@@ -713,7 +713,7 @@ async function phoneMenu() {
   if (fast) return;
   const opts = [["msgs", "Messages (" + S.msgs.length + ")"], ["crate", "Record crate (" + S.records.length + ")"], ["gear", "My setup"]];
   if (!S.f.noTravel && availableLocations().length) opts.splice(1, 0, ["map", "Subway map"]);
-  opts.push(["save", "Save game"], ["title", "Quit to title"], ["back", "Back"]);
+  opts.push(["hint", "Show what I can click"], ["save", "Save game"], ["title", "Quit to title"], ["back", "Back"]);
   const i = await choose(opts.map(o => o[1]));
   const k = opts[i][0];
   if (k === "msgs") await RP.phone();
@@ -721,6 +721,7 @@ async function phoneMenu() {
   if (k === "crate") await RP.crateView();
   if (k === "gear") await RP.gearView();
   if (k === "save") { save(); toast("Saved."); }
+  if (k === "hint") setTimeout(revealHotspots, 50);
   if (k === "title") { save(); if (RP.onQuit) RP.onQuit(); }
 }
 RP.phoneMenu = phoneMenu;
@@ -1007,6 +1008,7 @@ function bindInput() {
     if (MG.active) return;
     if (e.key === "Escape") { if (busy && skipFn) { skipFn(); return; } verb = null; pending = null; updateVerbs(); renderInv(); updateSentence(); }
     if ((e.key === " " || e.key === "Enter" || e.key === ".") && busy && skipFn) { e.preventDefault(); skipFn(); }
+    if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0 && (e.key === "h" || e.key === "H" || e.key === "Tab")) { e.preventDefault(); revealHotspots(); return; }
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0) {
       const map = { l: "look", p: "pickup", u: "use", o: "open", t: "talk", s: "push", c: "close", g: "give", y: "pull" };
       const vb = map[e.key.toLowerCase()];
@@ -1014,6 +1016,40 @@ function bindInput() {
     }
   });
 }
+
+/* ======================================================================
+   hotspot reveal (H key / menu): label everything clickable for a moment
+   ====================================================================== */
+let revealT = null;
+function revealHotspots() {
+  if (!cur || fast) return;
+  dom.talk.querySelectorAll(".hs").forEach(e => e.remove());
+  const camX = cur.camX, placed = [];
+  const put = (name, x, y) => {
+    if (x - camX < -10 || x - camX > W + 10) return;
+    const e = el("div", { cls: "hs", text: name }, dom.talk);
+    const w = e.offsetWidth, h = e.offsetHeight;
+    let lx = clamp(x - camX - w / 2, 2, W - w - 2), ly = clamp(y - h / 2, 2, SH - h - 2);
+    for (let k = 0; k < 6; k++) {
+      const hit = placed.find(p => lx < p[0] + p[2] + 2 && lx + w + 2 > p[0] && ly < p[1] + p[3] + 1 && ly + h + 1 > p[1]);
+      if (!hit) break;
+      ly = clamp(k % 2 ? hit[1] - h - 2 : hit[1] + hit[3] + 2, 2, SH - h - 2);
+    }
+    placed.push([lx, ly, w, h]);
+    e.style.left = lx + "px"; e.style.top = ly + "px";
+  };
+  hotspots().forEach(h => {
+    if (h.vis && !h.vis(S)) return;
+    if (!h.r && !h.rects && !h.poly) return;
+    const rs = h.poly ? [(() => { const p = evalv(h.poly, S); const xs = p.map(q => q[0]), ys = p.map(q => q[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)]; })()] : rectsOf(h);
+    const r = rs[0]; if (!r) return;
+    put(hotName(h.id) + (h.exit ? " →" : ""), r[0] + r[2] / 2, r[1] + r[3] / 2);
+  });
+  cur.actors.forEach(a => { if (a.clickable && visible(a) && a.bounds) put(hotName(a.id), a.bounds[0] + a.bounds[2] / 2, a.bounds[1] + 6); });
+  clearTimeout(revealT);
+  revealT = setTimeout(() => dom.talk.querySelectorAll(".hs").forEach(e => e.remove()), 2600);
+}
+RP.revealHotspots = revealHotspots;
 
 /* ======================================================================
    save / load

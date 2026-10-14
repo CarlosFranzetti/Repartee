@@ -76,7 +76,7 @@ function howTo(p) {
    ["Use or Give an item:", " pick the verb, then the item, then the thing or person."],
    ["Right-click", " (desktop) looks at things. Click or press Space while someone talks to skip ahead."],
    ["MENU", " (or use your phone) opens messages, the subway map, your record crate, your setup, and saving."],
-   ["Keys:", " L look, P pick up, U use, O open, T talk, G give, Esc to cancel."],
+   ["Keys:", " L look, P pick up, U use, O open, T talk, G give, Esc to cancel. H (or Tab) shows what you can click."],
    ["Mini-games", " explain their own controls. You can replay any of them from the Mini-Game Arcade."]].forEach(([b, t]) => { const q = el("p", {}, p); el("b", { text: b }, q); q.appendChild(document.createTextNode(t)); });
 }
 function credits(p) {
