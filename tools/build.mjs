@@ -67,6 +67,20 @@ ${js}
 </body>
 </html>
 `;
+// artifact variant: the claude.ai artifact host supplies <!doctype>/<head>/<body>, so ship content only
+if (!outFile || process.argv.includes("--artifact")) {
+  const art = `<title>re:parteé</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A pixel-art point-and-click DJ adventure. From broke-ass bedroom DJ to festival headliner, one bad decision at a time.">
+<style>\n${fonts}\n${css}\n</style>
+<script>
+${js}
+</script>
+`;
+  const at = outFile && process.argv.includes("--artifact") ? outFile.replace(/\.html$/, "") + ".artifact.html" : path.join(root, "dist/artifact.html");
+  fs.mkdirSync(path.dirname(at), { recursive: true });
+  fs.writeFileSync(at, art);
+}
 const target = outFile || path.join(root, "dist/index.html");
 fs.mkdirSync(path.dirname(target), { recursive: true });
 const tmp = target + ".tmp" + process.pid;

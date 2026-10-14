@@ -154,9 +154,17 @@ RP.ending = async function () {
   showTitle();
 };
 
-function boot() {
+/* boot; inside a claude.ai artifact viewer, keep the player's place across republishes */
+function boot(data) {
   RP.boot();
-  showTitle();
+  if (data && data.S && data.S.room && !data.title) {
+    RP.restore(data.S).then(ok => { if (!ok) showTitle(); });
+  } else showTitle();
 }
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+function start() {
+  const hot = window.claude && window.claude.hot;
+  try { if (hot && hot.snapshot) hot.snapshot(() => ({ S: RP.state, title: !!titleEl })); } catch (e) { /* ignore */ }
+  if (hot && hot.ready) hot.ready(boot); else boot(hot && hot.data ? hot.data : {});
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();

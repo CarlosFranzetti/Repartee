@@ -1072,6 +1072,13 @@ RP.loadSave = async function () {
   return true;
 };
 RP.clearSave = () => store.del(SAVE_KEY);
+RP.restore = async function (d) {
+  if (!d || !ROOMS[d.room]) return false;
+  S = Object.assign(baseState(), JSON.parse(JSON.stringify(d)));
+  applyWardrobe(); renderInv(); updateHud();
+  await RP.goto(S.room, S.kx, S.ky, S.face, { instant: true });
+  return true;
+};
 
 /* ======================================================================
    acts
@@ -1112,16 +1119,17 @@ function layout() {
   const vw = document.documentElement.clientWidth || window.innerWidth, vh = document.documentElement.clientHeight || window.innerHeight;
   const portrait = vw < 600 && vh > vw;
   document.body.classList.toggle("p", portrait);
+  const cs = getComputedStyle(dom.app), gut = (parseFloat(cs.paddingLeft) || 16) + (parseFloat(cs.paddingRight) || 16);
   const below = dom.below;
   if (portrait) {
     if (dom.sentence.parentNode !== below) { below.appendChild(dom.sentence); below.appendChild(dom.panel); }
-    s = (vw - 32) / W;
+    s = (vw - gut) / W;
     dom.frame.style.height = SH + "px";
     dom.frameBox.style.width = W * s + "px"; dom.frameBox.style.height = SH * s + "px";
     speechScale = clamp(15 / (20 * s), 1, 2.2);
   } else {
     if (dom.sentence.parentNode !== dom.frame) { dom.frame.appendChild(dom.sentence); dom.frame.appendChild(dom.panel); }
-    s = Math.min((vw - 32) / W, (vh - 20) / 360);
+    s = Math.min((vw - gut) / W, (vh - 20) / 360);
     dom.frame.style.height = "360px";
     dom.frameBox.style.width = W * s + "px"; dom.frameBox.style.height = 360 * s + "px";
     speechScale = clamp(14 / (20 * s), 1, 1.8);
