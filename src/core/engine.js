@@ -364,7 +364,7 @@ function ensureBuf(w) {
 function drawActor(a, b, L) {
   const lt = RP.fx.actorLight(L, a.x, a.y);
   const sc = (a.scale || 1) * depthScale(a.y);
-  a.bounds = RP.chars.draw(b, { id: a.char, def: a.def, x: a.x, y: a.y, face: a.face, act: a.act, frame: a.frame, mouth: a.talking ? a.mouth : 0, blink: a.blink, expr: a.expr, scale: sc, noShadow: a.noShadow, alpha: a.alpha }, lt);
+  a.bounds = RP.chars.draw(b, { id: a.char, def: a.def, x: a.x, y: a.y, face: a.face, act: a.act, frame: a.frame, mouth: a.talking ? a.mouth : 0, blink: a.blink, expr: a.expr, scale: sc, noShadow: a.noShadow, noCast: a.crowd || a.noCast, alpha: a.alpha }, lt);
 }
 let lastT = 0;
 function render(now) {
@@ -1064,7 +1064,7 @@ RP.completeAct = async function (checks) {
   if (!unlocked.includes(n + 1)) { unlocked.push(n + 1); store.set("reparte.unlocked", unlocked); }
   await RP.card({ kicker: "LEVEL " + n + " COMPLETE", title: a.doneTitle || a.title, body: a.doneText ? [evalv(a.doneText, S)] : [], checks, button: ACTS[n + 1] ? "NEXT: " + ACTS[n + 1].title : "CONTINUE" });
   if (ACTS[n + 1]) await RP.startAct(n + 1, { carry: true });
-  else if (RP.ending) await RP.ending();
+  else if (RP.ending && !fast) await RP.ending();
 };
 
 /* ======================================================================

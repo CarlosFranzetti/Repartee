@@ -34,19 +34,24 @@ function paintTitle(c) {
   for (let y = 132; y < h; y++) for (let x = 0; x < w; x++) P(c, x, y, bayer(x, y) < 6 ? "#0b0720" : "#130b2e");
   for (let i = 0; i < 260; i++) { const x = rnd() * w | 0, y = 134 + rnd() * 44 | 0; R(c, x, y, 2 + rnd() * 4, 1, ["#ffd27a", "#ff6cbb", "#9fe8ff"][rnd() * 3 | 0]); }
   R(c, 0, 168, w, 12, "#2a1c30"); R(c, 0, 168, w, 1, "#4a3450");
-  // the kid on the ledge, headphones on, looking at the city
-  const k = mk(80, 140), kc = k.getContext("2d");
-  RP.chars.draw(kc, { id: "kid", x: 40, y: 130, face: "back", act: "stand" }, { lx: -0.5, rim: { color: "#ff6cbb", side: 1 }, shadow: 0 });
-  c.imageSmoothingEnabled = false;
-  c.drawImage(k, 0, 0, 80, 140, 150, 112, 40, 70);
+}
+/* title backdrop at 640x360: the city painted at 320x180 and doubled, the kid drawn at native size */
+function paintTitleHi(c2) {
+  const lo = mk(320, 180);
+  paintTitle(lo.getContext("2d"));
+  c2.imageSmoothingEnabled = false;
+  c2.drawImage(lo, 0, 0, 640, 360);
+  RP.chars.update("kid", { acc: ["headphones"], headphonesOn: true });
+  RP.chars.draw(c2, { id: "kid", x: 548, y: 352, face: "back", act: "stand" }, { lx: -0.6, rim: { color: "#ff6cbb", side: 1 }, shadow: 0.4 });
+  RP.chars.update("kid", { acc: [], headphonesOn: false });
 }
 
 function showTitle() {
   RP.hideGame(true);
   if (titleEl) titleEl.remove();
   const ov = titleEl = el("div", { id: "title", cls: "overlay" }, document.body);
-  const cv = el("canvas", { id: "tcv", width: 320, height: 180 }, ov);
-  paintTitle(cv.getContext("2d"));
+  const cv = el("canvas", { id: "tcv", width: 640, height: 360 }, ov);
+  paintTitleHi(cv.getContext("2d"));
   const box = el("div", { cls: "tbox" }, ov);
   el("h1", { cls: "logo", html: 're<span class="c">:</span>parte<span class="e">é</span>' }, box);
   el("p", { cls: "tag", text: "A PIXEL-ART DJ ADVENTURE GAME" }, box);

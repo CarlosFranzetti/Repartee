@@ -735,42 +735,39 @@ function sprite(def, pose, lx, rim) {
   return s;
 }
 
-/* projected cast shadow from the silhouette, away from the key light */
+/* projected cast shadow from the silhouette, away from the key light; pre-dithered and cached */
 function castShadow(def, pose, lx, sp) {
   const key = def.id + "|" + poseKey(pose) + "|" + qlx(lx);
   let s = shadowCache.get(key);
   if (s) return s;
   const B = sp.buf, len = 0.2, skew = -qlx(lx) * 0.75;
   const pad = 70, cv = mk(B.w + pad * 2, 40), c = cv.getContext("2d");
-  c.fillStyle = "#000";
-  const baseY = 30;
+  c.fillStyle = "#0a0410";
+  const baseY = 30, seen = new Uint8Array(cv.width * cv.height);
   for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
     if (B.c[y * B.w + x] < 0) continue;
     const hgt = B.ay - y;
     const sx = Math.round(pad + x + hgt * skew), sy = Math.round(baseY - hgt * len);
-    c.fillRect(sx, sy, 1, 1);
+    if (sx < 0 || sy < 0 || sx >= cv.width || sy >= cv.height || seen[sy * cv.width + sx]) continue;
+    seen[sy * cv.width + sx] = 1;
+    if ((sx + sy) & 1) c.fillRect(sx, sy, 1, 1);
   }
   s = { cv, ox: pad + B.ax, oy: baseY };
+  if (shadowCache.size > 1500) shadowCache.clear();
   shadowCache.set(key, s);
   return s;
 }
-
-/* checkerboard-dithered darkening pattern for shadows */
-let shadowPat = null;
-function ditherShadow(ctx, cv, dx, dy, w, h, strength) {
-  // draw silhouette as dithered dark: use the silhouette as mask over a checker
-  const tmp = ditherShadow.tmp || (ditherShadow.tmp = mk(220, 80));
-  if (tmp.width < cv.width || tmp.height < cv.height) { tmp.width = Math.max(tmp.width, cv.width); tmp.height = Math.max(tmp.height, cv.height); }
-  const t = tmp.getContext("2d");
-  t.globalCompositeOperation = "source-over";
-  t.clearRect(0, 0, tmp.width, tmp.height);
-  t.drawImage(cv, 0, 0);
-  t.globalCompositeOperation = "source-in";
-  if (!shadowPat) { const p = mk(2, 2), pc = p.getContext("2d"); pc.fillStyle = "#0a0410"; pc.fillRect(0, 0, 1, 1); pc.fillRect(1, 1, 1, 1); shadowPat = t.createPattern(p, "repeat"); }
-  t.fillStyle = shadowPat; t.fillRect(0, 0, tmp.width, tmp.height);
-  ctx.save(); ctx.globalAlpha = strength;
-  ctx.drawImage(tmp, 0, 0, cv.width, cv.height, dx, dy, w, h);
-  ctx.restore();
+/* dithered contact shadow ellipse, cached by size */
+const contactCache = new Map();
+function contactShadow(rx, ry, level) {
+  const key = rx + "," + ry + "," + level;
+  let cv = contactCache.get(key);
+  if (cv) return cv;
+  cv = mk(rx * 2 + 1, ry * 2 + 1);
+  const c = cv.getContext("2d"); c.fillStyle = "#0a0410";
+  for (let x = -rx; x <= rx; x++) for (let y = -ry; y <= ry; y++) if ((x * x) / (rx * rx) + (y * y) / (ry * ry) < 1 && bayer(x + 64, y + 64) < level) c.fillRect(x + rx, y + ry, 1, 1);
+  contactCache.set(key, cv);
+  return cv;
 }
 
 /* draw a character instance onto ctx at world (x,y)=feet.
@@ -792,10 +789,12 @@ function draw(ctx, inst, light = {}) {
   const sh = light.shadow == null ? 0.55 : light.shadow;
   if (sh > 0 && !inst.noShadow) {
     const rx = Math.round(11 * sc + (def.build === "big" ? 3 : def.build === "stocky" ? 2 : 0)), ryy = Math.max(1, Math.round(2 * sc));
-    for (let x = -rx; x <= rx; x++) for (let y = -ryy; y <= ryy; y++) if ((x * x) / (rx * rx) + (y * y) / (ryy * ryy) < 1 && bayer(X + x, Y + y) < 9 * sh + 2) { ctx.fillStyle = "#0a0410"; ctx.fillRect(X + x, Y + y, 1, 1); }
-    if (light.cast && Math.abs(lx) > 0.2) {
+    ctx.drawImage(contactShadow(rx, ryy, Math.round(9 * sh + 2)), X - rx, Y - ryy);
+    if (light.cast && Math.abs(lx) > 0.2 && !inst.noCast) {
       const cs = castShadow(def, pose, lx, sp);
-      ditherShadow(ctx, cs.cv, Math.round(X - cs.ox * sc), Math.round(Y - cs.oy * sc), Math.round(cs.cv.width * sc), Math.round(cs.cv.height * sc), 0.75 * sh);
+      ctx.save(); ctx.globalAlpha = Math.min(1, 0.85 * sh + 0.2);
+      ctx.drawImage(cs.cv, Math.round(X - cs.ox * sc), Math.round(Y - cs.oy * sc), Math.round(cs.cv.width * sc), Math.round(cs.cv.height * sc));
+      ctx.restore();
     }
   }
   ctx.imageSmoothingEnabled = false;
