@@ -42,6 +42,9 @@ function hue(col, dh, ds, dl) {               /* quick hsl nudge */
   return U.toHex(o[0], o[1], o[2]);
 }
 
+const lum = col => { const v = U.hex(col); return 0.3 * v[0] + 0.59 * v[1] + 0.11 * v[2]; };
+function inkFor(bg, cands) { let best = cands[0], bd = -1; cands.forEach(cc => { const d = abs(lum(cc) - lum(bg)); if (d > bd) { bd = d; best = cc; } }); return best; }
+
 /* ---------- drawing primitives ---------------------------------------------------- */
 const HL = (c, x, y, w, col) => R(c, x, y, w, 1, col);
 const VL = (c, x, y, h, col) => R(c, x, y, 1, h, col);
@@ -258,7 +261,7 @@ const ART_PALS = [
   ["#101018", "#39d0ff", "#e8e4f0", "#ff3fa4"], ["#d8c8a0", "#2a1a3a", "#c0302c", "#2f62b8"]
 ];
 
-PK.util = { rng, ri, pk, thr, sh, li, hue, AR, AP, clip, rr, outline, bev, paintFn, dshade, dmix, noise2, gradient, cylV, cylH, ball, blob, ring, groundShadow, haloPts, fitScale, HL, VL };
+PK.util = { lum, inkFor, rng, ri, pk, thr, sh, li, hue, AR, AP, clip, rr, outline, bev, paintFn, dshade, dmix, noise2, gradient, cylV, cylH, ball, blob, ring, groundShadow, haloPts, fitScale, HL, VL };
 
 /* =====================================================================================
    SURFACES
@@ -289,17 +292,17 @@ function crackPath(c, px, py, steps, dirx, r, k, bx0, by0, bx1, by1) {
     const m = r();
     if (m < 0.5) py++; else if (m < 0.8) { px += dirx; } else { px += dirx; py++; }
     if (r() < 0.02) dirx = -dirx;
-    if (r() < 0.05 && steps - i > 8) crackPath(c, px, py, floor((steps - i) * 0.5), -dirx, r, k, bx0, by0, bx1, by1);
+    if (r() < 0.025 && steps - i > 10) crackPath(c, px, py, floor((steps - i) * 0.5), -dirx, r, k, bx0, by0, bx1, by1);
   }
 }
 PK.plaster = function (c, x, y, w, h, o) {
   o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
   const base = o.base || "#8c7590", k = K(base), r = rng(o, x, y, 1);
-  const nz = noise2(floor(r() * 4e9));
+  const nz = noise2(floor(r() * 4e9)), pl = mix(k[2], k[3], 0.5), pd = mix(k[2], k[1], 0.5);
   paintFn(c, x, y, w, h, (px, py) => {
-    const n = nz(px / 26, py / 20) * 0.6 + nz(px / 8 + 31, py / 6 + 17) * 0.4;
-    const v = (n - 0.5) * 2.4, a = abs(v) - 0.27;
-    if (a > 0 && a * 1.7 > thr(px, py)) return v > 0 ? k[3] : k[1];
+    const n = nz(px / 34, py / 26) * 0.7 + nz(px / 7 + 31, py / 5 + 17) * 0.3;
+    const v = (n - 0.5) * 2.4, a = abs(v) - 0.2;
+    if (a > 0 && a * 1.8 > thr(px, py)) return v > 0 ? pl : pd;
     return k[2];
   });
   /* darker toward the ceiling */
@@ -314,12 +317,12 @@ PK.plaster = function (c, x, y, w, h, o) {
   const patches = o.patches == null ? 3 : o.patches;
   for (let i = 0; i < patches; i++) {
     const pw = ri(r, 14, 38), ph = ri(r, 8, 22), px = x + ri(r, 4, max(5, w - pw - 4)), py = y + ri(r, 4, max(5, h - ph - 4));
-    const pc = mix(k[2], k[3], 0.55);
+    const pc = mix(k[2], k[3], 0.32), pcl = mix(pc, k[3], 0.5), pcd = mix(pc, k[1], 0.5);
     rr(c, px, py, pw, ph, pc, 2);
-    HL(c, px + 2, py, pw - 4, k[4]); VL(c, px, py + 2, ph - 4, mix(pc, k[4], 0.5));
-    HL(c, px + 2, py + ph - 1, pw - 4, k[1]); VL(c, px + pw - 1, py + 2, ph - 4, k[1]);
-    for (let j = 0; j < pw * ph / 14; j++) P(c, px + 2 + floor(r() * (pw - 4)), py + 2 + floor(r() * (ph - 4)), r() < 0.5 ? k[3] : mix(pc, k[1], 0.35));
-    for (let j = 0; j < pw * 0.5; j++) if (r() < 0.4) AP(c, px + 1 + j * 2, py + ph, k[0], 0.3);   /* soft shadow under patch */
+    HL(c, px + 2, py, pw - 4, pcl); VL(c, px, py + 2, ph - 4, pcl);
+    HL(c, px + 2, py + ph - 1, pw - 4, pcd); VL(c, px + pw - 1, py + 2, ph - 4, pcd);
+    for (let j = 0; j < pw * ph / 22; j++) P(c, px + 2 + floor(r() * (pw - 4)), py + 2 + floor(r() * (ph - 4)), r() < 0.5 ? pcl : pcd);
+    for (let j = 0; j < pw; j++) if (r() < 0.35) AP(c, px + 1 + j, py + ph, k[0], 0.22);   /* soft shadow under patch */
   }
   /* water stains */
   const stains = o.stains == null ? 2 : o.stains;
@@ -521,10 +524,10 @@ PK.wallTiles = function (c, x, y, w, h, o) {
 /* ---- concrete -------------------------------------------------------------------------- */
 PK.concrete = function (c, x, y, w, h, o) {
   o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
-  const base = o.base || "#7a768a", k = K(base), r = rng(o, x, y, 6), nz = noise2(floor(r() * 4e9));
+  const base = o.base || "#7a768a", k = K(base), r = rng(o, x, y, 6), nz = noise2(floor(r() * 4e9)), cl = mix(k[2], k[3], 0.55), cd = mix(k[2], k[1], 0.55);
   paintFn(c, x, y, w, h, (px, py) => {
-    const n = nz(px / 30, py / 24) * 0.55 + nz(px / 6 + 11, py / 5 + 3) * 0.45, v = (n - 0.5) * 2.6, a = abs(v) - 0.24;
-    if (a > 0 && a * 1.7 > thr(px, py)) return v > 0 ? k[3] : k[1];
+    const n = nz(px / 40, py / 30) * 0.6 + nz(px / 6 + 11, py / 5 + 3) * 0.4, v = (n - 0.5) * 2.6, a = abs(v) - 0.22;
+    if (a > 0 && a * 1.8 > thr(px, py)) return v > 0 ? cl : cd;
     return k[2];
   });
   /* formwork seams + tie holes */
@@ -558,8 +561,9 @@ PK.asphalt = function (c, x, y, w, h, o) {
   /* repair patches */
   for (let i = 0; i < 2; i++) {
     const pw = ri(r, 24, 70), ph = ri(r, 8, max(9, floor(h * 0.4))), px = x + ri(r, 0, max(1, w - pw)), py = y + ri(r, 2, max(3, h - ph - 2));
-    R(c, px, py, pw, ph, mix(k[2], k[0], 0.5)); speckle(c, px, py, pw, ph, [k[1], k[2]], 0.3, floor(r() * 9e6));
-    HL(c, px, py, pw, mix(k[0], "#000000", 0.2)); HL(c, px, py + ph - 1, pw, k[3]);
+    const pcol = mix(k[2], k[0], 0.35);
+    R(c, px, py, pw, ph, pcol); speckle(c, px, py, pw, ph, [k[1], k[3], k[2]], 0.28, floor(r() * 9e6));
+    HL(c, px, py, pw, mix(pcol, k[0], 0.5)); HL(c, px, py + ph - 1, pw, mix(pcol, k[3], 0.4)); VL(c, px, py, ph, mix(pcol, k[0], 0.4));
   }
   /* tar-filled cracks */
   for (let i = 0; i < 3; i++) {
@@ -815,6 +819,11 @@ PK.skyline = function (c, x, y, w, h, o) {
         R(c, sx - 2, sb - sH * 0.94, 4, sH * 0.1, sc);
         VL(c, sx, sb - sH - 2, round(sH * 0.08) + 2, sk[1]);
         [[sx - sw / 2, sb - sH * 0.55], [sx - sw / 2 + 2, sb - sH * 0.72], [sx - sw / 2 + 4, sb - sH * 0.84], [sx - 2, sb - sH * 0.94]].forEach(p => VL(c, p[0], p[1], 5, mix(sc, night ? "#8a70c0" : "#ffffff", 0.4)));
+        const tiers = [[sx - sw / 2, sb - sH * 0.55, sw, sH * 0.55], [sx - sw / 2 + 2, sb - sH * 0.72, sw - 4, sH * 0.17], [sx - sw / 2 + 4, sb - sH * 0.84, sw - 8, sH * 0.12]];
+        tiers.forEach(tr => { for (let wy = round(tr[1]) + 4; wy < round(tr[1] + tr[3]) - 2 && wy < sb - 4; wy += 4) for (let wx = round(tr[0]) + 2; wx < round(tr[0] + tr[2]) - 2; wx += 3) {
+          if (night) { if (r() < 0.38) { P(c, wx, wy, pk(r, ["#ffd27a", "#ffe2a0", "#ffb04a"])); em.push([wx, wy, 1, 1]); } else if (r() < 0.4) P(c, wx, wy, mix(sc, "#4a3a7a", 0.45)); }
+          else P(c, wx, wy, r() < 0.2 ? mix(sc, "#e8f0ff", 0.4) : mix(sc, "#2a3068", 0.45));
+        } });
         if (night) {
           const lc = o.spireColor || "#ffe2a0";
           [[sx - 2, sb - sH * 0.94, 4, sH * 0.1], [sx - sw / 2 + 4, sb - sH * 0.84, sw - 8, 3], [sx - sw / 2 + 2, sb - sH * 0.72, sw - 4, 2]].forEach(q => {
@@ -905,6 +914,21 @@ PK.window = function (c, x, y, w, h, o) {
       const lineY = gy + round(gh * 0.72);                                                  /* clothesline */
       for (let px = gx + 6; px < gx + gw - 2; px++) P(c, px, lineY + round(sin((px - gx) / (gw - 8) * PI) * 3), "#1c1424");
       R(c, gx + round(gw * 0.35), lineY + 2, 5, 7, "#d8d0e0"); R(c, gx + round(gw * 0.35) + 7, lineY + 3, 4, 6, "#c0302c");
+    } else if (view === "interior") {
+      const litI = o.lit !== false;
+      if (litI) {
+        gradient(c, gx, gy, gw, gh, ["#fff0c0", "#ffd890", "#e8a058"], 1, true);
+        R(c, gx, gy + round(gh * 0.72), gw, ceil(gh * 0.28), "#b87a48"); HL(c, gx, gy + round(gh * 0.72), gw, "#8a5a30");        /* floor line */
+        const lx = gx + floor(gw / 2); ell(c, lx, gy + 6, 5, 3, "#ffffff"); haloPts(c, lx, gy + 6, 14, "#fff6d0", 0.7);              /* ceiling light */
+        const cc = o.curtain || "#c0555a", cw = max(4, round(gw * 0.22)), kcu = K(cc);
+        [[gx, 1], [gx + gw - cw, -1]].forEach(([cx0]) => { R(c, cx0, gy, cw, gh, cc); for (let q = 0; q < cw; q += 3) VL(c, cx0 + q, gy, gh, q % 6 ? kcu[3] : kcu[1]); });
+        if (r() < 0.6) { const px = gx + round(gw * 0.3); R(c, px, gy + round(gh * 0.52), 6, round(gh * 0.2), "#5a3a2a"); ell(c, px + 3, gy + round(gh * 0.5), 5, 4, "#3a7a3a"); }
+        em.push([gx, gy, gw, gh]);
+      } else {
+        gradient(c, gx, gy, gw, gh, ["#1a2236", "#0e1220"], 1, true);
+        R(c, gx, gy + round(gh * 0.72), gw, ceil(gh * 0.28), "#0a0c16");
+        const cc = o.curtain || "#3a2a4a"; R(c, gx, gy, round(gw * 0.2), gh, cc); R(c, gx + gw - round(gw * 0.2), gy, round(gw * 0.2), gh, cc);
+      }
     } else {
       gradient(c, gx, gy, gw, gh, ["#120c28", "#1c1238", "#0c0818"], 1, true);
     }
@@ -956,7 +980,7 @@ PK.window = function (c, x, y, w, h, o) {
 PK.fireEscape = function (c, x, y, w, h, o) {
   o = o || {}; x = round(x); y = round(y); w = round(w || 90); h = round(h || 112);
   const iron = o.color || "#231b30", edge = "#4e4468", dk = "#0e0818", r = rng(o, x, y, 23);
-  const ladderH = o.ladder === false ? 0 : 22, floors = o.floors || max(1, round((h - ladderH) / 54)), fh = (h - ladderH) / floors;
+  const ladderH = o.ladder === false ? 0 : 22, floors = o.floors || max(1, floor((h - ladderH) / 34)), fh = (h - ladderH) / floors;
   const railH = 20;
   for (let f = 0; f < floors; f++) {
     const deckY = y + round((f + 1) * fh) - 4;
@@ -1029,7 +1053,7 @@ PK.streetlamp = function (c, x, y, o) {
 };
 
 PK.hydrant = function (c, x, y, o) {
-  o = o || {}; x = round(x); y = round(y);
+  o = o || {}; x = round(x) + 3; y = round(y);
   const col = o.color || "#c8322c", k = K(col);
   groundShadow(c, x + 7, y + 20, 9, 2, 0.45);
   cylV(c, x + 2, y + 6, 10, 12, col);                                   /* barrel */
@@ -1076,9 +1100,9 @@ PK.manhole = function (c, x, y, o) {
   HL(c, cx - rx + 2, cy - ry + 1, rx * 2 - 3, k[3]);
   if (o.steam) {
     const r = rng(o, x, y, 25), sh_ = typeof o.steam === "number" ? o.steam : 70;
-    for (let i = 0; i < 12; i++) {
-      const t = i / 11, py = cy - 3 - t * sh_, px = cx + sin(t * 5 + 1) * 5 * t + (r() - 0.5) * 4, prx = 5 + t * 14, pry = 4 + t * 8;
-      const a = 0.30 * (1 - t * 0.75);
+    for (let i = 0; i < 20; i++) {
+      const t = i / 19, py = cy - 3 - t * sh_, px = cx + sin(t * 4.2 + 1) * 7 * t + (r() - 0.5) * 8, prx = 6 + t * 20 + r() * 5, pry = 4 + t * 10 + r() * 3;
+      const a = 0.4 * (1 - t * 0.72);
       dshade(c, round(px - prx), round(py - pry), round(prx * 2) + 1, round(pry * 2) + 1, "#e6e0f4", (qx, qy) => { const dx = (qx - px) / prx, dy = (qy - py) / pry, d = dx * dx + dy * dy; return d > 1 ? 0 : (1 - d) * 1.6; }, a + 0.1);
     }
   }
@@ -1156,7 +1180,9 @@ PK.awning = function (c, x, y, w, o) {
   }
   if (o.text) {
     const sc = fitScale(o.text, w - 12, 2), tw = txtW(o.text, sc), tx = round(x + w / 2 - tw / 2), ty = y + slope + 1;
-    txt(c, o.text, tx + 1, ty + 1, "#241838", sc); txt(c, o.text, tx, ty, o.textColor || "#fff6dc", sc);
+    const pl = sh(cols[0], 0.45), plh = sc * 5 + 3;
+    R(c, tx - 4, ty - 1, tw + 8, plh, pl); HL(c, tx - 4, ty - 1, tw + 8, mix(pl, "#ffffff", 0.35)); outline(c, tx - 4, ty - 1, tw + 8, plh, sh(pl, 0.4)); HL(c, tx - 3, ty, tw + 6, mix(pl, "#ffffff", 0.18));
+    txt(c, o.text, tx + 1, ty + 1, "#140c24", sc); txt(c, o.text, tx, ty, o.textColor || "#fff6dc", sc);
   }
 };
 
@@ -1231,9 +1257,9 @@ PK.mailbox = function (c, x, y, o) {
   ell(c, x + 10, y + 7, 9, 5, k[2]); for (let i = 0; i < 5; i++) HL(c, x + 5 + i, y + 3 + (i > 2 ? 4 - i : i), 11 - i * 2 + (i > 2 ? 0 : 0), k[2]);
   ell(c, x + 10, y + 6, 8, 4, k[2]); ell(c, x + 8, y + 5, 4, 2, k[3]); HL(c, x + 6, y + 3, 5, k[4]);
   HL(c, x + 1, y + 10, 18, k[0]);
-  R(c, x + 3, y + 12, 14, 3, k[0]); HL(c, x + 4, y + 13, 12, "#0a0614");    /* mail slot lip */
-  R(c, x + 4, y + 17, 12, 6, k[1]); outline(c, x + 4, y + 17, 12, 6, k[0]); R(c, x + 9, y + 19, 3, 2, "#c8c4d4");  /* pull-down door + handle */
-  txt(c, "MAIL", x + 3, y + 24 - 0, "#f4f0ff", 1, 0);
+  R(c, x + 3, y + 11, 14, 3, k[0]); HL(c, x + 4, y + 12, 12, "#0a0614");    /* mail slot lip */
+  txt(c, "MAIL", x + 3, y + 15, "#f4f0ff", 1, 0);
+  R(c, x + 4, y + 21, 12, 5, k[1]); outline(c, x + 4, y + 21, 12, 5, k[0]); R(c, x + 8, y + 23, 4, 2, "#c8c4d8");  /* pull-down door + handle */
 };
 
 PK.newspaperBox = function (c, x, y, o) {
@@ -1398,7 +1424,7 @@ function itemRow(c, type, x, yb, w, rowH, r) {
   let group = pk(r, CANC), gleft = ri(r, 2, 5);
   while (px < end - 2) {
     if (type === "records") {
-      const ww = ri(r, 1, 3), hh = rowH - 3 - ri(r, 0, 2), col = pk(r, ["#1d1622", "#c0302c", "#e8e4f0", "#2f62b8", "#ffd23f", "#ff3fa4", "#39d0ff", "#3a6a3a", "#e8a030", "#6a2a5a"]);
+      const ww = ri(r, 1, 2), hh = rowH - 3 - (r() < 0.2 ? ri(r, 1, 2) : 0), col = pk(r, ["#1d1622", "#c0302c", "#e8e4f0", "#2f62b8", "#ffd23f", "#ff3fa4", "#39d0ff", "#3a6a3a", "#e8a030", "#6a2a5a"]);
       if (px + ww > end) break;
       R(c, px, yb - hh, ww, hh, col); if (ww > 1) VL(c, px, yb - hh, hh, mix(col, "#ffffff", 0.28)); VL(c, px + ww - 1, yb - hh, hh, mix(col, "#0c0618", 0.4));
       if (r() < 0.35) R(c, px, yb - hh + ri(r, 2, 5), ww, 1, "#f4ead0");
@@ -1434,7 +1460,12 @@ function itemRow(c, type, x, yb, w, rowH, r) {
       if (gleft-- <= 0) { group = pk(r, CANC); gleft = ri(r, 2, 5); }
       const cw = 5, chh = 7, kk = K(group);
       if (px + cw > end) break;
-      for (let layer = 0; layer < (rowH >= 17 ? 2 : 1); layer++) {
+      if (r() < 0.07 && rowH >= 14 && px + 9 < end) {                                  /* 2-liter bottle */
+        const bh2 = rowH - 1, bc = pk(r, ["#c0302c", "#3a8a5a", "#e8a020", "#3a8ad8"]);
+        R(c, px, yb - bh2, 6, bh2, bc); HL(c, px, yb - bh2 + 2, 6, mix(bc, "#ffffff", 0.35)); R(c, px + 2, yb - bh2 - 2, 2, 2, "#e8e4f0"); VL(c, px + 1, yb - bh2 + 3, bh2 - 4, mix(bc, "#ffffff", 0.45)); VL(c, px + 5, yb - bh2, bh2, mix(bc, "#0c0618", 0.4)); R(c, px + 1, yb - floor(bh2 / 2), 4, 3, "#f4f0e8");
+        px += 7; continue;
+      }
+      for (let layer = 0; layer < (rowH >= 14 ? 2 : 1); layer++) {
         const cy = yb - chh * (layer + 1);
         R(c, px, cy, cw, chh, group); HL(c, px, cy, cw, "#d8d4e4"); HL(c, px, cy + chh - 1, cw, kk[1]);
         VL(c, px + 1, cy + 1, chh - 2, mix(group, "#ffffff", 0.5)); VL(c, px + cw - 1, cy + 1, chh - 1, kk[1]); R(c, px + 1, cy + 3, cw - 2, 2, "#f4f0e8"); P(c, px + 2, cy + 3, kk[1]);
@@ -1550,7 +1581,7 @@ PK.counter = function (c, x, y, w, h, o) {
 };
 
 PK.cashRegister = function (c, x, y, o) {
-  o = o || {}; x = round(x); y = round(y); const em = [];
+  o = o || {}; x = round(x); y = round(y) + 5; const em = [];
   const body = "#cfc4a8", k = K(body);
   R(c, x + 12, y + 1, 7, 2, "#8a8698"); R(c, x + 14, y + 3, 3, 4, "#8a8698");            /* stalk */
   R(c, x + 6, y - 5, 19, 7, "#2a2832"); HL(c, x + 6, y - 5, 19, "#5a5668");
@@ -1710,7 +1741,7 @@ PK.couch = function (c, x, y, w, o) {
   groundShadow(c, x + w / 2, y + h, w / 2, 2, 0.45);
   [x + 4, x + w - 8].forEach(lx => R(c, lx, y + h - 5, 4, 5, "#2a1c22"));
   /* back */
-  rr(c, x + arm - 2, y, w - arm * 2 + 4, backH + 4, col, 3); gradient(c, x + arm, y + 1, w - arm * 2, backH, [[0, k[3]], [0.25, k[2]], [1, k[1]]], 1, true);
+  rr(c, x + arm - 2, y, w - arm * 2 + 4, backH + 4, col, 3); gradient(c, x + arm, y + 1, w - arm * 2, backH, [[0, k[3]], [0.25, k[2]], [1, k[1]]], 0.5, true);
   HL(c, x + arm, y, w - arm * 2, k[4]);
   const cush = w > 100 ? 3 : 2, cw = (w - arm * 2) / cush;
   for (let i = 0; i < cush; i++) {
@@ -1723,7 +1754,7 @@ PK.couch = function (c, x, y, w, o) {
   const sh_ = h - round(h * 0.5) - 5;
   for (let i = 0; i < cush; i++) {
     const bx = x + arm + round(i * cw), ew = round((i + 1) * cw) - round(i * cw) - 0;
-    R(c, bx, seatY, ew, sh_, k[2]); gradient(c, bx, seatY, ew, sh_, [[0, k[4]], [0.14, k[3]], [0.5, k[2]], [1, k[1]]], 1, true);
+    R(c, bx, seatY, ew, sh_, k[2]); gradient(c, bx, seatY, ew, sh_, [[0, k[4]], [0.14, k[3]], [0.5, k[2]], [1, k[1]]], 0.6, true);
     HL(c, bx, seatY, ew, k[4]); HL(c, bx, seatY + sh_ - 1, ew, k[0]); VL(c, bx, seatY, sh_, k[0]); VL(c, bx + 1, seatY + 1, sh_ - 2, k[3]);
     for (let s = 0; s < ew; s += 2) P(c, bx + s, seatY + 4, k[1]);                                                                              /* piping stitch */
   }
@@ -1849,14 +1880,14 @@ function leaf(c, bx, by, ang, len, wd, col, droop) {
 PK.plant = function (c, x, y, o) {
   o = o || {}; x = round(x); y = round(y);
   const size = o.size || 2, dead = !!o.dead, r = rng(o, x, y, 44);
-  const pw = [12, 16, 22][size - 1] || 16, ph = [10, 13, 17][size - 1] || 13, H = [30, 48, 72][size - 1] || 48, W = [24, 36, 52][size - 1] || 36;
+  const pw = [12, 16, 22][size - 1] || 16, ph = [10, 13, 17][size - 1] || 13, H = [28, 47, 69][size - 1] || 47, W = [30, 50, 76][size - 1] || 50;
   const potC = o.pot || "#c06a3a", kp = K(potC), cx = x + floor(W / 2);
   groundShadow(c, cx, y + H, pw / 2 + 4, 2, 0.4);
   const leafC = dead ? "#8a6a3a" : (o.color || "#4a9a4a");
   const n = [6, 9, 13][size - 1] || 9;
   const ly = y + H - ph;
   for (let i = 0; i < n; i++) {
-    const t = n === 1 ? 0 : i / (n - 1), ang = (t - 0.5) * (dead ? 2.4 : 2.7) + (r() - 0.5) * 0.3, len = (H - ph - 2) * (0.55 + 0.45 * cos(ang) * (0.7 + r() * 0.3)), wd = [2, 3.2, 4.5][size - 1] * (0.8 + r() * 0.4);
+    const t = n === 1 ? 0 : i / (n - 1), ang = (t - 0.5) * (dead ? 2.4 : 2.7) + (r() - 0.5) * 0.3, len = (H - ph + 5) * (0.55 + 0.45 * cos(ang) * (0.7 + r() * 0.3)), wd = [2, 3.2, 4.5][size - 1] * (0.8 + r() * 0.4);
     leaf(c, cx + (r() - 0.5) * 3, ly + 2, ang, len, wd, i % 3 === 0 ? mix(leafC, "#9ac86a", 0.2) : leafC, dead ? len * 0.35 : 0);
   }
   /* pot */
@@ -1868,7 +1899,7 @@ PK.plant = function (c, x, y, o) {
 };
 
 PK.tv = function (c, x, y, o) {
-  o = o || {}; x = round(x); y = round(y);
+  o = o || {}; x = round(x); y = round(y) - 4;
   const on = !!o.on, w = o.w || 44, h = o.h || 38, body = o.color || "#3a364a", k = K(body), em = [], content = o.content || "static", r = rng(o, x, y, 45);
   groundShadow(c, x + w / 2, y + h, w / 2, 2, 0.4);
   if (o.ears) { line(c, x + w / 2, y + 3, x + 6, y - 14, "#c8c4d8"); line(c, x + w / 2, y + 3, x + w - 6, y - 14, "#c8c4d8"); }
@@ -1923,7 +1954,7 @@ PK.poster = function (c, x, y, w, h, o) {
   let pal = o.palette;
   if (typeof pal === "string") pal = { neon: ["#14102e", "#ff3fa4", "#39d0ff", "#e8e4f0"], paper: ["#eadcc0", "#c0302c", "#1d1622", "#2f62b8"], mono: ["#e8e4f0", "#1d1622", "#6a667c", "#1d1622"], sunset: ["#2a1a3a", "#ff8a4c", "#ffd23f", "#f4ead0"] }[pal] || null;
   pal = pal || pk(r, ART_PALS);
-  const bg = pal[0], a = pal[1], b = pal[2], ink = pal[3];
+  const bg = pal[0], a = pal[1], b = pal[2], ink = inkFor(bg, [pal[3], pal[1], pal[2]]);
   R(c, x, y, w, h, bg);
   if (r() < 0.5) gradient(c, x, y, w, h, [bg, mix(bg, a, 0.28)], 1, true);
   const titleH = h * 0.34, my = y + 2, mh = h - titleH - 12;
@@ -2066,7 +2097,8 @@ PK.toilet = function (c, x, y, o) {
 
 /* ---- office ----------------------------------------------------------------------------------- */
 PK.officeCubicle = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w || 120); h = round(h || 86);
+  o = o || {}; w = round(w || 132); h = round(h || 88);
+  x = round(x) + 12; y = round(y) + 2; w = w - 14; h = h - 2;                  /* footprint includes the 12px side panel and 2px cap */
   const col = o.color || "#6a7a96", k = K(col), r = rng(o, x, y, 49), em = [];
   /* back panel (fabric) */
   R(c, x, y, w, h - 28, col);
@@ -2101,7 +2133,7 @@ PK.officeCubicle = function (c, x, y, w, h, o) {
 };
 
 PK.copier = function (c, x, y, o) {
-  o = o || {}; x = round(x); y = round(y); const em = [];
+  o = o || {}; x = round(x) + 1; y = round(y) + 2; const em = [];
   const col = o.color || "#d8d0bc", k = K(col), w = 56, h = 46;
   groundShadow(c, x + w / 2, y + h, w / 2, 2, 0.4);
   R(c, x, y + 8, w, h - 8, col); gradient(c, x, y + 8, w, h - 8, [[0, k[3]], [0.2, k[2]], [1, k[1]]], 1, true);
@@ -2118,7 +2150,7 @@ PK.copier = function (c, x, y, o) {
 };
 
 PK.waterCooler = function (c, x, y, o) {
-  o = o || {}; x = round(x); y = round(y);
+  o = o || {}; x = round(x); y = round(y) + 2;
   const col = o.color || "#e0dce8", k = K(col), w = 18;
   groundShadow(c, x + w / 2, y + 46, 10, 2, 0.4);
   /* jug */
@@ -2382,7 +2414,7 @@ PK.monitors = function (c, x, y, o) {
 };
 
 PK.studioDesk = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w || 250); h = round(h || 98); const em = [], r = rng(o, x, y, 54);
+  o = o || {}; x = round(x); y = round(y); w = round(w || 250); h = round(h || 90); const em = [], r = rng(o, x, y, 54);
   const topY = y + h - 46, wood = "#5a3a30", k = K(wood);
   groundShadow(c, x + w / 2, y + h, w / 2, 2, 0.4);
   /* desk body */
@@ -2394,6 +2426,13 @@ PK.studioDesk = function (c, x, y, w, h, o) {
   const rx = x + w - 70, rh = h - (topY - y) - 14;
   R(c, rx, topY + 12, 54, rh, "#2a2832"); outline(c, rx, topY + 12, 54, rh, "#4a4658");
   for (let i = 0; i < floor(rh / 8); i++) { const ry = topY + 14 + i * 8; R(c, rx + 3, ry, 48, 6, "#1a1822"); HL(c, rx + 3, ry, 48, "#3a364a"); for (let l = 0; l < 6; l++) { const on = (Math.imul(i * 13 + l * 7, 2654435761) >>> 29) < 4; R(c, rx + 6 + l * 3, ry + 2, 2, 2, on ? (l % 3 === 0 ? "#3fd07a" : l % 3 === 1 ? "#ffb03a" : "#39d0ff") : "#2a2838"); if (on) em.push([rx + 6 + l * 3, ry + 2, 2, 2]); } for (let kn = 0; kn < 4; kn++) P(c, rx + 28 + kn * 5, ry + 2, "#8a86a0"); }
+  /* lower shelf with outboard gear + a floor sub */
+  const shY = topY + 25, deskBot = y + h;
+  R(c, x + 9, shY, w - 90, 3, k[2]); HL(c, x + 9, shY, w - 90, "#9a6a4a"); HL(c, x + 9, shY + 2, w - 90, k[0]);
+  const boxes = [[16, 38, 11, "#3a3848"], [58, 30, 9, "#4a2a3a"], [92, 44, 12, "#2a3a48"]];
+  boxes.forEach((bx, bi) => { const bxx = x + bx[0], byy = shY - bx[2]; if (bxx + bx[1] < x + w - 80) { R(c, bxx, byy, bx[1], bx[2], bx[3]); HL(c, bxx, byy, bx[1], mix(bx[3], "#ffffff", 0.3)); VL(c, bxx, byy, bx[2], mix(bx[3], "#ffffff", 0.15)); R(c, bxx + bx[1] - 8, byy + 3, 5, 2, bi % 2 ? "#3fd07a" : "#ff9a3f"); em.push([bxx + bx[1] - 8, byy + 3, 5, 2]); for (let q = 0; q < 4; q++) knob(c, bxx + 4 + q * 5, byy + 5, 1, "#8a86a0"); } });
+  const subW = 30, subX = x + 14, subY = deskBot - 29;
+  R(c, subX, subY, subW, 28, "#1e1c26"); gradient(c, subX, subY, subW, 28, [[0, "#3a364a"], [0.1, "#2a2736"], [1, "#16141c"]], 1, true); HL(c, subX, subY, subW, "#5a566c"); cone(c, subX + subW / 2, subY + 14, 9, 9, "#2a2834"); ring(c, subX + 15, subY + 14, 11, "#4a4658");
   /* cables */
   for (let i = 0; i < 24; i++) P(c, x + 12 + i, topY + h * 0.4 + round(sin(i / 3)), "#0a0810");
   for (let i = 0; i < 18; i++) P(c, x + 70 + i, topY + 20 + round(sin(i / 4) * 2), "#2a1c34");
@@ -2420,26 +2459,9 @@ PK.studioDesk = function (c, x, y, w, h, o) {
 };
 
 /* ---- neon -------------------------------------------------------------------------------------------- */
-PK.neon = function (c, text, x, y, color, o) {
-  o = o || {}; x = round(x); y = round(y); text = String(text);
-  const sc = o.scale || 2, tube = o.tube || sc, glowOn = o.glow !== false, strength = o.strength == null ? 1 : o.strength, em = [];
-  const sp = o.spacing != null ? o.spacing : sc, adv = 3 * sc + sp, off = floor((sc - tube) / 2);
-  const W = text.length * adv - sp + tube, H = 5 * sc + tube, G = o.glowR || (tube * 3 + 7);
-  const PW = W + G * 2, PH = H + G * 2;
-  const lit = new Uint8Array(PW * PH), dead = new Uint8Array(PW * PH);
-  const offs = o.off || [];
-  const setR = (arr, rx, ry, rw, rh) => { for (let yy = ry; yy < ry + rh; yy++) for (let xx = rx; xx < rx + rw; xx++) arr[(yy + G) * PW + xx + G] = 1; };
-  const up = text.toUpperCase();
-  for (let ci = 0; ci < up.length; ci++) {
-    const gl = U.F3[up[ci]] || U.F3[" "], arr = offs.indexOf(ci) >= 0 ? dead : lit, bx = ci * adv;
-    for (let i = 0; i < 15; i++) {
-      if (gl[i] !== "1") continue;
-      const gx = i % 3, gy = floor(i / 3), px = bx + gx * sc + off, py = gy * sc + off;
-      setR(arr, px, py, tube, tube);
-      if (gx < 2 && gl[i + 1] === "1") setR(arr, px, py, sc + tube, tube);
-      if (gy < 4 && gl[i + 3] === "1") setR(arr, px, py, tube, sc + tube);
-    }
-  }
+/* shared neon rasteriser: lit/dead are PWxPH bit masks (with a G px margin around the art) */
+function neonRender(c, x, y, PW, PH, G, lit, dead, color, tube, glowOn, strength) {
+  const em = [];
   const inM = (a, xx, yy) => xx >= 0 && yy >= 0 && xx < PW && yy < PH && a[yy * PW + xx] === 1;
   /* halo via chamfer distance */
   if (glowOn) {
@@ -2485,6 +2507,34 @@ PK.neon = function (c, text, x, y, color, o) {
     }
   }
   return em;
+}
+
+PK.neon = function (c, text, x, y, color, o) {
+  o = o || {}; x = round(x); y = round(y); text = String(text);
+  const sc = o.scale || 2, tube = o.tube || sc, glowOn = o.glow !== false, strength = o.strength == null ? 1 : o.strength, em = [];
+  const sp = o.spacing != null ? o.spacing : sc, adv = 3 * sc + sp, off = floor((sc - tube) / 2);
+  const W = text.length * adv - sp + tube, H = 5 * sc + tube, G = o.glowR || (tube * 3 + 7);
+  const PW = W + G * 2, PH = H + G * 2;
+  const lit = new Uint8Array(PW * PH), dead = new Uint8Array(PW * PH);
+  const offs = o.off || [];
+  const setR = (arr, rx, ry, rw, rh) => { for (let yy = ry; yy < ry + rh; yy++) for (let xx = rx; xx < rx + rw; xx++) arr[(yy + G) * PW + xx + G] = 1; };
+  const up = text.toUpperCase();
+  for (let ci = 0; ci < up.length; ci++) {
+    const gl = U.F3[up[ci]] || U.F3[" "], arr = offs.indexOf(ci) >= 0 ? dead : lit, bx = ci * adv;
+    for (let i = 0; i < 15; i++) {
+      if (gl[i] !== "1") continue;
+      const gx = i % 3, gy = floor(i / 3), px = bx + gx * sc + off, py = gy * sc + off;
+      setR(arr, px, py, tube, tube);
+      if (gx < 2 && gl[i + 1] === "1") setR(arr, px, py, sc + tube, tube);
+      if (gy < 4 && gl[i + 3] === "1") setR(arr, px, py, tube, sc + tube);
+      /* bridge diagonal-only neighbours so curved letters read as one continuous tube */
+      if (gy < 4 && sc > tube - 1) {
+        if (gx < 2 && gl[i + 4] === "1" && gl[i + 1] !== "1" && gl[i + 3] !== "1") setR(arr, px + tube - 1, py + tube - 1, sc - tube + 2, sc - tube + 2);
+        if (gx > 0 && gl[i + 2] === "1" && gl[i - 1] !== "1" && gl[i + 3] !== "1") setR(arr, px - (sc - tube) - 1, py + tube - 1, sc - tube + 2, sc - tube + 2);
+      }
+    }
+  }
+  return neonRender(c, x, y, PW, PH, G, lit, dead, color, tube, glowOn, strength);
 };
 
 PK.glow = function (c, x, y, r, color, o) {
@@ -2494,8 +2544,8 @@ PK.glow = function (c, x, y, r, color, o) {
 };
 
 PK.lightCone = function (c, x, y, topW, botW, h, color, o) {
-  o = o || {}; x = round(x); y = round(y); h = round(h); const em = [], al = o.alpha == null ? 0.5 : o.alpha;
-  const LV = [0, 0.12, 0.22, 0.34], pa = c.globalAlpha;
+  o = o || {}; x = round(x); y = round(y); h = round(h); topW = round(topW); botW = round(botW); const em = [], al = o.alpha == null ? 0.5 : o.alpha;
+  const LV = [0, 0.15, 0.28, 0.44], pa = c.globalAlpha;
   const lens = o.lens !== false;
   for (let lv = 1; lv <= 3; lv++) {
     c.globalAlpha = LV[lv] * (al / 0.5); c.fillStyle = color;
@@ -2507,7 +2557,7 @@ PK.lightCone = function (c, x, y, topW, botW, h, color, o) {
         let on = false;
         if (xx <= x1) {
           const dx = abs(xx + 0.5 - x) / max(0.5, half);
-          if (dx <= 1) { const I = fade * Math.pow(1 - dx, 0.55) * 3.3 * min(1, 0.45 + (o.core || 0)), b = floor(I), lvl = min(3, b + ((I - b) > thr(xx, y + t) ? 1 : 0)); on = lvl === lv; }
+          if (dx <= 1) { const I = fade * Math.pow(1 - dx, 0.55) * 3.4 * (1 + (o.core || 0)), b = floor(I), lvl = min(3, b + ((I - b) > thr(xx, y + t) ? 1 : 0)); on = lvl === lv; }
         }
         if (on) { if (rs < 0) rs = xx; } else if (rs >= 0) { c.fillRect(rs, y + t, xx - rs, 1); em.push([rs, y + t, xx - rs, 1]); rs = -1; }
       }
@@ -2519,7 +2569,7 @@ PK.lightCone = function (c, x, y, topW, botW, h, color, o) {
 };
 
 PK.discoBall = function (c, x, y, r, o) {
-  o = o || {}; x = round(x); y = round(y); r = r || 14; const em = [], rg = rng(o, x, y, 55);
+  o = o || {}; x = round(x); y = round(y); r = round(r || 14); const em = [], rg = rng(o, x, y, 55);
   const st = o.string == null ? 14 : o.string;
   if (st > 0) { VL(c, x, y - r - st, st, "#8a869c"); R(c, x - 1, y - r - st, 3, 2, "#c8c4d8"); }
   R(c, x - 2, y - r - 2, 5, 3, "#8a869c"); HL(c, x - 2, y - r - 2, 5, "#e8e4f4");
@@ -2550,13 +2600,16 @@ PK.truss = function (c, x, y, w, h, o) {
   for (let px = x; px < x + w; px += hh + 2) { line(c, px, y + 3, px + (hh + 2) / 2, y + h - 3, k[2]); line(c, px + (hh + 2) / 2, y + h - 3, px + hh + 2, y + 3, k[1]); }
   R(c, x, y, 3, h, col); VL(c, x, y, h, k[4]); R(c, x + w - 3, y, 3, h, col); VL(c, x + w - 1, y, h, k[0]);
   for (let px = x + 20; px < x + w - 10; px += 40) { R(c, px, y - 1, 5, 2, "#2a2838"); R(c, px, y + h - 1, 5, 2, "#2a2838"); }
+  const lampList = [];
   const nl = o.lights == null || o.lights === false ? 0 : (o.lights === true ? floor(w / 36) : typeof o.lights === "number" ? o.lights : o.lights.length);
   for (let i = 0; i < nl; i++) {
     const lc = Array.isArray(o.lights) ? o.lights[i] : NEON_CYCLE[i % NEON_CYCLE.length], lx = x + round((i + 0.5) * w / nl) - 4;
     R(c, lx + 3, y + h, 2, 3, "#2a2838"); R(c, lx, y + h + 3, 9, 8, "#1c1a24"); HL(c, lx, y + h + 3, 9, "#4a4658"); VL(c, lx, y + h + 3, 8, "#3a364a"); VL(c, lx + 8, y + h + 3, 8, "#0a0810");
     R(c, lx + 1, y + h + 9, 7, 2, lc); HL(c, lx + 1, y + h + 9, 7, mix(lc, "#ffffff", 0.7)); em.push([lx + 1, y + h + 9, 7, 2]);
     haloPts(c, lx + 4, y + h + 10, 9, lc, 0.9, em, 7);
+    lampList.push({ x: lx + 4, y: y + h + 10, color: lc });
   }
+  em.lights = lampList;                                    /* fixture positions: feed them to lightCone() */
   return em;
 };
 
@@ -2566,7 +2619,7 @@ PK.stage = function (c, x, y, w, h, o) {
   /* deck top (perspective boards) */
   R(c, x, y, w, deckH, deck); gradient(c, x, y, w, deckH, [[0, kd[1]], [1, kd[3]]], 1, true);
   for (let py = y + 4; py < y + deckH; py += 5 + round((py - y) / 8)) { HL(c, x, py, w, kd[0]); }
-  let seamX = x; while (seamX < x + w) { seamX += ri(r, 50, 120); VL(c, seamX, y, deckH, kd[0]); }
+  let seamX = x; while (seamX < x + w) { seamX += ri(r, 50, 120); if (seamX < x + w) VL(c, seamX, y, deckH, kd[0]); }
   for (let i = 0; i < 40; i++) R(c, x + floor(r() * w), y + floor(r() * deckH), ri(r, 2, 8), 1, r() < 0.5 ? kd[3] : kd[0]);
   /* gaffer tape marks */
   for (let i = 0; i < 6; i++) { const tx = x + ri(r, 10, w - 20), ty2 = y + ri(r, 3, deckH - 4); R(c, tx, ty2, ri(r, 4, 8), 1, pk(r, ["#e8d020", "#ff3fa4", "#39d0ff", "#e8e4f0"])); R(c, tx + 2, ty2 - 1, 1, 3, "#e8e4f0"); }
@@ -2589,13 +2642,14 @@ PK.ledWall = function (c, x, y, w, h, o) {
   const r = rng(o, x, y, 57), pattern = o.pattern || pk(r, ["waves", "grid", "equalizer", "sunburst", "plasma", "rain", "stripes", "rings"]);
   const pal = o.palette || ["#ff3fa4", "#39d0ff", "#a05cff", "#ffd23f"], cell = 2, cw = floor(w / cell), ch = floor(h / cell);
   const nz = noise2(floor(r() * 4e9)), ph = r() * 6;
+  const plasmaPal = []; { const stops = ["#14082c", pal[2], pal[0], pal[3], pal[1], pal[2], "#14082c"]; for (let i = 0; i < 16; i++) { const tt = i / 15 * (stops.length - 1), j = min(stops.length - 2, floor(tt)); plasmaPal.push(mix(stops[j], stops[j + 1], tt - j)); } }
   const col = (cx, cy) => {
     const u = cx / cw, v = cy / ch;
     switch (pattern) {
       case "grid": { const gx = cx % 10, gy = cy % 10; if (gx < 1 || gy < 1) return pal[(floor(cx / 10) + floor(cy / 10)) % pal.length]; return (floor(cx / 10) + floor(cy / 10)) % 3 === 0 ? mix(pal[1], "#06020e", 0.6) : "#0a0618"; }
       case "equalizer": { const bar = floor(cx / 4), hgt = 0.15 + 0.8 * ((Math.imul(bar * 977 + 13, 2654435761) >>> 24) / 255); if (cx % 4 === 3) return "#06020e"; if (v > 1 - hgt) { const t = (v - (1 - hgt)) / hgt; return t < 0.25 ? pal[3] : t < 0.6 ? pal[0] : pal[2]; } return "#0a0618"; }
       case "sunburst": { const dx = (u - 0.5) * 2 * (cw / ch), dy = v - 0.65, a = Math.atan2(dy, dx), d = sqrt(dx * dx + dy * dy); if (d < 0.32) return pal[3]; return (floor((a + PI) / (2 * PI) * 18) % 2) ? pal[0] : mix(pal[2], "#0a0618", 0.55); }
-      case "plasma": { const n = nz(cx / 8, cy / 8) + 0.5 * nz(cx / 3 + 9, cy / 3); const i = floor(n * 3.2) % pal.length; return mix(pal[i], "#0a0618", 0.15 + 0.4 * ((cy % 2) ? 0.3 : 0)); }
+      case "plasma": { const dx = cx - cw * 0.5, dy = cy - ch * 0.5, v = (sin(cx * 0.13 + ph) + sin(cy * 0.2 + ph * 0.7) + sin((cx + cy) * 0.09 + ph) + sin(sqrt(dx * dx + dy * dy) * 0.16 - ph)) / 4, t = (v + 1) / 2; return plasmaPal[min(plasmaPal.length - 1, floor(t * plasmaPal.length))]; }
       case "rain": { const s = Math.imul(cx * 7919 + 17, 2654435761) >>> 24; const head = ((s / 255 * ch * 2 + ph * 9) % (ch * 1.4)); const dd = cy - head + 6; return dd > 0 && dd < 8 ? mix(pal[1], "#0a0618", dd / 8) : "#0a0618"; }
       case "stripes": { const k2 = floor((cx + cy * 0.6) / 6) % 4; return k2 === 0 ? pal[0] : k2 === 1 ? "#0a0618" : k2 === 2 ? pal[1] : mix(pal[2], "#0a0618", 0.5); }
       case "rings": { const dx = (u - 0.5) * 2 * (cw / ch), dy = v - 0.5, d = sqrt(dx * dx + dy * dy); return floor(d * 9) % 2 ? pal[floor(d * 9 / 2) % pal.length] : "#0a0618"; }
@@ -2613,44 +2667,52 @@ PK.ledWall = function (c, x, y, w, h, o) {
 
 PK.crowdSilhouettes = function (c, x, y, w, h, o) {
   o = o || {}; x = round(x); y = round(y); w = round(w || 300); h = round(h || 70); const em = [], r = rng(o, x, y, 58);
-  const cols = o.colors || ["#2a2048", "#1c1432", "#10091e"], dens = o.density == null ? 0.8 : o.density, rim = o.rim || ["#ff3fa4", "#39d0ff"];
-  const rows = o.rows || clamp(floor(h / 18), 2, 4);
+  const cols = o.colors || ["#2e2452", "#1c1436", "#0e081c"], dens = o.density == null ? 0.88 : o.density, rim = o.rim || ["#ff3fa4", "#39d0ff"];
+  const rows = o.rows || clamp(floor(h / 17), 2, 5);
   clip(c, x, y, w, h, () => {
     for (let ro = 0; ro < rows; ro++) {
-      const t = rows === 1 ? 1 : ro / (rows - 1), col = cols[min(cols.length - 1, floor(t * cols.length))], kk = K(col);
-      const hr = round(lerp(3, 6, t)), spacing = round(hr * 2.6), base = y + round(lerp(h * 0.55, h * 0.95, t)) - 0;
-      const rc = rim[ro % rim.length];
-      let px = x - ri(r, 0, spacing);
-      while (px < x + w + spacing) {
+      const t = rows === 1 ? 1 : ro / (rows - 1), col = t < 0.5 ? mix(cols[0], cols[1], t * 2) : mix(cols[1], cols[cols.length - 1], (t - 0.5) * 2);
+      const hrBase = lerp(3, 6.6, t), base = y + lerp(h * 0.46, h * 1.04, t), rc = rim[ro % rim.length], kk = K(col);
+      let px = x - ri(r, 0, 8);
+      while (px < x + w + 12) {
+        const hr = max(2, round(hrBase * (0.85 + r() * 0.32))), step = round(hr * 2 + r() * hr * 1.3);
         if (r() < dens) {
-          const hx = px + ri(r, -2, 2), hy = base - hr * 2 - ri(r, 0, 3), type = r();
-          const bodyCol = col;
-          ell(c, hx, hy + hr * 2 + 2, round(hr * 2.1), round(hr * 1.5), bodyCol);
-          R(c, hx - round(hr * 2.1), hy + hr * 2 + 2, round(hr * 4.2) + 1, y + h - (hy + hr * 2 + 2), bodyCol);
-          R(c, hx - 1, hy + hr, 3, hr, bodyCol);
-          ell(c, hx, hy, hr, hr, bodyCol);
-          if (type < 0.18) ell(c, hx, hy - 1, hr + 2, hr + 1, bodyCol);                        /* big hair */
-          else if (type < 0.34) { R(c, hx - hr, hy - hr, hr * 2 + 1, round(hr * 0.7), bodyCol); R(c, hx + (r() < 0.5 ? 1 : -hr - 2), hy - round(hr * 0.5), hr + 2, 2, bodyCol); }   /* cap */
-          else if (type < 0.44) { R(c, hx + hr, hy + 1, 2, 5, bodyCol); }                          /* ponytail */
-          /* rim light from the stage on top of the head and shoulders */
-          HL(c, hx - hr + 1, hy - hr, hr * 2 - 1, mix(rc, bodyCol, 0.45)); P(c, hx - hr, hy - hr + 1, mix(rc, bodyCol, 0.55));
-          HL(c, hx - round(hr * 1.6), hy + hr * 2 - 1, round(hr * 3.2), mix(rc, bodyCol, 0.7));
+          const hx = px + ri(r, -2, 2), hy = round(base - hr * 2.4 - ri(r, 0, round(hr * 1.3))), sy2 = hy + hr * 2 + 1, kind = r();
+          const sw = round(hr * (2.0 + r() * 0.6));
+          ell(c, hx, sy2 + 1, sw, round(hr * 1.5), col);
+          R(c, hx - sw, sy2 + 1, sw * 2 + 1, max(0, y + h - sy2 - 1), col);
+          R(c, hx - 1, hy + hr - 1, 3, hr + 2, col);
+          ell(c, hx, hy, hr, hr, col);
+          if (kind < 0.16) ell(c, hx + ri(r, -1, 1), hy - 1, hr + 2, hr + 1, col);                       /* big hair */
+          else if (kind < 0.30) { R(c, hx - hr, hy - hr, hr * 2 + 1, max(1, round(hr * 0.7)), col); R(c, hx + (r() < 0.5 ? 1 : -hr - 2), hy - round(hr * 0.5), hr + 2, 2, col); }       /* cap */
+          else if (kind < 0.40) { R(c, hx + (r() < 0.5 ? hr : -hr - 1), hy + 1, 2, hr + 2, col); }       /* ponytail */
+          else if (kind < 0.46) { ell(c, hx, hy - 1, hr + 1, hr + 1, col); R(c, hx - hr - 1, hy, hr * 2 + 3, 2, kk[1]); }       /* hood / headphones */
+          /* rim light from the stage: tops of heads, a few shoulder runs */
+          HL(c, hx - hr + 2, hy - hr, max(1, hr * 2 - 3), mix(rc, col, 0.4)); P(c, hx - hr + 1, hy - hr + 1, mix(rc, col, 0.5));
+          if (r() < 0.3) HL(c, hx - sw + 1, sy2 - round(hr * 0.3), max(2, round(sw * 0.9)), mix(rc, col, 0.65));
           /* raised arms */
-          if (r() < 0.28 * (0.5 + t)) {
-            const side = r() < 0.5 ? -1 : 1, ah = ri(r, hr * 2, hr * 4), ax = hx + side * round(hr * 1.8);
-            for (let i = 0; i < ah; i++) R(c, ax + side * round(i * 0.15), hy + hr * 2 - i, 2, 1, bodyCol);
-            ell(c, ax + side * round(ah * 0.15), hy + hr * 2 - ah, 1, 1, bodyCol); P(c, ax + side * round(ah * 0.15), hy + hr * 2 - ah - 1, mix(rc, bodyCol, 0.4));
-            if (r() < 0.25) { R(c, ax + side * round(ah * 0.15) - 1, hy + hr * 2 - ah - 5, 2, 3, "#cfe8ff"); em.push([ax + side * round(ah * 0.15) - 1, hy + hr * 2 - ah - 5, 2, 3]); }   /* phone */
-            else if (r() < 0.2) { const gy = hy + hr * 2 - ah - 4; R(c, ax + side * round(ah * 0.15), gy, 1, 4, pk(r, NEON_CYCLE)); em.push([ax + side * round(ah * 0.15), gy, 1, 4]); }   /* glowstick */
+          if (r() < 0.2 + 0.2 * t) {
+            const both = r() < 0.3;
+            [-1, 1].forEach(side => {
+              if (!both && side !== (r() < 0.5 ? -1 : 1)) return;
+              const ah = ri(r, hr * 2, hr * 4), ax = hx + side * (sw - 1), lean = side * (0.12 + r() * 0.12);
+              for (let i = 0; i < ah; i++) R(c, ax + round(i * lean), sy2 - 1 - i, 2, 1, col);
+              const hx2 = ax + round(ah * lean), hy2 = sy2 - ah - 1;
+              ell(c, hx2, hy2, 1, 1, col); P(c, hx2, hy2 - 2, mix(rc, col, 0.4)); P(c, hx2 - 1, hy2 - 1, mix(rc, col, 0.55));
+              const q = r();
+              if (q < 0.22) { R(c, hx2 - 1, hy2 - 5, 2, 3, "#cfe8ff"); em.push([hx2 - 1, hy2 - 5, 2, 3]); }                          /* phone */
+              else if (q < 0.32) { R(c, hx2, hy2 - 5, 1, 4, pk(r, NEON_CYCLE)); em.push([hx2, hy2 - 5, 1, 4]); }                    /* glow stick */
+            });
           }
         }
-        px += spacing + ri(r, -1, 2);
+        px += step;
       }
-      dshade(c, x, y, w, h, "#2a1858", (qx, qy) => (1 - t) * 0.5, 0.18);
+      dshade(c, x, y, w, h, rc0(rim, ro), (qx, qy) => clamp(1 - (qy - y) / (h * 0.9), 0, 1) * 0.5, 0.08);     /* stage haze catching the crowd */
     }
   });
   return em;
 };
+function rc0(rim, ro) { return rim[ro % rim.length]; }
 
 PK.barricade = function (c, x, y, w, o) {
   o = o || {}; x = round(x); y = round(y); w = round(w || 120);
@@ -2673,18 +2735,20 @@ PK.barricade = function (c, x, y, w, o) {
 
 PK.departuresBoard = function (c, x, y, w, h, o) {
   o = o || {}; x = round(x); y = round(y); w = round(w || 200); h = round(h || 74);
-  const r = rng(o, x, y, 60), rowH = 7, hdr = 10, rows = o.rows || max(1, floor((h - hdr - 4) / rowH));
+  const r = rng(o, x, y, 60), rowH = 7, hdr = 10, rows = o.rows || max(1, floor((h - hdr - 14) / rowH));
   R(c, x, y, w, h, "#2a2838"); outline(c, x, y, w, h, "#5a566c"); HL(c, x + 1, y + 1, w - 2, "#4a4658");
   R(c, x + 2, y + 2, w - 4, h - 4, "#07050e");
   R(c, x + 2, y + 2, w - 4, hdr - 2, "#1a2a5a"); txt(c, o.title || "DEPARTURES", x + 5, y + 4, "#ffd23f", 1, 1);
   const cols = [0.0, 0.17, 0.52, 0.68, 0.78].map(f => x + 5 + round(f * (w - 10)));
-  ["TIME", "TO", "FLT", "GT", "STATUS"].forEach((t, i) => { if (cols[i] + txtW(t) < x + w - 3 && w > 150) txt(c, t, cols[i], y + 4, "#9fb0ff", 1, 1); });
+  const chY = y + hdr + 1;
+  ["TIME", "TO", "FLT", "GT", "STATUS"].forEach((t, i) => { if (cols[i] + txtW(t) < x + w - 3 && (w > 150 || i < 2)) txt(c, t, cols[i], chY, "#7a8ad8", 1, 1); });
+  HL(c, x + 3, chY + 6, w - 6, "#2a3a7a");
   const dest = ["LONDON", "PARIS", "BERLIN", "TOKYO", "LAX", "MIAMI", "AMSTERDAM", "MEXICO CITY", "ROME", "CHICAGO", "ATLANTA", "IBIZA", "DUBLIN", "LISBON"];
   const air = ["AA", "DL", "UA", "BA", "AF", "LH", "B6", "KL"];
   const stat = [["ON TIME", "#5cff9a"], ["BOARDING", "#39d0ff"], ["DELAYED", "#ffb03a"], ["ON TIME", "#5cff9a"], ["GATE CHG", "#ffb03a"], ["CANCELED", "#ff4a4a"], ["FINAL CALL", "#ff8a4c"]];
   let hh = 6 + ri(r, 0, 10), mm = ri(r, 0, 5) * 10;
   for (let i = 0; i < rows; i++) {
-    const ry = y + hdr + 2 + i * rowH;
+    const ry = y + hdr + 10 + i * rowH;
     if (ry + 6 > y + h - 3) break;
     if (i % 2) R(c, x + 3, ry - 1, w - 6, rowH, "#0e0c1a");
     const t = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
@@ -2745,7 +2809,7 @@ PK.planeWindow = function (c, x, y, o) {
 };
 
 PK.suitcase = function (c, x, y, o) {
-  o = o || {}; x = round(x); y = round(y);
+  o = o || {}; x = round(x); y = round(y) + (o.handle === false ? 0 : 5);
   const w = o.w || 22, h = o.h || round(w * 1.4), col = o.color || "#c0302c", k = K(col), r = rng(o, x, y, 62);
   groundShadow(c, x + w / 2, y + h + 2, w / 2 + 1, 1, 0.4);
   if (o.handle !== false) { R(c, x + floor(w / 2) - 5, y - 4, 2, 4, "#6a667c"); R(c, x + floor(w / 2) + 4, y - 4, 2, 4, "#6a667c"); R(c, x + floor(w / 2) - 5, y - 5, 12, 2, "#2a2838"); HL(c, x + floor(w / 2) - 5, y - 5, 12, "#6a667c"); }
@@ -2829,6 +2893,7 @@ PK.subwayPlatform = function (c, x, y, w, h, o) {
   for (let px = x + 20; px < x + w - 36; px += 112) { R(c, px, y + 3, 40, 4, "#fff6d8"); HL(c, px, y + 3, 40, "#ffffff"); em.push([px, y + 3, 40, 4]); dshade(c, px - 10, y + 9, 60, 14, "#fff0c0", (qx, qy) => (1 - (qy - y - 9) / 14) * 0.7, 0.25); em.push([px - 10, y + 9, 60, 14]); }
   /* station name plaques + columns */
   for (let px = x + 64; px < x + w; px += 160) {
+    if (px - 36 < x + 54 || px + 36 > x + w - 54) continue;
     R(c, px - 36, y + 26, 72, 18, "#101a3a"); outline(c, px - 36, y + 26, 72, 18, "#e8e4f0"); outline(c, px - 35, y + 27, 70, 16, "#2a3a7a");
     txtC(c, name, px, y + 31, "#ffffff", 1, 1); txtC(c, "BROOKLYN", px, y + 38, "#9fb0ff", 1, 1);
   }
@@ -2934,7 +2999,7 @@ PK.subwayCar = function (c, x, y, w, o) {
   }
   /* LED destination sign + line bullet */
   const ln = o.line || "L", bc = { L: "#9a9caa", "7": "#b933ad", A: "#2850ad", "4": "#00933c", G: "#6cbe45", J: "#996633", N: "#fccc0a", F: "#ff6319" }[ln] || "#9a9caa";
-  R(c, x + 6, y + 9, 24, 6, "#08060c"); if (lit) { txt(c, "BROOKLYN", x + 7, y + 10, "#ff9a3f", 1, 0); em.push([x + 6, y + 9, 24, 6]); }
+  R(c, x + 6, y + 9, 36, 6, "#08060c"); if (lit) { txt(c, "BROOKLYN", x + 8, y + 10, "#ff9a3f", 1, 0); em.push([x + 6, y + 9, 36, 6]); }
   ell(c, x + w - 18, y + 70, 8, 8, "#14111c"); ell(c, x + w - 18, y + 70, 7, 7, bc); txtC(c, ln, x + w - 18, y + 68, ln === "N" ? "#14111c" : "#ffffff", 1);
   for (let i = 0; i < 8; i++) R(c, x + ri(r, 0, w - 4), y + ri(r, 8, h - 20), ri(r, 3, 10), 1, "#6a667c");                 /* grime streaks */
   dshade(c, x, y + 60, w, 30, "#2a1c10", (px, py) => (py - y - 60) / 30 * 0.8, 0.25);
@@ -2942,7 +3007,7 @@ PK.subwayCar = function (c, x, y, w, o) {
 };
 
 PK.turnstile = function (c, x, y, o) {
-  o = o || {}; x = round(x); y = round(y); const em = [];
+  o = o || {}; x = round(x) + 2; y = round(y) - 6; const em = [];
   const col = o.color || "#a8aab8", k = K(col), H = 44, W = 28;
   groundShadow(c, x + W / 2, y + H, W / 2, 2, 0.4);
   R(c, x, y + 8, 14, H - 8, col); gradient(c, x, y + 8, 14, H - 8, [[0, k[4]], [0.3, k[3]], [1, k[1]]], 1, false); VL(c, x, y + 8, H - 8, k[4]); VL(c, x + 13, y + 8, H - 8, k[0]); HL(c, x, y + 8, 14, "#ffffff");
@@ -2967,6 +3032,125 @@ PK.bench = function (c, x, y, w, o) {
   if (back) for (let i = 0; i < 2; i++) { const sy = y + 1 + i * 6; R(c, x, sy, w, 4, wood); HL(c, x, sy, w, k[4]); HL(c, x, sy + 3, w, k[0]); for (let g = 0; g < w / 12; g++) R(c, x + floor(r() * (w - 5)), sy + 1, ri(r, 3, 8), 1, k[1]); }
   dshade(c, x + 6, y + (back ? 23 : 13), w - 12, 4, "#0c0618", (px, py) => 1 - (py - y - (back ? 23 : 13)) / 4, 0.3);
   ell(c, x + ri(r, 10, w - 10), y + (back ? 15 : 5), 1, 0, "#2a2634");
+};
+
+/* =====================================================================================
+   EXTRAS: small things every room ends up needing
+   ===================================================================================== */
+
+PK.neonLine = function (c, pts, x, y, color, o) {
+  o = o || {}; x = round(x); y = round(y);
+  const tube = o.tube || 2, G = o.glowR || (tube * 3 + 7);
+  let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+  pts.forEach(p => { minX = min(minX, p[0]); minY = min(minY, p[1]); });
+  const P2 = pts.map(p => [round(p[0] - minX), round(p[1] - minY)]); x += round(minX); y += round(minY);
+  P2.forEach(p => { maxX = max(maxX, p[0]); maxY = max(maxY, p[1]); });
+  const PW = maxX + tube + 1 + G * 2, PH = maxY + tube + 1 + G * 2, lit = new Uint8Array(PW * PH);
+  const stamp = (px, py) => { for (let dy = 0; dy < tube; dy++) for (let dx = 0; dx < tube; dx++) { const xx = px + dx + G, yy = py + dy + G; if (xx >= 0 && yy >= 0 && xx < PW && yy < PH) lit[yy * PW + xx] = 1; } };
+  const seg = (a, b) => {
+    let x0 = a[0], y0 = a[1]; const x1 = b[0], y1 = b[1], dx = abs(x1 - x0), dy = -abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let err = dx + dy;
+    for (;;) { stamp(x0, y0); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 >= dy) { err += dy; x0 += sx; } if (e2 <= dx) { err += dx; y0 += sy; } }
+  };
+  for (let i = 0; i < P2.length - 1; i++) seg(P2[i], P2[i + 1]);
+  if (o.closed) seg(P2[P2.length - 1], P2[0]);
+  return neonRender(c, x, y, PW, PH, G, lit, new Uint8Array(PW * PH), color, tube, o.glow !== false, o.strength == null ? 1 : o.strength);
+};
+
+PK.baseboard = function (c, x, y, w, o) {
+  o = o || {}; x = round(x); y = round(y); w = round(w || 640);
+  const h = o.h || 9, col = o.color || "#5a4058", k = K(col), r = rng(o, x, y, 70);
+  R(c, x, y, w, h, col);
+  gradient(c, x, y + 3, w, h - 4, [[0, k[2]], [1, k[1]]], 1, true);
+  HL(c, x, y, w, k[4]); HL(c, x, y + 1, w, k[3]); HL(c, x, y + 2, w, k[1]); HL(c, x, y + h - 1, w, k[0]);
+  for (let i = 0; i < w / 6; i++) { const px = x + floor(r() * w), py = y + 3 + floor(r() * max(1, h - 5)); P(c, px, py, r() < 0.5 ? k[3] : k[0]); }
+  for (let px = x + 24; px < x + w; px += 48 + ri(r, 0, 20)) { P(c, px, y + 4, k[0]); P(c, px + 1, y + 4, k[3]); }
+  dshade(c, x, y + h, w, 3, "#0c0618", (px, py) => 1 - (py - y - h) / 3, 0.4);
+};
+
+PK.rug = function (c, x, y, w, h, o) {
+  o = o || {}; x = round(x); y = round(y); w = round(w || 120); h = round(h || 30);
+  const cols = o.colors || ["#5b2e8c", "#e0368f", "#7a3fb0"], kb = K(cols[0]), kr = K(cols[1]), ka = K(cols[2]);
+  const shape = o.shape || "oval", cx = x + floor(w / 2), cy = y + floor(h / 2), rx = floor(w / 2), ry = floor(h / 2);
+  if (shape === "oval") {
+    ell(c, cx, cy + 1, rx, ry, kb[0]);
+    ell(c, cx, cy, rx, ry, cols[1]); ell(c, cx - 1, cy - 1, rx - 2, ry - 1, kr[3]); ell(c, cx, cy, rx - 2, ry - 1, cols[1]);
+    ell(c, cx, cy, rx - 4, ry - 2, kb[1]); ell(c, cx, cy, rx - 5, ry - 3, cols[0]);
+    for (let i = 0; i < 4; i++) { const f = 1 - i * 0.2; if (rx * f - 6 > 3) { ell(c, cx, cy, round((rx - 6) * f), max(1, round((ry - 4) * f)), i % 2 ? cols[0] : cols[2]); } }
+    for (let a = 0; a < 24; a++) { const ang = a / 24 * 2 * PI; P(c, cx + round(cos(ang) * (rx - 3)), cy + round(sin(ang) * (ry - 2)), kr[4]); }
+    dshade(c, x, y, w, h, "#0c0618", (px, py) => { const dx = (px - cx) / rx, dy = (py - cy) / ry; return clamp(dx * dx + dy * dy - 0.55, 0, 1) * 0.6; }, 0.3);
+  } else {
+    const tw = round(w * 0.12);
+    poly(c, [[x + tw, y], [x + w - tw, y], [x + w, y + h - 1], [x, y + h - 1]], kb[0]);
+    poly(c, [[x + tw + 1, y + 1], [x + w - tw - 1, y + 1], [x + w - 1, y + h - 2], [x + 1, y + h - 2]], cols[1]);
+    poly(c, [[x + tw + 3, y + 3], [x + w - tw - 3, y + 3], [x + w - 4, y + h - 4], [x + 4, y + h - 4]], cols[0]);
+    for (let i = 0; i < 5; i++) { const t = (i + 0.5) / 5, px = round(lerp(x + w * 0.25, x + w * 0.75, t)); line(c, px, y + 4, round(lerp(x + 8, x + w - 8, t)), y + h - 5, i % 2 ? cols[2] : ka[3]); }
+    for (let px = x + 2; px < x + w - 2; px += 2) { P(c, px, y + h, kr[3]); P(c, round(lerp(x + tw, x + w - tw, (px - x) / w)), y - 1, kr[3]); }
+  }
+};
+
+PK.bulb = function (c, x, y, o) {
+  o = o || {}; x = round(x); y = round(y); const em = [], len = o.len == null ? 22 : o.len, on = o.on !== false;
+  R(c, x, y, 1, len, "#1a1620");
+  R(c, x - 3, y + len, 7, 4, "#4a4658"); HL(c, x - 3, y + len, 7, "#8a869c"); HL(c, x - 3, y + len + 3, 7, "#2a2838");
+  if (on) { haloPts(c, x, y + len + 9, o.glowR || 34, "#ffd890", 0.85, em, o.glowR || 34); ball(c, x, y + len + 8, 3, "#fff4d6"); R(c, x - 1, y + len + 6, 2, 2, "#ffffff"); em.push([x - 3, y + len + 5, 7, 7]); }
+  else ball(c, x, y + len + 8, 3, "#8a8698");
+  return em;
+};
+
+PK.fluorescent = function (c, x, y, w, o) {
+  o = o || {}; x = round(x); y = round(y); w = round(w || 80); const em = [], on = o.on !== false;
+  R(c, x, y, w, 5, "#9a96a8"); HL(c, x, y, w, "#d8d4e4"); HL(c, x, y + 4, w, "#4a4658");
+  R(c, x + 2, y + 1, w - 4, 3, on ? "#f4fbff" : "#6a7080"); if (on) { HL(c, x + 2, y + 1, w - 4, "#ffffff"); em.push([x + 2, y + 1, w - 4, 3]); dshade(c, x - 6, y + 5, w + 12, 16, "#e8f4ff", (px, py) => (1 - (py - y - 5) / 16) * 0.8, 0.22); em.push([x - 6, y + 5, w + 12, 16]); }
+  R(c, x - 1, y, 2, 5, "#4a4658"); R(c, x + w - 1, y, 2, 5, "#4a4658");
+  return em;
+};
+
+PK.exitSign = function (c, x, y, o) {
+  o = o || {}; x = round(x); y = round(y); const em = [];
+  R(c, x, y, 25, 11, "#1a2a20"); outline(c, x, y, 25, 11, "#5a566c"); R(c, x + 2, y + 2, 21, 7, "#18a050"); HL(c, x + 2, y + 2, 21, "#5affa0");
+  txtC(c, "EXIT", x + 12.5, y + 3, "#ffffff", 1, 1); em.push([x + 2, y + 2, 21, 7]); haloPts(c, x + 12, y + 5, 16, "#40e080", 0.7, em, 10);
+  return em;
+};
+
+PK.crate = function (c, x, y, o) {
+  o = o || {}; x = round(x); y = round(y); const r = rng(o, x, y, 71);
+  const col = o.color || "#2f62b8", k = K(col), w = o.w || 36, h = o.h || 28, rec = o.records !== false;
+  groundShadow(c, x + w / 2, y + 12 + h, w / 2, 2, 0.4);
+  if (rec) [["#e0368f", 2], ["#ffd23f", 7], ["#efeaf8", 12], ["#39d0ff", 18], ["#ff8a4c", 24], ["#1d1622", 29]].forEach(([cc, ox], i) => { if (ox + 4 < w) { R(c, x + ox, y + 1 + (i % 2), 4, 12, cc); R(c, x + ox, y + 1 + (i % 2), 4, 1, "#ffffff"); VL(c, x + ox + 3, y + 2 + (i % 2), 11, mix(cc, "#0c0618", 0.4)); } });
+  const by = y + 12;
+  R(c, x, by, w, h, col); HL(c, x, by, w, k[4]); HL(c, x, by + 1, w, k[3]); VL(c, x, by, h, k[3]); VL(c, x + w - 1, by, h, k[1]); HL(c, x, by + h - 1, w, k[0]); HL(c, x, by + h - 2, w, k[1]);
+  for (let yy = by + 5; yy < by + h - 5; yy += 6) for (let xx = x + 3; xx < x + w - 5; xx += 6) { R(c, xx, yy, 4, 3, k[0]); HL(c, xx, yy + 3, 4, k[3]); }
+  R(c, x + 12, by + 4, 12, 3, k[0]);
+};
+
+PK.trashCan = function (c, x, y, o) {
+  o = o || {}; x = round(x); y = round(y); const w = o.w || 20, h = o.h || 28, col = o.color || "#8a8aa0", k = K(col), r = rng(o, x, y, 72);
+  groundShadow(c, x + w / 2, y + h, w / 2 + 1, 2, 0.45);
+  if (o.full) { ell(c, x + w / 2, y + 2, 8, 4, "#26222e"); ell(c, x + w / 2 - 2, y + 1, 4, 2, "#3a3448"); P(c, x + 4, y - 1, "#e8e4f0"); R(c, x + 13, y - 1, 3, 2, "#c8925a"); }
+  R(c, x + 1, y + 6, w - 2, h - 6, col); gradient(c, x + 1, y + 6, w - 2, h - 6, [[0, k[3]], [0.2, k[4]], [0.5, k[2]], [0.85, k[1]], [1, k[0]]], 1, false);
+  for (let px = x + 4; px < x + w - 3; px += 4) VL(c, px, y + 8, h - 10, k[1]);
+  R(c, x, y + 4, w, 3, k[2]); HL(c, x, y + 4, w, k[4]); HL(c, x, y + 6, w, k[0]);
+  R(c, x, y + h - 4, w, 3, k[2]); HL(c, x, y + h - 4, w, k[3]); HL(c, x, y + h - 2, w, k[0]);
+  if (!o.full) { R(c, x + 2, y + 2, w - 4, 3, k[3]); HL(c, x + 2, y + 2, w - 4, k[4]); R(c, x + floor(w / 2) - 2, y, 5, 2, k[1]); }
+  P(c, x + 5, y + 14, k[0]); P(c, x + 6, y + 15, k[3]);
+};
+
+PK.pizzaBox = function (c, x, y, o) {
+  o = o || {}; x = round(x); y = round(y); const w = o.w || 42, bc = "#c8925a", kk = K(bc);
+  R(c, x + 2, y, w - 2, 9, bc); HL(c, x + 2, y, w - 2, kk[4]); R(c, x, y + 9, w, 5, kk[1]); HL(c, x, y + 9, w, kk[3]); HL(c, x, y + 13, w, kk[0]);
+  for (let i = 0; i < 9; i++) P(c, x + 2 - round(i * 0.25), y + i, kk[1]);
+  txt(c, "PIZZA", x + floor((w - 19) / 2), y + 2, "#c0302c", 1, 0); ell(c, x + w - 8, y + 5, 3, 2, kk[2]); P(c, x + w - 9, y + 4, kk[0]);
+};
+
+PK.cardboardBox = function (c, x, y, w, h, o) {
+  o = o || {}; x = round(x); y = round(y); w = round(w || 26); h = round(h || 20);
+  const col = o.color || "#c8925a", k = K(col), r = rng(o, x, y, 73), td = 5;
+  groundShadow(c, x + w / 2, y + h + td, w / 2 + 1, 2, 0.4);
+  R(c, x, y + td, w, h, col); gradient(c, x, y + td, w, h, [[0, k[3]], [0.15, k[2]], [1, k[1]]], 1, true); VL(c, x, y + td, h, k[3]); VL(c, x + w - 1, y + td, h, k[0]); HL(c, x, y + td + h - 1, w, k[0]);
+  poly(c, [[x, y + td], [x + 3, y], [x + w - 1, y], [x + w - 1, y + td]], k[3]); HL(c, x + 3, y, w - 4, k[4]); HL(c, x, y + td, w, k[1]);
+  R(c, x + floor(w / 2) - 2, y + 1, 4, td + 6, "#d8c8a0"); HL(c, x + floor(w / 2) - 2, y + td + 6, 4, "#a8986a");                    /* packing tape */
+  R(c, x + 3, y + td + h - 8, 8, 5, "#f4f0e4"); HL(c, x + 4, y + td + h - 6, 6, "#8a869c"); P(c, x + w - 6, y + td + h - 7, "#c0302c");
+  for (let i = 0; i < 4; i++) P(c, x + 2 + floor(r() * (w - 4)), y + td + 2 + floor(r() * (h - 4)), k[1]);
 };
 
 /* =====================================================================================

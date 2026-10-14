@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>re:parteé paint kit gallery</title>
+<style>
+  html, body { margin: 0; background: #0b0814; color: #b9b2d8; font: 13px/1.3 ui-monospace, Menlo, Consolas, monospace; }
+  h1 { font-size: 15px; margin: 10px 12px 2px; color: #ff3fa4; letter-spacing: .5px; }
+  p.note { margin: 0 12px 8px; color: #7d77a0; }
+  .scene { margin: 0 0 8px; }
+  .scene h2 { margin: 0; padding: 2px 12px; font-size: 12px; font-weight: normal; color: #39d0ff; background: #140f26; }
+  canvas { display: block; width: 1280px; height: 512px; image-rendering: pixelated; image-rendering: crisp-edges; cursor: pointer; background: #000; }
+  .tall canvas { height: 1024px; }
+</style>
+</head>
+<body>
+<h1>re:parteé — paint kit gallery (640x256 logical px, shown 2x; click a night scene to toggle the engine light pass)</h1>
+<p class="note">Scenes marked "lit" simulate the engine: a multiply light map with every returned emissive rect restored to full brightness.</p>
+<div id="root"></div>
+<script src="../src/core/util.js"></script>
+<script src="../src/core/paint.js"></script>
+<script>
+(function () {
+"use strict";
+const U = RP.u, PK = RP.PK;
+const { R, P, ell, line, poly, txt, txtC, txtW, mix, mulberry, bayer } = U;
+const root = document.getElementById("root");
+const HL = (c, x, y, w, col) => R(c, x, y, w, 1, col);
+const VL = (c, x, y, h, col) => R(c, x, y, 1, h, col);
+const timings = [];
+
+/* simulate the engine's light pass: multiply tint, then restore emissive rects from the unlit snapshot */
+function relight(c, em, tint, pools) {
+  const snap = U.mk(640, 256); snap.getContext("2d").drawImage(c.canvas, 0, 0);
+  c.globalCompositeOperation = "multiply"; c.fillStyle = tint; c.fillRect(0, 0, 640, 256);
+  c.globalCompositeOperation = "source-over";
+  (pools || []).forEach(p => {
+    const g = c.createRadialGradient(p[0], p[1], 2, p[0], p[1], p[2]);
+    g.addColorStop(0, p[3]); g.addColorStop(1, "rgba(0,0,0,0)");
+    c.globalCompositeOperation = "lighter"; c.fillStyle = g; c.fillRect(0, 0, 640, 256); c.globalCompositeOperation = "source-over";
+  });
+  em.forEach(r => { if (r && r[2] > 0 && r[3] > 0) c.drawImage(snap, r[0], r[1], r[2], r[3], r[0], r[1], r[2], r[3]); });
+}
+
+function scene(title, fn, o) {
+  o = o || {};
+  const wrap = document.createElement("div"); wrap.className = "scene" + (o.tall ? " tall" : "");
+  const h2 = document.createElement("h2"); wrap.appendChild(h2);
+  const cv = document.createElement("canvas"); cv.width = 640; cv.height = o.tall ? 512 : 256; wrap.appendChild(cv); root.appendChild(wrap);
+  const c = cv.getContext("2d"); c.imageSmoothingEnabled = false;
+  const em = [];
+  const E = r => { if (r && r.length) for (let i = 0; i < r.length; i++) em.push(r[i]); return r; };
+  const t0 = performance.now();
+  fn(c, E);
+  const ms = performance.now() - t0;
+  timings.push([title, ms]);
+  h2.textContent = title + "   [" + ms.toFixed(0) + " ms, " + em.length + " emissive rects]" + (o.light ? "   (click: raw / lit)" : "");
+  if (o.light) {
+    const raw = U.mk(640, 256); raw.getContext("2d").drawImage(cv, 0, 0);
+    let lit = true; relight(c, em, o.light.tint, o.light.pools);
+    cv.addEventListener("click", () => {
+      lit = !lit; c.clearRect(0, 0, 640, 256); c.drawImage(raw, 0, 0);
+      if (lit) relight(c, em, o.light.tint, o.light.pools);
+    });
+  }
+}
+
+/* ======================================================================== 1. BEDROOM */
+scene("1  Bedroom: plaster wall, planks, window onto the city, posters, DJ desk, bed", (c, E) => {
+  PK.plaster(c, 0, 0, 640, 166, { base: "#8c7590", seed: 7, patches: 4, stains: 2, cracks: 2 });
+  PK.planks(c, 0, 172, 640, 84, { base: "#8a5a3e", seed: 3 });
+  PK.baseboard(c, 0, 163, 640, { h: 9, color: "#5a4058", seed: 1 });
+  PK.rug(c, 236, 218, 128, 30, { seed: 2 });
+  E(PK.window(c, 216, 30, 120, 94, { time: "night", seed: 4 }));
+  PK.radiator(c, 236, 134, 80, 30);
+  PK.pipe(c, 343, 108, 56, { dir: "v", r: 3 });
+  PK.poster(c, 41, 37, 58, 84, { title: "GOOD MUSIC", titleLines: ["GOOD", "MUSIC", "BETTER", "PEOPLE"], lines: [], palette: "paper", seed: 3 });
+  PK.poster(c, 445, 37, 54, 62, { title: "NOWHERE", lines: ["SAT 10PM", "DJ ???"], palette: "neon", seed: 11 });
+  PK.frame(c, 140, 44, 26, 32, { seed: 5 });
+  PK.clock(c, 520, 44, { hour: 3, min: 40 });
+  txt(c, "NYC", 524, 66, "#ff3fa4", 2, 2); txt(c, "4EVR", 520, 79, "#ff3fa4", 2, 2);
+  PK.bed(c, 12, 118, 182, { h: 92, color: "#6b35a0", seed: 2 });
+  E(PK.laptop(c, 126, 138, { on: true, seed: 3 }));
+  // desk + gear
+  PK.desk(c, 372, 140, 214, 62, { seed: 9 });
+  PK.monitors(c, 378, 96, { krk: true, pair: true, gap: 178 });
+  E(PK.cdj(c, 410, 110, { tier: 2 })); E(PK.cdj(c, 498, 110, { tier: 2 })); E(PK.mixer(c, 458, 110, { channels: 2, rotary: true }));
+  PK.door(c, 590, 48, 48, 118, { color: "#6a4a5e", sign: "", seed: 1 });
+  PK.plant(c, 204, 176, { size: 1, seed: 4 }); PK.crate(c, 150, 196, { seed: 3 });
+  PK.recordBins(c, 292, 190, 88, 56, { seed: 8 });
+  PK.chair(c, 468, 164, { kind: "office", color: "#2a2838", flip: false });
+  // hanging bulb
+  E(PK.bulb(c, 470, 0, { len: 22 }));
+  E(PK.lamp(c, 98, 138, { on: true, kind: "desk" }));
+}, { light: { tint: "#b8a8d8", pools: [[470, 40, 130, "rgba(90,60,20,0.5)"]] } });
+
+/* ======================================================================== 2. STREET AT NIGHT */
+scene("2  Brooklyn street at night: sky, skyline, bridge, brownstone stoop, bodega, lamp, hydrant, steam", (c, E) => {
+  PK.sky(c, 0, 0, 640, 180, { time: "night", seed: 2, moon: { x: 574, y: 34, r: 8 } });
+  E(PK.skyline(c, 0, 40, 640, 140, { night: true, layers: 3, spire: true, seed: 5, spireX: 366 }));
+  E(PK.bridge(c, 238, 166, 250, { night: true, h: 80 }));
+  // brownstone
+  PK.brick(c, 0, 0, 236, 182, { base: "#6e3a3e", mortar: "#6a5868", worn: 0.45, seed: 3 });
+  R(c, 0, 0, 236, 9, "#4a2a3a"); HL(c, 0, 9, 236, "#8a5a6a"); HL(c, 0, 0, 236, "#7a4a5a"); for (let x = 3; x < 236; x += 8) R(c, x, 1, 4, 6, "#5a3446");
+  E(PK.window(c, 14, 14, 56, 62, { view: "interior", seed: 1, frame: "#9a8aa8" }));
+  E(PK.window(c, 150, 14, 56, 62, { view: "interior", lit: false, seed: 2, frame: "#9a8aa8" }));
+  E(PK.window(c, 20, 102, 54, 44, { view: "interior", seed: 3, frame: "#9a8aa8", bars: true }));
+  PK.fireEscape(c, 4, 30, 80, 60, { floors: 1, ladder: false, seed: 4 });
+  PK.stoop(c, 112, 132, 112, 52, { steps: 7, seed: 5 });
+  PK.door(c, 116, 22, 40, 110, { color: "#3a2a4a", frame: "#8a6a50", panels: 4, seed: 4 });
+  // bodega
+  PK.brick(c, 452, 0, 188, 182, { base: "#8a5238", mortar: "#8a7a78", worn: 0.5, seed: 8 });
+  E(PK.window(c, 466, 8, 40, 44, { view: "interior", seed: 6, frame: "#a89ab0" })); E(PK.window(c, 590, 8, 40, 44, { view: "interior", lit: false, seed: 7, frame: "#a89ab0" }));
+  PK.awning(c, 458, 62, 176, { text: "BODEGA 24HR", colors: ["#1f7a4a", "#efe8d8"] });
+  R(c, 464, 98, 108, 76, "#1a1018"); E([[466, 100, 104, 72]]);
+  c.save(); c.beginPath(); c.rect(466, 100, 104, 72); c.clip(); R(c, 466, 100, 104, 72, "#ffe2a0"); E(PK.shelf(c, 468, 102, 100, 70, { items: "cans", wood: "#8a6a4a", seed: 5 })); c.restore();
+  E(PK.neon(c, "OPEN", 484, 106, "#ff3fa4", { scale: 2, seed: 1 }));
+  E(PK.neon(c, "BEER", 520, 106, "#39d0ff", { scale: 2, tube: 2 }));
+  PK.door(c, 584, 88, 44, 90, { metal: true, window: true, color: "#6a7a8a", knob: false });
+  // sidewalk + street
+  PK.sidewalk(c, 0, 182, 640, 40, { curbY: 208, seed: 2 });
+  PK.asphalt(c, 0, 222, 640, 34, { lines: ["double"], seed: 6 });
+  PK.manhole(c, 150, 236, { steam: 64 });
+  E(PK.streetlamp(c, 330, 208, { on: true }));
+  PK.hydrant(c, 252, 186); PK.trashBags(c, 28, 184, { seed: 1 }); PK.trashCan(c, 196, 182, {}); PK.pizzaBox(c, 70, 200, {}); PK.mailbox(c, 374, 178); PK.newspaperBox(c, 404, 184); PK.bike(c, 408, 178, { seed: 1 });
+  E(PK.subwayStairs(c, 540, 180));
+}, { light: { tint: "#7a6aa8", pools: [[330, 150, 90, "rgba(120,70,20,0.45)"]] } });
+
+/* ======================================================================== 3. BODEGA */
+scene("3  Bodega interior: tile floor, shelves of cans / boxes, lit coolers, counter, register, neon", (c, E) => {
+  PK.plaster(c, 0, 0, 640, 112, { base: "#d6cdb0", seed: 21, patches: 2, stains: 3, cracks: 1 });
+  PK.wallTiles(c, 0, 112, 640, 54, { base: "#e4e0d2", size: 9, grout: "#a89e8a", seed: 2 });
+  R(c, 0, 160, 640, 6, "#5a4a3a"); HL(c, 0, 160, 640, "#8a7a5a");
+  PK.tiles(c, 0, 166, 640, 90, { a: "#d8d4c4", b: "#3f7a58", grout: "#8a8a70", size: 40, checker: true, seed: 1 });
+  // ceiling tubes
+  for (let x = 50; x < 640; x += 150) E(PK.fluorescent(c, x, 0, 90));
+  PK.shelf(c, 10, 34, 150, 124, { items: "cans", seed: 3 });
+  PK.shelf(c, 168, 34, 130, 124, { items: "boxes", seed: 4 });
+  E(PK.cooler(c, 312, 32, 74, 128, { sign: "COLD DRINKS", seed: 5 }));
+  E(PK.cooler(c, 392, 32, 74, 128, { sign: "BEER", seed: 6 }));
+  PK.shelf(c, 478, 22, 156, 62, { items: "bottles", seed: 7 });
+  PK.counter(c, 476, 128, 162, 50, { top: "#c8b090", front: "#6a4a3a", seed: 2, rail: true });
+  E(PK.cashRegister(c, 494, 104)); E(PK.microwave(c, 590, 113, {}));
+  PK.poster(c, 524, 100, 14, 20, { title: "LOTTO", lines: [], seed: 4, palette: "sunset" });
+  E(PK.neon(c, "ICE COLD", 150, 8, "#39d0ff", { scale: 2, tube: 2 }));
+  E(PK.neon(c, "OPEN", 20, 8, "#ff3fa4", { scale: 2, off: [] }));
+  PK.shelf(c, 40, 176, 96, 40, { items: "boxes", seed: 11, wood: "#6a4a3a" });
+  E(PK.exitSign(c, 300, 18)); PK.trashCan(c, 440, 156, { full: true }); PK.cardboardBox(c, 240, 190, 30, 22, {}); PK.cardboardBox(c, 262, 200, 26, 18, { seed: 2 }); PK.pizzaBox(c, 300, 232, {});
+}, { light: null });
+
+/* ======================================================================== 4. RECORD STORE */
+scene("4  Record store: brick, face-out record wall, crate bins, counter with turntable, bulbs, window", (c, E) => {
+  PK.brick(c, 0, 0, 640, 172, { base: "#7a3a3a", mortar: "#8a7878", worn: 0.35, seed: 12, bw: 16, bh: 7 });
+  PK.planks(c, 0, 172, 640, 84, { base: "#7a5238", seed: 5 });
+  R(c, 0, 168, 640, 6, "#3a2028"); HL(c, 0, 168, 640, "#6a4048");
+  E(PK.window(c, 16, 24, 104, 108, { time: "dusk", blinds: 0.25, seed: 8 }));
+  E(PK.neon(c, "VINYL", 38, 140, "#ff3fa4", { scale: 3, tube: 2 }));
+  PK.recordWall(c, 146, 20, 262, 112, { seed: 4, header: "" });
+  PK.shelf(c, 424, 14, 130, 116, { items: "records", seed: 3 });
+  PK.poster(c, 566, 24, 44, 64, { title: "WAREHOUSE", lines: ["FRI 11PM", "$10"], seed: 21 });
+  PK.poster(c, 604, 70, 30, 40, { title: "BASS", lines: [], seed: 22, palette: "neon" });
+  PK.recordBins(c, 120, 168, 150, 70, { seed: 7 });
+  PK.recordBins(c, 290, 176, 132, 64, { seed: 9 });
+  PK.counter(c, 456, 140, 170, 50, { top: "#4a2a20", front: "#2a1c28", seed: 3 });
+  E(PK.turntable(c, 470, 112, { model: "technics" }));
+  E(PK.cashRegister(c, 588, 116));
+  for (let x = 160; x < 600; x += 140) { R(c, x, 0, 1, 14 + (x % 5), "#1a1218"); R(c, x - 1, 14 + (x % 5), 3, 4, "#5a566c"); R(c, x - 1, 18 + (x % 5), 3, 2, "#fff4d6"); E([[x - 1, 18 + (x % 5), 3, 2]]); E(PK.glow(c, x, 20 + (x % 5), 24, "#ffd890", { strength: 0.9 })); }
+  PK.plant(c, 8, 150, { size: 2, seed: 6 }); PK.crate(c, 430, 226, { seed: 4, color: "#c0302c" });
+}, { light: null });
+
+/* ======================================================================== 5. CLUB */
+scene("5  Nightclub: DJ booth, LED wall, neon, truss + beams, disco ball, stacks, carpet, crowd", (c, E) => {
+  U.R(c, 0, 0, 640, 256, "#0a0618");
+  PK.gradV(c, 0, 0, 640, 170, ["#0a0618", "#150a2c", "#2a1040"], { dither: 1 });
+  E(PK.ledWall(c, 130, 28, 380, 84, { pattern: "sunburst", seed: 3 }));
+  E(PK.neon(c, "NOWHERE", 22, 42, "#ff3fa4", { scale: 3, tube: 2 }));
+  E(PK.neon(c, "SAT", 568, 42, "#39d0ff", { scale: 3, tube: 3 }));
+  E(PK.neonLine(c, [[0, 0], [12, 0], [4, 14], [16, 14], [2, 34], [7, 18], [-4, 18], [0, 0]], 14, 124, "#ffd23f", { tube: 2 }));
+  PK.carpet(c, 0, 196, 640, 60, { pattern: "club" });
+  PK.stage(c, 40, 156, 560, 58, { seed: 2, steps: false });
+  const tr = PK.truss(c, 40, 8, 560, 12, { lights: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a", "#ff3fa4", "#39d0ff", "#ffd23f"] }); E(tr);
+  tr.lights.forEach((l, i) => E(PK.lightCone(c, l.x, l.y, 6, 120 + (i % 3) * 30, 140, l.color, { alpha: 0.55 })));
+  E(PK.discoBall(c, 320, 52, 14, { string: 28 }));
+  PK.speakerStack(c, 52, 80, 46, 96); PK.speakerStack(c, 542, 80, 46, 96);
+  E(PK.djBooth(c, 205, 100, 230, { gear: "cdj", mixer: "4ch", lights: true }));
+  E(PK.crowdSilhouettes(c, 0, 168, 640, 88, { seed: 4, rim: ["#ff3fa4", "#39d0ff"], rows: 4 }));
+}, { light: { tint: "#9a88c8", pools: [] } });
+
+/* ======================================================================== 6. AIRPORT */
+scene("6  Airport terminal: glass wall, departures board, seats, carousel, suitcases, tile floor", (c, E) => {
+  PK.sky(c, 0, 0, 640, 150, { time: "day", seed: 6, clouds: 4 });
+  R(c, 0, 118, 640, 32, "#7a7a8a"); PK.speckle(c, 0, 118, 640, 32, ["#6a6a7a", "#8a8a9a"], 0.2, 5);   // apron
+  for (let x = 20; x < 640; x += 90) R(c, x, 132, 40, 2, "#e8e4f0");
+  poly(c, [[420, 100], [520, 96], [548, 84], [556, 84], [546, 100], [560, 106], [420, 108]], "#eef0f8");                                             // parked jet
+  poly(c, [[480, 98], [510, 98], [496, 124], [486, 124]], "#c8ccd8"); R(c, 556, 76, 3, 24, "#c0302c"); for (let i = 0; i < 9; i++) R(c, 440 + i * 9, 102, 3, 2, "#39618d");
+  for (let x = 0; x <= 640; x += 128) { R(c, x - 3, 0, 7, 152, "#8a8aa0"); VL(c, x - 3, 0, 152, "#c8c8dc"); VL(c, x + 3, 0, 152, "#4a4a60"); }
+  R(c, 0, 0, 640, 6, "#3a3a50"); HL(c, 0, 6, 640, "#9a9ab4"); R(c, 0, 148, 640, 6, "#5a5a70"); HL(c, 0, 148, 640, "#c8c8dc");
+  PK.tiles(c, 0, 154, 640, 102, { a: "#d8d6e4", b: "#b4b2c6", grout: "#8a88a0", size: 56, checker: true, seed: 3 });
+  E(PK.departuresBoard(c, 184, 12, 272, 80, { seed: 3 }));
+  R(c, 190, 0, 2, 12, "#2a2838"); R(c, 448, 0, 2, 12, "#2a2838");
+  PK.airportSeats(c, 20, 160, 150); PK.airportSeats(c, 20, 206, 150);
+  PK.airportSeats(c, 470, 160, 150);
+  E(PK.luggageCarousel(c, 210, 198, 220, { seed: 2, label: "CAROUSEL 3" }));
+  PK.suitcase(c, 190, 222, { color: "#c0302c" }); PK.suitcase(c, 440, 224, { color: "#2f62b8", w: 24 }); PK.suitcase(c, 468, 226, { color: "#1d1622", w: 18 });
+  PK.plant(c, 600, 112, { size: 2 }); PK.waterCooler(c, 176, 106);
+  E(PK.vendingMachine(c, 570, 110, { sign: "SNACKS", color: "#2f62b8" }));
+}, { light: null });
+
+/* ======================================================================== 7. FESTIVAL STAGE */
+scene("7  Festival stage at dusk: sky + sun, tree line, rig truss, LED wall, stacks, barricade, crowd, beams", (c, E) => {
+  PK.sky(c, 0, 0, 640, 190, { time: "dusk", seed: 9, sun: { x: 96, y: 150, r: 9 }, clouds: 5 });
+  // tree line: clustered canopies
+  { const r = mulberry(5); R(c, 0, 168, 640, 24, "#1c1030");
+    for (let x = -10; x < 650; x += 9) { const hh = 10 + r() * 16, rx = 8 + r() * 8; ell(c, x, 170 - hh * 0.5, rx, hh * 0.9, "#1c1030"); }
+    for (let x = -10; x < 650; x += 14) { const hh = 6 + r() * 12; ell(c, x + 4, 166 - hh * 0.4, 6 + r() * 6, hh * 0.7, "#271645"); }
+    R(c, 0, 172, 640, 20, "#1c1030"); PK.speckle(c, 0, 168, 640, 24, ["#2a1a44", "#140a24"], 0.2, 3); }
+  PK.gradV(c, 0, 190, 640, 66, ["#3a2a44", "#2a1c34", "#1c1226"], { dither: 1 });
+  PK.speckle(c, 0, 190, 640, 66, ["#4a3a54", "#241830", "#5a4a60"], 0.12, 8);
+  // rig
+  R(c, 62, 20, 6, 150, "#2a2838"); R(c, 572, 20, 6, 150, "#2a2838"); VL(c, 62, 20, 150, "#6a667c"); VL(c, 572, 20, 150, "#6a667c");
+  const rig = PK.truss(c, 56, 14, 528, 14, { lights: 9 }); E(rig);
+  rig.lights.forEach((l, i) => { if (i % 2 === 0) E(PK.lightCone(c, l.x, l.y, 6, 110 + (i % 3) * 30, 140, l.color, { alpha: 0.55 })); });
+  E(PK.truss(c, 56, 60, 528, 10, { color: "#7a788c" }));
+  E(PK.ledWall(c, 150, 74, 340, 84, { pattern: "plasma", seed: 6 }));
+  [[100, 1], [492, 1]].forEach(([x]) => PK.speakerStack(c, x, 72, 44, 96));
+  PK.stage(c, 56, 160, 528, 40, { seed: 4, wedges: true });
+  PK.barricade(c, 0, 206, 640);
+  E(PK.crowdSilhouettes(c, 0, 204, 640, 52, { seed: 11, rim: ["#ffd23f", "#ff3fa4"], rows: 3, density: 0.9 }));
+}, { light: null });
+
+/* ======================================================================== 8. SUBWAY */
+scene("8  Subway platform: tiled wall, columns, tunnel mouths, track pit, car with open doors, bench", (c, E) => {
+  E(PK.subwayPlatform(c, 0, 0, 640, 256, { name: "BEDFORD AV", seed: 2 }));
+  E(PK.subwayCar(c, 150, 66, 340, { doorsOpen: true, lit: true, line: "L", h: 100 }));
+  PK.bench(c, 40, 196, 96, {}); PK.bench(c, 500, 200, 90, { back: true });
+  PK.trashBags(c, 590, 214, { seed: 3 });
+}, { light: null });
+
+/* ======================================================================== 9. PROP SHEET: office, bathroom, hotel, travel */
+scene("9  Prop sheet: office cubicle, copier, cooler, vending, microwave, sink, toilet, hotel bed, plane windows, suitcases", (c, E) => {
+  PK.plaster(c, 0, 0, 640, 200, { base: "#b8b4c0", seed: 3, patches: 0, stains: 1, cracks: 0 });
+  PK.tiles(c, 0, 200, 640, 56, { a: "#8a8698", b: "#7a7688", grout: "#5a566c", size: 30, checker: true });
+  E(PK.officeCubicle(c, 20, 90, 130, 104, { seed: 2 }));
+  E(PK.copier(c, 180, 150)); PK.waterCooler(c, 246, 148); E(PK.vendingMachine(c, 276, 128, {})); PK.table(c, 330, 156, 60, 38, {}); E(PK.microwave(c, 340, 142));
+  PK.sink(c, 420, 140); PK.toilet(c, 470, 158); PK.door(c, 520, 76, 40, 120, { metal: true, window: false, color: "#6a7a8a" });
+  E(PK.hotelBed(c, 410, 24, 150, { seed: 2 })); PK.suitcase(c, 580, 160, { color: "#c0302c", w: 26 }); PK.suitcase(c, 610, 168, { color: "#2f62b8", w: 20 });
+  E(PK.planeWindow(c, 14, 14, { view: "sky" })); E(PK.planeWindow(c, 50, 14, { view: "night" })); E(PK.planeWindow(c, 86, 14, { view: "wing", shade: 0.3 }));
+  PK.clock(c, 140, 20); PK.frame(c, 170, 14, 28, 34, {}); PK.frame(c, 206, 14, 28, 34, { mirror: true }); PK.vent(c, 250, 22, 30, 18);
+  E(PK.tv(c, 300, 30, { on: true, content: "news" })); E(PK.tv(c, 356, 30, { on: false }));
+  PK.chair(c, 150, 190, { kind: "wood" }); PK.chair(c, 190, 190, { kind: "office" }); PK.chair(c, 230, 190, { kind: "stool" });
+  PK.couch(c, 300, 196, 110, {}); PK.lamp(c, 430, 196, { kind: "floor", on: false });
+  PK.plant(c, 560, 208, { size: 3, dead: true });
+}, { light: null });
+
+/* ======================================================================== 10. DJ GEAR + STUDIO */
+scene("10  DJ gear & studio: turntables, CDJ tiers, mixers, booth, studio desk with synth + pads, monitors", (c, E) => {
+  PK.concrete(c, 0, 0, 640, 256, { base: "#4a4660", seed: 4 });
+  U.R(c, 0, 150, 640, 106, "#2a2438"); PK.planks(c, 0, 150, 640, 106, { base: "#4a3a3a", seed: 3 });
+  E(PK.turntable(c, 16, 20, { model: "technics" })); E(PK.turntable(c, 96, 20, { model: "budget" }));
+  E(PK.cdj(c, 176, 20, { tier: 1 })); E(PK.cdj(c, 232, 20, { tier: 2 })); E(PK.cdj(c, 292, 20, { tier: 3 }));
+  E(PK.mixer(c, 360, 20, { channels: 2 })); E(PK.mixer(c, 408, 20, { channels: 4 })); E(PK.mixer(c, 484, 20, { channels: 2, rotary: true }));
+  PK.monitors(c, 540, 8, { krk: true }); PK.monitors(c, 576, 8, { krk: false });
+  PK.speakerStack(c, 606, 6, 30, 70);
+  E(PK.studioDesk(c, 16, 70, 400, 150, {}));
+  E(PK.djBooth(c, 430, 94, 200, { gear: "turntable", mixer: "rotary", lights: true }));
+  E(PK.lamp(c, 430, 180, { kind: "table", on: true }));
+}, { light: null });
+
+/* ======================================================================== 11. SURFACES */
+scene("11  Surfaces: plaster, brick, planks, tiles, wall tiles, concrete, asphalt, sidewalk, carpets, gradients", (c, E) => {
+  PK.plaster(c, 0, 0, 128, 128, { seed: 1 }); PK.brick(c, 128, 0, 128, 128, { seed: 2 }); PK.planks(c, 256, 0, 128, 128, { seed: 3, horizonY: -40 });
+  PK.tiles(c, 384, 0, 128, 128, { a: "#e8e4f0", b: "#3a3450", checker: true, horizonY: -50 }); PK.tiles(c, 512, 0, 128, 128, { a: "#7a9a8a", grout: "#4a6a5a", horizonY: -50, size: 30 });
+  PK.wallTiles(c, 0, 128, 128, 128, { band: true }); PK.concrete(c, 128, 128, 128, 128, {});
+  PK.asphalt(c, 256, 128, 128, 64, { lines: ["double"] }); PK.sidewalk(c, 256, 192, 128, 64, {});
+  PK.carpet(c, 384, 128, 64, 128, { pattern: "club" }); PK.carpet(c, 448, 128, 64, 128, { pattern: "hotel" }); PK.carpet(c, 512, 128, 64, 128, { pattern: "argyle" }); PK.carpet(c, 576, 128, 64, 128, { pattern: "stars" });
+}, { light: null });
+
+/* ======================================================================== 12. DAY STREET + ROOFTOP */
+scene("12  Day street (paletteDay): sky, skyline, bridge, windows, awning, scaffold, fire escape", (c, E) => {
+  PK.sky(c, 0, 0, 640, 150, { time: "day", seed: 3, clouds: 4, sun: { x: 540, y: 30, r: 9 } });
+  PK.skyline(c, 0, 30, 640, 130, { night: false, layers: 3, spire: true, seed: 4, spireX: 200 });
+  PK.bridge(c, 280, 150, 250, { night: false, h: 70 });
+  PK.brick(c, 0, 0, 220, 190, { base: "#a4543e", mortar: "#c0b0a8", worn: 0.3, seed: 2 });
+  PK.window(c, 20, 14, 56, 64, { view: "city", time: "day", seed: 3, blinds: 0.35 }); PK.window(c, 120, 14, 56, 64, { view: "city", time: "day", seed: 4 });
+  PK.fireEscape(c, 10, 70, 90, 100, { seed: 3 });
+  PK.scaffold(c, 440, 20, 200, 160, { seed: 2 });
+  PK.sidewalk(c, 0, 190, 640, 38, { curbY: 214, seed: 4 }); PK.asphalt(c, 0, 228, 640, 28, { lines: ["double"], seed: 3 });
+  PK.awning(c, 230, 100, 170, { text: "PIZZA", colors: ["#c0302c", "#f4f0e4"] });
+  PK.hydrant(c, 420, 190); PK.mailbox(c, 450, 182); PK.manhole(c, 520, 240, { steam: 50 });
+}, { light: null });
+
+/* timings overview in console */
+console.log("scene timings (ms): " + timings.map(t => t[0].slice(0, 12) + "=" + t[1].toFixed(0)).join(" | "));
+window.__paintTimings = timings;
+})();
+</script>
+</body>
+</html>
