@@ -296,7 +296,7 @@ function crackPath(c, px, py, steps, dirx, r, k, bx0, by0, bx1, by1) {
   }
 }
 PK.plaster = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const base = o.base || "#8c7590", k = K(base), r = rng(o, x, y, 1);
   const nz = noise2(floor(r() * 4e9)), pl = mix(k[2], k[3], 0.5), pd = mix(k[2], k[1], 0.5);
   paintFn(c, x, y, w, h, (px, py) => {
@@ -335,7 +335,7 @@ PK.plaster = function (c, x, y, w, h, o) {
 
 /* ---- brick ----------------------------------------------------------------------- */
 PK.brick = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const base = o.base || "#8a4a3e", k = K(base), mortar = o.mortar || "#a09090", mk = K(mortar);
   const bw = o.bw || 14, bh = o.bh || 6, worn = o.worn == null ? 0.25 : o.worn, r = rng(o, x, y, 2);
   paintFn(c, x, y, w, h, () => { const v = r(); return v < 0.14 ? mk[3] : v < 0.3 ? mk[1] : mk[2]; });
@@ -391,7 +391,7 @@ function perspRows(y, h, hy, rhB) {
 
 /* ---- wooden floor ------------------------------------------------------------------ */
 PK.planks = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const base = o.base || "#8a5a3e", k = K(base), seam = o.seam || k[0], r = rng(o, x, y, 3);
   const hy = o.horizonY != null ? o.horizonY : y - h * 0.9;
   const rhB = o.plankH || clamp(round(h / 7), 6, 18);
@@ -436,7 +436,7 @@ PK.planks = function (c, x, y, w, h, o) {
 
 /* ---- floor tiles in perspective ---------------------------------------------------- */
 PK.tiles = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const A = o.a || "#c8c4d4", checker = o.checker != null ? !!o.checker : o.b != null;
   const B = o.b || mix(A, "#241838", 0.6), grout = o.grout || mix(A, "#241838", 0.35);
   const ka = K(A), kb = K(B), size = o.size || 36, r = rng(o, x, y, 4);
@@ -478,7 +478,7 @@ PK.tiles = function (c, x, y, w, h, o) {
 
 /* ---- glossy subway wall tiles -------------------------------------------------------- */
 PK.wallTiles = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const base = o.base || "#d9d5df", grout = o.grout || mix(base, "#4a4058", 0.42), size = o.size || 12, th = max(3, round(size / 2));
   const k = K(base), r = rng(o, x, y, 5);
   R(c, x, y, w, h, grout);
@@ -523,7 +523,7 @@ PK.wallTiles = function (c, x, y, w, h, o) {
 
 /* ---- concrete -------------------------------------------------------------------------- */
 PK.concrete = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const base = o.base || "#7a768a", k = K(base), r = rng(o, x, y, 6), nz = noise2(floor(r() * 4e9)), cl = mix(k[2], k[3], 0.55), cd = mix(k[2], k[1], 0.55);
   paintFn(c, x, y, w, h, (px, py) => {
     const n = nz(px / 40, py / 30) * 0.6 + nz(px / 6 + 11, py / 5 + 3) * 0.4, v = (n - 0.5) * 2.6, a = abs(v) - 0.22;
@@ -549,7 +549,7 @@ PK.concrete = function (c, x, y, w, h, o) {
 
 /* ---- asphalt -------------------------------------------------------------------------- */
 PK.asphalt = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const base = o.base || "#363244", k = K(base), r = rng(o, x, y, 7), nz = noise2(floor(r() * 4e9));
   paintFn(c, x, y, w, h, (px, py) => {
     const n = nz(px / 36, py / 12) * 0.5 + nz(px / 9 + 5, py / 5 + 9) * 0.5, v = (n - 0.5) * 2.4, a = abs(v) - 0.14;
@@ -591,7 +591,7 @@ function wornLine(c, x, y, w, h, r) {
 
 /* ---- sidewalk + curb ---------------------------------------------------------------- */
 PK.sidewalk = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const base = o.base || "#8c88a0", k = K(base), r = rng(o, x, y, 8), nz = noise2(floor(r() * 4e9));
   const curbY = o.curbY != null ? round(o.curbY) : y + h - 12, sh_ = max(4, curbY - y);
   /* slabs */
@@ -645,7 +645,7 @@ PK.sidewalk = function (c, x, y, w, h, o) {
 
 /* ---- carpet --------------------------------------------------------------------------- */
 PK.carpet = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const pattern = o.pattern || "club";
   const defaults = { club: "#241a3c", hotel: "#6a2a3a", stripes: "#3a2a5a", argyle: "#2a4a4a", stars: "#2a1a4a", plain: "#4a3a5a" };
   const base = o.base || defaults[pattern] || "#4a3a5a", k = K(base), r = rng(o, x, y, 9), nz = noise2(floor(r() * 4e9));
@@ -722,7 +722,7 @@ function cloud(c, cx, cy, cw, cols, r) {
   lump.forEach(l => { if (r() < 0.7) HL(c, l[0] - 2, l[1] - l[3], 4, "#ffffff"); });
 }
 PK.sky = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const time = o.time || "night", r = rng(o, x, y, 20), cols = SKY[time] || SKY.night;
   clip(c, x, y, w, h, () => {
     gradient(c, x, y, w, h, o.colors || cols, 1, true);
@@ -763,7 +763,7 @@ function waterTower(c, x, y, col, k) {
   poly(c, [[x - 5, y - 11], [x, y - 14], [x + 5, y - 11]], mix(col, "#6a4a30", 0.3));
 }
 PK.skyline = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w == null ? 640 - x : w); h = round(h == null ? 256 - y : h);
   const night = !!o.night, layers = o.layers == null ? 2 : o.layers, r = rng(o, x, y, 21), em = [];
   const bottom = y + h;
   const far = night ? "#2a1e4c" : "#a9a1c8", near = night ? "#120a26" : "#6a628c";
@@ -846,7 +846,7 @@ PK.skyline = function (c, x, y, w, h, o) {
 
 /* ---- bridge ------------------------------------------------------------------------- */
 PK.bridge = function (c, x, y, w, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w);
+  o = o || {}; x = round(x); y = round(y); w = round(w || 300);
   const night = !!o.night, H = o.h || round(w * 0.3), col = o.color || (night ? "#2a1f4a" : "#7a7298"), kk = K(col), em = [];
   const t1 = x + round(w * 0.22), t2 = x + round(w * 0.78), top = y - H, rimC = night ? "#6a58a0" : "#b8b0d4";
   /* deck + truss */
@@ -886,7 +886,7 @@ PK.bridge = function (c, x, y, w, o) {
 
 /* ---- window --------------------------------------------------------------------------- */
 PK.window = function (c, x, y, w, h, o) {
-  o = o || {}; x = round(x); y = round(y); w = round(w); h = round(h);
+  o = o || {}; x = round(x); y = round(y); w = round(w || 100); h = round(h || 90);
   const frame = o.frame || "#d8d0e6", kf = K(frame), view = o.view || "city", time = o.time || "night", r = rng(o, x, y, 22);
   const t = o.frameW || 4, gx = x + t, gy = y + t, gw = w - t * 2, gh = h - t * 2, em = [];
   const night = time === "night" || time === "dusk";
@@ -980,10 +980,11 @@ PK.window = function (c, x, y, w, h, o) {
 PK.fireEscape = function (c, x, y, w, h, o) {
   o = o || {}; x = round(x); y = round(y); w = round(w || 90); h = round(h || 112);
   const iron = o.color || "#231b30", edge = "#4e4468", dk = "#0e0818", r = rng(o, x, y, 23);
-  const ladderH = o.ladder === false ? 0 : 22, floors = o.floors || max(1, floor((h - ladderH) / 34)), fh = (h - ladderH) / floors;
-  const railH = 20;
+  const railH = 20, ladderH0 = o.ladder === false ? 0 : 22;
+  const floors = o.floors || max(1, floor((h - ladderH0 - 2) / 34));
+  const deck0 = y + railH + 2, deckL = floors > 1 ? y + h - ladderH0 - 3 : deck0, sp = floors > 1 ? (deckL - deck0) / (floors - 1) : 0;
   for (let f = 0; f < floors; f++) {
-    const deckY = y + round((f + 1) * fh) - 4;
+    const deckY = round(deck0 + f * sp);
     /* cast shadow on the wall */
     dshade(c, x + 2, deckY + 4, w, 9, "#0c0618", (px, py) => 1 - (py - deckY - 4) / 9, 0.38);
     /* railing */
@@ -995,25 +996,22 @@ PK.fireEscape = function (c, x, y, w, h, o) {
     R(c, x - 1, deckY, w + 2, 3, iron); HL(c, x - 1, deckY, w + 2, edge); HL(c, x - 1, deckY + 2, w + 2, dk);
     for (let px = x; px < x + w; px += 3) P(c, px, deckY + 3, dk);
     for (let px = x + 3; px < x + w; px += 7) P(c, px, deckY + 1, dk);
-    /* stairs down to the next landing */
-    if (f < floors - 1 || ladderH === 0 && false) {
-      const left = f % 2 === 1, run = round(w * 0.5), rise = round(fh) - 3, sx0 = left ? x + 4 : x + w - 4, sx1 = left ? x + 4 + run : x + w - 4 - run;
-      const dx = left ? 1 : -1;
-      /* two stringers + treads */
+    /* stairs down to the next landing, alternating sides */
+    if (f < floors - 1) {
+      const left = f % 2 === 1, run = round(w * 0.5), rise = round(sp) - 3, sx0 = left ? x + 4 : x + w - 4, sx1 = left ? x + 4 + run : x + w - 4 - run;
       line(c, sx0, deckY + 3, sx1, deckY + 3 + rise, iron); line(c, sx0, deckY + 4, sx1, deckY + 4 + rise, iron); line(c, sx0, deckY + 2, sx1, deckY + 2 + rise, edge);
       const steps = 8;
-      for (let s = 0; s <= steps; s++) {
-        const px = round(lerp(sx0, sx1, s / steps)), py = round(lerp(deckY + 3, deckY + 3 + rise, s / steps));
+      for (let s2 = 0; s2 <= steps; s2++) {
+        const px = round(lerp(sx0, sx1, s2 / steps)), py = round(lerp(deckY + 3, deckY + 3 + rise, s2 / steps));
         R(c, px - (left ? 0 : 3), py - 1, 4, 2, iron); HL(c, px - (left ? 0 : 3), py - 1, 4, edge);
       }
-      /* stair rail */
       line(c, sx0, deckY - railH + 2, sx1, deckY + rise - railH + 2, iron); line(c, sx0, deckY - railH + 1, sx1, deckY + rise - railH + 1, edge);
-      for (let s = 1; s < steps; s += 1) { const px = round(lerp(sx0, sx1, s / steps)), py = round(lerp(deckY + 3, deckY + 3 + rise, s / steps)); VL(c, px, py - railH + 3 + 0, railH - 2, iron); }
+      for (let s2 = 1; s2 < steps; s2++) { const px = round(lerp(sx0, sx1, s2 / steps)), py = round(lerp(deckY + 3, deckY + 3 + rise, s2 / steps)); VL(c, px, py - railH + 3, railH - 2, iron); }
     }
   }
-  if (ladderH) {
-    const lx = x + (o.ladderSide === "left" ? 6 : w - 18), ly = y + h - ladderH;
-    VL(c, lx, ly, ladderH, iron); VL(c, lx + 9, ly, ladderH, iron); VL(c, lx, ly, ladderH, edge);
+  if (ladderH0) {
+    const lx = x + (o.ladderSide === "left" ? 6 : w - 18), ly = deckL + 3, lh = y + h - ly;
+    VL(c, lx, ly, lh, iron); VL(c, lx + 9, ly, lh, iron); VL(c, lx, ly, lh, edge);
     for (let py = ly + 3; py < y + h; py += 4) R(c, lx, py, 10, 1, iron);
   }
   /* rust + chipped paint */
