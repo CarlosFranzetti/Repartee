@@ -141,7 +141,6 @@ scene("3  Bodega interior: tile floor, shelves of cans / boxes, lit coolers, cou
   PK.shelf(c, 478, 22, 156, 62, { items: "bottles", seed: 7 });
   PK.counter(c, 476, 128, 162, 50, { top: "#c8b090", front: "#6a4a3a", seed: 2, rail: true });
   E(PK.cashRegister(c, 494, 104)); E(PK.microwave(c, 590, 113, {}));
-  PK.poster(c, 524, 100, 14, 20, { title: "LOTTO", lines: [], seed: 4, palette: "sunset" });
   E(PK.neon(c, "ICE COLD", 150, 8, "#39d0ff", { scale: 2, tube: 2 }));
   E(PK.neon(c, "OPEN", 20, 8, "#ff3fa4", { scale: 2, off: [] }));
   PK.shelf(c, 40, 176, 96, 40, { items: "boxes", seed: 11, wood: "#6a4a3a" });
@@ -280,7 +279,7 @@ scene("12  Day street (paletteDay): sky, skyline, bridge, windows, awning, scaff
   PK.sky(c, 0, 0, 640, 150, { time: "day", seed: 3, clouds: 4, sun: { x: 540, y: 30, r: 9 } });
   PK.skyline(c, 0, 30, 640, 130, { night: false, layers: 3, spire: true, seed: 4, spireX: 200 });
   PK.bridge(c, 280, 150, 250, { night: false, h: 70 });
-  PK.brick(c, 0, 0, 220, 190, { base: "#a4543e", mortar: "#c0b0a8", worn: 0.3, seed: 2 });
+  PK.concrete(c, 220, 156, 420, 36, { base: "#8a86a0", seed: 9, panelH: 30 }); PK.brick(c, 0, 0, 220, 190, { base: "#a4543e", mortar: "#c0b0a8", worn: 0.3, seed: 2 });
   PK.window(c, 20, 14, 56, 64, { view: "city", time: "day", seed: 3, blinds: 0.35 }); PK.window(c, 120, 14, 56, 64, { view: "city", time: "day", seed: 4 });
   PK.fireEscape(c, 10, 70, 90, 100, { seed: 3 });
   PK.scaffold(c, 440, 20, 200, 160, { seed: 2 });

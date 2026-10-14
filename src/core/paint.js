@@ -1530,8 +1530,8 @@ PK.recordBins = function (c, x, y, w, h, o) {
     R(c, bx + floor(ww / 2) - 6, top + boxH - 8, 12, 5, "#f4ead0"); txtC(c, pk(r, ["NEW", "JAZZ", "FUNK", "HOUSE", "$5", "SOUL"]), bx + ww / 2, top + boxH - 7, "#1d1622", 1);
   }
   /* stand legs */
-  for (let b = 0; b <= nb; b++) { const lx = x + b * bw - (b === nb ? 2 : 0); R(c, lx, y + boxH, 3, legH, wood); VL(c, lx, y + boxH, legH, k[3]); VL(c, lx + 2, y + boxH, legH, k[0]); }
-  R(c, x, y + boxH + floor(legH * 0.55), w, 2, wood); HL(c, x, y + boxH + floor(legH * 0.55), w, k[4]);
+  for (let b = 0; b <= nb; b++) { const lx = x + b * bw - (b === nb ? 3 : 0); R(c, lx, y + boxH, 4, legH, wood); VL(c, lx, y + boxH, legH, k[3]); VL(c, lx + 3, y + boxH, legH, k[0]); R(c, lx - 1, y + h - 1, 6, 1, k[0]); }
+  R(c, x, y + boxH + floor(legH * 0.55), w, 3, wood); HL(c, x, y + boxH + floor(legH * 0.55), w, k[4]); HL(c, x, y + boxH + floor(legH * 0.55) + 2, w, k[0]);
 };
 
 PK.recordWall = function (c, x, y, w, h, o) {
@@ -3157,14 +3157,14 @@ PK.cardboardBox = function (c, x, y, w, h, o) {
 PK.paletteNight = {
   name: "night",
   wall: "#6a5478", wallLight: "#8a70a0", wallDark: "#463858", ceiling: "#3a2e50", trim: "#a48aa0",
-  plaster: "#7a6488", brick: "#7e4248", brickDark: "#52283a", mortar: "#7a6a78",
+  plaster: "#7a6488", brick: "#8a3a2a", brickDark: "#52283a", mortar: "#7a6a78",
   floor: "#5a4048", wood: "#7a4a32", woodLight: "#a06a46", woodDark: "#4e2e26",
   metal: "#4a4658", metalLight: "#8a86a0", metalDark: "#2a2638", chrome: "#c8c4d8",
   concrete: "#5e5a70", asphalt: "#2a2636", sidewalk: "#6a6680", curb: "#7a7690", tile: "#aaa6bc", tileDark: "#36324a",
   carpet: "#241a3c", leather: "#4a2a3a", fabric: "#3a3a6a",
   sky: SKY.night, glass: "#1a2a44", ink: "#140c1e", paper: "#d8ccb8", white: "#e8e4f0",
-  neonPink: "#ff3fa4", neonCyan: "#39d0ff", neonViolet: "#a05cff", neonGreen: "#5cff9a", neonAmber: "#ffb03a",
-  neonRed: "#ff4a4a", neonYellow: "#ffd23f", neonBlue: "#4a7aff", sodium: "#ff9a3a", sodiumLight: "#ffd27a",
+  neonPink: "#ff3fa4", neonCyan: "#39d0ff", neonViolet: "#a05cff", neonGreen: "#9be15d", neonAmber: "#ffc44d",
+  neonRed: "#ff4a4a", neonYellow: "#ffd23f", neonBlue: "#4a7aff", sodium: "#ffb04a", sodiumLight: "#ffd27a",
   lamp: "#ffe2a0", screen: "#123040", ledGreen: "#3fd07a", ledAmber: "#ff9a3f", ledRed: "#ff4a4a",
   skin: ["#f2c8a0", "#e0a27a", "#b8775a", "#8a5238", "#5a3424"], accent: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a", "#ff8a4c"]
 };
@@ -3177,11 +3177,26 @@ PK.paletteDay = {
   concrete: "#9a96a8", asphalt: "#4a4658", sidewalk: "#b0acc0", curb: "#aaa6bc", tile: "#e0dce8", tileDark: "#5a5670",
   carpet: "#5a3a5a", leather: "#8a4a4a", fabric: "#5a6aa0",
   sky: SKY.day, glass: "#8ab8e0", ink: "#241838", paper: "#f0e4cc", white: "#fbf8ff",
-  neonPink: "#ff3fa4", neonCyan: "#39d0ff", neonViolet: "#a05cff", neonGreen: "#5cff9a", neonAmber: "#ffb03a",
-  neonRed: "#ff4a4a", neonYellow: "#ffd23f", neonBlue: "#4a7aff", sodium: "#ff9a3a", sodiumLight: "#ffd27a",
+  neonPink: "#ff3fa4", neonCyan: "#39d0ff", neonViolet: "#a05cff", neonGreen: "#9be15d", neonAmber: "#ffc44d",
+  neonRed: "#ff4a4a", neonYellow: "#ffd23f", neonBlue: "#4a7aff", sodium: "#ffb04a", sodiumLight: "#ffd27a",
   lamp: "#fff4d6", screen: "#2a5a70", ledGreen: "#3fd07a", ledAmber: "#ff9a3f", ledRed: "#ff4a4a",
   skin: ["#f2c8a0", "#e0a27a", "#b8775a", "#8a5238", "#5a3424"], accent: ["#e0368f", "#2a9ad8", "#f0b020", "#8a4cd8", "#3ab870", "#e86a30"]
 };
 PK.ramp = ramp;
+
+/* Default footprints [w, h] of the solid artwork (glow/shadow excluded), x,y = top-left, measured from the real
+   output with default arguments.  Handy for grounding props:  PK.hydrant(c, x, floorY - PK.sizes.hydrant[1]). */
+PK.sizes = {
+  hydrant: [20, 20], trashBags: [43, 28], manhole: [38, 12], mailbox: [20, 32], newspaperBox: [16, 28], bike: [48, 31], subwayStairs: [64, 52],
+  door: [48, 118], cashRegister: [31, 29], table: [64, 36], chair: [22, 42], couch: [110, 46], bed: [176, 62], desk: [110, 50], lamp: [18, 35], lampFloor: [20, 74],
+  plant1: [30, 28], plant2: [50, 47], plant3: [76, 69], tv: [44, 34], laptop: [30, 22], poster: [40, 56], frame: [26, 32], clock: [18, 18], radiator: [80, 34],
+  vent: [26, 16], sink: [28, 39], toilet: [30, 36], officeCubicle: [136, 88], copier: [56, 46], waterCooler: [18, 46], vendingMachine: [40, 66], microwave: [26, 15],
+  turntable: [70, 31], turntableBudget: [62, 28], cdj1: [46, 28], cdj2: [52, 30], cdj3: [58, 32], mixer2: [40, 30], mixer4: [66, 30], speakerStack: [44, 92], monitors: [26, 44],
+  shelf: [100, 80], recordBins: [132, 60], recordWall: [160, 90], counter: [120, 34], cooler: [72, 98], bar: [260, 110], stoop: [120, 80], awning: [120, 26], scaffold: [160, 120],
+  fireEscape: [90, 112], truss: [200, 12], stage: [420, 64], studioDesk: [250, 90], djBooth: [230, 74], barricade: [120, 24], departuresBoard: [200, 74], airportSeats: [120, 40],
+  planeWindow: [28, 38], luggageCarousel: [220, 44], hotelBed: [150, 78], suitcase: [23, 36], subwayCar: [280, 96], turnstile: [38, 38], bench: [90, 34], baseboard: [640, 9],
+  rug: [120, 30], bulb: [7, 34], fluorescent: [80, 5], exitSign: [25, 11], crate: [36, 40], trashCan: [20, 28], pizzaBox: [42, 14], cardboardBox: [26, 25]
+};
+PK.version = "1.0";
 
 })();
