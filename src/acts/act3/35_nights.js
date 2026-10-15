@@ -149,8 +149,8 @@ async function anniversarySet(S) {
   if (hasGrail) await lines(["For the last record I pull out the one sleeve in the bag that says 'FOR COMPANY.' Loose Joints. 'Is It All Over My Face?' Larry Levan's remix, the one everyone knows. On the Technics' cousin in the booth.",
     "Somebody screams. Somebody cries. Somebody films it, which is the same thing."]);
   RP.sfx("cheer");
-  RP.actor("a3_dj_louie_vega"); S.f.a3_vegaHere = true;
-  await lines(["Near the front, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend."]);
+  S.f.a3_vegaHere = true;
+  await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend."]);
   await say("Nice blend. Louie Vega said 'nice blend.' I'm going to put it on my gravestone.");
   await lines(["@a3_odessa ...That's the one. That's the set. That's Saturday.", "@a3_odessa Saturday. Eleven PM. The main floor. Prime time. Brandon's got a vacation.", "@a3_odessa Take the old booth monitors. Dynaudio BM5s. Too good for Gus, who only listens to the sound of a bag opening."]);
   RP.setGear("monitors", "dynaudio_bm5_mkiii");

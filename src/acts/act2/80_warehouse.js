@@ -27,8 +27,9 @@ function paint(c, S) {
     U.dshade(c, x, 30, 24, 140, "#06020c", (xx, y) => (xx - x) / 24 * 0.5, 0.35);
   });
   // faded painted sign: TRI-STATE TAPE & DUPLICATION
-  txtC(c, "TRI-STATE TAPE", 360, 40, "#c8c0b0", 2, 1); txtC(c, "& DUPLICATION", 360, 54, "#c8c0b0", 1, 1); txtC(c, "WE COPY ANYTHING (LEGALLY)", 360, 66, "#a8a090", 1, 1);
-  U.dshade(c, 200, 34, 320, 44, "#4e3036", (x, y) => ((x * 3 + y * 5) % 7 < 3 ? 0.9 : 0.2), 0.45);
+  txtC(c, "TRI-STATE TAPE", 360, 48, "#c8c0b0", 2, 1); txtC(c, "& DUPLICATION", 360, 61, "#c8c0b0", 1, 1);
+  txt(c, "WE COPY ANYTHING (LEGALLY)", 100, 116, "#a8a090", 1, 1);
+  U.dshade(c, 200, 46, 320, 22, "#4e3036", (x, y) => ((x * 3 + y * 5) % 7 < 3 ? 0.9 : 0.2), 0.45);
   // cassette wall (left): rows of tape boxes
   R(c, 8, 52, 70, 96, "#2a1c1c"); U.outline(c, 8, 52, 70, 96, "#5a4038");
   for (let r = 0; r < 6; r++) { const y = 56 + r * 15; R(c, 9, y + 12, 68, 2, "#7a5a40"); for (let k = 0; k < 8; k++) { const col = ["#ff3fa4", "#39d0ff", "#ffd23f", "#e8e4f0", "#9be15d", "#c0302c", "#a05cff", "#ff8a4c"][(r * 3 + k * 5) % 8]; R(c, 11 + k * 8, y + 1, 7, 11, col); R(c, 12 + k * 8, y + 3, 5, 4, "#f4f0e8"); P(c, 14 + k * 8, y + 5, "#1d1622"); } }
@@ -53,8 +54,8 @@ function paint(c, S) {
   PK.speakerStack(c, 208, 66, 44, 92, {}); PK.speakerStack(c, 468, 66, 44, 92, {});
   // truss with par cans, and the neon sign (lit only when Twinkie flips the breaker)
   const tr = PK.truss(c, 196, 34, 328, 10, { lights: L ? ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a"] : 5 }); if (L) em.push.apply(em, tr);
-  if (L) { em.push.apply(em, PK.neon(c, "BASEMENT", 240, 108 - 24, "#39d0ff", { scale: 2, tube: 2 })); em.push.apply(em, PK.neon(c, "TAPES", 336, 108 - 24, "#ff3fa4", { scale: 2, tube: 2 })); }
-  else { txtC(c, "BASEMENT TAPES", 360, 78, "#3a3648", 2, 1); }
+  if (L) { em.push.apply(em, PK.neon(c, "BASEMENT", 254, 62, "#39d0ff", { scale: 2, tube: 2 })); em.push.apply(em, PK.neon(c, "TAPES", 356, 62, "#ff3fa4", { scale: 2, tube: 2 })); }
+  else { txtC(c, "BASEMENT TAPES", 360, 66, "#3a3648", 2, 1); }
   // a work bulb by the door when the lights are off
   if (!L) em.push.apply(em, PK.bulb(c, 62, 30, { len: 8, glowR: 40 }));
   return em;
@@ -345,7 +346,7 @@ RP.room({
   start: { x: 70, y: 232, face: "right" },
   update: A2.update,
   fx: [
-    { type: "haze", rect: [40, 90, 560, 110], color: "#b8a8ff", density: 2, on: () => crowdOn(RP.state) },
+    { type: "haze", rect: [30, 80, 580, 150], color: "#9a8ae0", density: 3, on: () => crowdOn(RP.state) },
     { type: "beams", origins: [[240, 46], [300, 46], [360, 46], [420, 46], [480, 46]], colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a"], base: Math.PI / 2, swing: 0.5, len: 170, width: 14, alpha: 0.14, period: 1400, on: () => crowdOn(RP.state) },
     { type: "dust", rect: [40, 40, 540, 150], count: 26, color: "#fff4d6", on: () => !crowdOn(RP.state) },
     { type: "steam", x: 440, y: 236, rise: 30, size: 8, drift: 4, color: "#8a86a0" }
@@ -367,8 +368,8 @@ RP.room({
   },
   hotspots: [
     { id: "a2_whdoor", name: "back door", r: [2, 40, 56, 132], z: 20, walk: [70, 232, "left"], exit: "travel", look: "The back door to the basement: a chain, a padlock Twinkie has the key to, and a smell of ambition. Beyond it: Gowanus, a canal and the sunrise.", push: "I'm already inside. This is the wrong direction for pushing." },
-    { id: "a2_whsign", name: "painted sign", r: [196, 34, 330, 40], z: 14, walk: [360, 208, "back"], look: "A faded wall sign: TRI-STATE TAPE & DUPLICATION. WE COPY ANYTHING (LEGALLY). Lou said he got his demos duplicated here in 1993. This room has heard \"NYC 93\" before. It's the first place that might remember.", use: "I can't edit a wall sign. I can only read it and feel old." },
-    { id: "a2_whneon", name: "BASEMENT TAPES neon", r: [238, 78, 160, 30], z: 22, walk: [360, 208, "back"], look: S => lit(S) ? "A neon: BASEMENT TAPES. Cyan and pink. Whoever installed it did it twice, so it would last." : "A dark sign over the stage that says BASEMENT TAPES in cold, unlit glass. It's waiting.", use: "It has no switch. It has a breaker. And a conscience." },
+    { id: "a2_whsign", name: "painted sign", r: [196, 44, 330, 26], z: 14, walk: [360, 208, "back"], look: "A faded wall sign: TRI-STATE TAPE & DUPLICATION. WE COPY ANYTHING (LEGALLY). Lou said he got his demos duplicated here in 1993. This room has heard \"NYC 93\" before. It's the first place that might remember.", use: "I can't edit a wall sign. I can only read it and feel old." },
+    { id: "a2_whneon", name: "BASEMENT TAPES neon", r: [250, 58, 196, 20], z: 22, walk: [360, 208, "back"], look: S => lit(S) ? "A neon: BASEMENT TAPES. Cyan and pink. Whoever installed it did it twice, so it would last." : "A dark sign over the stage that says BASEMENT TAPES in cold, unlit glass. It's waiting.", use: "It has no switch. It has a breaker. And a conscience." },
     { id: "a2_whrules", name: "house rules", r: [128, 74, 82, 34], z: 22, walk: [170, 208, "back"], look: "HOUSE RULES: NO CAMERAS. NO COVER BANDS. NO \"CAN YOU PLAY SOMETHING I KNOW.\" Underneath, in pencil: \"VINYL ONLY. BRING YOUR OWN TURNTABLES.\" That last rule is mine now.", pickup: "It's painted on. Vic would find me." },
     { id: "a2_whtapes", name: "cassette wall", r: [8, 44, 72, 108], z: 20, walk: [44, 214, "back"], look: "A wall of old cassettes, labeled MASTERS. Hundreds of copies of things that were important to somebody once. I can feel them all not being played.", pickup: "Hundreds of cassettes. I'd take one. But which? So many people's one chance.", use: "I don't have a cassette deck. I have regrets." },
     { id: "a2_whbar", name: "drum bar", r: [22, 138, 110, 62], z: 24, walk: [76, 212, "back"], look: "A bar made of two blue oil drums and a plank, with a cash box and a sign: \"CASH ONLY.\" The cash box has a rubber band around it. Vic's.", use: "I'd pour a drink, but it's Vic's. And he's the type to count the ice.", pickup: "Not touching Vic's cash box. Not even to look at it." },

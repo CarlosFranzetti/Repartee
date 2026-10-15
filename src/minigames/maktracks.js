@@ -47,7 +47,7 @@ const SECS = {
   build: { name: "BUILD", col: "#ffc44d", layers: ["kick", "clap", "hat", "ohat", "chord", "sample"], f: [0.6, 1] },
   drop: { name: "DROP", col: "#ff3fa4", layers: RID.slice(), f: [1, 1] },
   break: { name: "BREAK", col: "#a77bff", layers: ["chord", "sample"], f: [0.55, 0.55] },
-  outro: { name: "OUTRO", col: "#9be15d", layers: ["kick", "hat", "bass", "sample"], f: [0.8, 0.7] }
+  outro: { name: "OUTRO", col: "#9be15d", layers: ["kick", "hat", "bass"], f: [0.8, 0.7] }
 };
 const SEC_ORDER = ["intro", "build", "drop", "break", "outro"];
 const DEFAULT_ARR = ["intro", "intro", "build", "build", "drop", "drop", "break", "outro"];
@@ -278,11 +278,11 @@ const CSS = `
 .mt-box { background: #120e24; border: 1px solid var(--line); border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .mt-h { font-size: 17px; color: var(--muted); letter-spacing: .08em; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .mt-h b { color: var(--fg); font-weight: 400; }
-.mt-machine { background: linear-gradient(#1d1738, #120e24); border: 2px solid #3a2f78; box-shadow: 0 0 0 2px #120a2c, 0 6px 0 #000; border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
-.mt-top { display: grid; grid-template-columns: minmax(150px, 1.1fr) auto; gap: 8px; align-items: stretch; }
+.mt-machine { position: relative; background: linear-gradient(#1d1738, #120e24); border: 2px solid #3a2f78; box-shadow: 0 0 0 2px #120a2c, 0 6px 0 #000; border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+.mt-top { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 8px; align-items: center; }
 .mt-lcdwrap { border: 3px solid #0a0716; background: #0a1a14; box-shadow: inset 0 0 0 1px #2a4a3a; line-height: 0; }
 .mt-lcdwrap canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; aspect-ratio: 160 / 28; }
-.mt-trans { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+.mt-trans { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; justify-content: flex-end; }
 .mt-trans .btn { font-size: 20px; padding: 5px 12px; }
 .mt-trans .btn.on { background: var(--ok); border-color: var(--ok); color: #06180e; }
 .mt-bpm { display: flex; align-items: center; gap: 6px; font-size: 18px; color: var(--muted); }
@@ -336,7 +336,7 @@ const CSS = `
 .mt-hearts .hp i { flex: 1; height: 12px; background: #1a1534; border: 1px solid #2d2456; }
 .mt-hearts .hp i.on { background: var(--pink); } .mt-hearts .hp i.hi { background: var(--ok); }
 .mt-goals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.mt-goals li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; font-size: 18px; line-height: 1.02; color: var(--muted); }
+.mt-goals li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 6px; align-items: start; font-size: 18px; line-height: 1.02; color: var(--muted); }
 .mt-goals li::before { content: "[ ]"; color: var(--muted); }
 .mt-goals li.y { color: var(--fg); } .mt-goals li.y::before { content: "[x]"; color: var(--ok); }
 .mt-goals li small { font-size: 15px; color: var(--muted); white-space: nowrap; }
@@ -365,7 +365,7 @@ const CSS = `
 .mt-card ul b { font-weight: 400; color: var(--fg); }
 .mt-card .row { justify-content: flex-end; }
 .mt-card canvas { width: 100%; image-rendering: pixelated; image-rendering: crisp-edges; border: 2px solid #3a2f78; aspect-ratio: 320 / 130; }
-.mt-toast { position: absolute; left: 50%; top: -8px; transform: translateX(-50%); background: var(--amber); color: #12061a; font-size: 20px; padding: 3px 12px; z-index: 5; pointer-events: none; border: 2px solid #fff; }
+.mt-toast { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); background: var(--amber); color: #12061a; font-size: 20px; padding: 3px 12px; z-index: 5; pointer-events: none; border: 2px solid #fff; }
 .mt-wrap :focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
 @media (max-width: 860px) {
   .mt-cols { grid-template-columns: minmax(0, 1fr); }
@@ -424,7 +424,7 @@ RP.mg.register("makTracks", {
 
     /* ---------- state ---------- */
     const pat = {}; RID.forEach(r => { pat[r] = new Array(STEPS).fill(0); });
-    pat.kick = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]; pat.sample[0] = 1;       // a skeleton so there is sound from the first second
+    pat.kick = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];       // a skeleton so there is sound from the first second
     const st = {
       bpm: clamp(Math.round(p.bpm || origBpm), 70, 170), swing: SWING[genre] != null ? SWING[genre] : 0.1, playing: false, mode: "pat", gs: 0, next: 0, t: 0,
       armed: "kick", brush: { bass: 1, chord: 1, sample: 1 }, voice: {}, mute: {}, solo: {},
@@ -479,7 +479,7 @@ RP.mg.register("makTracks", {
       const space = adj >= 4 ? 0.6 : adj >= 3 ? 0.85 : 1;
       const d = Math.abs(st.bpm - origBpm), tempo = d <= 4 ? 1 : d <= 10 ? 0.8 : d <= 18 ? 0.55 : 0.3;
       const sb = st.layers.filter(l => l[RID.indexOf("sample")]).length;
-      const arrQ = sb === 0 ? 0.2 : sb <= 2 ? 0.7 : sb <= 6 ? 1 : 0.75;
+      const arrQ = sb === 0 ? 0.2 : sb <= 2 ? 0.7 : sb <= 7 ? 1 : 0.75;
       const t = 100 * (0.26 * presence + 0.2 * variety + 0.2 * hook + 0.12 * tempo + 0.12 * arrQ + 0.10 * space);
       return { t: Math.round(ns === 0 ? Math.min(t, 12) : t), ns, dist, hookAt, adj, d, sb, presence, variety, hook, tempo, arrQ, space };
     }
@@ -536,7 +536,7 @@ RP.mg.register("makTracks", {
     const bFin = el("button", { cls: "btn primary", type: "button", text: "FINISH TRACK" }, trans);
 
     const grid = el("div", { cls: "mt-grid", role: "grid", "aria-label": "16-step sequencer" }, machine);
-    const toastHost = el("div", { style: "position:relative;height:0" }, machine);
+    const toastHost = machine;
     const numEls = [], rowEls = {}, stepEls = {}, ledEls = {}, nameEls = {}, msEls = {};
     for (let s = 0; s < STEPS; s++) {
       const n = el("div", { cls: "mt-num" + (s % 4 === 0 ? " b" : ""), text: String(s + 1), style: "--si:" + s }, grid); numEls.push(n);
@@ -895,10 +895,9 @@ RP.mg.register("makTracks", {
       goalUl.innerHTML = "";
       ev.list.forEach(g => {
         const li = el("li", { cls: g.ok ? "y" : "" }, goalUl);
-        el("span", { text: "" }, li);
         const mid = el("span", {}, li); mid.innerHTML = RP.u.esc(g.t) + "<br><small style='color:var(--muted)'>" + RP.u.esc(g.d) + "</small>";
         el("small", { text: g.prog }, li);
-        if (g.ok && !st.goalsDone[g.id]) { st.goalsDone[g.id] = true; rewardGoal(g); }
+        if (g.ok && !st.goalsDone[g.id]) { st.goalsDone[g.id] = true; if (!st.firstEval) rewardGoal(g); }
       });
       // arrangement
       for (let b = 0; b < BARS; b++) {
@@ -1059,7 +1058,7 @@ RP.mg.register("makTracks", {
 
     /* ---------- go ---------- */
     refreshGrid(); refreshRows(); refreshBank(); refreshPads(); setBpm(st.bpm);
-    st.t = 0; onChange();
+    st.t = 0; st.firstEval = true; onChange(); st.firstEval = false;
     setHint("Welcome to the studio. Tap the grid to program a beat, then press PLAY. Arrow keys + SPACE work too.");
     if (withLou) { st.louMsg = LOU.idle[0]; louSayEl.innerHTML = "<b>LOU:</b> “" + RP.u.esc(st.louMsg) + "”"; }
     return new Promise(resolve => { resolveFn = resolve; host.cleanup(() => { if (resolveFn) { const f = resolveFn; resolveFn = null; f({ ok: false, score: 0, track: null }); } }); });

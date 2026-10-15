@@ -339,6 +339,7 @@ RP.mg.register("recordHunt", {
         if (!open && arrive < q.closes * 60 + 1) { /* opens later */ }
         if (arrive >= q.closes * 60) el("div", { cls: "dk-note", html: "<span class='bad' style='color:#ff7a7a'>You'd arrive after closing (" + fmtT(arrive) + ").</span>" }, card);
         else if (arrive < q.opens * 60) el("div", { cls: "dk-note", html: "<span style='color:#ffc44d'>Not open until " + fmtH(q.opens) + ". You'd wait.</span>" }, card);
+        msg.textContent = S.at ? "Where to next? It's " + clockLabel() + "." : "Tip: read the notebook, then pick the spot that fits the clue.";
         const go = el("div", { cls: "rh-go" }, card);
         const bSub = el("button", { cls: "btn primary", type: "button", html: "SUBWAY<small>" + money(ti.fare) + " · " + ti.min + " min</small>" }, go);
         const bWalk = el("button", { cls: "btn", type: "button", html: "WALK<small>free · " + ti.walk + " min</small>" }, go);
@@ -349,7 +350,7 @@ RP.mg.register("recordHunt", {
         const q = byId[S.at];
         const h = el("h3", { text: q.label }, card); el("small", { text: q.area + " · " + clockLabel() }, h);
         const lg = el("div", { cls: "rh-log", "aria-live": "polite" }, card);
-        S.log.forEach(l => { const ln = el("p", { cls: l.kind }, lg); ln.textContent = l.text; });
+        S.log.slice(L.narrow ? -4 : -6).forEach(l => { const ln = el("p", { cls: l.kind }, lg); ln.textContent = l.text; });
         const q_ = S.log.length ? lg.lastChild : null;
         if (q_ && S.fresh) { const full = S.log[S.log.length - 1].text; S.fresh = false; typeInto(q_, full); }
         if (S.visitClosed) { el("div", { cls: "dk-note", text: "Nobody's here. The gate's chained." }, card); }
@@ -362,8 +363,10 @@ RP.mg.register("recordHunt", {
             b.addEventListener("click", e => { if (e.detail) b.blur(); askAbout(id); });
           });
         }
-        if (!S.found) { const bb = el("button", { cls: "btn", type: "button", text: "BACK TO THE MAP" }, card); bb.addEventListener("click", e => { if (e.detail) bb.blur(); leaveVisit(); }); }
+        if (!S.found) { const bb = el("button", { cls: "btn", type: "button", text: "BACK TO THE MAP" }, card); bb.addEventListener("click", e => { if (e.detail) bb.blur(); leaveVisit(); }); if (L.narrow && !S.fresh0) host.timeout(() => { try { bb.scrollIntoView({ block: "nearest" }); } catch (e2) { /* ignore */ } }, 40); }
+        msg.textContent = S.visitClosed ? "Closed. That was a very expensive sign." : "Ask about a clue (or press 1-" + S.clues.length + "). Each question costs 10 minutes.";
       } else if (S.mode === "reveal") {
+        msg.textContent = "";
         const h = el("h3", { text: "THERE IT IS." }, card); el("small", { text: byId[S.at].label }, h);
         el("div", { cls: "dk-meta", text: "Under the mothballs and a crocheted doily: " + rec.artist + " – " + rec.title + "." }, card);
       } else if (S.mode === "intro") {

@@ -133,16 +133,15 @@ RP.room({
   walk: [[8, 214], [600, 214], [630, 250], [8, 250]],
   start: { x: 60, y: 238, face: "right" },
   fx: [
-    { type: "haze", rect: [0, 150, 640, 70], color: "#b8a8ff", density: 4, slow: 70 },
-    { type: "haze", rect: [0, 40, 640, 60], color: "#ff9ab8", density: 2, slow: 110 },
+    { type: "haze", rect: [0, 170, 640, 60], color: "#b8a8ff", density: 2, slow: 80 },
     { type: "beams", origins: [[120, 20], [260, 20], [380, 20], [520, 20]], colors: ["#ff2a3a", "#3a6aff"], base: Math.PI / 2, swing: 0.55, len: 230, width: 14, alpha: 0.13, period: 1800 },
     { type: "strobe", period: 2600, flash: 55, alpha: 0.16, color: "#ffffff", on: () => !!RP.state.f.a4_strobe }
   ],
   actors: [
     { id: "a4_jeff", char: "dj_jeff_mills", x: 296, y: 168, face: "front", act: "dj", name: "Jeff Mills" },
     { id: "a4_katja", char: "a4_katja", x: 494, y: 214, face: "left", act: "stand", name: "Katja" },
-    { crowd: { n: 16, rect: [120, 196, 400, 40], seed: 21, face: "back", act: "dance", scale: 0.95, opts: { override: { top: { style: "tee", color: "#14121a" }, bottom: { style: "cargo", color: "#14121a" } } } } },
-    { crowd: { n: 10, rect: [30, 204, 580, 36], seed: 52, face: "back", act: "dance", scale: 0.98, opts: { override: { top: { style: "jacket", color: "#1a1822", color2: "#2a2836" }, bottom: { style: "pants", color: "#17131f" } } } } }
+    { crowd: { n: 16, rect: [110, 214, 420, 24], seed: 21, face: "back", act: "dance", scale: 0.74, opts: { override: { top: { style: "tee", color: "#14121a" }, bottom: { style: "cargo", color: "#14121a" } } } } },
+    { crowd: { n: 12, rect: [24, 220, 590, 22], seed: 52, face: "back", act: "dance", scale: 0.8, opts: { override: { top: { style: "jacket", color: "#1a1822", color2: "#2a2836" }, bottom: { style: "pants", color: "#17131f" } } } } }
   ],
   sprites: [
     { y: 176, draw: c => sprBoothFront(c, 183, 94) },

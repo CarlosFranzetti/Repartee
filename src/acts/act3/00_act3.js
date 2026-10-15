@@ -224,9 +224,16 @@ RP.defineAct({
     await RP.lines([
       "@nar Six months later.",
       "Thursday. I have a residency. I say that out loud sometimes, just to hear how it sounds.",
-      "The Halcyon Room, Lower East Side. Ten to two. Nobody shows up before midnight.",
-      "Odessa's three house rules: be early, stay sober, and bring Gus a snack. Nobody knows why the third one."
+      "The Halcyon Room, Lower East Side. Ten to two. Nobody shows up before midnight."
     ]);
+    await RP.phone([
+      { from: "ODESSA (HALCYON)", text: "Doors 10. Late = no Saturday, ever. Bring Gus a snack. Don't ask. -O", hot: true },
+      { from: "MARCUS", text: "plus 3 tonight right??" },
+      { from: "EDDIE TWO-TIMES", text: "Two-time deal on CDJ-900s. Come see me when you're paid. -E2T" },
+      { from: "MOM", text: "Did you eat. Also is it true you work Thursdays now" }
+    ]);
+    S.f.a3_texts = true;
+    await RP.lines(["Odessa's three house rules: be early, stay sober, bring Gus a snack. Nobody knows why the third one.", "Record bag, USB, jacket. Then the subway map. In that order."]);
   },
   doneTitle: "SATURDAY NIGHT",
   doneText: S => "The Halcyon Room. Anniversary Thursday. You followed Kosmo Delacroix (he called you " + A3.KOSMO_NAME + "), beat Brandon Shine's USB, and Odessa gave you Saturday. A booking agent in Europe just emailed.",

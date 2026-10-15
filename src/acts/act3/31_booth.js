@@ -106,10 +106,11 @@ RP.room({
   ],
   actors: S => [
     { id: "a3_kosmo", char: "kosmo", x: 262, y: 153, face: "front", act: "dj", name: "Kosmo Delacroix", vis: S2 => !!S2.f.a3_thu3 && !S2.f.a3_kosmoDone },
-    { id: "a3_gus", char: "a3_gus", x: 120, y: 153, face: "front", act: "stand", name: "Gus", vis: S2 => false }
+    { id: "a3_dj_louie_vega", char: "a3_dj_louie_vega", x: 520, y: 153, face: "front", act: "stand", name: "Louie Vega", vis: S2 => !!S2.f.a3_vegaHere }
   ],
   enter: async (S, from) => { if (A3.boothEnter) await A3.boothEnter(S, from); },
   hotspots: [
+    { id: "a3_dj_louie_vega", name: "Louie Vega", z: 80, look: "Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez. He's nodding at the room like it just told him a good joke.", talk: ["Mr. Vega, I... thank you.", "@a3_dj_louie_vega Nice blend."] },
     { id: "a3_b_steps", name: "steps to the floor", r: [4, 146, 52, 26], z: 40, walk: [64, 153, "left"],
       look: "Three steps down to the dance floor. At the bottom, a hundred people who don't know I'm nervous.",
       exit: S => ({ room: "a3_halcyon", x: 450, y: 214, face: "front" }) },

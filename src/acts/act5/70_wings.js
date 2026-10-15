@@ -20,7 +20,6 @@ function paint(c, S) {
   PK.speakerStack(c, 568, 52, 40, 100);
   art.lineArray(c, 130, 18, 6, 18, { ch: 9 });
   PK.stage(c, 110, 146, 500, 44, { seed: 3, wedges: false, trim: true });
-  em.push.apply(em, PK.crowdSilhouettes(c, 220, 188, 420, 68, { seed: 8, rim: ["#ff3fa4", "#39d0ff"], rows: 3, density: 0.95 }));
   /* the dark foreground: masking curtains (legs) and a cable-strewn floor */
   for (let x = 0; x < 78; x++) { const f = Math.sin(x * 0.9) * 0.5 + 0.5; R(c, x, 0, 1, 256, f > 0.6 ? "#16101e" : f > 0.3 ? "#0c0814" : "#06040a"); }
   for (let x = 596; x < 640; x++) { const f = Math.sin(x * 0.9) * 0.5 + 0.5; R(c, x, 0, 1, 256, f > 0.6 ? "#16101e" : f > 0.3 ? "#0c0814" : "#06040a"); }

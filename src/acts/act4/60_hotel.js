@@ -46,6 +46,8 @@ function paint(c, S) {
   // wood paneling
   R(c, 0, 132, W, 40, "#4a2a22"); for (let x = 0; x < W; x += 40) { R(c, x + 3, 136, 34, 32, "#5a3428"); R(c, x + 3, 136, 34, 1, "#8a5a44"); R(c, x + 3, 167, 34, 1, "#2a1410"); R(c, x + 3, 136, 1, 32, "#7a4a38"); R(c, x + 36, 136, 1, 32, "#2a1410"); }
   R(c, 0, 168, W, 5, "#2a1410"); R(c, 0, 168, W, 1, "#8a5a44");
+  // lobby couch (green velvet)
+  PK.couch(c, 104, 124, 196, { color: "#2f6a4a", h: 64, pillowColor: "#c8a030" });
   // floor: hotel carpet with a runner
   PK.carpet(c, 0, 173, W, 83, { pattern: "hotel", base: "#6a2a3a", accent: "#d8b060", seed: 3 });
   PK.rug(c, 120, 200, 400, 46, { colors: ["#3a2a5a", "#c8a030", "#7a3a4a"], shape: "rect" });

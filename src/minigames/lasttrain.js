@@ -66,7 +66,7 @@ const MAPS = {
     key: "subway", name: "Night service map", river: true, fare: 3, cab: 38, startMin: 94, maxPairs: [["jkh", "atl"], ["fls", "hew"], ["eny", "gre"], ["gre", "flt"], ["nvy", "jam"], ["jam", "atl"], ["fls", "flt"], ["crt", "eny"]],
     stations: [
       S("gre", "Greenpoint Ave", "Greenpoint", 30, 45, 2, 0, true, "b"), S("crt", "Court Sq", "Court Sq", 100, 45, 3, 3, true, "t"), S("qbp", "Queensboro Plz", "Queensboro", 180, 45, 3, 3, false, "t"),
-      S("jkh", "Jackson Hts", "Jackson Hts", 245, 45, 2, 0, true, "t"), S("fls", "Flushing–Main St", "Flushing", 295, 45, 3, 0, true, "b"),
+      S("jkh", "Jackson Hts", "Jackson Hts", 245, 45, 2, 0, true, "t"), S("fls", "Flushing–Main St", "Flushing", 295, 45, 3, 0, true, "bl"),
       S("nvy", "Navy Yard", "Navy Yard", 20, 100, 1, 0, false, "b"), S("lor", "Lorimer St", "Lorimer", 58, 100, 2, 0, false, "b"), S("met", "Metropolitan Av", "Metropolitan", 100, 100, 3, 2, true, "tl"),
       S("hal", "Halsey St", "Halsey", 140, 100, 2, 0, false, "b"), S("myr", "Myrtle–Wyckoff", "Myrtle–Wyck.", 180, 100, 3, 2, true, "br"), S("brj", "Broadway Jct", "Broadway Jct", 250, 100, 3, 3, false, "t"),
       S("jam", "Jamaica Av", "Jamaica Av", 295, 100, 2, 0, true, "b"),
@@ -271,7 +271,7 @@ RP.mg.register("lastTrain", {
       t: t0, loc: "street", st: A.id, line: null, train: null, idx: 0, seg: null,
       bat: clamp(Number(p.battery) >= 0 ? Number(p.battery) : [28, 22, 18, 15, 12][diff - 1], 0, 100),
       money: Number(p.money) >= 0 ? Number(p.money) : [9, 6, 3, 3, 3][diff - 1],
-      stam: 100, paid: false, liveUntil: -1, checks: 0, collapses: 0, cab: false, walk: 0, swipeFails: 0, done: false, arrived: false, late: 0, stairsFlights: 0, announce: null, log: [], bump: 0
+      stam: 100, elKnown: new Set(), paid: false, liveUntil: -1, checks: 0, collapses: 0, cab: false, walk: 0, swipeFails: 0, done: false, arrived: false, late: 0, stairsFlights: 0, announce: null, log: [], bump: 0
     };
     const startBat = Pl.bat, startMoney = Pl.money;
     const CAB = Number(p.cab) > 0 ? Number(p.cab) : MAP.cab;
@@ -427,7 +427,7 @@ RP.mg.register("lastTrain", {
         const cost = stamCost(fl); then(); spendStam(cost);
       } else {
         const stn = MAP.by[Pl.st];
-        if (world.elevOut.has(Pl.st) && !(stn.elOk)) { stn.elOk = false; advance(Pl.t + 2); sfx("buzz"); setInfoNote("The elevator at " + stn.n + " is OUT OF SERVICE. Two minutes gone, a sign taped to the door."); logAdd("Elevator out at " + stn.n); renderAll(); return; }
+        if (world.elevOut.has(Pl.st)) { Pl.elKnown.add(Pl.st); advance(Pl.t + 2); sfx("buzz"); setInfoNote("The elevator at " + stn.n + " is OUT OF SERVICE. Two minutes gone, a sign taped to the door."); logAdd("Elevator out at " + stn.n); renderAll(); return; }
         advance(Pl.t + 2 + (hN(Math.floor(Pl.t), stn.fl) % 3) + 1); sfx("door"); then();
       }
       renderAll();
@@ -530,7 +530,8 @@ RP.mg.register("lastTrain", {
       const stn = MAP.by[stId || Pl.st], tired = tiredNow();
       const row = el("div", { cls: "lt-row2" }, parent);
       optBtn(row, labelPrefix + "STAIRS", costTxt([fl + (fl === 1 ? " flight" : " flights"), stairsMin(fl, tired) + " min", "-" + stamCost(fl) + " breath"]), () => fn("stairs"), null, "mv");
-      optBtn(row, labelPrefix + "ELEVATOR", stn.el ? "about 4 min, no breath" : "", () => fn("elev"), stn.el ? null : "none here", "mv");
+      const out = world.elevOut.has(stn.id) && (Pl.elKnown.has(stn.id) || Pl.liveUntil >= 0);
+      optBtn(row, labelPrefix + "ELEVATOR", stn.el ? "about 4 min, no breath" : "", () => fn("elev"), !stn.el ? "none here" : out ? "out of service" : null, "mv");
     }
     function renderPanel() {
       panel.textContent = "";

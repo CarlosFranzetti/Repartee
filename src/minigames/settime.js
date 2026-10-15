@@ -28,7 +28,7 @@ const SC = {
     handover: 0, bpm: [108, 124], tolUp: 0.85, tolDn: 1.5, ideal: 7, hand: 8, people: 24,
     want: u => 1.6 + 1.9 * Math.pow(u, 1.15), pot: u => 22 + 52 * Math.pow(u, 1.1),
     taste: { house: 1, disco: 1, funk: .7, pop: .6, acid: .5, techno: .3, electro: .5, hiphop: .5, breaks: .5, ambient: .5 }, over: { "deep house": 1, boogie: 1, garage: 1 },
-    goal: { final: 58, avg: 30 },
+    goal: { final: 58, avg: 38 },
     brief: { story: "10 PM at the Halcyon Room. The floor is empty, the promoter keeps checking his phone, and your first record is sitting on the deck.", goal: "Hand over a warm floor at the end of the hour.",
       tips: ["Start low and warm. Raise the energy one notch per record.", "Too hard too early scares people off. Too soft for too long bores the promoter.", "Cue a record, then MIX IN inside the green window."] }
   },
@@ -683,7 +683,7 @@ RP.mg.register("setTime", {
         const D = R.D;
         // component scores
         const finalF = G.floor, avgF = G.sumT > 0 ? G.sumF / G.sumT : G.floor;
-        const fs = clamp(0.6 * (finalF / D.goal.final) + 0.4 * (avgF / D.goal.avg), 0, 1);
+        const fs = clamp(0.7 * (finalF / D.goal.final) + 0.3 * (avgF / D.goal.avg), 0, 1);
         const qs = G.mixes.length ? G.mixes.reduce((a, m) => a + m.q, 0) / G.mixes.length : 0.25;
         const ms = clamp(qs - 0.08 * G.deadMin, 0, 1);
         const es = G.evLog.length ? G.evLog.reduce((a, e) => a + e.r, 0) / G.evLog.length : 0.55;
@@ -703,7 +703,7 @@ RP.mg.register("setTime", {
         let score = Math.round(100 * (0.35 * fs + 0.2 * ms + 0.2 * es + 0.15 * ts + 0.1 * pw));
         if (G.failed) score = Math.min(score, 45);
         score = clamp(score, 0, 100);
-        const ok = !G.failed && score >= 58;
+        const ok = !G.failed && score >= 58 && finalF >= D.goal.final * 0.7;
         const count = lbl => G.mixes.filter(m => m.label === lbl).length;
         const res = { ok, score, scenario: R.key, floor: Math.round(finalF), avgFloor: Math.round(avgF), mixes: { clean: count("clean"), smooth: count("smooth"), sloppy: count("sloppy"), wreck: count("wreck") }, deadAir: Math.round(G.deadMin * 10) / 10, events: G.evLog.length, meter: Math.round(G.pat), reason: G.failed || (ok ? "" : "score"), minutes: R.M };
         host.timeout(() => showEnd(res, { fs, ms, es, ts, pw, kind }), kind === "fail" ? 500 : 1100);
