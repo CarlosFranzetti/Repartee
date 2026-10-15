@@ -1171,6 +1171,14 @@ RP.hideGame = on => { if (dom.app) dom.app.style.visibility = on ? "hidden" : ""
    ====================================================================== */
 RP.test = {
   log: [], errors: [], answers: [], mgQ: [], travelQ: [], noSave: false,
+  /* average cost in ms of one simulated frame (actor updates + full render) in the current room */
+  frameCost(n = 60) {
+    if (!cur) return null;
+    const t0 = performance.now();
+    let t = t0;
+    for (let i = 0; i < n; i++) { t += 16.7; updateActor(kid, 1 / 60); cur.actors.forEach(a => updateActor(a, 1 / 60)); render(t); }
+    return (performance.now() - t0) / n;
+  },
   setFast(f) { fast = !!f; RP.fast = fast; },
   isBusy: () => busy,
   skip() { if (skipFn) skipFn(); },
