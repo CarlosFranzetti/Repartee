@@ -288,7 +288,7 @@ A3.nicoTalk = async function (S) {
   await say("What'll it be? I'm not speaking to her. Neither is she. So it's just us.", "a3_nico");
   await RP.convo([
     { text: "What happened between you two?", when: S2 => !S2.f.a3_feudKnown, run: async () => { S.f.a3_feudKnown = true; await lines(["@a3_nico The lemon incident. March. I cut lemons into wedges. She says wheels. We haven't spoken since.", "Over lemons?", "@a3_nico It's never about the lemons. It's about wedges."]); } },
-    { text: "What do you listen to when you're not angry?", when: S2 => !!S2.f.a3_feudKnown && !S2.f.a3_feudOver, run: () => lines(["@a3_nico ...Sylvester. 'You Make Me Feel (Mighty Real).' Don't tell her. She thinks I only like opera.", "I'll keep it to myself."]) },
+    { text: "What do you listen to when you're not angry?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_nico ...Sylvester. 'You Make Me Feel (Mighty Real).' Don't tell her. She thinks I only like opera.", "I'll keep it to myself."]) },
     { text: "Can you open the bar-cam DVR for me?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_nico The DVR needs two keys: mine and Bex's, turned at the same time.", "@a3_nico We haven't been in the same room voluntarily since March. Ask her. Don't ask her. Ask her."]) },
     { text: "Tell Bex the limes are in the walk-in.", when: S2 => !S2.f.a3_feudOver, run: () => lines(["I'll tell her. ...She heard you. She says she knows.", "@a3_nico She says she KNOWS? Tell her I know she knows."]) },
     { text: "Never mind.", end: true }
@@ -301,7 +301,7 @@ A3.bexTalk = async function (S) {
   await say("Don't speak to me about him. Order or leave.", "a3_bex");
   await RP.convo([
     { text: "What happened between you two?", when: S2 => !S2.f.a3_feudKnown, run: async () => { S.f.a3_feudKnown = true; await lines(["@a3_bex He cut lemons into wedges. Wedges. For a Collins. It's a wheel drink.", "That's it?", "@a3_bex That's the tip of it."]); } },
-    { text: "What do you listen to when you're not angry?", when: S2 => !!S2.f.a3_feudKnown && !S2.f.a3_feudOver, run: () => lines(["@a3_bex ...Sylvester. 'Mighty Real.' Don't tell Nico. He thinks I only listen to drill.", "I'll take it to my grave. Or to a record player."]) },
+    { text: "What do you listen to when you're not angry?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_bex ...Sylvester. 'Mighty Real.' Don't tell Nico. He thinks I only listen to drill.", "I'll take it to my grave. Or to a record player."]) },
     { text: "Can you open the bar-cam DVR for me?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_bex Two keys. Mine and Nico's. At the same time. I'd rather swallow mine.", "@a3_bex Find a way to make him laugh first. I'll think about it. I won't."]) },
     { text: "Tell Nico the ice machine's his now.", when: S2 => !S2.f.a3_feudOver, run: () => lines(["I'll tell him. ...He heard you. He says it's always been his.", "@a3_bex It was always mine. Tell him I'll never forgive him."]) },
     { text: "Never mind.", end: true }

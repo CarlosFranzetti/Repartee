@@ -329,7 +329,7 @@ const CSS = `
 @keyframes mtnew { 50% { background: var(--amber); color: #12061a; } }
 .mt-studio { border: 2px solid #3a2f78; box-shadow: 0 0 0 2px #120a2c, 0 5px 0 #000; line-height: 0; background: #05030a; }
 .mt-studio canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; aspect-ratio: 320 / 130; }
-.mt-lou { font-size: 20px; line-height: 1.05; color: #9be15d; min-height: 44px; }
+.mt-lou { font-size: 20px; line-height: 1.05; color: #9be15d; min-height: 42px; }
 .mt-lou b { font-weight: 400; color: var(--amber); }
 .mt-hearts { display: flex; align-items: center; gap: 4px; font-size: 17px; color: var(--muted); }
 .mt-hearts .hp { display: flex; gap: 2px; flex: 1; }
@@ -345,12 +345,12 @@ const CSS = `
 .mt-arr .rl { font-size: 12px; color: var(--muted); display: flex; align-items: center; justify-content: flex-end; padding-right: 2px; }
 .mt-sec { font-size: 13px; padding: 3px 0; border: 2px solid; border-color: var(--sc) #0a0716 #0a0716 var(--sc); background: #1a1534; color: var(--sc); cursor: pointer; line-height: 1; min-width: 0; overflow: hidden; }
 .mt-sec.play { background: var(--sc); color: #12061a; }
-.mt-em { position: relative; height: 62px; display: flex; flex-direction: column-reverse; gap: 1px; background: #0a0816; border: 1px solid #241d48; padding: 1px; cursor: pointer; }
+.mt-em { position: relative; height: 54px; display: flex; flex-direction: column-reverse; gap: 1px; background: #0a0816; border: 1px solid #241d48; padding: 1px; cursor: pointer; }
 .mt-em i { flex: 1; background: #1a1534; }
 .mt-em i.on { background: var(--ec); }
 .mt-em.play { box-shadow: 0 0 0 2px rgba(98, 230, 255, .8); z-index: 1; }
 .mt-em .tl { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dotted #fff; opacity: .7; pointer-events: none; }
-.mt-ly { height: 14px; background: #1a1534; border: 1px solid #2d2456; padding: 0; cursor: pointer; min-width: 0; }
+.mt-ly { height: 12px; background: #1a1534; border: 1px solid #2d2456; padding: 0; cursor: pointer; min-width: 0; }
 .mt-ly.on { background: var(--lc); border-color: var(--lc); }
 .mt-ly.play { box-shadow: 0 0 0 1px rgba(98, 230, 255, .8); }
 .mt-arr .elbl { font-size: 12px; color: var(--muted); display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 2px 2px 0; }
@@ -471,17 +471,19 @@ RP.mg.register("makTracks", {
     }
     function taste() {
       const ns = count("sample"), used = new Set(pat.sample.filter(v => v > 0)), dist = used.size;
-      const presence = ns === 0 ? 0 : ns < 3 ? 0.6 : ns <= 7 ? 1 : ns <= 10 ? 0.7 : 0.4;
+      const presence = ns === 0 ? 0 : ns <= 2 ? 0.55 : ns === 3 ? 0.85 : ns <= 7 ? 1 : ns <= 10 ? 0.7 : 0.4;
       const variety = dist === 0 ? 0 : dist === 1 ? 0.4 : dist === 2 ? 0.75 : dist <= 4 ? 1 : dist <= 6 ? 0.85 : 0.6;
       const hookAt = pat.sample.findIndex(v => v === 1);
       const hook = hookAt < 0 ? 0.15 : (pat.sample[0] === 1 || pat.sample[8] === 1) ? 1 : 0.7;
       let adj = 0; for (let i = 0; i < STEPS - 1; i++) if (pat.sample[i] > 0 && pat.sample[i + 1] > 0) adj++;
       const space = adj >= 4 ? 0.6 : adj >= 3 ? 0.85 : 1;
+      let onKick = 0; for (let i = 0; i < STEPS; i++) if (pat.sample[i] > 0 && pat.kick[i] > 0) onKick++;
+      const mud = ns === 0 ? 0 : onKick / ns > 0.99 ? 0.5 : onKick / ns > 0.5 ? 0.75 : 1;      // don't bury the sample under every kick
       const d = Math.abs(st.bpm - origBpm), tempo = d <= 4 ? 1 : d <= 10 ? 0.8 : d <= 18 ? 0.55 : 0.3;
       const sb = st.layers.filter(l => l[RID.indexOf("sample")]).length;
       const arrQ = sb === 0 ? 0.2 : sb <= 2 ? 0.7 : sb <= 7 ? 1 : 0.75;
-      const t = 100 * (0.26 * presence + 0.2 * variety + 0.2 * hook + 0.12 * tempo + 0.12 * arrQ + 0.10 * space);
-      return { t: Math.round(ns === 0 ? Math.min(t, 12) : t), ns, dist, hookAt, adj, d, sb, presence, variety, hook, tempo, arrQ, space };
+      const t = 100 * (0.22 * presence + 0.18 * variety + 0.18 * hook + 0.12 * tempo + 0.10 * arrQ + 0.08 * space + 0.12 * mud);
+      return { t: Math.round(ns === 0 ? Math.min(t, 12) : t), ns, dist, hookAt, adj, d, sb, onKick, presence, variety, hook, tempo, arrQ, space, mud };
     }
     function goalsEval() {
       const en = energy(), tz = taste();
@@ -858,6 +860,7 @@ RP.mg.register("makTracks", {
       hook: ["That's it! That's the hook. Every Saturday, 1993.", "There she is. There's the hook."],
       salad: ["Easy! It's not a salad. Don't chop it to confetti.", "That's not a chop, that's a blender."],
       stutter: ["Stuttering? It's a record, not a record scratch.", "Let it breathe. We had room in '93."],
+      mud: ["Don't bury it under every kick. Let it swing.", "The sample's on top of the kick. Give it some air."],
       fast: ["Too fast. We danced slower in '93. We had knees.", "Slow down. It's not a race, it's a groove."],
       slow: ["Slower? It's garage, not a lullaby.", "Pick it up. The floor is falling asleep."],
       one: ["Use more than one bit of it. I made the whole thing.", "One slice? That's a ringtone, kid."],
@@ -867,13 +870,14 @@ RP.mg.register("makTracks", {
     };
     const pickR = a => a[Math.floor(Math.random() * a.length)];
     function cheerFor(kind, n) { if (!withLou) return; if (kind === "new") { if (n === 1) louSayKey("hook"); else if (Math.random() < 0.5) louSayKey("newslice"); } }
-    function louSayKey(k) { const msg = pickR(LOU[k] || LOU.idle); st.louMsg = msg; st.louT = st.t; st.louFlash = st.t + 2.4; st.louExpr = (k === "hook" || k === "good" || k === "newslice") ? "happy" : (k === "salad" || k === "none" || k === "stutter" || k === "nohook") ? "angry" : (k === "fast" || k === "slow" || k === "one" || k === "wall") ? "worried" : "surprised"; if (louSayEl) louSayEl.innerHTML = "<b>LOU:</b> “" + RP.u.esc(msg) + "”"; }
+    function louSayKey(k) { const msg = pickR(LOU[k] || LOU.idle); st.louMsg = msg; st.louT = st.t; st.louFlash = st.t + 2.4; st.louExpr = (k === "hook" || k === "good" || k === "newslice") ? "happy" : (k === "salad" || k === "none" || k === "stutter" || k === "nohook") ? "angry" : (k === "fast" || k === "slow" || k === "one" || k === "wall" || k === "mud") ? "worried" : "surprised"; if (louSayEl) louSayEl.innerHTML = "<b>LOU:</b> “" + RP.u.esc(msg) + "”"; }
     function louReact(tz, why) {
       if (!withLou) return;
       let key = null;
       if (why === "bpm") key = tz.d > 10 ? (st.bpm > origBpm ? "fast" : "slow") : null;
       else if (why === "sample") key = tz.ns === 0 ? "none" : tz.ns > 10 ? "salad" : tz.adj >= 5 ? "stutter" : tz.hookAt < 0 && tz.ns >= 2 ? "nohook" : tz.dist === 1 && tz.ns >= 4 ? "one" : null;
       else if (why === "arr") key = tz.sb >= 8 ? "wall" : null;
+      if (!key && why === "sample" && tz.ns >= 3 && tz.mud < 0.8) key = "mud";
       if (key) louSayKey(key);
     }
 
@@ -906,7 +910,7 @@ RP.mg.register("makTracks", {
         const e = ev.en[b], lit = Math.round(e / 10);
         const em = emEls[b]; em.style.setProperty("--ec", e >= 80 ? "#ffffff" : e >= 60 ? "#ff3fa4" : e >= 35 ? "#ffc44d" : "#39d0ff");
         [...em.querySelectorAll("i")].forEach((i, k) => i.classList.toggle("on", k < lit));
-        const tl = em.querySelector(".tl"); tl.style.bottom = (TIER_GOALS.drop[diff - 1] / 100 * 60) + "px"; tl.style.display = st.arr[b] === "drop" ? "block" : "none";
+        const tl = em.querySelector(".tl"); tl.style.bottom = (TIER_GOALS.drop[diff - 1] / 100 * 52) + "px"; tl.style.display = st.arr[b] === "drop" ? "block" : "none";
         RID.forEach((r, ri) => { lyEls[ri][b].classList.toggle("on", !!st.layers[b][ri]); lyEls[ri][b].setAttribute("aria-pressed", st.layers[b][ri] ? "true" : "false"); });
       }
       refreshPads(); refreshHint();
