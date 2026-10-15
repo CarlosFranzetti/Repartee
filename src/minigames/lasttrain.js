@@ -383,7 +383,7 @@ RP.mg.register("lastTrain", {
               if (g.kind === "express") { const to = stName(T.stops[g.to].st), sk = []; for (let k = g.idx + 1; k < g.to; k++) sk.push(stName(T.stops[k].st)); Pl.announce = "This train is now running express to " + to + ". Please enjoy the view of " + sk.join(" and ") + " going by."; }
               else if (g.kind === "delay") Pl.announce = "We are being held momentarily by the train's dispatcher. Thank you for your patience. (+" + g.n + " min)";
               else Pl.announce = "This train is going out of service at " + nm + ". All passengers must leave the train.";
-              sfx("alarm"); logAdd("Announcement: " + Pl.announce.slice(0, 58));
+              sfx("alarm"); logAdd(g.kind === "express" ? "Announcement: express, skipping stops" : g.kind === "delay" ? "Announcement: held " + g.n + " min" : "Announcement: out of service at " + nm);
             }
           }
         }
@@ -649,7 +649,7 @@ RP.mg.register("lastTrain", {
       /* live trains */
       if (Pl.liveUntil >= 0 && !Pl.done) world.trains.forEach(T => {
         const pos = trainPos(T, tDisp); if (!pos) return; const col = lineOf(T.line).col;
-        R(c, pos[0] - 2, pos[1] - 2, 5, 5, "#05030c"); R(c, pos[0] - 1, pos[1] - 1, 3, 3, col); P(c, pos[0], pos[1], "#ffffff");
+        R(c, pos[0] - 3, pos[1] - 3, 7, 7, "#05030c"); R(c, pos[0] - 2, pos[1] - 2, 5, 5, col); R(c, pos[0] - 1, pos[1] - 1, 3, 3, "#ffffff");
       });
       /* player */
       let pp = null;
