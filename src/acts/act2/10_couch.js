@@ -450,11 +450,11 @@ RP.room({
   update: A2.update,
   actors: actorsFn,
   sprites: [
-    { y: 175, draw: (c, S) => drawGear(c, S) },
-    { y: 172, draw: (c, S) => drawCouch(c, S) },
-    { y: 172, draw: (c, S) => drawTv(c, S) },
-    { y: 222, draw: (c, S) => drawTable(c, S) },
-    { y: 200, draw: c => { PK.plant(c, 468, 118, { size: 2, seed: 5, pot: "#c06a3a" }); } }
+    { y: 175, draw: A2.cs(drawGear) },
+    { y: 172, draw: A2.cs(drawCouch, S => party(S) ? "p" : "n") },
+    { y: 172, draw: A2.cs(drawTv) },
+    { y: 222, draw: A2.cs(drawTable, S => party(S) ? "p" : "n") },
+    { y: 200, draw: A2.cs(c => { PK.plant(c, 468, 118, { size: 2, seed: 5, pot: "#c06a3a" }); }) }
   ],
   enter: async (S, from) => {
     if (S.f.a2_ch === 2 && !S.f.a2_partyStarted && !S.f.a2_partyDone) await partyIntro(S);

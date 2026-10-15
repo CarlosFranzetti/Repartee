@@ -257,11 +257,11 @@ RP.room({
   ],
   actors: [{ id: "eddie", char: "eddie", x: 222, y: 224, face: "right", act: "stand", name: "Eddie Two-Times" }],
   sprites: [
-    { y: 206, draw: (c, S) => drawVan(c, S) },
-    { y: 212, draw: (c, S) => drawTable(c, S) },
-    { y: 244, draw: (c, S) => drawJunk(c, S) },
-    { y: 226, draw: c => { PK.subwayStairs(c, 568, 176); } },
-    { y: 150, draw: (c, S) => drawBulbs(c, S) }
+    { y: 206, draw: A2.cs(drawVan, S => dark(S) ? "n" : "d") },
+    { y: 212, draw: A2.cs(drawTable) },
+    { y: 244, draw: A2.cs(drawJunk) },
+    { y: 226, draw: A2.cs(c => { PK.subwayStairs(c, 568, 176); }) },
+    { y: 150, draw: A2.cs(drawBulbs) }
   ],
   hotspots: [
     { id: "a2_vanstairs", name: "subway stairs", r: [566, 172, 70, 62], z: 28, walk: [600, 244, "back"], exit: "travel", look: "The Bedford Avenue station stairs, with the usual green globes. The L train rattles overhead every six minutes, like a very patient headache.", push: "The stairs are a stairs thing. I don't push them." },

@@ -50,7 +50,7 @@ function paint(c, S) {
   [[20, 118, "#ff3fa4"], [60, 120, "#39d0ff"], [150, 124, "#ffd23f"], [330, 119, "#9be15d"], [570, 122, "#ff3fa4"]].forEach(([x, y, col]) => { R(c, x, y, 9, 4, col); R(c, x, y, 9, 1, "#ffffff55"); });
   // benches, bin, ticket machine, validator
   PK.bench(c, 520, 194, 90, { back: true });
-  PK.trashCan(c, 24, 184, { color: "#c0302c" });
+  PK.trashCan(c, 596, 182, { color: "#c0302c" });
   return em;
 }
 
@@ -156,7 +156,7 @@ RP.room({
     { id: "a4_poster", name: "Halle Neun poster", r: [40, 34, 58, 78], z: 20, walk: [70, 220, "back"],
       look: "\"HALLE NEUN: SA - TECHNO. KEIN SMALL TALK.\" Black, white, one red dot. In Berlin even the posters don't smile.", pickup: "It's wheat-pasted. Pulling it would take the wall with it." },
     { id: "a4_bench", name: "bench", r: [520, 168, 92, 38], z: 15, walk: [560, 228, "back"], look: "A metal bench with a view of tracks. A man on it is asleep. Possibly dead. Probably German.", use: "If I sit, I'll miss the last train. And the first. And possibly the entire weekend.", pickup: "Bolted down. Germany bolts everything down." },
-    { id: "a4_bin", name: "trash can", r: [22, 182, 24, 34], z: 45, walk: [60, 232, "left"], look: "A red recycling bin with five colors of slots. I put a ticket stub in the green one. Or the yellow. A man frowns." },
+    { id: "a4_bin", name: "trash can", r: [594, 180, 24, 34], z: 45, walk: [580, 234, "right"], look: "A red recycling bin with five colors of slots. I put a ticket stub in the green one. Or the yellow. A man frowns." },
     { id: "a4_tracks", name: "tracks", r: [0, 128, 640, 42], z: 5, walk: [320, 226, "back"], look: "Two tracks, rails shining, an electrified third rail. There's a sign: \"NICHT BETRETEN.\" I assume that's \"don't be an idiot.\"", use: "I'm not going down there. They'd put me in a very serious German form.", pickup: "No. It's a track. And the thing on it is also a train." },
     { id: "a4_floor", name: "platform", r: [8, 190, 620, 62], z: 3, floor: true, look: "A concrete platform, yellow edge, a faint smell of ozone and decisions." }
   ],

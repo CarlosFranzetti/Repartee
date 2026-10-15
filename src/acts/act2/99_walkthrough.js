@@ -12,6 +12,7 @@ const inv = (verb, id, item) => [[verb, "inv:" + id, item]];
 const say = txt => ["answers", [].concat(txt)];
 const clear = () => ["run", (S, R) => { R.test.answers.length = 0; R.test.mgQ.length = 0; R.test.travelQ.length = 0; }];
 const mg = (id, result, fb) => ["run", (S, R) => { if (R.mg.reg[id]) R.test.mgQ.push(result); else R.test.answers.push(...fb); }];
+const mgs = (id, results, fb) => ["run", (S, R) => { if (R.mg.reg[id]) R.test.mgQ.push(...results); else R.test.answers.push(...fb); }];
 const queueTravel = loc => ["run", (S, R) => { R.test.travelQ.push(loc); }];
 // leave through a "travel" exit hotspot: queue the destination, then use the stairs
 const go = (exitId, loc) => [queueTravel(loc), ...hot("use", exitId), clear()];
@@ -164,17 +165,13 @@ RP.walkthroughs.act2alt = W(
   hot("use", "a2_ladder"),
   exp("S.room === 'a2_loft' && S.f.a2_sneaked", "snuck in through the bathroom window"),
   hot("use", "a2_rack", "a2_amp"),
-  mg("soundCheck", { ok: false, score: 10, fixed: 1 }, FB.sound), say([0]), hot("use", "a2_booth"), clear(),
-  exp("!S.f.a2_loftFixed", "failed once"),
-  say([0]), mg("soundCheck", { ok: true, score: 90, fixed: 3 }, FB.sound), hot("use", "a2_booth"), clear(),
-  exp("S.f.a2_loftFixed", "fixed on the retry"),
+  say([0]), mgs("soundCheck", [{ ok: false, score: 10, fixed: 1 }, { ok: true, score: 90, fixed: 3 }], FB.sound), hot("use", "a2_booth"), clear(),
+  exp("S.f.a2_loftFixed", "failed once, fixed on the retry"),
   hot("use", "a2_loftexit"),
   go("a2_loftstairs", "a2_loc_basement"),
   // afterParty fails once, then succeeds; promoterTalk fails three times and Vic gives in
-  mg("afterParty", { ok: false, score: 20, guests: 8 }, FB.after), say([0]), hot("talk", "twinkie"), clear(),
-  exp("!S.f.a2_afterDone", "afterParty failed once"),
-  mg("afterParty", { ok: true, score: 70, guests: 40 }, FB.after), hot("talk", "twinkie"), clear(),
-  exp("S.f.a2_afterDone", "afterParty ok on retry"),
+  say([0]), mgs("afterParty", [{ ok: false, score: 20, guests: 8 }, { ok: true, score: 70, guests: 40 }], FB.after), hot("talk", "twinkie"), clear(),
+  exp("S.f.a2_afterDone", "afterParty failed once, ok on retry"),
   ["run", (S, R) => { S.f.a2_vicFails = 2; }],
   mg("promoterTalk", { ok: false, score: 10, deal: null }, ["desperate"]), hot("use", "a2_whbooth", "a2_tts"), clear(),
   exp("S.f.a2_slot && S.done.includes(2)", "Vic gave in after the third miss: act 2 complete")

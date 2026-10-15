@@ -158,14 +158,14 @@ RP.room({
     { id: "a2_pearl", char: "a2_pearl", x: 196, y: 172, face: "left", act: "sit", name: "Mrs. Pearl", vis: S2 => !dark(S2), noTurn: true, talkDist: 30 }
   ],
   sprites: [
-    { y: 207, draw: (c, S) => drawLamp(c, S) },
-    { y: 236, draw: (c, S) => drawCar(c, S) },
-    { y: 226, draw: c => { PK.hydrant(c, 32, 190); } },
-    { y: 214, draw: c => { PK.mailbox(c, 70, 184); } },
-    { y: 213, draw: c => { PK.trashBags(c, 232, 188, { seed: 3 }); } },
-    { y: 218, draw: c => { PK.newspaperBox(c, 394, 192, { color: "#ffd23f" }); } },
-    { y: 213, draw: c => { PK.bike(c, 456, 184, { color: "#2f62b8", seed: 2 }); } },
-    { y: 215, draw: (c, S) => { PK.subwayStairs(c, 296, 176); } }
+    { y: 207, draw: A2.cs(drawLamp, S => dark(S) ? "n" : "d") },
+    { y: 236, draw: A2.cs(drawCar, S => dark(S) ? "n" : "d") },
+    { y: 226, draw: A2.cs(c => { PK.hydrant(c, 32, 190); }) },
+    { y: 214, draw: A2.cs(c => { PK.mailbox(c, 70, 184); }) },
+    { y: 213, draw: A2.cs(c => { PK.trashBags(c, 232, 188, { seed: 3 }); }) },
+    { y: 218, draw: A2.cs(c => { PK.newspaperBox(c, 394, 192, { color: "#ffd23f" }); }) },
+    { y: 213, draw: A2.cs(c => { PK.bike(c, 456, 184, { color: "#2f62b8", seed: 2 }); }) },
+    { y: 215, draw: A2.cs(c => { PK.subwayStairs(c, 296, 176); }) }
   ],
   enter: async (S, from) => {
     if (from === "a2_couch" && !S.f.a2_streetSeen) { S.f.a2_streetSeen = true; RP.toast("Click the subway stairs to travel."); }

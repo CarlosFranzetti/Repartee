@@ -19,6 +19,7 @@ const kiosk = A3.sprite("a3_p_kiosk", 54, 80, c => {
   R(c, 8, 12, 36, 22, "#0a0e12"); R(c, 9, 13, 34, 20, "#123a2a"); txtC(c, "OUT OF", 26, 16, "#ff9a3f", 1, 1); txtC(c, "SERVICE", 26, 22, "#ff9a3f", 1, 1); txtC(c, "TRY NEXT", 26, 28, "#ff9a3f", 1, 1);
   R(c, 10, 40, 14, 10, "#c8c4d8"); R(c, 28, 40, 14, 10, "#c8c4d8"); R(c, 10, 54, 32, 4, "#17101e"); R(c, 12, 62, 28, 6, "#f4efe4"); txtC(c, "METROCARD", 26, 63, "#2f62b8", 1, 1);
 });
+const bin = A3.sprite("a3_p_bin", 30, 44, c => PK.trashCan(c, 4, 6, { full: true }));
 const pizza = A3.sprite("a3_p_slice", 22, 10, c => { U.poly(c, [[2, 3], [18, 2], [10, 9]], "#f2c84a"); U.poly(c, [[2, 3], [18, 2], [18, 4], [2, 4]], "#c8925a"); ell(c, 8, 4, 1, 1, "#c0302c"); ell(c, 13, 4, 1, 1, "#c0302c"); });
 
 function paint(c, S) {
@@ -89,13 +90,14 @@ RP.room({
   start: { x: 540, y: 230, face: "left" },
   fx: [{ type: "dust", rect: [0, 60, 640, 120], count: 12, color: "#e8fff4" }],
   sprites: [
-    { y: 224, draw: c => benchSpr(c, 232, 186) },
+    { y: 212, draw: c => benchSpr(c, 232, 186) },
     { y: 232, draw: c => machineSpr(c, 540, 144) },
     { y: 232, draw: c => kiosk(c, 82, 146) },
-    { y: 244, draw: c => pizza(c, 420, 236) }
+    { y: 244, draw: c => pizza(c, 420, 236) },
+    { y: 232, draw: c => bin(c, 440, 190) }
   ],
   actors: [
-    { id: "a3_sleeper", char: "a3_sleeper", x: 280, y: 218, face: "front", act: "sit", name: "sleeping guy", noTurn: true }
+    { id: "a3_sleeper", char: "a3_sleeper", x: 284, y: 224, face: "front", act: "sit", name: "sleeping guy", noTurn: true }
   ],
   enter: async (S, from) => {
     if (S.f.a3_train) return;

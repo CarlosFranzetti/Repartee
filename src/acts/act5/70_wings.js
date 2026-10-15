@@ -7,16 +7,21 @@ const U = RP.u, PK = RP.PK, A5 = RP.a5, art = A5.art;
 const { R, P, ell, line, poly, bayer, mulberry, mix, txt, txtC, txtW, clamp } = U;
 const K = U.ramp;
 const HL = (c, x, y, w, col) => R(c, x, y, w, 1, col), VL = (c, x, y, h, col) => R(c, x, y, 1, h, col);
-const axlOn = S => !S.f.a5_overrunDone;
+const ph = S => S.f.a5_phase || 0;
+const axlOn = S => ph(S) >= 2 && !S.f.a5_overrunDone;
+const mode = S => ph(S) < 2 ? "day" : (S.f.a5_overrunDone ? "ready" : "live");
 
 function paint(c, S) {
   const em = [];
+  const md = mode(S);
   PK.gradV(c, 0, 0, 640, 256, ["#06020e", "#0a0618", "#14082a"], { dither: 1 });
-  /* the stage beyond: a blazing LED wall, truss and lamps, the deck, a DJ booth, the sea of the crowd */
-  em.push.apply(em, PK.ledWall(c, 150, 18, 420, 100, { pattern: "sunburst", palette: ["#ff3fa4", "#39d0ff", "#a05cff", "#ffd23f"], seed: 31 }));
-  const tr = PK.truss(c, 120, 4, 480, 12, { lights: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a", "#ff3fa4", "#39d0ff", "#ffd23f"] });
+  if (md === "day") { PK.sky(c, 100, 0, 500, 148, { time: "day", seed: 4, clouds: 3 }); em.push([100, 0, 500, 148]); }
+  /* the stage beyond: a blazing LED wall, truss and lamps, the deck, a DJ booth */
+  if (md === "day") { R(c, 150, 18, 420, 100, "#14121c"); HL(c, 150, 18, 420, "#5a566c"); txtC(c, "HARBOR LIGHTS", 360, 58, "#ff3fa4", 3, 2); txtC(c, "FESTIVAL", 360, 82, "#39d0ff", 1, 3); em.push([150, 18, 420, 100]); }
+  else em.push.apply(em, PK.ledWall(c, 150, 18, 420, 100, { pattern: "sunburst", palette: ["#ff3fa4", "#39d0ff", "#a05cff", "#ffd23f"], seed: 31 }));
+  const tr = PK.truss(c, 120, 4, 480, 12, { lights: md === "day" ? ["#e8e4f0", "#e8e4f0", "#e8e4f0", "#e8e4f0", "#e8e4f0", "#e8e4f0"] : ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a", "#ff3fa4", "#39d0ff", "#ffd23f"] });
   em.push.apply(em, tr);
-  tr.lights.forEach((l, i) => em.push.apply(em, PK.lightCone(c, l.x, l.y, 6, 70 + (i % 3) * 20, 130, l.color, { alpha: 0.5 })));
+  if (md !== "day") tr.lights.forEach((l, i) => em.push.apply(em, PK.lightCone(c, l.x, l.y, 6, 70 + (i % 3) * 20, 130, l.color, { alpha: md === "live" ? 0.5 : 0.2 })));
   PK.speakerStack(c, 568, 52, 40, 100);
   art.lineArray(c, 130, 18, 6, 18, { ch: 9 });
   PK.stage(c, 110, 146, 500, 44, { seed: 3, wedges: false, trim: true });
@@ -43,7 +48,7 @@ function drawDesk(c, S) {
   R(c, 110, 168, 12, 6, "#17131f"); ell(c, 116, 164, 3, 3, "#17131f");
   R(c, 140, 160, 20, 16, "#17131f"); R(c, 142, 162, 6, 6, S.f.a5_overrunDone ? "#3fd07a" : "#8a1a1a"); R(c, 150, 162, 6, 6, S.f.a5_overrunDone ? "#4a1a1a" : "#ff3a3a"); R(c, 142, 170, 14, 3, "#6a667c");
   R(c, 100, 120, 56, 22, "#0a0810"); outline(c, 100, 120, 56, 22, "#4a4658");
-  txtC(c, S.f.a5_overrunDone ? "11:45" : "11:52", 128, 125, S.f.a5_overrunDone ? "#3fd07a" : "#ff3a3a", 2, 1);
+  txtC(c, mode(S) === "day" ? "3:58" : S.f.a5_overrunDone ? "11:45" : "11:52", 128, 125, mode(S) === "live" ? "#ff3a3a" : "#3fd07a", 2, 1);
   R(c, 90, 178, 8, 4, "#17131f"); R(c, 164, 176, 10, 6, "#c8c4d8");
 }
 const outline = (c, x, y, w, h, col) => { HL(c, x, y, w, col); HL(c, x, y + h - 1, w, col); VL(c, x, y, h, col); VL(c, x + w - 1, y, h, col); };
@@ -63,6 +68,7 @@ function drawFoot(c, S) {
 }
 
 function lightMap(S) {
+  if (mode(S) === "day") return { ambient: "#6a6088", lights: [{ x: 360, y: 40, r: 500, color: "#fff0d0", steps: 3, power: 0.7 }, { x: 120, y: 150, r: 70, color: "#9fe8ff", steps: 3, power: 0.7 }], key: { x: 360, y: 30 }, shadow: 0.5 };
   return { ambient: "#2a2250", lights: [
     { x: 360, y: 70, r: 380, color: "#ff3fa4", steps: 4, power: 0.8, rim: true }, { x: 360, y: 110, r: 300, color: "#39d0ff", steps: 4, power: 0.5 },
     { x: 120, y: 150, r: 70, color: "#9fe8ff", steps: 3, power: 0.7 }, { x: 128, y: 130, r: 50, color: "#ff3a3a", steps: 2, power: 0.4 }],
@@ -110,13 +116,20 @@ async function overrun(S) {
   RP.text("PRIYA (MGR)", "Axl's off. You're on. Whatever happens, I'm proud, and I've invoiced.", true);
 }
 
+async function rozWings(S) {
+  if (ph(S) < 2) { await RP.lines(["@a5_roz Stage is that way. Booth, center. Mo's on the talkback. Check it, then get out of my wings."]); return; }
+  if (S.f.a5_overrunDone) { await RP.lines(["@a5_roz Go. Up the stairs. Be good. Don't peak early."]); return; }
+  if (!S.f.a5_louArrived) { await RP.lines(["@a5_roz It's not time. Axl's on at ten-fifteen. Come back when you've seen Lou."]); return; }
+  await overrun(S);
+}
+
 /* --------------------------------------------------------------------------------------- room */
 RP.room({
-  id: "a5_wings", act: 5, name: "Stage left", paint, cacheKey: S => "w", light: lightMap, ambience: "festival",
+  id: "a5_wings", act: 5, name: "Stage left", paint, cacheKey: S => mode(S), light: lightMap, lightKey: S => mode(S), ambience: "festival",
   walk: [[84, 214], [590, 214], [590, 250], [84, 250]],
   start: { x: 90, y: 232, face: "right" },
   fx: [
-    { type: "beams", origins: [[240, 20], [330, 20], [420, 20], [510, 20]], colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff"], base: Math.PI / 2, swing: 0.9, len: 220, width: 16, alpha: 0.18, period: 900 },
+    { type: "beams", origins: [[240, 20], [330, 20], [420, 20], [510, 20]], colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff"], base: Math.PI / 2, swing: 0.9, len: 220, width: 16, alpha: 0.18, period: 900, on: () => mode(RP.state) !== "day" },
     { type: "strobe", period: 2600, flash: 70, alpha: 0.2, on: () => axlOn(RP.state) },
     { type: "custom", draw: (c, dt, t) => { if (!axlOn(RP.state)) return; const k = (t % 3000) / 3000; if (k < 0.12) { for (let i = 0; i < 24; i++) { const fx = 150 + (i % 2) * 430, fy = 190 - k * 600 - (i * 7) % 50; U.R(c, fx + ((i * 13) % 20), fy, 2 + (i % 3), 4 + (i % 4), i % 3 ? "#ffb02a" : "#ff6a2a"); } } } }
   ],
@@ -133,16 +146,16 @@ RP.room({
   ],
   hotspots: [
     { id: "a5_wback", name: "stairs down", r: [0, 150, 22, 104], z: 25, walk: [92, 236, "left"], look: "The stairs back to the compound. And to the people who'd like to hold my hand.", exit: { room: "a5_backstage", x: 880, y: 236, face: "left" } },
-    { id: "a5_wstage", name: "the stage", r: [100, 10, 500, 180], z: 10, walk: [400, 232, "back"], look: S => axlOn(S) ? "The stage, blinding. A very large DJ in a white tank is waving his arms at a crowd the size of a small town. He's on his fourth encore. They're still clapping. Maybe out of politeness. Maybe out of fear." : "The stage, empty and still glowing. The booth is waiting.", talk: "I yell something. A tech tells me to be quiet. I stop. I'm in a wing.", push: "I'm not pushing a stage.", pickup: "I can't lift it. It's a stage." },
+    { id: "a5_wstage", name: "the stage", r: [100, 10, 500, 180], z: 10, walk: [400, 232, "back"], look: S => mode(S) === "day" ? "The stage in daylight: a booth, a wall of dark screen, work lights and a stagehand arguing with a cable. It looks like a spaceship being repaired." : axlOn(S) ? "The stage, blinding. A very large DJ in a white tank is waving his arms at a crowd the size of a small town. He's on his fourth encore. They're still clapping. Maybe out of politeness. Maybe out of fear." : "The stage, empty and still glowing. The booth is waiting.", talk: "I yell something. A tech tells me to be quiet. I stop. I'm in a wing.", push: "I'm not pushing a stage.", pickup: "I can't lift it. It's a stage." },
     { id: "a5_wexit", name: "to the stage", r: [570, 150, 70, 104], z: 28, walk: [586, 236, "right"], look: "A gap in the curtains. Past it, the stage. Past that, the crowd. I'm trying not to think about the crowd.",
-      exit: S => !S.f.a5_overrunDone ? "Axl's still on. I'd step on his set. And probably his foot. Talk to Roz." : { room: "a5_mainstage", x: 110, y: 200, face: "right" } },
+      exit: S => (ph(S) >= 2 && !S.f.a5_overrunDone) ? "Axl's still on. I'd step on his set. And probably his foot. Talk to Roz." : { room: "a5_mainstage", x: 110, y: 177, face: "right" } },
     { id: "a5_wdesk", name: "calling desk", r: [86, 112, 90, 110], z: 32, walk: [128, 238, "back"], look: S => ["Roz's calling desk: a monitor with the stage camera, a clock, cue lights and a radio. The big red clock says " + (S.f.a5_overrunDone ? "11:45. A lie, in a good way." : "11:52. It's seven minutes later than it should be."), "Two lights: green for go, red for hold. They're both red. They've been both red since 11:30."], pickup: "Roz would take my fingers. Politely.", use: "That's Roz's. It's all Roz's.", pull: "I'm not pulling the stage-manager cue. I'd start a war." },
     { id: "a5_wclock", name: "stage clock", r: [98, 118, 62, 28], z: 38, walk: [128, 238, "back"], look: S => S.f.a5_overrunDone ? "11:45. The clock says it's time. I'm six minutes late and ready." : "11:52. The clock is red. It's the color of Roz's face." },
     { id: "a5_wstool", name: "stool", r: [522, 202, 38, 40], z: 33, walk: [506, 238, "right"], look: "A stool in the wings. The best seat in the house for people who need to sit. Lou will take it.", use: "It's for Lou. I'm not sitting on Lou's throne." },
     { id: "a5_wcases", name: "road cases", rects: [[4, 154, 50, 78], [594, 202, 44, 38]], z: 36, walk: [96, 240, "back"], look: "Black flight cases stenciled MON and DJ. Everything's black. If the world ended, it'd be on a road case.", pickup: "Crew-only." },
     { id: "a5_wcurtain", name: "masking curtain", rects: [[0, 0, 80, 150], [596, 0, 44, 200]], z: 12, walk: [92, 238, "back"], look: "A black wing curtain. They hide the mess and stage hands. Right now I'm one of them.", pull: "I tug the curtain. Roz clears her throat. I let go.", pickup: "Not pickable. Black cloth is eternal." },
-    { id: "axl", name: "Axl Vanta", r: [348, 60, 70, 100], z: 15, walk: [400, 232, "back"], look: "Axl, in a sea of light, white tank, shades, arms up. He looks like the sun if the sun were a brand.", talk: "I shout. It disappears into the bass. He does a leap.", give: "I'm not handing him anything mid-leap." },
-    { id: "a5_roz", name: "Roz", talk: S => S.f.a5_overrunDone ? RP.lines(["@a5_roz Go. Up the stairs. Be good. Don't peak early."]) : overrun(S), look: "Roz, in the dark, with a headset and a clipboard and a stare that says \"nine minutes ago.\"", give: "Roz: \"I'm busy.\"", pickup: "No.", push: "I'm not pushing Roz. She's got a radio.", use: S => S.f.a5_overrunDone ? "Roz: \"It's done. Go. Just GO.\"" : overrun(S) },
+    { id: "axl", name: "Axl Vanta", r: [348, 60, 70, 100], z: 15, vis: S => axlOn(S), walk: [400, 232, "back"], look: "Axl, in a sea of light, white tank, shades, arms up. He looks like the sun if the sun were a brand.", talk: "I shout. It disappears into the bass. He does a leap.", give: "I'm not handing him anything mid-leap." },
+    { id: "a5_roz", name: "Roz", talk: S => rozWings(S), look: "Roz, in the dark, with a headset and a clipboard and a stare that says \"nine minutes ago.\"", give: "Roz: \"I'm busy.\"", pickup: "No.", push: "I'm not pushing Roz. She's got a radio.", use: S => rozWings(S) },
     { id: "lou", name: "Lou", talk: S => RP.lines(["@lou It's loud. It's... it's the loudest thing I've heard. Since 1993.", "Are you okay?", "@lou I'm fine. My ears haven't felt this alive in years. Don't tell your mother."]), look: "Lou, in the good navy cardigan, on a stool, watching a stage with his arms crossed like he's reviewing it. His foot's tapping. He pretends it isn't.", give: "Lou's not taking anything from me. He's got what he came for.", pickup: "Lou would flatten me.", use: "No." }
   ],
   combos: [
@@ -157,5 +170,4 @@ RP.room({
   },
   self: { look: "A headliner in the dark, in a pink-lined coat. Nobody can see me. It's my best look.", talk: "I'm mouthing the words to something. I don't know what." }
 });
-function ph(S) { return S.f.a5_phase || 0; }
 })();

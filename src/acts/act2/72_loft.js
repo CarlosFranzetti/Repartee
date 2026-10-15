@@ -270,10 +270,10 @@ RP.room({
     { crowd: { n: 4, rect: [280, 190, 70, 14], seed: 47, face: "front", act: fixed(S) ? "dance" : "stand", scale: 0.88 } }
   ],
   sprites: [
-    { y: 182, draw: (c, S) => drawCounter(c, S) },
-    { y: 175, draw: (c, S) => drawRack(c, S) },
-    { y: 200, draw: c => drawStools(c) },
-    { y: 184, draw: (c, S) => drawCables(c, S) }
+    { y: 182, draw: A2.cs(drawCounter) },
+    { y: 175, draw: A2.cs(drawRack, S => S.f.a2_ampInstalled ? "a" : "n") },
+    { y: 200, draw: A2.cs(drawStools) },
+    { y: 184, draw: A2.cs(drawCables) }
   ],
   enter: async (S, from) => {
     if (!S.f.a2_loftSeen) { S.f.a2_loftSeen = true; RP.toast("The PA is dead. Moxie looks like she needs help."); }

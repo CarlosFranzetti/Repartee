@@ -343,6 +343,7 @@ const CSS = `
 .mt-goals li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 6px; align-items: start; font-size: 18px; line-height: 1.02; color: var(--muted); }
 .mt-goals li::before { content: "[ ]"; color: var(--muted); }
 .mt-goals li.y { color: var(--fg); } .mt-goals li.y::before { content: "[x]"; color: var(--ok); }
+.mt-goals li > span { min-width: 0; overflow-wrap: anywhere; }
 .mt-goals li small { font-size: 15px; color: var(--muted); white-space: nowrap; }
 .mt-goals li.y small { color: var(--ok); }
 .mt-arr { display: grid; grid-template-columns: 38px repeat(8, minmax(0, 1fr)); gap: 3px; align-items: stretch; }
@@ -911,7 +912,7 @@ RP.mg.register("makTracks", {
       goalUl.innerHTML = "";
       ev.list.forEach(g => {
         const li = el("li", { cls: g.ok ? "y" : "" }, goalUl);
-        const mid = el("span", {}, li); mid.innerHTML = RP.u.esc(g.t) + "<br><small style='color:var(--muted)'>" + RP.u.esc(g.d) + "</small>";
+        const mid = el("span", {}, li); mid.innerHTML = RP.u.esc(g.t) + "<br><small style='color:var(--muted);white-space:normal'>" + RP.u.esc(g.d) + "</small>";
         el("small", { text: g.prog }, li);
         if (g.ok && !st.goalsDone[g.id]) { st.goalsDone[g.id] = true; if (!st.firstEval) rewardGoal(g); }
       });

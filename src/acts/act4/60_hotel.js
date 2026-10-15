@@ -193,9 +193,9 @@ async function axlSign(S) {
   RP.actor("a4_axl").act = "stand";
   await RP.npcWalk("a4_axl", 420, 236, "right");
   await RP.lines(["@a4_ent2 He's got a TV in the bathroom, I heard.", "@a4_ent1 (stands up very slowly) Bags."]);
-  S.f.a4_axlGone = true; RP.relight();
-  RP.actor("a4_ent1").vis = () => false;
+  S.f.a4_ent1Gone = true;
   await RP.npcWalk("a4_axl", 590, 236, "right");
+  S.f.a4_axlGone = true; RP.relight();
   await RP.say("The lobby sighs. The key sits on the coffee table. It's been a long day for a key.");
 }
 async function takeKey(S) {
@@ -265,9 +265,9 @@ RP.room({
   start: { x: 60, y: 232, face: "right" },
   actors: [
     { id: "a4_brandt", char: "a4_brandt", x: 414, y: 184, face: "front", act: "stand", name: "Herr Brandt", noTurn: true },
-    { id: "a4_axl", char: "axl", x: 190, y: 180, face: "front", act: "sit", name: "Axl Vanta", noTurn: true, vis: S => true },
-    { id: "a4_ent1", char: "a4_ent1", x: 286, y: 200, face: "left", act: "stand", name: "Brock" },
-    { id: "a4_ent2", char: "a4_ent2", x: 132, y: 214, face: "right", act: "stand", name: "Tiff" }
+    { id: "a4_axl", char: "axl", x: 190, y: 180, face: "front", act: "sit", name: "Axl Vanta", noTurn: true, vis: S => !S.f.a4_axlGone },
+    { id: "a4_ent1", char: "a4_ent1", x: 286, y: 200, face: "left", act: "stand", name: "Brock", vis: S => !S.f.a4_axlGone && !S.f.a4_ent1Gone },
+    { id: "a4_ent2", char: "a4_ent2", x: 132, y: 214, face: "right", act: "stand", name: "Tiff", vis: S => !S.f.a4_axlGone }
   ],
   sprites: [
     { y: 204, draw: c => sprDesk(c, 330, 146) },

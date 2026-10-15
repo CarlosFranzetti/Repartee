@@ -52,7 +52,7 @@ function paint(c, S) {
   em.push.apply(em, boothSprite.em(258, 68)); em.push.apply(em, fohDesk.em(434, 184));
   // speaker stacks on both sides of the stage
   PK.speakerStack(c, 212, 64, 36, 108, { seed: 523 }); PK.speakerStack(c, 478, 64, 36, 108, { seed: 524 });
-  em.push.apply(em, PK.discoBall(c, 362, 46, 11, { string: 16, seed: 525 }));
+  em.push.apply(em, PK.discoBall(c, 432, 44, 10, { string: 14, seed: 525 }));
   /* ---- bar ---- */
   em.push.apply(em, PK.bar(c, 52, 66, 180, 104, { stools: 4, seed: 530 }));
   // the bar record player at the end of the counter
@@ -100,7 +100,7 @@ function light(S) {
     lights: [{ x: 210, y: 40, r: 300, color: "#ff3fa4", steps: 5, sy: 1.1, rim: true }, { x: 520, y: 40, r: 280, color: "#39d0ff", steps: 5, sy: 1.1, rim: true }, { x: 362, y: 96, r: 150, color: "#ffe2c0", steps: 4, power: 0.8 },
       { x: 130, y: 100, r: 170, color: "#ff9a4a", steps: 4, power: 0.9 }, { x: 470, y: 188, r: 70, color: "#9be15d", steps: 3, power: 0.7 }, { x: 320, y: 200, r: 200, color: "#a05cff", steps: 3, power: 0.5 },
       { x: 570, y: 70, r: 110, color: "#39d0ff", steps: 3, power: 0.7 }, { x: 25, y: 70, r: 90, color: "#7a8aff", steps: 3, power: 0.6 }],
-    halos: [{ x: 362, y: 52, r: 26, color: "#ffffff", strength: 0.9 }, { x: 134, y: 52, r: 24, color: "#ffc44d", strength: 0.9 }],
+    halos: [{ x: 432, y: 46, r: 26, color: "#ffffff", strength: 0.9 }, { x: 134, y: 52, r: 24, color: "#ffc44d", strength: 0.9 }],
     rims: [{ x: 210, y: 80, r: 320, color: "#ff3fa4" }, { x: 520, y: 80, r: 300, color: "#39d0ff" }], shadow: 0.62 };
 }
 
@@ -117,7 +117,7 @@ function draw(c, S, t) {
   c.restore();
   // disco ball facets throwing light spots around the room
   for (let i = 0; i < 34; i++) {
-    const a = t / 1700 + i * 2.1, rx = 140 + (i * 37 % 70), x = 362 + Math.cos(a) * rx * 1.5, y = 60 + Math.sin(a * 0.8 + i) * 44 + (i % 3) * 20;
+    const a = t / 1700 + i * 2.1, rx = 140 + (i * 37 % 70), x = 432 + Math.cos(a) * rx * 1.5, y = 60 + Math.sin(a * 0.8 + i) * 44 + (i % 3) * 20;
     if (x < 0 || x > W || y < 0 || y > 170) continue;
     P(c, x, y, i % 3 === 0 ? "#ffffff" : i % 3 === 1 ? "#8ad8ff" : "#ff9ad5");
   }
@@ -207,7 +207,7 @@ RP.room({
       look: "Three steps to the booth. Seventeen years of sneakers have worn a groove in the middle one.",
       exit: S => ({ room: "a3_booth", x: 300, y: 152, face: "front" }) },
     { id: "a3_h_led", name: "LED wall", r: [258, 26, 208, 44], z: 10, look: "A wall of LED panels playing the same wave for hours. After two hours you start to feel like the wave is playing you.", pickup: "Each panel weighs more than I do. And I weigh... a lot, after the pizza." },
-    { id: "a3_h_ball", name: "disco ball", r: [346, 36, 32, 34], z: 14, look: "A disco ball the size of a beach ball. A hundred little mirrors, and every one of them is smiling.", pickup: "It's on a wire. A very high wire. Hard no." },
+    { id: "a3_h_ball", name: "disco ball", r: [418, 32, 30, 32], z: 14, look: "A disco ball the size of a beach ball. A hundred little mirrors, and every one of them is smiling.", pickup: "It's on a wire. A very high wire. Hard no." },
     { id: "a3_h_speakers", name: "speakers", rects: [[212, 64, 40, 108], [474, 64, 40, 108]], z: 22, look: "PA stacks, tall as a person and louder than my last argument. The cone on the bottom is a subwoofer. It's a feeling, not a sound.", use: "It's a PA. You don't 'use' it. It uses you.", push: "Pushing a stack of speakers: how to get a quick hospital visit." },
     { id: "a3_h_crowd", name: "dance floor", r: [236, 188, 252, 36], z: 5, floor: true,
       look: S => isFull(S) ? "The dance floor. A tide of bodies, phones held up like candles, and one guy who's definitely Marcus." : isOpen(S) ? "The dance floor. At ten o'clock, it's a gym with a disco ball. A few brave souls near the bar pretend they're not waiting." : "The dance floor, in work-light. A sticky epic of spilled drinks, gum, and one lonely glove." },

@@ -27,9 +27,9 @@ function paint(c, S) {
     U.dshade(c, x, 30, 24, 140, "#06020c", (xx, y) => (xx - x) / 24 * 0.5, 0.35);
   });
   // faded painted sign: TRI-STATE TAPE & DUPLICATION
-  txtC(c, "TRI-STATE TAPE", 360, 48, "#c8c0b0", 2, 1); txtC(c, "& DUPLICATION", 360, 61, "#c8c0b0", 1, 1);
-  txt(c, "WE COPY ANYTHING (LEGALLY)", 100, 116, "#a8a090", 1, 1);
-  U.dshade(c, 200, 46, 320, 22, "#4e3036", (x, y) => ((x * 3 + y * 5) % 7 < 3 ? 0.9 : 0.2), 0.45);
+  txt(c, "TRI-STATE TAPE & DUPLICATION", 98, 108, "#c8c0b0", 1, 1);
+  txt(c, "WE COPY ANYTHING (LEGALLY)", 98, 118, "#a8a090", 1, 1);
+  U.dshade(c, 96, 104, 120, 22, "#4e3036", (x, y) => ((x * 3 + y * 5) % 7 < 3 ? 0.9 : 0.2), 0.4);
   // cassette wall (left): rows of tape boxes
   R(c, 8, 52, 70, 96, "#2a1c1c"); U.outline(c, 8, 52, 70, 96, "#5a4038");
   for (let r = 0; r < 6; r++) { const y = 56 + r * 15; R(c, 9, y + 12, 68, 2, "#7a5a40"); for (let k = 0; k < 8; k++) { const col = ["#ff3fa4", "#39d0ff", "#ffd23f", "#e8e4f0", "#9be15d", "#c0302c", "#a05cff", "#ff8a4c"][(r * 3 + k * 5) % 8]; R(c, 11 + k * 8, y + 1, 7, 11, col); R(c, 12 + k * 8, y + 3, 5, 4, "#f4f0e8"); P(c, 14 + k * 8, y + 5, "#1d1622"); } }
@@ -41,7 +41,7 @@ function paint(c, S) {
   R(c, 536, 44, 68, 10, "#e8c820"); txtC(c, "FREIGHT", 570, 46, "#1d1622", 1, 1);
   for (let i = 0; i < 4; i++) { RP.u.poly(c, [[538 + i * 17, 168], [546 + i * 17, 168], [538 + i * 17, 176]], "#e8c820"); }
   // house rules banner
-  R(c, 130, 76, 78, 30, "#14102e"); U.outline(c, 130, 76, 78, 30, "#5a4a88"); txtC(c, "NO CAMERAS", 169, 79, "#ff3fa4", 1, 0); txtC(c, "NO COVER BANDS", 169, 86, "#e8e4f0", 1, 0); txtC(c, "NO \"CAN YOU", 169, 93, "#39d0ff", 1, 0); txtC(c, "PLAY SOMETHING", 169, 99, "#39d0ff", 1, 0);
+  R(c, 130, 66, 78, 30, "#14102e"); U.outline(c, 130, 66, 78, 30, "#5a4a88"); txtC(c, "NO CAMERAS", 169, 69, "#ff3fa4", 1, 0); txtC(c, "NO COVER BANDS", 169, 76, "#e8e4f0", 1, 0); txtC(c, "NO \"CAN YOU", 169, 83, "#39d0ff", 1, 0); txtC(c, "PLAY SOMETHING", 169, 89, "#39d0ff", 1, 0);
   // concrete floor with safety lines, a drain and cables
   PK.concrete(c, 0, 168, W, 88, { base: "#4a4660", panelH: 60, seed: 83 });
   R(c, 0, 168, W, 3, "#3a3650"); U.dshade(c, 0, 171, W, 16, "#06020c", (x, y) => 1 - (y - 171) / 16, 0.45);
@@ -360,17 +360,17 @@ RP.room({
     { crowd: { n: 16, rect: [70, 204, 480, 46], seed: 91, face: "front", act: "dance", scale: 0.95, vis: S2 => !!S2.f.a2_afterDone } }
   ],
   sprites: [
-    { y: 168, draw: (c, S) => drawBar(c, S) },
-    { y: 176, draw: (c, S) => drawTapes(c, S) }
+    { y: 168, draw: A2.cs(drawBar) },
+    { y: 176, draw: A2.cs(drawTapes) }
   ],
   enter: async (S, from) => {
     if (!S.f.a2_whIntro) await arrive(S);
   },
   hotspots: [
     { id: "a2_whdoor", name: "back door", r: [2, 40, 56, 132], z: 20, walk: [70, 232, "left"], exit: "travel", look: "The back door to the basement: a chain, a padlock Twinkie has the key to, and a smell of ambition. Beyond it: Gowanus, a canal and the sunrise.", push: "I'm already inside. This is the wrong direction for pushing." },
-    { id: "a2_whsign", name: "painted sign", r: [196, 44, 330, 26], z: 14, walk: [360, 208, "back"], look: "A faded wall sign: TRI-STATE TAPE & DUPLICATION. WE COPY ANYTHING (LEGALLY). Lou said he got his demos duplicated here in 1993. This room has heard \"NYC 93\" before. It's the first place that might remember.", use: "I can't edit a wall sign. I can only read it and feel old." },
+    { id: "a2_whsign", name: "painted sign", r: [94, 102, 124, 26], z: 14, walk: [160, 208, "back"], look: "A faded wall sign: TRI-STATE TAPE & DUPLICATION. WE COPY ANYTHING (LEGALLY). Lou said he got his demos duplicated here in 1993. This room has heard \"NYC 93\" before. It's the first place that might remember.", use: "I can't edit a wall sign. I can only read it and feel old." },
     { id: "a2_whneon", name: "BASEMENT TAPES neon", r: [250, 58, 196, 20], z: 22, walk: [360, 208, "back"], look: S => lit(S) ? "A neon: BASEMENT TAPES. Cyan and pink. Whoever installed it did it twice, so it would last." : "A dark sign over the stage that says BASEMENT TAPES in cold, unlit glass. It's waiting.", use: "It has no switch. It has a breaker. And a conscience." },
-    { id: "a2_whrules", name: "house rules", r: [128, 74, 82, 34], z: 22, walk: [170, 208, "back"], look: "HOUSE RULES: NO CAMERAS. NO COVER BANDS. NO \"CAN YOU PLAY SOMETHING I KNOW.\" Underneath, in pencil: \"VINYL ONLY. BRING YOUR OWN TURNTABLES.\" That last rule is mine now.", pickup: "It's painted on. Vic would find me." },
+    { id: "a2_whrules", name: "house rules", r: [128, 64, 82, 34], z: 22, walk: [170, 208, "back"], look: "HOUSE RULES: NO CAMERAS. NO COVER BANDS. NO \"CAN YOU PLAY SOMETHING I KNOW.\" Underneath, in pencil: \"VINYL ONLY. BRING YOUR OWN TURNTABLES.\" That last rule is mine now.", pickup: "It's painted on. Vic would find me." },
     { id: "a2_whtapes", name: "cassette wall", r: [8, 44, 72, 108], z: 20, walk: [44, 214, "back"], look: "A wall of old cassettes, labeled MASTERS. Hundreds of copies of things that were important to somebody once. I can feel them all not being played.", pickup: "Hundreds of cassettes. I'd take one. But which? So many people's one chance.", use: "I don't have a cassette deck. I have regrets." },
     { id: "a2_whbar", name: "drum bar", r: [22, 138, 110, 62], z: 24, walk: [76, 212, "back"], look: "A bar made of two blue oil drums and a plank, with a cash box and a sign: \"CASH ONLY.\" The cash box has a rubber band around it. Vic's.", use: "I'd pour a drink, but it's Vic's. And he's the type to count the ice.", pickup: "Not touching Vic's cash box. Not even to look at it." },
     { id: "a2_whpa", name: "PA stacks", rects: [[206, 64, 48, 96], [466, 64, 48, 96]], z: 28, walk: [250, 212, "back"], look: S => crowdOn(S) ? "Two PA stacks, wired in by Moxie and Jess's amp. It sounds like the ground is shaking. The floor is." : "Two PA stacks, silent. They look like they've been waiting for a party.", pickup: "Not in a thousand years.", push: "They don't budge. They've seen a thousand parties." },

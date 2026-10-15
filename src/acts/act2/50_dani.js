@@ -186,10 +186,10 @@ RP.room({
   ],
   actors: [{ id: "a2_dani", char: "a2_dani", x: 388, y: 222, face: "left", act: "stand", name: "Dani" }],
   sprites: [
-    { y: 176, draw: c => drawCouch(c) },
-    { y: 172, draw: c => { PK.bike(c, 74, 146, { color: "#39d0ff", seed: 3 }); } },
-    { y: 208, draw: (c, S) => drawTable(c, S) },
-    { y: 210, draw: c => drawChairs(c) }
+    { y: 176, draw: A2.cs(drawCouch) },
+    { y: 172, draw: A2.cs(c => { PK.bike(c, 74, 146, { color: "#39d0ff", seed: 3 }); }) },
+    { y: 208, draw: A2.cs(drawTable, S => S.f.a2_daniMeal ? "m" : "n") },
+    { y: 210, draw: A2.cs(drawChairs) }
   ],
   hotspots: [
     { id: "a2_exit", name: "front door (stairs)", r: [6, 32, 52, 132], z: 30, walk: [66, 232, "left"], exit: "travel",

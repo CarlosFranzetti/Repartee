@@ -162,10 +162,10 @@ RP.room({
     { crowd: { n: 4, rect: [420, 214, 90, 24], seed: 33, face: "left", act: "stand", scale: 1 } }
   ],
   sprites: [
-    { y: 207, draw: (c, S) => drawDumpster(c, S) },
-    { y: 206, draw: c => drawLamp(c) },
-    { y: 212, draw: c => drawBags(c) },
-    { y: 215, draw: c => drawStairs(c) }
+    { y: 207, draw: A2.cs(drawDumpster, S => S.f.a2_dumpster ? "m" : "n") },
+    { y: 206, draw: A2.cs(drawLamp) },
+    { y: 212, draw: A2.cs(drawBags) },
+    { y: 215, draw: A2.cs(drawStairs) }
   ],
   hotspots: [
     { id: "a2_loftstairs", name: "subway stairs", r: [76, 176, 74, 66], z: 28, walk: [112, 232, "back"], exit: "travel", look: "The Morgan Avenue station. The L train takes everyone who has somewhere to be and drops everybody who has a flyer.", push: "I don't push stairs." },

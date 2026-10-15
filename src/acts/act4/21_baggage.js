@@ -94,8 +94,9 @@ function draw(c, S, t) {
   // moving bags on the carousel: draw back-to-front by x
   BAGS.forEach((b, i) => { const x = beltPos(i, t); if (x < 340 || x > 640) return; sprBag[b.id](c, x, 128 - b.h - 2 + (b.id === "cello" ? 4 : 0)); });
   // priya's monitor: a cat falls off a couch, forever
-  const cx = 114, cy = 128;
-  R(c, cx, cy, 36, 20, "#0a0818"); R(c, cx + 1, cy + 1, 34, 18, "#2a3a5a");
+  const cx = 106, cy = 118;
+  R(c, cx + 14, cy + 28, 8, 4, "#3a3c50"); R(c, cx + 10, cy + 30, 16, 2, "#5a5c70");
+  R(c, cx - 3, cy - 3, 42, 30, "#14121c"); R(c, cx - 3, cy - 3, 42, 1, "#5a5c70"); R(c, cx, cy, 36, 20, "#0a0818"); R(c, cx + 1, cy + 1, 34, 18, "#2a3a5a");
   R(c, cx + 2, cy + 12, 18, 6, "#7a3fb0"); R(c, cx + 2, cy + 12, 18, 1, "#a070d0");
   const k = (t / 1100) % 3;
   const catx = k < 1.2 ? 8 + k * 6 : 16 + (k - 1.2) * 14, caty = k < 1.2 ? 8 : 8 + Math.min(10, (k - 1.2) * (k - 1.2) * 14);
@@ -194,7 +195,7 @@ RP.room({
       look: "A rubber stamp that says RECEIVED, next to a red pad. Priya guards it like a dragon with a very small hoard.",
       pickup: "Priya's got eyes on it. \"Hands off,\" she says. She hasn't looked up.", use: "I can't stamp my own form. I'm not an authority. I'm a DJ." },
     { id: "a4_numbers", name: "take-a-number", r: [316, 156, 26, 52], z: 50, walk: [330, 218, "back"], look: "TAKE A NUMBER. The display says NOW SERVING 4. My ticket says 5. There's only me here. Math, as practiced by an airline.", pickup: "Already took one. It says 5. I'm keeping it.", use: "I already have a number. It's 5. It's the loneliest number." },
-    { id: "a4_screen", name: "Priya's monitor", r: [112, 124, 40, 26], z: 70, walk: [140, 214, "back"],
+    { id: "a4_screen", name: "Priya's monitor", r: [102, 114, 46, 40], z: 70, walk: [140, 214, "back"],
       look: "A video loops on Priya's screen: a cat falls off a couch, over and over, to a bouncy track. I know that bounce. I MADE that bounce. It's on loop. In an airport.",
       use: "It's her screen. She'd notice.", pickup: "It's a monitor. And it's Priya's. And I have a sense of self-preservation." },
     { id: "a4_shelves", name: "unclaimed bags", r: [30, 48, 270, 92], z: 15, walk: [180, 218, "back"], look: "Hundreds of bags, tagged and shelved. A suitcase that's been waiting since the last century. Mine joined its ranks this afternoon. Possibly." },

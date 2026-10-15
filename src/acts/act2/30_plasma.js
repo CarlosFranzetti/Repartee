@@ -266,10 +266,10 @@ RP.room({
     { id: "a2_bev", char: "a2_bev", x: 504, y: 214, face: "right", act: "stand", name: "Nurse Bev" }
   ],
   sprites: [
-    { y: 182, draw: (c, S) => drawCounter(c, S) },
-    { y: 196, draw: (c, S) => drawTable(c, S) },
-    { y: 196, draw: c => drawSeats(c) },
-    { y: 190, draw: c => drawCooler(c) }
+    { y: 182, draw: A2.cs(drawCounter) },
+    { y: 196, draw: A2.cs(drawTable, S => S.f.a2_ate ? "a" : "n") },
+    { y: 196, draw: A2.cs(drawSeats) },
+    { y: 190, draw: A2.cs(drawCooler) }
   ],
   hotspots: [
     { id: "a2_exit", name: "exit", r: [6, 28, 54, 136], z: 30, walk: [66, 232, "left"], look: "The exit. Beyond it: Atlantic Avenue, fresh air and the possibility of a better decision.",

@@ -183,7 +183,7 @@ RP.mg.register("crateDigging", {
       boxCv = DK.cv(L.boxW, 20); DK.drawBinFront(boxCv.getContext("2d"), 0, 0, L.boxW, 20, null, { wood: "#c8925a" });
       const bc = boxCv.getContext("2d"); R(bc, Math.floor(L.boxW / 2) - 8, 0, 16, 4, "#d8c8a0"); R(bc, Math.floor(L.boxW / 2) - 8, 3, 16, 1, "#a8986a");
       /* floor props: stacked boxes */
-      safe(() => PK.cardboardBox(c, L.narrow ? 2 : 10, L.floorY - 26, L.narrow ? 24 : 26, 18, { seed: 2 }));
+      if (!L.narrow) safe(() => PK.cardboardBox(c, 10, L.floorY - 26, 26, 18, { seed: 2 }));
     }
     const refit = () => {
       const avail = root.clientWidth >= 820 ? Math.min(680, root.clientWidth - 300) : root.clientWidth;

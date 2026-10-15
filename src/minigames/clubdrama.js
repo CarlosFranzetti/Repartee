@@ -11,12 +11,11 @@ const { el, clamp, R, P, ell, line, poly, mulberry, hashStr, ramp, txt, txtC, tx
 const K = ramp;
 
 const CSS = `
-.cd-wrap { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; }
-.cd-hud { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 3; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; pointer-events: none; }
-.cd-hud .sk-meter { flex: 0 0 150px; min-width: 0; background: rgba(8, 5, 18, .78); padding: 3px 5px 4px; border: 1px solid #2d2456; }
-.cd-hud .sk-meter .lab { font-size: 16px; } .cd-hud .sk-meter .bar { height: 12px; }
-.cd-round { align-self: flex-start; font-family: var(--logo); font-size: 9px; letter-spacing: .06em; color: var(--amber); background: rgba(8, 5, 18, .78); padding: 5px 6px; border: 1px solid #2d2456; text-align: center; line-height: 1.5; }
-@media (max-width: 559px) { .cd-hud { position: static; margin-bottom: 6px; } .cd-hud .sk-meter { flex: 1 1 0; } .cd-round { display: none; } }
+.cd-wrap { width: fit-content; max-width: 100%; margin: 0 auto; }
+.cd-hud { display: flex; justify-content: space-between; align-items: stretch; gap: 8px; margin-bottom: 6px; }
+.cd-hud .sk-meter { flex: 1 1 0; min-width: 0; }
+.cd-round { align-self: center; font-family: var(--logo); font-size: 10px; letter-spacing: .06em; color: var(--amber); background: #0c0919; padding: 6px 10px; border: 1px solid #2d2456; text-align: center; white-space: nowrap; }
+@media (max-width: 559px) { .cd-round { display: none; } }
 .cd-vs { font-size: 17px; color: var(--muted); letter-spacing: .08em; }
 .cd-end { font-size: 22px; line-height: 1.1; }
 `;

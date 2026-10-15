@@ -84,6 +84,7 @@ function paint(c, S) {
   // streetlamp at the curb (static, behind the walkers)
   em.push.apply(em, PK.streetlamp(c, 470, 226, { h: 118, on: night, arm: 22, seed: 422 }));
   em.push.apply(em, PK.subwayStairs(c, 2, 168, {}));
+  PK.hydrant(c, 150, 196, {}); PK.trashBags(c, 418, 188, {});
   PK.manhole(c, 232, 240, { w: 36, h: 10, steam: night ? 60 : 0, seed: 423 });
   return em;
 }
