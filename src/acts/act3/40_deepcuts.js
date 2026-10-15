@@ -122,8 +122,7 @@ RP.room({
     { y: 170, draw: c => registerSpr(c, 592, 116) }
   ],
   actors: [
-    { id: "a3_ray", char: "ray", x: 540, y: 176, face: "front", act: "stand", name: "Ray" },
-    { id: "a3_dc_customer", char: "a3_vendor", x: 380, y: 224, face: "left", act: "stand", name: "customer", vis: S => false }
+    { id: "a3_ray", char: "ray", x: 540, y: 176, face: "front", act: "stand", name: "Ray" }
   ],
   enter: async (S, from) => {
     if (!S.f.a3_dcSeen) { S.f.a3_dcSeen = true; RP.setClock("FRI 2:15 PM"); await RP.lines(["Deep Cuts. It smells like cardboard and 'I told you so.'"]); }

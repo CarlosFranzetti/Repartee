@@ -59,7 +59,8 @@ function buildScenario(rec, p, rnd, diff, DK) {
     fair: { id: "fair", label: "Church Basement Record Fair", kind: "fair", area: "Manhattan", u: 0.49, v: 0.3, opens: 11, closes: 17, fee: 2, hint: "Record fair in a church basement. $2 donation for the roof. Open 11 to 5.", npc: "dk_deacon", npcName: "DEACON",
       intro: ["DEACON: \"Suggested donation: two dollars. Suggested volume: whisper.\""],
       asks: { c2: { say: ["YOU: \"I'm after '" + T + "'. The tote bag guy's crates came through here.\"", "DEACON: \"Table four. Table four is... no longer here. The dealer took it home to Queens.\"", "DEACON: \"Mind you, Hal's widow still keeps his whole dance wall. Mrs. Feld, Rego Park. Fourth floor, no elevator. Bring lungs.\""], gives: "c3" } },
-      fallback: { say: ["DEACON: \"Records? Everyone here has records. Be specific. Be quiet, too.\"", "A dealer hisses across table two: \"A name, kid. Not a genre. Where did the tip start?\""], gives: "s4", find: true } },
+      fallback: { say: ["DEACON: \"Records? Everyone here has records. Be specific. Be quiet, too.\"", "A dealer hisses across table two: \"A name, kid. Not a genre. Where did the tip start?\""], gives: "s4", find: true },
+      late: { after: 900, say: ["DEACON: \"Tote bag guy? Ronnie's lot is packed up by now, isn't it. Sit. Whisper.\"", "A dealer, taking pity: \"His crates went to Hal's widow. Mrs. Feld, Rego Park, fourth floor. Bring lungs.\""], gives: "c3" } },
     apt: { id: "apt", label: "Mrs. Feld's walk-up", kind: "apt", area: "Rego Park, Queens", u: 0.83, v: 0.4, opens: 12, closes: 19, hint: "Fourth-floor walk-up in Rego Park. Ring twice. Open noon to 7. Nap time is sacred.", npc: "dk_feld", npcName: "MRS. FELD",
       intro: ["MRS. FELD, through the chain: \"Who is it? If it's the census, I'm dead.\""],
       asks: { c3: { say: ["YOU: \"The church dealers said you might still have Hal's dance records. I'm after '" + T + "'.\"", "MRS. FELD: \"Hal's wall! Come in, come in. Wipe your feet. Not on the carpet. On the other carpet.\"", "She lifts a cedar chest lid that smells like 1981 and mothballs..."], found: true } },
@@ -71,7 +72,8 @@ function buildScenario(rec, p, rnd, diff, DK) {
     back: { id: "back", label: "Deep Cuts, the back room", kind: "back", area: "East Village, Manhattan", u: 0.43, v: 0.55, opens: 11, closes: 19, hint: "Ray's stockroom behind the store. Open 11 to 7. Ray hates visitors.", npc: "ray", npcName: "RAY",
       intro: ["RAY: \"You came BACK? I said it once. I'm not saying it twice.\""],
       asks: {},
-      fallback: { say: ["RAY: \"I looked already. Back room: eurodance, a cat, and a water stain shaped like a mistake.\"", "RAY: \"Flea. Market. I said it twice. Now get out of my cat's light.\""], gives: "s2", find: true } },
+      fallback: { say: ["RAY: \"I looked already. Back room: eurodance, a cat, and a water stain shaped like a mistake.\"", "RAY: \"Flea. Market. I said it twice. Now get out of my cat's light.\""], gives: "s2", find: true },
+      late: { after: 900, say: ["RAY: \"Ronnie's flea packs up at three. It's past three. Fine.\"", "RAY: \"The tote-bag guy's crates went to the church fair. West Side basement. You didn't hear it from me.\""], gives: "c2" } },
     swap: { id: "swap", label: "Harbor Swap Meet", kind: "swap", area: "Staten Island", u: 0.21, v: 0.78, opens: 10, closes: 16, hint: "Swap meet on Staten Island. Ferry weather. Open 10 to 4.", npc: "dk_swap", npcName: "VENDOR",
       intro: ["VENDOR: \"Everything's one price: make an offer, I'll be offended.\""],
       asks: {},
@@ -312,7 +314,7 @@ RP.mg.register("recordHunt", {
     function renderHud() {
       clockEl.querySelector("b").textContent = clockLabel();
       const left_ = endMin - S.min; const hh = Math.floor(left_ / 60), mm = left_ % 60;
-      leftEl.innerHTML = "SHOPS CLOSE <b class='" + (left_ < 90 ? "bad" : left_ < 180 ? "warn" : "") + "'>" + (left_ > 0 ? hh + "h " + String(mm).padStart(2, "0") + "m left" : "NOW") + "</b>";
+      leftEl.innerHTML = "TIME LEFT <b class='" + (left_ < 90 ? "bad" : left_ < 180 ? "warn" : "") + "'>" + (left_ > 0 ? hh + "h " + String(mm).padStart(2, "0") + "m" : "NOW") + "</b>";
       moneyEl.querySelector("b").textContent = money(S.money); clueCnt.querySelector("b").textContent = S.clues.length;
       const fr = clamp((endMin - S.min) / (endMin - startMin), 0, 1); barFill.style.width = (fr * 100) + "%"; barW.className = "dk-bar" + (fr < 0.2 ? " bad" : fr < 0.4 ? " warn" : "");
     }
@@ -336,7 +338,7 @@ RP.mg.register("recordHunt", {
         const st = el("div", { cls: "rh-status" }, card);
         el("span", { html: "FARE <b>" + money(ti.fare) + "</b>" }, st); el("span", { html: "SUBWAY <b>" + ti.min + " min</b>" }, st); el("span", { html: "WALK <b>" + ti.walk + " min</b>" }, st);
         if (q.fee) el("span", { html: "ENTRY <b>" + money(q.fee) + "</b>" }, st);
-        if (!open && arrive < q.closes * 60 + 1) { /* opens later */ }
+        { const spare = q.closes * 60 - arrive; if (spare > 0) el("div", { cls: "dk-note", html: spare < 75 ? "<span style='color:#ffc44d'>Cutting it close: you'd have " + spare + " min before they close.</span>" : "Closes at " + fmtH(q.closes) + "." }, card); }
         if (arrive >= q.closes * 60) el("div", { cls: "dk-note", html: "<span class='bad' style='color:#ff7a7a'>You'd arrive after closing (" + fmtT(arrive) + ").</span>" }, card);
         else if (arrive < q.opens * 60) el("div", { cls: "dk-note", html: "<span style='color:#ffc44d'>Not open until " + fmtH(q.opens) + ". You'd wait.</span>" }, card);
         msg.textContent = S.at ? "Where to next? It's " + clockLabel() + "." : "Tip: read the notebook, then pick the spot that fits the clue.";
@@ -393,7 +395,7 @@ RP.mg.register("recordHunt", {
       renderCard();
     }
     function arrive(id) {
-      const q = byId[id]; S.at = id; S.pos = { u: q.u, v: q.v }; S.log = []; S.fresh = false; S.visitClosed = false;
+      const q = byId[id]; S.at = id; S.pos = { u: q.u, v: q.v }; S.log = []; S.fresh = false; S.visitClosed = false; S.progress = false;
       q.visits++;
       const now = S.min;
       if (now >= endMin) { gameOver("late"); return; }
@@ -421,24 +423,27 @@ RP.mg.register("recordHunt", {
       if (ent) {
         ent.say.forEach(t => log(t.startsWith("YOU") ? "you" : t.startsWith("She ") || t.startsWith("The chain") || t.startsWith("He ") ? "nar" : "npc", t));
         if (ent.found) { S.fresh = true; foundIt(); return; }
-        const c = giveClue(ent.gives); if (c) { log("nar", "New clue in your notebook."); RP.sfx("ping"); q.done = true; } else RP.sfx("click");
+        const c = giveClue(ent.gives); if (c) { log("nar", "New clue in your notebook."); RP.sfx("ping"); q.done = true; S.progress = true; } else RP.sfx("click");
       } else {
-        const fb = q.fallback || { say: ["Nothing. Nobody knows anything."] };
+        const fb = (q.late && S.min >= q.late.after && !S.clues.includes(q.late.gives)) ? q.late : (q.fallback || { say: ["Nothing. Nobody knows anything."] });
+        if (fb === q.late) q.gaveFallback = false;
         if (first || !q.gaveFallback) fb.say.forEach(t => log(t.startsWith("YOU") ? "you" : "npc", t)); else log("npc", "\"We already did this. Do you need a coat?\"");
         if (fb.junk && !q.junkShown) { q.junkShown = true; const jid = FLAVOR_JUNK[Math.floor(rnd() * FLAVOR_JUNK.length)], jr = RP.rec(jid); log("nar", "You flip a bin: " + jr.artist + " – " + jr.title + " (" + jr.label + ", " + jr.year + "). Not it."); }
         const c = !q.gaveFallback ? giveClue(fb.gives) : null; q.gaveFallback = true;
-        if (c) { log("nar", "New clue in your notebook."); RP.sfx("ping"); } else { RP.sfx("error"); if (!q.wrongCounted) { q.wrongCounted = true; S.wrong++; } }
-        if (!q.wrongCounted && q.id !== sc.final) { q.wrongCounted = true; S.wrong++; }
+        if (c) { log("nar", "New clue in your notebook."); RP.sfx("ping"); } else RP.sfx("error");
       }
       S.fresh = true; renderCard();
       if (S.min >= endMin) { host.timeout(() => gameOver("late"), 900); }
     }
     function leaveVisit() {
-      if (S.mode !== "visit") return; S.mode = "map"; S.at = q_at(); S.log = []; S.newClue = S.newClue; pinLayer.style.display = ""; RP.sfx("door");
+      if (S.mode !== "visit") return;
+      /* a visit that moved the hunt forward is not a dead end */
+      if (!S.visitClosed && !S.progress && !q_at_().wrongCounted) { q_at_().wrongCounted = true; S.wrong++; } S.mode = "map"; S.at = q_at(); S.log = []; S.newClue = S.newClue; pinLayer.style.display = ""; RP.sfx("door");
       if (S.min >= endMin) { gameOver("late"); return; }
       renderCard();
     }
     const q_at = () => S.at;
+    const q_at_ = () => byId[S.at] || { };
 
     /* ------------------------------------------------ the reveal + end */
     function foundIt() {
@@ -483,7 +488,7 @@ RP.mg.register("recordHunt", {
     const mainBits = [hud, barW, cols, msg, foot]; mainBits.forEach(n => { n.style.display = "none"; });
     const intro = el("div", { cls: "cd-intro mg-panel" }, root);
     el("h2", { text: "THE HUNT" }, intro);
-    el("div", { cls: "dk-meta", html: "Somewhere in the five boroughs is a clean copy of <b>" + DK.ascii(rec.artist) + " – " + DK.ascii(rec.title) + "</b> (" + [rec.label, rec.year].filter(Boolean).join(", ") + "). It's 10 AM. Everything closes by <b>" + fmtH(Math.floor(endMin / 60)) + (endMin % 60 ? ":" + endMin % 60 : "") + "</b>." }, intro);
+    el("div", { cls: "dk-meta", html: "Somewhere in the five boroughs is a clean copy of <b>" + DK.ascii(rec.artist) + " – " + DK.ascii(rec.title) + "</b> (" + [rec.label, rec.year].filter(Boolean).join(", ") + "). It's 10 AM. You have until <b>" + fmtH(Math.floor(endMin / 60)) + (endMin % 60 ? ":" + endMin % 60 : "") + "</b>." }, intro);
     const ul = el("ul", {}, intro);
     el("li", { html: "Pick a spot on the map. <b class='s'>Subway</b> costs " + money(FARE) + " and is quick. <b class='k'>Walking</b> is free and takes three times as long." }, ul);
     el("li", { html: "At a spot, <b>ASK ABOUT</b> a clue from your notebook. Right question, right place: a new lead. Wrong place: a funny dead end, usually with a hint." }, ul);

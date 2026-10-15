@@ -313,7 +313,7 @@ async function satBrief(S) {
   S.f.a2_satBrief = true;
   await RP.say("Saturday. Noon. The living room looks like a crime scene with balloons.", "nar");
   const have = S.money + (RP.has("a2_card") ? Math.round((S.f.a2_cardBal || 0) * 0.9) : 0);
-  const need = 180 - Math.round(have);
+  const need = 215 - Math.round(have);
   if (!S.f.a2_turntables && need > 0) {
     S.f.a2_envelope = true;
     await RP.lines([

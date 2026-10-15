@@ -110,6 +110,7 @@ RP.room({
   ],
   enter: async (S, from) => { if (A3.boothEnter) await A3.boothEnter(S, from); },
   hotspots: [
+    { id: "a3_kosmo", name: "Kosmo Delacroix", z: 80, look: "Kosmo Delacroix, mid-set, headphones on one ear, nodding at a record the way you nod at a waiter who got your order right. Silver hair, coat, sunglasses at midnight.", talk: S => A3.kosmoTalk(S), give: "Kosmo Delacroix doesn't take gifts from someone whose name he's still working on." },
     { id: "a3_dj_louie_vega", name: "Louie Vega", z: 80, look: "Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez. He's nodding at the room like it just told him a good joke.", talk: ["Mr. Vega, I... thank you.", "@a3_dj_louie_vega Nice blend."] },
     { id: "a3_b_steps", name: "steps to the floor", r: [4, 146, 52, 26], z: 40, walk: [64, 153, "left"],
       look: "Three steps down to the dance floor. At the bottom, a hundred people who don't know I'm nervous.",

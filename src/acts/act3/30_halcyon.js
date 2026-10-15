@@ -161,7 +161,6 @@ RP.room({
     L.push({ id: "a3_odessa", char: "a3_odessa", x: isOpen(S) ? 130 : 280, y: 226, face: "right", act: "stand", name: "Odessa", vis: S2 => !S2.f.a3_odessaGone });
     // stage DJ
     L.push({ id: "a3_kosmo", char: "kosmo", x: 358, y: 122, face: "front", act: "dj", name: "Kosmo Delacroix", scale: 1, vis: S2 => !!S2.f.a3_thu3 && !S2.f.a3_kosmoDone });
-    L.push({ id: "a3_dj_stage", char: "a3_brandon", x: 358, y: 122, face: "front", act: "dj", name: "DJ Brandon Shine", vis: S2 => false });
     // rival at the bar
     L.push({ id: "a3_brandon", char: "a3_brandon", x: 214, y: 222, face: "left", act: "stand", name: "DJ Brandon Shine", vis: S2 => isOpen(S2) && (!S2.f.a3_thu3 ? !!S2.f.a3_brandonSeen : !S2.f.a3_brandonGone) });
     L.push({ id: "a3_marcus", char: "marcus", x: 290, y: 214, face: "back", act: "dance", name: "Marcus", vis: S2 => isOpen(S2) && !!S2.f.a3_marcus3 });

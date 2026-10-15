@@ -163,25 +163,34 @@ async function fallbackBuy(params) {
 }
 
 async function buyDeck(S) {
-  if (S.f.a2_turntables) { await RP.say("I already own turntables. I own turntables! Say it with me: I own turntables.", "kid"); return; }
-  if (S.money < 100) {
+  if (S.f.a2_turntables) { await RP.say("I already own turntables. I own turntables! Say it with me: I own turntables."); return; }
+  if (S.money < 170) {
     await RP.lines(["@eddie Show me the money. I can't take promises. Everybody pays me next week, kid. It's the one thing I won't do.", "I have $" + Math.round(S.money) + ". It's a good start."]);
     if (RP.has("a2_card")) await RP.lines(["What about the LifeDrop card?", "@eddie I don't take cards. Cards have records. Cash. Paper. Dirty, green, folded paper."]);
-    else await RP.say("Come back with a hundred and something. I'll hold the AT-LP120s till then. Two of them. Because I'm that kind of guy.", "eddie");
+    else await RP.say("Come back with about a hundred and eighty. I'll hold the AT-LP120s till then. Two of them. Because I'm that kind of guy.", "eddie");
     return;
   }
-  await RP.lines(["Eddie, I want the AT-LP120-USB pair.", "@eddie Oh, you want the good ones. Of course you do. It's a two-time deal!"]);
-  let res = await A2.mg("buyGear", { slot: "turntables", options: ["at_lp120_usb", "numark_tt1650"], seller: "Eddie Two-Times", budget: Math.floor(S.money), scams: 1, difficulty: 2 }, fallbackBuy);
+  await RP.lines(["Eddie, I want a pair of turntables. The AT-LP120-USBs.", "@eddie Oh, you want the good ones. Of course you do. It's a two-time deal! Look around. Poke around. Don't trust me."]);
+  const res = await A2.mg("buyGear", { slot: "turntables", options: ["at_lp120_usb", "numark_tt1650", "technics_sl_1200mk2"], flaws: ["ok", "cosmetic", "wobble"], scams: 1, seller: "Eddie Two-Times", budget: Math.floor(S.money), difficulty: 2 }, fallbackBuy);
+  const paid = res && res.paid > 0 ? Math.min(Math.round(res.paid), Math.floor(S.money)) : 0;
+  if (res && res.lemon && paid > 0) {
+    // bought a lemon: it "worked this morning". Never a dead end: the two-time refund.
+    RP.money(-paid);
+    await RP.lines(["The platter wobbles like a drunk plate. The pitch drifts. The \"bargain\" is a lemon with a power cord.", "Eddie. It doesn't work.", "@eddie It worked this morning!", "Eddie. Refund.", "@eddie No refunds. (x2.) Which, mathematically, means one refund. Here."]);
+    RP.money(paid);
+    await RP.say("Eddie counts it back with a look of physical pain. I keep my eyes on the AT-LP120s. Next time, I look closer.");
+    return;
+  }
   if (!(res && res.ok && res.bought)) {
     await RP.lines(["@eddie Nothing? Nobody bought anything? That's the saddest two-time deal I ever saw.", "@eddie Come back when you're ready, kid. I'm here. The van is here. We're all here."]);
     return;
   }
   const gid = RP.gearInfo(res.bought) ? res.bought : "at_lp120_usb";
-  const paid = res.paid != null && res.paid > 0 ? Math.min(res.paid, Math.floor(S.money)) : Math.min(PRICE, Math.floor(S.money));
-  RP.money(-paid);
+  const spent = paid > 0 ? paid : Math.min(PRICE, Math.floor(S.money));
+  RP.money(-spent);
   RP.setGear("turntables", gid);
   RP.give("a2_tts");
-  S.f.a2_turntables = true; S.f.a2_paid = paid;
+  S.f.a2_turntables = true; S.f.a2_paid = spent;
   RP.followers(10);
   RP.sfx("success");
   const g = RP.gearInfo(gid);
@@ -190,10 +199,9 @@ async function buyDeck(S) {
     "@eddie ...here's a second record. Free. Not stolen. Possibly stolen."
   ]);
   RP.addRecord("inner_city_good_life");
-  const r = RP.rec("inner_city_good_life");
   S.f.a2_goodLife = true;
   await RP.lines([
-    "Inner City, \"Good Life.\" 10 Records, 1988, vocals by Paris Grey. Released November 1988, I looked it up.",
+    "Inner City, \"Good Life.\" 10 Records, with vocals by Paris Grey. November 1988.",
     "@eddie Look at you. You know things. You're a scholar."
   ]);
   await RP.lines([

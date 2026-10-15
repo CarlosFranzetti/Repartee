@@ -264,7 +264,7 @@ async function fallbackTalk() {
 }
 
 async function pitchVic(S) {
-  const patience = 3 + (S.f.a2_showered ? 1 : 0) + (S.f.a2_louSecret ? 1 : 0) + (S.f.a2_afterDone ? 1 : 0);
+  const patience = 7 + (S.f.a2_showered ? 1 : 0) + (S.f.a2_louSecret ? 1 : 0) + (S.f.a2_afterDone ? 1 : 0);
   let res = null;
   for (;;) {
     res = await A2.mg("promoterTalk", { promoter: "Vic", charId: "a2_vic", ask: "a monthly slot at Basement Tapes", patience, difficulty: 2 }, fallbackTalk);

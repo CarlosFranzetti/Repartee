@@ -396,7 +396,7 @@ RP.mg.register("setTime", {
         G = { t: 0, phase: "brief", floor: D.floor0, pat: D.pat0, win: 15, stale: 0, cur: null, next: null, hand: R.ids.map(id => RP.rec(id)), played: [], mixes: [], evs: eventsFor(R.key, R), evi: 0, curEv: null, evLog: [], dead: false, deadMin: 0, deadStart: 0,
           holding: false, hold: 0, tension: 0, cd: 0, mood: 0, moodUntil: -1, flags: {}, mEnd: R.M, h0: D.handover, overEnd: D.handover, handed: false, ended: false, fade: null, sumF: 0, sumT: 0, minF: 100, lastFit: 0.5, sumFit: 0, fitT: 0, failed: null, lastEvEnd: -9, nextPrompt: 0, hint: "" };
         // record lengths so that a good plan roughly fills the playable time
-        const base = clamp(R.mPlay * 0.97 / Math.max(2, Math.min(D.ideal, R.ids.length)), 5.5, 14);
+        const base = clamp(R.mPlay / Math.max(2, Math.min(D.ideal, R.ids.length)) + 0.9, 5.5, 14);
         G.lens = {}; R.ids.forEach(id => { G.lens[id] = Math.round(base * (0.88 + 0.24 * ((hashStr(id) % 100) / 100)) * 10) / 10; });
         // opening on-air state
         if (R.key === "opener") G.cur = { tape: true, rec: { id: "tape", artist: "The house tape", title: "background mix", label: "", year: null, genre: "deep house", bpm: 104, energy: 1 }, len: 99, pos: 0 };

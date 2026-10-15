@@ -40,7 +40,7 @@ RP.walkthroughs.act3 = [
   ["expect", "S.room === 'a3_halcyon'", "back on the floor"],
   ans(["Never mind"]), ["talk", "hot:a3_gus"],
   ["give", "hot:a3_gus", "a3_rinds"],                              // "No."
-  ["give", "hot:a3_gus", "a3_pickle"].slice(0, 0).length ? ["look", "hot:a3_gus"] : ["look", "hot:a3_gus"],
+  ["look", "hot:a3_gus"],
   ans(["What kind of snack", "Never mind"]), ["talk", "hot:a3_gus"],
   ["give", "hot:a3_gus", "a3_chips"],
   ["expect", "S.f.a3_soundcheck", "Gus woke the monitors"],
@@ -65,7 +65,7 @@ RP.walkthroughs.act3 = [
   ["give", "hot:a3_gus", "a3_pickle"],
   ["expect", "S.f.a3_dj350 && S.gear.mixer === 'pioneer_djm_350'", "DJM-350 from Gus"],
   /* ---------------- the week: Deep Cuts, the fair, the hunt ---------------- */
-  trav("a3_loc_deepcuts"), ["travel", "a3_loc_deepcuts"],
+  ["travel", "a3_loc_deepcuts"],
   ["expect", "S.room === 'a3_deepcuts'", "Deep Cuts"],
   ["look", "hot:a3_dc_grails"], ["look", "hot:a3_dc_wall"], ["look", "hot:a3_dc_sign"],
   ans(["something for me", "dollar", "Later"]), mg({ ok: true, score: 70, bought: ["crystal_waters_gypsy_woman"], spent: 3 }), ["talk", "hot:a3_ray"],
@@ -102,7 +102,6 @@ RP.walkthroughs.act3 = [
   ["expect", "S.f.a3_thu3 && S.msgs.length >= 4", "Thursday again: anniversary night"],
   ["talk", "hot:a3_hole"],
   /* ---------------- Night 3: the street, Tiny, Marcus and plus three ---------------- */
-  ["use", "hot:a3_door"],                                           // wait: need the map queue
   ["run", (S, R) => { R.test.travelQ.length = 0; R.test.travelQ.push("a3_loc_halcyon"); }],
   ["use", "hot:a3_door"],
   ["expect", "S.room === 'a3_street' && S.f.a3_arr3", "anniversary night on Ludlow Street"],
@@ -115,7 +114,6 @@ RP.walkthroughs.act3 = [
   ["use", "hot:a3_b_cdjs"],                                         // not yet
   ["expect", "!S.f.a3_kosmoDone", "can't set up yet"],
   ["use", "hot:a3_b_steps"],
-  ["give", "hot:a3_gus", "a3_chips"],
   ans(["Brandon", "Never mind"]), ["talk", "hot:a3_gus"],
   ["talk", "hot:a3_odessa"],
   ["expect", "S.f.a3_toldOdessa", "told Odessa"],

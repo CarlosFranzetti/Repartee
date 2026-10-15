@@ -9,6 +9,7 @@ const U = RP.u;
 const say = (t, who) => RP.say(t, who);
 const lines = a => RP.lines(a);
 const GRAIL = "loose_joints_is_it_all_over_my_face";
+const AC = id => RP.actor(id) || {};   // actors only exist in their own room; a missing one is a harmless dummy
 
 /* ====================================================================== room entry */
 A3.hallEnter = async function (S, from) {
@@ -36,8 +37,8 @@ A3.hallEnter = async function (S, from) {
     await lines(["@nar Anniversary night. Six months of Thursdays.", "The room's already packed. The banner says '6 MONTHS.' It doesn't say my name. It's for the room. It's still my favorite banner.",
       "@a3_odessa Six months. You've been late zero times. I've never had a DJ be early six months in a row.", "@a3_odessa Kosmo's here. He's in the booth. Don't speak unless spoken to. And if spoken to, don't speak too much.",
       "@a3_brandon THERE he is! The Thursday kid!"]);
-    RP.actor("a3_brandon").x = 150; RP.actor("a3_brandon").y = 232;
-    RP.actor("a3_brandon").face = "right";
+    AC("a3_brandon").x = 150; AC("a3_brandon").y = 232;
+    AC("a3_brandon").face = "right";
     await lines(["@a3_brandon Six months! Big night! Come here, come here, I'm a hugger.", "Brandon. Uh. Hi."]);
     RP.sfx("whoosh"); await RP.wait(500);
     await lines(["@a3_brandon I'm a fan. Honestly. The way you... stand at things. Nice jacket!", "@a3_brandon Break a leg. Both. Whichever.",
@@ -83,7 +84,7 @@ async function night1Set(S) {
   RP.money(200); RP.give("a3_list");
   await lines(["Gear that doesn't embarrass her. A sound of my own. A crowd. And an anniversary Thursday in a week and a half. Odessa's whole business plan, in lipstick.",
     "@a3_brandon Cute. Cute set. I'd say 'I'm proud,' but then I'd have to be. See you Saturdays. Oh wait. You won't."]);
-  RP.actor("a3_brandon").expr = "angry";
+  AC("a3_brandon").expr = "angry";
   await RP.fadeTo(1, 700);
   S.f.a3_week = true; S.f.noTravel = false; S.f.a3_floor = null;
   RP.unlock("a3_loc_deepcuts");
@@ -231,7 +232,7 @@ A3.odessaGive = async function (S, item) {
 A3.footageToOdessa = async function (S) {
   if (S.f.a3_brandonDone) { await say("It's over. Brandon's been dealt with. Odessa's still holding the clip like it's a very small, very guilty child."); return; }
   await lines(["@a3_odessa A clip? ...Show me.", "She watches it. The hug. The pat. The swap. The yawn.", "@a3_odessa ...Brandon. BRANDON. Here. Now."]);
-  RP.actor("a3_brandon").expr = "worried";
+  AC("a3_brandon").expr = "worried";
   await RP.npcWalk("a3_brandon", 170, 226, "left");
   await A3.confrontBrandon(S, true);
 };
@@ -257,7 +258,7 @@ A3.confrontBrandon = async function (S, withOdessa) {
     await RP.npcWalk("a3_odessa", 180, 226, "right");
   }
   await lines(["@a3_odessa ...Explain the yawn. I want to hear him explain the yawn.", "@a3_brandon That's not me. It's a lookalike. It's a very handsome lookalike. It's a plot to frame me!"]);
-  RP.actor("a3_brandon").expr = "angry";
+  AC("a3_brandon").expr = "angry";
   const res = await A3.mg("clubDrama", { scenario: "rival", rival: "DJ Brandon Shine", difficulty: 2 }, {
     giveUp: "Back off", tries: 2,
     onFail: async () => { await lines(["@a3_brandon You can't prove I meant it! It's entrapment! It's a hug!", "Try again. Stay calm. Let him dig."]); },
@@ -269,7 +270,7 @@ A3.confrontBrandon = async function (S, withOdessa) {
     "@a3_odessa Brandon. My office. Now. We're discussing your Saturday.", "@a3_brandon You can't do that! It's MY Saturday!", "@a3_odessa It's a Saturday. I'm the one who has it.",
     "He storms off, gold vest flapping like a very expensive bird."]);
   S.f.a3_brandonGone = true;
-  RP.actor("a3_brandon").vis = () => false;
+  AC("a3_brandon").vis = () => false;
   await lines(["@a3_odessa Kosmo's about to wrap. Go to the booth. Be ready.", "I'm ready. I'm so ready. I'm terrified. It's the same feeling."]);
   RP.setClock("THU 11:50 PM");
 };
@@ -337,16 +338,16 @@ A3.barPlayer = async function (S) {
     return;
   }
   // the right one: both bartenders freeze, then thaw
-  RP.actor("a3_nico").face = "right"; RP.actor("a3_bex").face = "left";
+  AC("a3_nico").face = "right"; AC("a3_bex").face = "left";
   await RP.wait(900);
   await lines(["Both bartenders stop. A glass is held in mid-polish. A hand freezes on a bottle.", "@a3_nico ...", "@a3_bex ..."]);
-  RP.actor("a3_nico").act = "dance"; RP.actor("a3_bex").act = "dance";
+  AC("a3_nico").act = "dance"; AC("a3_bex").act = "dance";
   await RP.wait(1600);
   await lines(["@a3_nico You like this?", "@a3_bex ...Since I was nine.", "@a3_nico Me too. I didn't want you to know.", "@a3_bex I didn't want YOU to know."]);
   await RP.wait(600);
   await lines(["@a3_nico Wedges. Fine. Wedges AND wheels.", "@a3_bex I'll cut wheels. You cut wedges. We'll never speak of this.", "They shake on it and laugh, which is when I realize they've never laughed in front of me before."]);
   await RP.wait(500); stop();
-  RP.actor("a3_nico").act = "stand"; RP.actor("a3_bex").act = "stand"; RP.actor("a3_nico").face = "front"; RP.actor("a3_bex").face = "front";
+  AC("a3_nico").act = "stand"; AC("a3_bex").act = "stand"; AC("a3_nico").face = "front"; AC("a3_bex").face = "front";
   S.f.a3_feudOver = true;
   RP.give("a3_key_nico"); RP.give("a3_key_bex");
   await lines(["@a3_nico You need the DVR? Take my key. Odessa's rule: both keys, both people.", "@a3_bex And mine. Don't lose them. Please don't make it weird.", "Two keys on lanyards. I'm now a keeper of a ceasefire."]);

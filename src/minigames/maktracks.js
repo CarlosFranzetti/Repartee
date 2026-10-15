@@ -59,7 +59,7 @@ const CHORDS = [[0, 3, 7, 10], [3, 7, 10, 14], [5, 8, 12, 15], [10, 14, 17, 21]]
 const CHORD_NAME = ["i", "III", "iv", "VII"];
 const SWING = { garage: 0.14, house: 0.06, "deep house": 0.1, techno: 0, "hip-hop": 0.18, disco: 0.04, boogie: 0.1, breaks: 0.12 };
 const TIER_GOALS = {
-  drop: [55, 62, 70, 76, 82], jump: [16, 20, 22, 25, 28], taste: [50, 58, 65, 72, 78], chop: [2, 3, 3, 4, 4], build: [10, 12, 14, 16, 20]
+  drop: [55, 62, 70, 76, 82], jump: [16, 20, 22, 25, 28], taste: [50, 58, 65, 72, 78], chop: [2, 3, 3, 4, 4], build: [8, 10, 12, 16, 20]
 };
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = m => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
@@ -474,8 +474,8 @@ RP.mg.register("makTracks", {
         const f = filtOf(b); e += W_FILT * (f[0] + f[1]) / 2;
         let v = e * 100;
         const sec = st.arr[b];
-        if (sec === "build") { let a = b; while (a > 0 && st.arr[a - 1] === "build") a--; let z = b; while (z < BARS - 1 && st.arr[z + 1] === "build") z++; v += 14 * (b - a + 1) / (z - a + 1); }
-        if (sec === "drop" && b > 0 && st.arr[b - 1] !== "drop") v += 6;
+        if (sec === "build") { let a = b; while (a > 0 && st.arr[a - 1] === "build") a--; let z = b; while (z < BARS - 1 && st.arr[z + 1] === "build") z++; v += 8 * (b - a + 1) / (z - a + 1); }
+        if (sec === "drop" && b > 0 && st.arr[b - 1] !== "drop") v += 10;
         out.push(Math.round(clamp(v, 0, 100)));
       }
       return out;
@@ -504,20 +504,20 @@ RP.mg.register("makTracks", {
       if (drops.length) {
         dropMin = Math.min(...drops.map(b => en[b]));
         const b0 = drops[0], prev = b0 > 0 ? en[b0 - 1] : 0;
-        jump = Math.round(drops.reduce((a, b) => a + en[b], 0) / drops.length - prev);
+        jump = Math.round(en[b0] - prev);
       }
       const kickN = count("kick"), hatN = count("hat"), clapN = count("clap");
       const gGroove = diff <= 1 ? kickN >= 3 && hatN >= 3 : diff === 2 ? kickN >= 4 && hatN >= 4 : kickN >= 4 && clapN >= 2 && hatN >= 6;
       const list = [
         { id: "groove", t: "GET A GROOVE", d: diff <= 1 ? "kick 3+, hats 3+" : diff === 2 ? "kick 4+, hats 4+" : "kick 4+, clap 2+, hats 6+", ok: gGroove, prog: "K" + kickN + " C" + clapN + " H" + hatN },
         { id: "chop", t: "CHOP THE SAMPLE", d: TIER_GOALS.chop[di] + "+ different slices", ok: tz.dist >= TIER_GOALS.chop[di], prog: tz.dist + "/" + TIER_GOALS.chop[di] },
-        { id: "drop", t: "MAKE THE DROP HIT", d: "drop energy " + TIER_GOALS.drop[di] + "+, " + TIER_GOALS.jump[di] + "+ above what's before it", ok: drops.length > 0 && dropMin >= TIER_GOALS.drop[di] && jump >= TIER_GOALS.jump[di], prog: drops.length ? dropMin + " / +" + Math.max(0, jump) : "no drop" }
+        { id: "drop", t: "MAKE THE DROP HIT", d: "every drop bar " + TIER_GOALS.drop[di] + "+, and " + TIER_GOALS.jump[di] + "+ above the bar before it", ok: drops.length > 0 && dropMin >= TIER_GOALS.drop[di] && jump >= TIER_GOALS.jump[di], prog: drops.length ? dropMin + " / +" + Math.max(0, jump) : "no drop" }
       ];
       if (withLou) list.push({ id: "lou", t: "KEEP LOU HAPPY", d: "Lou's mood " + TIER_GOALS.taste[di] + "%+", ok: tz.t >= TIER_GOALS.taste[di], prog: tz.t + "%" });
       if (diff >= 3) {
-        const bi = st.arr.indexOf("build"); let ok = false, rise = 0;
-        if (bi >= 0 && drops.length) { let z = bi; while (z < BARS - 1 && st.arr[z + 1] === "build") z++; const before = bi > 0 ? en[bi - 1] : 0; rise = en[z] - before; ok = st.arr[z + 1] === "drop" && rise >= TIER_GOALS.build[di] + 6; }
-        list.push({ id: "build", t: "BUILD THE TENSION", d: "a build into the drop, +" + (TIER_GOALS.build[di] + 6) + " lift", ok, prog: bi >= 0 ? "+" + Math.max(0, rise) : "no build" });
+        let best = null;
+        for (let b = 0; b < BARS; b++) if (st.arr[b] === "build" && (b === 0 || st.arr[b - 1] !== "build")) { let z = b; while (z < BARS - 1 && st.arr[z + 1] === "build") z++; if (z > b) { const c = Math.max(...en.slice(b, z + 1)) - en[b]; if (!best || c > best.c) best = { c, a: b, z }; } }
+        list.push({ id: "build", t: "BUILD THE TENSION", d: "2+ build bars: add layers so the energy climbs +" + TIER_GOALS.build[di], ok: !!best && best.c >= TIER_GOALS.build[di], prog: best ? "+" + Math.max(0, best.c) : "no 2-bar build" });
       }
       return { en, tz, list, dropMin, jump, drops };
     }

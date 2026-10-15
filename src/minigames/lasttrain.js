@@ -84,10 +84,10 @@ const MAPS = {
   airport: {
     key: "airport", name: "Airport + rail map", river: false, fare: 4, cab: 55, startMin: 100, maxPairs: [["t1", "hal9"], ["t2", "war"], ["prk", "mit"], ["t1", "war"], ["t2", "hal9"]],
     stations: [
-      S("t1", "Terminal 1", "Terminal 1", 30, 40, 2, 0, true, "r"), S("t2", "Terminal 2", "Terminal 2", 30, 92, 2, 0, true, "r"), S("prk", "Long-Term Parking", "Parking", 30, 144, 1, 0, false, "r"),
-      S("rail", "Airport Rail", "Airport Rail", 96, 120, 3, 3, true, "b"), S("mes", "Messe Nord", "Messe Nord", 146, 70, 2, 0, false, "t"), S("hbf", "Hauptbahnhof", "Hauptbahnhof", 230, 70, 3, 3, true, "t"),
-      S("ost", "Ostkreuz", "Ostkreuz", 290, 40, 2, 0, false, "l"), S("sue", "Südkreuz", "Südkreuz", 146, 170, 2, 0, false, "b"), S("neu", "Neukölln", "Neukölln", 230, 170, 3, 3, true, "t"),
-      S("war", "Warschauer Str", "Warschauer", 290, 140, 2, 0, true, "l"), S("mit", "Mitte", "Mitte", 230, 120, 2, 0, false, "r"), S("hal9", "Halle Neun", "Halle Neun", 290, 185, 1, 0, false, "l")
+      S("t1", "Terminal 1", "Terminal 1", 30, 40, 2, 0, true, "r"), S("t2", "Terminal 2", "Terminal 2", 30, 92, 2, 0, true, "r"), S("prk", "Long-Term Parking", "Parking", 30, 144, 1, 0, false, "b"),
+      S("rail", "Airport Rail", "Airport Rail", 96, 120, 3, 3, true, "tl"), S("mes", "Messe Nord", "Messe Nord", 146, 70, 2, 0, false, "t"), S("hbf", "Hauptbahnhof", "Hauptbahnhof", 230, 70, 3, 3, true, "t"),
+      S("ost", "Ostkreuz", "Ostkreuz", 290, 40, 2, 0, false, "b"), S("sue", "Südkreuz", "Südkreuz", 146, 170, 2, 0, false, "b"), S("neu", "Neukölln", "Neukölln", 230, 170, 3, 3, true, "bl"),
+      S("war", "Warschauer Str", "Warschauer", 290, 140, 2, 0, true, "t"), S("mit", "Mitte", "Mitte", 230, 120, 2, 0, false, "r"), S("hal9", "Halle Neun", "Halle Neun", 290, 185, 1, 0, false, "t")
     ],
     lines: [
       { id: "sky", n: "SKYTRAIN", col: "#ffc44d", st: ["t1", "t2", "prk", "rail"], rt: [3, 3, 4], head: 6, last: 235, fare: 0, path: [[30, 40], [30, 92], [30, 144], [64, 144], [96, 120]] },
@@ -270,7 +270,7 @@ RP.mg.register("lastTrain", {
     const Pl = {
       t: t0, loc: "street", st: A.id, line: null, train: null, idx: 0, seg: null,
       bat: clamp(Number(p.battery) >= 0 ? Number(p.battery) : [28, 22, 18, 15, 12][diff - 1], 0, 100),
-      money: Number(p.money) >= 0 ? Number(p.money) : [9, 6, 3, 3, 3][diff - 1],
+      money: Number(p.money) >= 0 ? Number(p.money) : (mode === "airport" ? [12, 9, 6, 5, 4] : [9, 6, 3, 3, 3])[diff - 1],
       stam: 100, elKnown: new Set(), paid: false, liveUntil: -1, checks: 0, collapses: 0, cab: false, walk: 0, swipeFails: 0, done: false, arrived: false, late: 0, stairsFlights: 0, announce: null, log: [], bump: 0
     };
     const startBat = Pl.bat, startMoney = Pl.money;
@@ -344,6 +344,12 @@ RP.mg.register("lastTrain", {
         const b = el("button", { cls: "lt-st", type: "button", "aria-label": s.n + ", " + s.lines.map(l => MAP.lineBy[l].n).join(" and ") }, labs);
         b.style.left = (s.x / W * 100) + "%"; b.style.top = (s.y / H * 100) + "%";
         b.addEventListener("click", () => { sel = s.id; sfx("blip"); renderInfo(); });
+        b.addEventListener("keydown", e => {
+          const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key]; if (!d) return;
+          e.preventDefault(); const cur = MAP.by[sel]; let best = null, bs = 1e9;
+          MAP.stations.forEach(o => { if (o.id === cur.id) return; const dx = o.x - cur.x, dy = o.y - cur.y, along = dx * d[0] + dy * d[1]; if (along <= 0) return; const cross = Math.abs(dx * d[1] + dy * d[0]), sc = along + cross * 2.2; if (sc < bs) { bs = sc; best = o; } });
+          if (best) { sel = best.id; renderInfo(); try { stBtn[best.id].focus(); } catch (er) { /* ignore */ } }
+        });
         stBtn[s.id] = b;
         const l = el("div", { cls: "lt-lab", text: s.s }, labs); stLab[s.id] = l;
       });
@@ -568,6 +574,7 @@ RP.mg.register("lastTrain", {
           const why = (L.fare > 0 && !Pl.paid && Pl.money < L.fare) ? "need " + money(L.fare) : null;
           optBtn(c, "<span style='color:" + L.col + "'>▶</span> to " + dest, "in " + min + " min (" + clk(it.t) + ")", () => board(it), why, "go");
         });
+        if (Pl.money < FARE && !Pl.paid && stn.lines.some(l => l !== Pl.line && lineOf(l).fare > 0)) optBtn(c, "Ask a stranger for a ticket", "3 min", askSwipe, Pl.swipeOK ? "a ticket is ready: change lines" : null);
         const others = stn.lines.filter(l => l !== Pl.line);
         others.forEach(lid => {
           const card = el("div", { cls: "lt-card", style: "padding:6px 8px;border-style:dashed" }, c);
@@ -618,6 +625,7 @@ RP.mg.register("lastTrain", {
         if (list.length) h += "<br><span style='color:var(--pink)'>LIVE: " + list.join(" | ") + "</span>";
       }
       info.innerHTML = h;
+      MAP.stations.forEach(q => { stBtn[q.id].tabIndex = q.id === sel ? 0 : -1; });
     }
     function renderHud() {
       cNow.innerHTML = "<small>NOW</small>" + clk(Pl.t);
