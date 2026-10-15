@@ -491,7 +491,7 @@ RP.mg.register("setTime", {
           winQ = rem <= win() ? 1 : clamp(0.55 + 0.45 * (cur.pos / Math.max(1, cur.len - win())), 0.5, 0.97);
           if (cur.pos > cur.len + 0.3) winQ = 0.8;
         }
-        const mq = mixQ(cur.rec, nx, winQ, R.diff);
+        const mq = cur.tape ? { q: winQ * 0.95, bq: 1, gq: 1 } : mixQ(cur.rec, nx, winQ, R.diff);
         let q = mq.q; const lab = mixLabel(q), first = !G.played.length || cur.prev || cur.tape;
         const parts = [];
         // first record after a legend: the gap

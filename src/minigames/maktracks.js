@@ -272,18 +272,22 @@ const CSS = `
 .mg-makTracks .mg-wrap { margin-block: 0 auto; width: min(1060px, 100%); }
 .mt-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .mg-head.mt-head { align-items: center; }
-.mt-head .mt-leave { font-size: 18px; padding: 2px 12px; margin-left: auto; }
+.mt-head .mt-leave { font-size: 18px; padding: 2px 12px; }
+.mt-head .btn.primary { font-size: 18px; padding: 2px 12px; margin-left: auto; }
+.mt-bfin { display: none; font-size: 20px; }
 .mt-cols { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 10px; align-items: start; }
 .mt-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .mt-box { background: #120e24; border: 1px solid var(--line); border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .mt-h { font-size: 17px; color: var(--muted); letter-spacing: .08em; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .mt-h b { color: var(--fg); font-weight: 400; }
-.mt-machine { position: relative; background: linear-gradient(#1d1738, #120e24); border: 2px solid #3a2f78; box-shadow: 0 0 0 2px #120a2c, 0 6px 0 #000; border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
-.mt-top { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 8px; align-items: center; }
+.mt-machine { position: relative; background: linear-gradient(#1d1738, #120e24); border: 2px solid #3a2f78; box-shadow: 0 0 0 2px #120a2c, 0 6px 0 #000; border-radius: 4px; padding: 8px; display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 8px; align-items: center; }
+.mt-machine > .mt-grid { grid-column: 1 / -1; }
+
 .mt-lcdwrap { border: 3px solid #0a0716; background: #0a1a14; box-shadow: inset 0 0 0 1px #2a4a3a; line-height: 0; }
 .mt-lcdwrap canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; aspect-ratio: 160 / 28; }
 .mt-trans { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; justify-content: flex-end; }
 .mt-trans .btn { font-size: 20px; padding: 5px 12px; }
+.mt-trans .lg { }
 .mt-trans .btn.on { background: var(--ok); border-color: var(--ok); color: #06180e; }
 .mt-bpm { display: flex; align-items: center; gap: 6px; font-size: 18px; color: var(--muted); }
 .mt-bpm input[type=range] { width: 110px; accent-color: var(--pink); }
@@ -368,9 +372,16 @@ const CSS = `
 .mt-toast { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); background: var(--amber); color: #12061a; font-size: 20px; padding: 3px 12px; z-index: 5; pointer-events: none; border: 2px solid #fff; }
 .mt-wrap :focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
 @media (max-width: 860px) {
+  .mt-head .btn.primary { display: none; }
+  .mt-bfin { display: block; }
   .mt-cols { grid-template-columns: minmax(0, 1fr); }
-  .mt-top { grid-template-columns: minmax(0, 1fr); }
-  .mt-trans { justify-content: flex-start; }
+  .mt-machine { grid-template-columns: minmax(0, 1fr); }
+  .mt-trans { justify-content: space-between; position: sticky; top: 0; z-index: 6; background: #1a1434; padding: 6px 4px; margin: 0 -4px; border-bottom: 2px solid #3a2f78; flex-wrap: nowrap; gap: 6px; }
+  .mt-trans .btn { font-size: 19px; padding: 5px 9px; }
+  .mt-trans .lg { display: none; }
+  .mt-bpm input[type=range] { display: none; }
+  .mt-bpm { gap: 4px; }
+  .mt-bfin { width: 100%; }
   .mt-grid { grid-template-columns: 20px repeat(7, minmax(0, 1fr)); grid-template-rows: auto repeat(16, 28px); gap: 3px; }
   .mt-num { grid-row: calc(var(--si) + 2); grid-column: 1; line-height: 28px; font-size: 12px; }
   .mt-rh { grid-column: calc(var(--ri) + 2); grid-row: 1; flex-wrap: wrap; justify-content: center; gap: 1px; padding: 2px; }
@@ -524,18 +535,19 @@ RP.mg.register("makTracks", {
 
     /* machine: LCD + transport + grid */
     const machine = el("div", { cls: "mt-machine" }, colA);
-    const top = el("div", { cls: "mt-top" }, machine);
-    const lcdw = el("div", { cls: "mt-lcdwrap" }, top);
+    const lcdw = el("div", { cls: "mt-lcdwrap" }, machine);
     const lcv = el("canvas", { width: 160, height: 28, "aria-hidden": "true" }, lcdw), lc = lcv.getContext("2d");
-    const trans = el("div", { cls: "mt-trans" }, top);
+    const trans = el("div", { cls: "mt-trans" }, machine);
     const bPlay = el("button", { cls: "btn", type: "button", text: "PLAY", "aria-label": "Play / stop (P)" }, trans);
-    const bMode = el("button", { cls: "btn", type: "button", text: "LOOP: PATTERN", title: "Pattern = loop the 16 steps. Song = play the 8-bar arrangement." }, trans);
+    const bMode = el("button", { cls: "btn", type: "button", title: "Pattern = loop the 16 steps. Song = play the 8-bar arrangement.", "aria-label": "Loop mode" }, trans);
+    const setModeLabel = () => { bMode.innerHTML = "<span class='lg'>LOOP: </span>" + (st.mode === "pat" ? "PATTERN" : "SONG"); };
     const bpmw = el("div", { cls: "mt-bpm" }, trans);
     const bDn = el("button", { cls: "kbtn", type: "button", text: "−", "aria-label": "Slower" }, bpmw);
     const bpmIn = el("input", { type: "range", min: "70", max: "170", step: "1", value: String(st.bpm), "aria-label": "BPM" }, bpmw);
     const bUp = el("button", { cls: "kbtn", type: "button", text: "+", "aria-label": "Faster" }, bpmw);
     const bpmTxt = el("span", { text: "" }, bpmw);
-    const bFin = el("button", { cls: "btn primary", type: "button", text: "FINISH TRACK" }, trans);
+    const bFin = el("button", { cls: "btn primary", type: "button", text: "FINISH TRACK" }); head.insertBefore(bFin, leave);
+    const bFin2 = el("button", { cls: "btn primary mt-bfin", type: "button", text: "FINISH TRACK: NAME IT AND BOUNCE" }, wrap);
 
     const grid = el("div", { cls: "mt-grid", role: "grid", "aria-label": "16-step sequencer" }, machine);
     const toastHost = machine;
@@ -759,7 +771,7 @@ RP.mg.register("makTracks", {
       bPlay.textContent = "PLAY"; bPlay.classList.remove("on"); showPlayhead(-1, -1);
     }
     const toggle = () => { if (st.playing) stop(); else play(); };
-    function cueBar(b) { st.mode = "song"; bMode.textContent = "LOOP: SONG"; if (E.live) { try { E.newBus(); } catch (e) { /* ignore */ } } play(b); RP.sfx("blip"); }
+    function cueBar(b) { st.mode = "song"; setModeLabel(); if (E.live) { try { E.newBus(); } catch (e) { /* ignore */ } } play(b); RP.sfx("blip"); }
     host.cleanup(() => { st.playing = false; });
 
     /* ---------- editing ---------- */
@@ -850,7 +862,7 @@ RP.mg.register("makTracks", {
     bpmIn.addEventListener("input", () => setBpm(parseInt(bpmIn.value, 10)));
     bDn.addEventListener("click", () => setBpm(st.bpm - 2)); bUp.addEventListener("click", () => setBpm(st.bpm + 2));
     bPlay.addEventListener("click", toggle);
-    bMode.addEventListener("click", () => { st.mode = st.mode === "pat" ? "song" : "pat"; bMode.textContent = "LOOP: " + (st.mode === "pat" ? "PATTERN" : "SONG"); if (st.playing) { stop(); play(st.mode === "song" ? 0 : null); } onChange(); });
+    bMode.addEventListener("click", () => { st.mode = st.mode === "pat" ? "song" : "pat"; setModeLabel(); if (st.playing) { stop(); play(st.mode === "song" ? 0 : null); } onChange(); });
 
     /* ---------- Lou ---------- */
     const LOU = {
@@ -1038,7 +1050,7 @@ RP.mg.register("makTracks", {
       cont.focus({ preventScroll: true });
       RP.sfx(res.ok ? "success" : "fail");
     }
-    bFin.addEventListener("click", finishFlow);
+    bFin.addEventListener("click", finishFlow); bFin2.addEventListener("click", finishFlow);
     leave.addEventListener("click", () => { if (st.done) return; st.done = true; stop(); if (resolveFn) { const f = resolveFn; resolveFn = null; f({ ok: false, score: 0, track: null }); } });
 
     /* ---------- main loop ---------- */
@@ -1061,7 +1073,7 @@ RP.mg.register("makTracks", {
     });
 
     /* ---------- go ---------- */
-    refreshGrid(); refreshRows(); refreshBank(); refreshPads(); setBpm(st.bpm);
+    setModeLabel(); refreshGrid(); refreshRows(); refreshBank(); refreshPads(); setBpm(st.bpm);
     st.t = 0; st.firstEval = true; onChange(); st.firstEval = false;
     setHint("Welcome to the studio. Tap the grid to program a beat, then press PLAY. Arrow keys + SPACE work too.");
     if (withLou) { st.louMsg = LOU.idle[0]; louSayEl.innerHTML = "<b>LOU:</b> “" + RP.u.esc(st.louMsg) + "”"; }
