@@ -629,10 +629,23 @@ function paintSide(B, P, d, m, pose) {
 }
 
 /* ---------------- shading ---------------- */
+/* character ramp: shadows multiply toward a cool plum (never a saturated red on skin),
+   lights lift toward warm white. [deep, shadow, base, light, highlight] as rgb arrays */
+const crampCache = new Map();
+function cramp(base) {
+  let r = crampCache.get(base);
+  if (r) return r;
+  const [R0, G0, B0] = hex(base);
+  const mul = (a, b, c) => [R0 * a, G0 * b, B0 * c].map(v => clamp(Math.round(v), 0, 255));
+  const lift = (a, b, c) => [R0 + (255 - R0) * a, G0 + (255 - G0) * b, B0 + (255 - B0) * c].map(v => clamp(Math.round(v), 0, 255));
+  r = [mul(0.5, 0.46, 0.64), mul(0.75, 0.71, 0.85), [R0, G0, B0], lift(0.2, 0.18, 0.12), lift(0.42, 0.4, 0.3)];
+  crampCache.set(base, r);
+  return r;
+}
 function shadeBuffer(B, lx, rim) {
   const { w, h } = B;
   const out = new Uint8ClampedArray(w * h * 4);
-  const ramps = B.pal.map(c => ramp(c).map(hex));
+  const ramps = B.pal.map(c => cramp(c));
   const flat = B.pal.map(hex);
   const val = new Float32Array(w * h);
   // per-part horizontal runs → cylinder normal

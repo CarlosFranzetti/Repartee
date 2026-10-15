@@ -156,7 +156,6 @@ async function bartend(S, who) {
   await RP.lines(m ? ["Hey. Any chance you'll dance later?", "@a1_mia I haven't danced behind a bar in six years. Not since the last DJ who made me want to.", "@a1_mia Make me want to. It's not hard. It's just rare."] : ["Slow night?", "@a1_rafa Slow? It's ten. It's a funeral until eleven.", "@a1_rafa I'm writing a screenplay. It's about a bartender. It's a drama. Ask me about it. Don't."]);
 }
 
-const FLOOR = (seed, x0, n) => ({ crowd: { n, rect: [x0, 208, 160, 34], seed, face: "back", act: "dance", scale: 0.92 } });
 RP.room({
   id: "a1_nowhere", act: 1, name: "Nowhere",
   paint: paintNowhere, draw: drawNowhere, light: lightNowhere,
@@ -180,7 +179,7 @@ RP.room({
     { id: "a1_hank", char: "a1_hank", x: 64, y: 204, face: "right", act: "sit", name: "Old Hank" },
     { id: "a1_twig", char: "a1_twig", x: 470, y: 236, face: "front", act: "stand", name: "Twig" },
     { id: "a1_coco", char: "a1_coco", x: 138, y: 240, face: "right", act: "phone", name: "Coco" },
-    Object.assign({ crowd: { n: 3, rect: [150, 212, 130, 30], seed: 11, face: "back", act: "stand", scale: 0.92 } }, {}),
+    { crowd: { n: 3, rect: [150, 212, 130, 30], seed: 11, face: "back", act: "stand", scale: 0.92, vis: S => !S.f.a1_setGood } },
     { crowd: { n: 3, rect: [360, 212, 130, 30], seed: 12, face: "back", act: "stand", scale: 0.92, vis: S => !S.f.a1_setGood } },
     { crowd: { n: 12, rect: [140, 208, 150, 34], seed: 13, face: "back", act: "dance", scale: 0.92, vis: S => !!S.f.a1_setGood } },
     { crowd: { n: 12, rect: [350, 208, 150, 34], seed: 14, face: "back", act: "dance", scale: 0.92, vis: S => !!S.f.a1_setGood } }

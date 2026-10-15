@@ -226,8 +226,6 @@ RP.defineAct({
     }
     A5.ensureCrate(S);
     S.inv = ["phone", "wallet"];
-    const keep = {};
-    S.f = Object.assign(keep, S.f);
     Object.keys(S.f).forEach(k => { if (k.indexOf("a5_") === 0) delete S.f[k]; });
     S.f.noTravel = false; S.f.__hideKid = false;
     S.f.a5_day = 1; S.f.a5_tod = "day"; S.f.a5_phase = 0;
@@ -237,6 +235,7 @@ RP.defineAct({
   wardrobe: A5.outfits.coat.patch,
   async intro(S) {
     const k = RP.actor("kid"); k.face = "front";
+    S.f.a5_advance = Math.max(5000, Math.ceil((10000 - S.money) / 500) * 500);
     await RP.lines([
       "Thursday. Ten in the morning. Three days until I headline a festival.",
       "I'm not nervous. That's a lie. I've been up since five, alphabetizing my own records."
@@ -245,13 +244,11 @@ RP.defineAct({
     await RP.lines([
       "@a5_priya Good morning, headliner. It's Priya. Your manager. I'm calling at ten because I'm a person who calls at ten.",
       "Priya, I haven't seen you since the Berlin invoice.",
-      "@a5_priya And you won't see this one either. Harbor Lights wired your advance. Five thousand dollars, in your account.",
-      "I've never had five thousand dollars at once. I have to sit down. I'm sitting down."
+      "@a5_priya And you won't see this one either. Harbor Lights wired your advance. " + RP.u.fmtMoney(S.f.a5_advance) + ", in your account.",
+      "I've never had that much at once. I have to sit down. I'm sitting down."
     ]);
     S.f.a5_calledPriya = true;
-    const adv = Math.max(5000, Math.ceil((10000 - S.money) / 500) * 500);
-    S.f.a5_advance = adv;
-    RP.money(adv);
+    RP.money(S.f.a5_advance);
     await RP.lines([
       "@a5_priya Here's the plan. You're not playing a festival on CDJ-900s and a mixer from a different decade.",
       "@a5_priya Lacquer & Wire in Williamsburg. They stock the mixer you keep describing in your sleep. Handwired, in Barcelona.",
@@ -267,6 +264,7 @@ RP.defineAct({
       "(Phone: Subway map. Then Lacquer & Wire. The advance is real. I checked twice.)"
     ]);
   },
+  combos: [["a5_marker", "a5_pass", S => A5.fixPass(RP.state)]],
   doneTitle: "SUPERSTAR DJ",
   doneText: S => "Harbor Lights. Main stage. A rotary mixer, a white label, and a thousand people who knew every word. Dante's drink tickets: still unspent."
 });
