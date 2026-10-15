@@ -2,7 +2,8 @@
    with real records and gear. Flags used here (S.f): a1_charged, a1_texts, a1_drawer,
    a1_swabs, a1_vodka, a1_mixer, a1_c1, a1_louAngry, a1_louAsked, a1_louHappy, a1_pizza,
    a1_cans, a1_crate, a1_charger, a1_booked, a1_acidUnder, a1_acidFlat, a1_slept, a1_usbSeen,
-   a1_win, lamp (inverse: a1_lampOff), time ("night" | "morning" | later beats). */
+   a1_win, lamp (inverse: a1_lampOff), time ("night" Tue | "morning" Wed | "evening" Wed dusk | "sat" Saturday night).
+   Hooks implemented in 15_home.js: RP.act1DoorExit, RP.act1LaptopUse, RP.act1BedUse, RP.act1BedroomEnter. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -19,8 +20,10 @@ RP.data.extraRecords = Object.assign(RP.data.extraRecords || {}, {
   white_nyc93: { id: "white_nyc93", artist: "Unknown", title: "\"NYC 93\" (white label)", label: "white label", year: 1993, format: "12\"", genre: "garage", bpm: 120, energy: 3, rarity: "grail", price: 0, vibe: ["weird", "builder"], fact: "No label, no artist. Just \"NYC 93\" in marker. Lou won't say where it came from." }
 });
 
-const night = S => S.f.time === "night";
-const lampOn = S => night(S) && !S.f.a1_lampOff;
+const night = S => S.f.time === "night" || S.f.time === "sat";
+const dusk = S => S.f.time === "evening";
+const lampOn = S => (night(S) || dusk(S)) && !S.f.a1_lampOff;
+const modeOf = S => night(S) ? "night" : dusk(S) ? "dusk" : "day";
 
 const C = {
   wall: "#8c7590", wallL: "#9a83a0", wallD: "#7c6582", patch: "#a891a8", patchI: "#998199", ceil: "#6e5874",
@@ -40,34 +43,40 @@ const C = {
 const WIN = { x: 216, y: 30, w: 120, h: 94 };
 let litWindows = [];
 
-function paintCity(c, day) {
+function paintCity(c, mode) {
+  const day = mode === "day", dusk = mode === "dusk";
   const rnd = mulberry(42);
   const { x: x0, y: y0, w, h } = WIN;
-  const sky = day ? ["#8fb4f5", "#a5c3f7", "#c2d2f5", "#e7d9e8", "#ffd7b8"] : ["#140c34", "#1f1146", "#2e1558", "#4a1d66", "#6e2a6e"];
+  const sky = day ? ["#8fb4f5", "#a5c3f7", "#c2d2f5", "#e7d9e8", "#ffd7b8"] : dusk ? ["#3a2a78", "#7a3a86", "#c8527a", "#ff8a5a", "#ffc47a"] : ["#140c34", "#1f1146", "#2e1558", "#4a1d66", "#6e2a6e"];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const t = y / (h - 1) + (bayer(x, y) / 16 - 0.5) * 0.16; P(c, x0 + x, y0 + y, sky[clamp(Math.floor(t * 5), 0, 4)]); }
-  if (!day) {
+  if (mode === "night") {
     for (let i = 0; i < 18; i++) P(c, x0 + rnd() * w, y0 + rnd() * h * 0.45, rnd() > 0.5 ? "#ffffff" : "#b9a8ff");
     ell(c, x0 + w - 24, y0 + 15, 6, 6, "#f2e7c4"); P(c, x0 + w - 26, y0 + 13, "#d8cca4"); P(c, x0 + w - 22, y0 + 17, "#d8cca4"); P(c, x0 + w - 21, y0 + 12, "#d8cca4");
+  } else if (dusk) {
+    for (let i = 0; i < 5; i++) P(c, x0 + rnd() * w, y0 + rnd() * h * 0.2, "#d8c8ff");
+    ell(c, x0 + 26, y0 + h - 30, 9, 9, "#fff0c0"); ell(c, x0 + 26, y0 + h - 30, 6, 6, "#ffffff");
+    for (let i = 0; i < 4; i++) R(c, x0 + 6 + i * 11, y0 + 24 + i * 6, 34 - i * 4, 1, i % 2 ? "#ffb878" : "#e0709a");
   } else ell(c, x0 + 18, y0 + 18, 8, 8, "#fff6dc");
-  const by = y0 + h - 16, bc = day ? "#7d7598" : "#2a1c48";
+  const by = y0 + h - 16, bc = day ? "#7d7598" : dusk ? "#5a3a6a" : "#2a1c48";
   R(c, x0, by, w * 0.62, 2, bc);
   [[x0 + 18, 22], [x0 + 58, 22]].forEach(([tx, th]) => { R(c, tx, by - th, 3, th, bc); R(c, tx - 1, by - th, 5, 2, bc); });
   for (let i = 0; i < 40; i++) { const t = i / 39, sag = Math.sin(t * Math.PI) * 10; P(c, x0 + 19 + t * 40, by - 22 + sag, bc); }
   if (!day) for (let x = 0; x < w * 0.62; x += 3) P(c, x0 + x, by - 1, (x / 3) % 2 ? "#ffd27a" : "#ff6cbb");
   litWindows = [];
   let bx = x0;
-  while (bx < x0 + w) { const bw = 7 + rnd() * 12 | 0, bh = 22 + rnd() * 34 | 0; R(c, bx, y0 + h - bh, bw, bh, day ? "#a49cc0" : "#22163e"); bx += bw; }
+  while (bx < x0 + w) { const bw = 7 + rnd() * 12 | 0, bh = 22 + rnd() * 34 | 0; R(c, bx, y0 + h - bh, bw, bh, day ? "#a49cc0" : dusk ? "#4a3068" : "#22163e"); bx += bw; }
   bx = x0 - 3;
+  const litCols = ["#ffd27a", "#ffb04a", "#ff9ad5", "#9fe8ff"];
   while (bx < x0 + w) {
     const bw = 9 + rnd() * 14 | 0, bh = 14 + rnd() * 30 | 0, top = y0 + h - bh;
-    R(c, Math.max(bx, x0), top, bw - Math.max(0, x0 - bx), bh, day ? "#7d7598" : "#130c28");
+    R(c, Math.max(bx, x0), top, bw - Math.max(0, x0 - bx), bh, day ? "#7d7598" : dusk ? "#2e1c48" : "#130c28");
     for (let wy = top + 3; wy < y0 + h - 2; wy += 3) for (let wx = bx + 2; wx < bx + bw - 1; wx += 3) {
       if (wx < x0 || wx >= x0 + w) continue;
-      if (rnd() < (day ? 0.18 : 0.33)) { const col = day ? "#5d567a" : ["#ffd27a", "#ffb04a", "#ff9ad5", "#9fe8ff"][rnd() * 4 | 0]; P(c, wx, wy, col); if (!day) litWindows.push([wx, wy, col]); }
+      if (rnd() < (day ? 0.18 : dusk ? 0.26 : 0.33)) { const col = day ? "#5d567a" : litCols[rnd() * 4 | 0]; P(c, wx, wy, col); if (!day) litWindows.push([wx, wy, col]); }
     }
     bx += bw + 1;
   }
-  const sx = x0 + 78, sb = y0 + h, tc = day ? "#8e86ab" : "#1b1233";
+  const sx = x0 + 78, sb = y0 + h, tc = day ? "#8e86ab" : dusk ? "#3a2458" : "#1b1233";
   R(c, sx, sb - 58, 14, 58, tc); R(c, sx + 2, sb - 66, 10, 8, tc); R(c, sx + 4, sb - 72, 6, 6, tc); R(c, sx + 6, sb - 82, 2, 10, tc);
   if (!day) { for (let wy = sb - 56; wy < sb - 2; wy += 4) for (let wx = sx + 2; wx < sx + 13; wx += 3) if (rnd() < 0.5) P(c, wx, wy, "#ffe2a0"); P(c, sx + 6, sb - 83, "#ff4040"); }
   c.fillStyle = "rgba(255,255,255,0.10)";
@@ -86,7 +95,7 @@ function paintWindowFrame(c, open) {
 }
 
 function paint(c, S) {
-  const day = !night(S), open = !!S.f.a1_win;
+  const mode = modeOf(S), day = mode === "day", open = !!S.f.a1_win;
   const rnd = mulberry(7);
   R(c, 0, 0, W, 166, C.wall);
   for (let i = 0; i < 1100; i++) P(c, rnd() * W, rnd() * 162, C.wallL);
@@ -131,7 +140,7 @@ function paint(c, S) {
   R(c, 132, 151, 22, 12, C.lapD); R(c, 133, 152, 20, 10, "#1a2840"); R(c, 128, 162, 30, 3, C.lap); R(c, 128, 164, 30, 1, C.lapD);
   R(c, 140, 156, 6, 1, "#9fc2ff"); R(c, 135, 158, 10, 1, "#6a8ad8"); R(c, 131, 154, 1, 6, "#c0b8a0"); R(c, 152, 153, 1, 7, "#c0b8a0");
   // window, radiator, pipe hole
-  paintCity(c, day); paintWindowFrame(c, open);
+  paintCity(c, mode); paintWindowFrame(c, open);
   R(c, 236, 136, 80, 30, C.radD); R(c, 236, 136, 80, 3, C.rad);
   for (let x = 238; x < 314; x += 5) { R(c, x, 139, 4, 26, C.rad); R(c, x + 3, 139, 1, 26, C.radF); }
   R(c, 234, 162, 84, 4, C.radD); R(c, 238, 166, 4, 4, C.radD); R(c, 310, 166, 4, 4, C.radD);
@@ -230,7 +239,7 @@ function drawPlant(c) {
 
 let playing = false, sparkT = 0;
 function draw(c, S, t) {
-  if (night(S)) {
+  if (night(S) || dusk(S)) {
     for (let i = 0; i < litWindows.length; i++) { const w = litWindows[i]; if (((i * 7919 + Math.floor(t / 900) * 31) % 97) === 0) P(c, w[0], w[1], "#130c28"); }
     if (Math.floor(t / 700) % 2) P(c, WIN.x + 84, WIN.y + WIN.h - 83, "#ff4040");
   }
@@ -240,7 +249,7 @@ function draw(c, S, t) {
   P(c, 488, 114, S.f.a1_mixer ? "#3fd07a" : (Math.floor(t / 400) % 2 ? "#ff3f3f" : "#5a1a1a"));
   if (sparkT > performance.now()) for (let i = 0; i < 6; i++) P(c, 484 + Math.random() * 10, 116 + Math.random() * 10, Math.random() > 0.5 ? "#fff6a0" : "#ffffff");
   if (lampOn(S)) { ell(c, 470, 31, 3, 4, C.bulb); P(c, 469, 29, "#ffffff"); } else { ell(c, 470, 31, 3, 4, "#cfc8b8"); P(c, 469, 29, "#efe8d8"); }
-  if (night(S)) R(c, 140, 156, 6, 1, "#9fc2ff");
+  if (night(S) || dusk(S)) R(c, 140, 156, 6, 1, "#9fc2ff");
   drawDrawer(c, S);
   if (S.f.a1_charged) { R(c, 198, 156, 4, 3, "#efeaf6"); for (let y = 159; y < 200; y++) P(c, 200 + Math.round(Math.sin(y / 4) * 2), y, "#efeaf6"); }
   if (!S.f.a1_charger) { R(c, 118, 202, 6, 4, "#efeaf6"); for (let i = 0; i < 14; i++) P(c, 124 + i, 204 + Math.round(Math.sin(i / 2)), "#efeaf6"); }
@@ -248,6 +257,13 @@ function draw(c, S, t) {
 
 /* ---------------- light ---------------- */
 function light(S) {
+  if (dusk(S)) {
+    const on = lampOn(S);
+    const L = { ambient: on ? "#86688c" : "#7a5c84", lights: [{ box: [WIN.x, WIN.y, WIN.w, WIN.h], r: 300, color: "#ff9d66", steps: 4, sy: 1 }, { x: 276, y: 70, r: 210, color: "#ffb88a", steps: 3 }, { x: 612, y: 166, r: 40, color: "#ffcf7a", steps: 2, power: 0.6 }],
+      key: { x: 276, y: 60 }, rims: [{ x: 276, y: 80, r: 220, color: "#ffa070" }], shadow: 0.5 };
+    if (on) { L.lights.push({ x: 470, y: 32, r: 220, color: "#ffe2c0", steps: 4, sy: 1.25, power: 0.8 }); L.halos = [{ x: 470, y: 31, r: 20, color: "#ffb060", strength: 1 }]; }
+    return L;
+  }
   if (!night(S)) return { ambient: "#cdbfd8", lights: [{ box: [WIN.x, WIN.y, WIN.w, WIN.h], r: 300, color: "#fff4e8", steps: 3, sy: 1 }, { x: 276, y: 60, r: 200, color: "#ffffff", steps: 2 }], key: { x: 276, y: 60 }, shadow: 0.45 };
   if (lampOn(S)) return { ambient: "#5a4f98", lights: [{ x: 470, y: 32, r: 250, color: "#ffe2c0", steps: 5, sy: 1.25 }, { box: [WIN.x, WIN.y, WIN.w, WIN.h], r: 34, color: "#6f66b8", steps: 2 }, { x: 612, y: 166, r: 40, color: "#ffcf7a", steps: 2, power: 0.6 }],
     halos: [{ x: 470, y: 31, r: 20, color: "#ffb060", strength: 1 }], rims: [{ x: 276, y: 80, r: 170, color: "#8f86e0" }], shadow: 0.6 };
@@ -401,8 +417,9 @@ async function retrieveAcid(S) {
 RP.room({
   id: "bedroom", act: 1, name: "Bedroom 4C",
   paint, draw, light,
-  cacheKey: S => (night(S) ? "n" : "d") + (S.f.a1_win ? "o" : "c") + (lampOn(S) ? "l" : ""),
-  lightKey: S => (night(S) ? "n" : "d") + (lampOn(S) ? "l" : ""),
+  cacheKey: S => modeOf(S) + (S.f.a1_win ? "o" : "c") + (lampOn(S) ? "l" : ""),
+  lightKey: S => modeOf(S) + (lampOn(S) ? "l" : ""),
+  enter: async (S, from) => { S.f.noTravel = true; if (RP.act1BedroomEnter) await RP.act1BedroomEnter(S, from); },
   ambience: S => S.f.a1_win ? "street" : "room",
   walk: [[12, 218], [200, 210], [628, 210], [628, 250], [12, 250]],
   start: { x: 300, y: 228, face: "front" },
@@ -450,7 +467,7 @@ RP.room({
     { id: "outlet", name: "outlet", r: [193, 146, 14, 16], z: 44, walk: [204, 220, "back"], look: S => S.f.a1_charged ? "My phone charger lives here now." : "One outlet for the whole room. It powers my entire career." },
     { id: "poster", name: "poster", r: [40, 36, 60, 86], z: 20, walk: [70, 222, "back"], look: "GOOD MUSIC, BETTER PEOPLE. Bought it at a flea market from a guy who was neither.", pickup: "It's the only thing holding that wall together." },
     { id: "window", name: "window", r: [206, 24, 140, 112], z: 20, walk: [276, 214, "back"],
-      look: S => night(S) ? "Bushwick at night. Somewhere out there, a promoter is lying to a DJ." : "Bushwick in the morning. Somewhere out there, a DJ is going to bed.",
+      look: S => dusk(S) ? "Bushwick at dusk. The whole block turns orange for ten minutes a day. It's the landlord's only free upgrade." : night(S) ? "Bushwick at night. Somewhere out there, a promoter is lying to a DJ." : "Bushwick in the morning. Somewhere out there, a DJ is going to bed.",
       open: async S => { if (S.f.a1_win) return "It's already open. The city is in here with me."; S.f.a1_win = true; RP.sfx("click"); RP.audio.setAmbience("street"); await RP.say("Some city comes in. A siren, a bass line, somebody yelling about parking."); },
       close: async S => { if (!S.f.a1_win) return "It's closed."; S.f.a1_win = false; RP.sfx("click"); RP.audio.setAmbience("room"); await RP.say("Okay, city. That's enough city."); } },
     { id: "plant", name: "plant", r: [204, 174, 24, 38], z: 52, walk: [232, 220, "left"], look: "That's Gerald. He's seen things.", talk: "Hang in there, Gerald.", use: "I water him on holidays. Gerald loves holidays.", pickup: "Gerald stays where the light is. It's his whole thing." },
@@ -460,7 +477,7 @@ RP.room({
       talk: S => louTalk(S), use: "It's a hole. It's for talking to Lou and for nothing else.",
       give: async (S, item) => { if (item === "rec_mom") return giveJazz(S); return "Lou doesn't want that."; } },
     { id: "bulb", name: "light bulb", r: [460, 14, 22, 34], z: 26, walk: [470, 214, "back"], look: "A bare bulb on a pull chain. Mood lighting, landlord edition.",
-      pull: async S => { if (!night(S)) return "It's daytime. The bulb is decoration now."; S.f.a1_lampOff = !S.f.a1_lampOff; RP.sfx("click"); RP.relight(); await RP.say(lampOn(S) ? "Click. Light." : "Click. Very moody. Very underground."); },
+      pull: async S => { if (!night(S) && !dusk(S)) return "It's daytime. The bulb is decoration now."; S.f.a1_lampOff = !S.f.a1_lampOff; RP.sfx("click"); RP.relight(); await RP.say(lampOn(S) ? "Click. Light." : "Click. Very moody. Very underground."); },
       use: async S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "bulb").pull), pickup: "It's hot and it's the only one I have." },
     { id: "flyer", name: "Nowhere flyer", r: [444, 36, 56, 64], z: 21, walk: [472, 214, "back"], look: S => S.f.a1_booked ? "Saturday, 10 PM. That's me now. Sort of." : "Nowhere. Every Saturday. Dante's party. One day my name goes on one of these.", pickup: "Leave it. It's motivational." },
     { id: "graffiti", name: "graffiti", r: [514, 48, 46, 46], z: 19, walk: [548, 214, "back"], look: "NYC 4EVR, with a crown. My old roommate did it. My security deposit did not survive." },
@@ -505,6 +522,11 @@ RP.room({
     ["rec_acid", "hole", "Giving Lou anything called \"Acid Tracks\" is how I get evicted."],
     ["white", "hole", "He gave it to me for a reason."],
     ["usb_cat", "laptop", () => RP.state.f.a1_booked ? RP.lines(["Let me just clear some space on... oh.", "4,000 photos of Mr. Whiskers. I promised. I need a new USB."]) : "Nothing to copy yet."],
+    ["a1_usb", "laptop", () => RP.act1LaptopUse(RP.state)],
+    ["a1_usb3", "laptop", "Open the pack first. Then I'll have a USB to put things on."],
+    ["a1_usb", "cdjs", "The CDJs read USBs. Saturday. Right now it's blank and so is my plan."],
+    ["a1_usb", "self", "It goes in my pocket, not in my mouth. I have standards."],
+    ["a1_flyer", "poster", "My name doesn't even fit on the same wall as that poster. Ironically."],
     ["usb_cat", "cdjs", "It's full of cat photos. The decks would just show Mr. Whiskers. ...Actually, that's kind of a set."],
     ["rec_first", "cdjs", "That's vinyl. Those are CDJs. That's not how any of this works."],
     ["rec_acid", "cdjs", "That's vinyl. Those are CDJs. That's not how any of this works."],

@@ -1,4 +1,8 @@
-/* Act 1 — Bedroom DJ. Act definition, shared items and voices. */
+/* Act 1 — Bedroom DJ. Act definition, shared items, voices and subway-map locations.
+   Level files (loaded in name order): 01_lib, 05_chars, 06_items, 10_bedroom, 20_hall, 30_stoop,
+   32_bodega, 34_sals, 40_subway, 50_synergex, 52_breakroom, 60_deepcuts, 70_nowhere_door,
+   72_nowhere, 90_walkthrough. Flags are all a1_*; time is S.f.time ("night" Tue, "morning" Wed,
+   "evening" Wed dusk, "sat" Saturday night). */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -15,7 +19,7 @@ RP.defineAct({
     S.gear = { decks: "pioneer_cdj_350", mixer: "numark_m101usb", monitors: "krk_rokit_5_g4" };
     S.f.time = "night";
     S.clock = "TUE 11:04 PM";
-    S.unlocked = [];
+    S.unlocked = ["a1_loc_home"];
   },
   wardrobe: { top: { style: "tee", color: "#17131f", print: "circle" }, acc: [] },
   async intro() {
@@ -28,7 +32,19 @@ RP.defineAct({
 
 /* voices that speak from off-screen */
 RP.voice("lou", { color: "#9be15d", anchor: [346, 128] });
+RP.voice("loudoor", { color: "#9be15d", anchor: [303, 62] });                   /* Lou through the 4B door */
 RP.voice("dan", { color: "#ff8fcf", prefix: "DANTE (PHONE): ", anchor: S => [RP.actor("kid").x, 40] });
+RP.voice("pa", { color: "#ffd23f", prefix: "PA: ", anchor: [320, 30] });         /* Synergex fire-alarm speaker */
+RP.voice("mom", { color: "#ffb0c8", prefix: "MOM: ", anchor: [320, 40] });
+
+/* ---------------- subway map ---------------- */
+RP.location({ id: "a1_loc_home", act: 1, label: "Home (Jefferson St)", area: "Bushwick", room: "a1_stoop", x: 790, y: 238, face: "left", fare: 3, mx: 236, my: 124 });
+RP.location({ id: "a1_loc_synergex", act: 1, label: "Synergex Solutions", area: "Midtown", room: "a1_synergex", x: 592, y: 238, face: "left", fare: 3, mx: 146, my: 66,
+  open: S => !!(S.f.a1_texts && S.f.time === "morning" && !S.f.a1_gotUSB) });
+RP.location({ id: "a1_loc_deepcuts", act: 1, label: "Deep Cuts Records", area: "East Village", room: "a1_deepcuts", x: 58, y: 236, face: "right", fare: 3, mx: 152, my: 108,
+  open: S => !!(S.f.a1_gotUSB && !S.f.a1_sat) });
+RP.location({ id: "a1_loc_nowhere", act: 1, label: "Nowhere", area: "Bushwick", room: "a1_nowhere_door", x: 76, y: 238, face: "right", fare: 3, mx: 266, my: 132,
+  open: S => !!S.f.a1_sat });
 
 /* ---------------- items carried across the act ---------------- */
 RP.item("phone", {
