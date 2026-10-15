@@ -76,7 +76,7 @@ async function checkHunt(S) {
   const res = await A3.mg("recordHunt", {
     target: "loose_joints_is_it_all_over_my_face",
     clues: ["Ray: a clean copy of 'Is It All Over My Face?' has sat in a Queens collection for thirty years.", "Mort: the collector was Hal Pruitt. He passed in March. The family is emptying the house this week.", "A flyer: 'PRUITT ESTATE SALE. WOODSIDE. EVERYTHING MUST GO.'"],
-    places: [{ id: "deepcuts", label: "Deep Cuts, East Village", hint: "Ray remembers the pressing, not the buyer." }, { id: "fair", label: "Sunday Record Fair, Williamsburg", hint: "Mort knows every collector." }, { id: "estate", label: "The Pruitt house, Woodside, Queens", hint: "An estate sale this week." }, { id: "flea", label: "Weekend flea market", hint: "Mostly lamps." }],
+    places: [{ id: "deepcuts", label: "Deep Cuts, East Village", hint: "Ray remembers the pressing, not the buyer." }, { id: "fair", label: "Sunday Record Fair, Williamsburg", hint: "Mort knows every collector." }, { id: "estate", label: "The Pruitt house, Woodside, Queens", hint: "An estate sale this week.", found: true }, { id: "flea", label: "Weekend flea market", hint: "Mostly lamps." }],
     difficulty: 2 }, { giveUp: "Not now", onFail: async () => { await RP.lines(["I lost the thread. Try again, deep breath, Ray's tip first."]); }, assist: async () => { await RP.say("It clicks, finally. It's in Queens. It's a house. It's Woodside."); } });
   if (res.giveUp) return;
   S.f.a3_hunt = true;

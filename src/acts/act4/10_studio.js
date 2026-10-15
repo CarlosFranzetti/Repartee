@@ -319,14 +319,17 @@ async function ingridCall(S) {
   await A4.ing("Exposure is very valuable.");
   await RP.say("Exposure doesn't pay for flights.");
   await A4.ing("Everyone says that. And then they take the exposure.");
-  const res = await A4.tryMg("promoterTalk", { promoter: "Ingrid Falk", charId: "a4_ingrid", ask: "your fee, flights, hotel and rider", patience: 5, difficulty: 2 }, S, {
+  const res = await A4.tryMg("promoterTalk", { promoter: "Ingrid Falk", charId: "a4_ingrid", ask: "your fee, flights, hotel and rider", currency: "$", patience: 5, difficulty: 2 }, S, {
     max: 3, fallbackScore: 72,
     onFail: async (r, n) => { await A4.ing(n === 1 ? "I'm not hearing a number. I'm hearing a feeling." : "Let me give you one more try. Say the word 'fee'. F, E, E."); }
   });
   const sc = res.score != null ? res.score : 60;
-  const fee = res.forced || sc < 35 ? 900 : 1500 + Math.round(sc * 6);
+  const deal = res.deal || {};
+  const dfee = typeof deal.fee === "number" ? deal.fee : 0;
+  const fee = res.forced || dfee <= 0 ? 350 : Math.max(350, Math.round(dfee));
   S.f.a4_dealScore = sc; S.f.a4_fee = fee; S.f.a4_deal = true;
-  await A4.ingLines([res.forced ? "Fine. A fee of $" + fee + ". Flights. A hotel that is also a hotel." : "Fine. A fee of $" + fee + ", flights, the hotel and a rider.",
+  const terms = deal.terms || {};
+  await A4.ingLines([res.forced ? "Fine. A fee of $" + fee + ". Flights. A hotel that is also a hotel." : "Fine. A fee of $" + fee + (terms.flights ? ", flights (" + String(terms.flights).toLowerCase() + ")" : ", flights") + ", the hotel and a rider.",
     "The rider: water, towels, and a vegetable that is not a pickle.",
     "@kid And no exposure?", "No exposure. We have an exposure budget. I'm saving it for the tourists."]);
   RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 4:55 PM, Terminal 4. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Passport!!", false);

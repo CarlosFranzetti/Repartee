@@ -116,8 +116,8 @@ async function startSet(S) {
   RP.actor("kid").act = "stand"; RP.place("kid", 380, 214, "front"); RP.actor("a4_jeff").act = "stand";
   S.f.a4_setDone = true;
   RP.followers(sc >= 70 ? 4200 : 1800);
-  const fee = Math.max(0, (S.f.a4_fee || 1800) - (S.f.a4_late > 0 ? 150 : 0));
-  await RP.lines(["@a4_katja Your fee. Cash. Count it. We count everything here.", S.f.a4_late > 0 ? "(Minus $150 for being late. It's in a footnote. Germans love a footnote.)" : "It's all there. Every note. Crisp as a pretzel."]);
+  const fee = Math.max(0, (S.f.a4_fee || 600) - (S.f.a4_late > 0 ? 100 : 0));
+  await RP.lines(["@a4_katja Your fee. Cash. Count it. We count everything here.", S.f.a4_late > 0 ? "(Minus $100 for being late. It's in a footnote. Germans love a footnote.)" : "It's all there. Every note. Crisp as a pretzel."]);
   RP.money(fee); S.f.a4_paid = true;
   RP.setClock("SUN 4:05 AM");
   A4.setHaleMusic(true);

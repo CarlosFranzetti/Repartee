@@ -112,26 +112,27 @@ async function tanyaTalk(S) {
   if (pay) RP.money(-pay);
   S.f.a3_estatePaid = true;
   await RP.lines(["@a3_tanya Deal. It's yours. Good luck.", "Sixty years of one man's records. In a Queens living room. And I just bought it."]);
-  await sortCollection(S);
+  await sortCollection(S, pay);
 }
-async function sortCollection(S) {
+async function sortCollection(S, pay) {
   await RP.fadeTo(1, 700);
   RP.setClock("MON 1:20 PM");
   await RP.say("Hours later. Dust in my teeth, a crate in every direction, a pile of 'maybe' that's bigger than most people's collection.", "nar");
   await RP.fadeTo(0, 700);
-  const res = await A3.mg("crateDigging", { records: COLLECTION, budget: S.money, time: 90, difficulty: 2 }, { giveUp: "Later", tries: 1,
+  const res = await A3.mg("crateDigging", { records: COLLECTION, budget: pay, keepSlots: 8, difficulty: 2 }, { giveUp: "Later", tries: 1,
     onFail: async () => { await RP.lines(["I leave a lot of it in the crates. Some of it's good. I'll know later."]); } });
   const keep = (res.keep && res.keep.length ? res.keep : (res.missing || res.assisted || res.ok ? GEMS : [])).filter(id => RP.rec(id));
   const sold = (res.sold || []).filter(id => RP.rec(id));
-  const profit = Math.max(0, Math.round(res.profit != null ? res.profit : (res.missing || res.assisted ? 45 : 0)));
+  // crateDigging reports profit = cash from the dealer minus the lot price, so the dealer's cash is profit + what I paid
+  const cash = Math.max(0, Math.round(res.cash != null ? res.cash : (res.profit != null ? res.profit + pay : (res.missing || res.assisted ? pay + 45 : 0))));
   keep.forEach(id => RP.addRecord(id));
   await RP.lines(["I keep " + keep.length + " records. The rest I stack in a box that says 'FOR THE NEXT SUCKER.'"]);
   if (S.f.a3_priyaAtEstate) {
     await RP.lines(["@a3_priya ...You keep the good ones. Fine. I'll take the rest off your hands. Fair price. Not a penny of it fair to ME."]);
-    if (profit) { RP.money(profit); }
+    if (cash) { RP.money(cash); }
     S.f.a3_priyaAtEstate = false;
     await RP.lines(["@a3_priya Don't look at me like that. I get the junk. You get the glory. We both go home with something. Bye."]);
-  } else if (profit) { RP.money(profit); await RP.say("A junk dealer takes the rest for $" + profit + ". It's an honest hustle."); }
+  } else if (cash) { RP.money(cash); await RP.say("A junk dealer takes the rest for $" + cash + ". It's an honest hustle."); }
   S.f.a3_dug = true;
   await RP.lines(["Now the turntables. And whatever's on that platter."]);
 }

@@ -238,13 +238,13 @@ const CSS = `
 .st-main { display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 1fr); gap: 10px; align-items: start; }
 .st-left, .st-right { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .st-clock { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.st-time { font-size: 46px; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 3px 0 #2a0d3a; }
+.st-time { font-size: 40px; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 3px 0 #2a0d3a; }
 .st-time small { font-size: 20px; color: var(--muted); margin-left: 6px; }
 .st-slot { position: relative; height: 12px; background: #0a0816; border: 1px solid #241d48; margin-top: 2px; }
 .st-slot i { position: absolute; left: 0; top: 0; bottom: 0; background: repeating-linear-gradient(90deg, var(--cyan) 0 4px, transparent 4px 6px); }
 .st-slot u { position: absolute; top: -3px; bottom: -3px; border-left: 2px solid var(--amber); text-decoration: none; }
 .st-slot s { position: absolute; top: 0; bottom: 0; background: rgba(255, 90, 90, .25); border-right: 2px solid #ff5a5a; text-decoration: none; }
-.st-slotl { display: flex; justify-content: space-between; font-size: 15px; color: var(--muted); }
+.st-slotl { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 15px; color: var(--muted); }
 .st-g { display: flex; flex-direction: column; gap: 2px; }
 .st-g .lab { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 17px; color: var(--muted); }
 .st-g .lab b { color: var(--fg); font-weight: 400; }
@@ -383,7 +383,7 @@ RP.mg.register("setTime", {
 
       /* ---------- state ---------- */
       let G = null, floor = null, last = null, uiAcc = 0, cards = [], evTimerEl = null, outTO = null;
-      let secPerMin = 1.9 - 0.1 * (R.diff - 1);
+      let secPerMin = (1.9 - 0.1 * (R.diff - 1)) / (+params.speed > 0 ? +params.speed : 1); // params.speed: test-only time multiplier
       const win = () => 2.0 - 0.2 * (R.diff - 1);                    // green window (game minutes)
       const evTimeout = () => [15, 13, 11, 9, 7][R.diff - 1];
 
@@ -391,7 +391,7 @@ RP.mg.register("setTime", {
       function setup() {
         R = Object.assign(R, resolveST(Object.assign({}, params, { records: R.ids, seed: R.seed, scenario: R.key, minutes: R.M })));
         // keep same ids/seed for retries
-        secPerMin = 1.9 - 0.1 * (R.diff - 1);
+        secPerMin = (1.9 - 0.1 * (R.diff - 1)) / (+params.speed > 0 ? +params.speed : 1);
         const D = R.D;
         G = { t: 0, phase: "brief", floor: D.floor0, pat: D.pat0, win: 15, stale: 0, cur: null, next: null, hand: R.ids.map(id => RP.rec(id)), played: [], mixes: [], evs: eventsFor(R.key, R), evi: 0, curEv: null, evLog: [], dead: false, deadMin: 0, deadStart: 0,
           holding: false, hold: 0, tension: 0, cd: 0, mood: 0, moodUntil: -1, flags: {}, mEnd: R.M, h0: D.handover, overEnd: D.handover, handed: false, ended: false, fade: null, sumF: 0, sumT: 0, minF: 100, lastFit: 0.5, sumFit: 0, fitT: 0, failed: null, lastEvEnd: -9, nextPrompt: 0, hint: "" };
@@ -426,7 +426,8 @@ RP.mg.register("setTime", {
         const B = R.D.brief, rep = s => s.replace(/\{L\}/g, R.legendShort);
         briefBox.hidden = false; briefBox.innerHTML = "";
         const bx = el("div", { cls: "st-brief" }, briefBox);
-        el("h3", { text: R.D.title + " · " + fmtClock(R.D.start) + " – " + fmtClock(R.D.start + R.M) }, bx);
+        el("h3", { text: R.D.title }, bx);
+        el("div", { cls: "mg-sub", text: fmtClock(R.D.start) + " – " + fmtClock(R.D.start + R.M) + " · " + R.M + " game minutes" }, bx);
         el("p", { text: rep(B.story) }, bx);
         if (R.key === "follow-legend") el("p", { html: "<b style='color:#c8b0ff;font-weight:400'>" + U.esc(R.legendShort) + ":</b> \"Good luck, uh... " + U.esc(R.wrongName) + ". Don't wreck the vibe.\"" }, bx);
         el("div", { cls: "goal", text: "GOAL: " + rep(B.goal) }, bx);

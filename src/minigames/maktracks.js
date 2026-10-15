@@ -581,11 +581,11 @@ RP.mg.register("makTracks", {
     const bank = el("div", { cls: "mt-bank" }, bankBox);
 
     /* right column: Lou, goals, arrangement */
-    let scv = null, sc = null, louSay = null, hearts = null, heartEls = [];
+    let scv = null, sc = null, louSayEl = null, hearts = null, heartEls = [];
     if (withLou) {
       const stu = el("div", { cls: "mt-studio" }, colB);
       scv = el("canvas", { width: 320, height: 130, role: "img", "aria-label": "Lou in the studio" }, stu); sc = scv.getContext("2d");
-      louSay = el("div", { cls: "mt-lou", "aria-live": "polite" }, colB);
+      louSayEl = el("div", { cls: "mt-lou", "aria-live": "polite" }, colB);
       hearts = el("div", { cls: "mt-hearts" }, colB); el("span", { text: "LOU'S MOOD" }, hearts); const hp = el("div", { cls: "hp" }, hearts); for (let i = 0; i < 10; i++) heartEls.push(el("i", {}, hp));
     }
     const goalBox = el("div", { cls: "mt-box" }, colB);
@@ -866,11 +866,8 @@ RP.mg.register("makTracks", {
       wall: ["It never shuts up. Give the sample a rest.", "Let it breathe in the break."]
     };
     const pickR = a => a[Math.floor(Math.random() * a.length)];
-    function louSay(key) { st.louMsg = pickR(LOU[key] || LOU.idle); st.louT = st.t; st.louFlash = st.t + 2.2; if (louSay_el) louSay_el.innerHTML = "<b>LOU:</b> “" + RP.u.esc(st.louMsg) + "”"; }
-    const louSay_el = louSay;
-    let louKey = "idle";
     function cheerFor(kind, n) { if (!withLou) return; if (kind === "new") { if (n === 1) louSayKey("hook"); else if (Math.random() < 0.5) louSayKey("newslice"); } }
-    function louSayKey(k) { const msg = pickR(LOU[k] || LOU.idle); st.louMsg = msg; st.louT = st.t; st.louFlash = st.t + 2.4; st.louExpr = (k === "hook" || k === "good" || k === "newslice") ? "happy" : (k === "salad" || k === "none" || k === "stutter" || k === "nohook") ? "angry" : (k === "fast" || k === "slow" || k === "one" || k === "wall") ? "worried" : "surprised"; if (louSay_el) louSay_el.innerHTML = "<b>LOU:</b> “" + RP.u.esc(msg) + "”"; }
+    function louSayKey(k) { const msg = pickR(LOU[k] || LOU.idle); st.louMsg = msg; st.louT = st.t; st.louFlash = st.t + 2.4; st.louExpr = (k === "hook" || k === "good" || k === "newslice") ? "happy" : (k === "salad" || k === "none" || k === "stutter" || k === "nohook") ? "angry" : (k === "fast" || k === "slow" || k === "one" || k === "wall") ? "worried" : "surprised"; if (louSayEl) louSayEl.innerHTML = "<b>LOU:</b> “" + RP.u.esc(msg) + "”"; }
     function louReact(tz, why) {
       if (!withLou) return;
       let key = null;
@@ -888,7 +885,7 @@ RP.mg.register("makTracks", {
         heartEls.forEach((h, i) => { h.className = i < Math.round(tz.t / 10) ? (tz.t >= TIER_GOALS.taste[diff - 1] ? "hi" : "on") : ""; });
         if (why === "sample" || why === "bpm" || why === "arr") louReact(tz, why);
         if (why === "bpm" || why === "sample") { /* react above */ }
-        if (st.louMsg === "" || st.t - st.louT > 8) { if (!st.louMsg) { st.louMsg = LOU.idle[0]; if (louSay_el) louSay_el.innerHTML = "<b>LOU:</b> “" + RP.u.esc(st.louMsg) + "”"; } }
+        if (st.louMsg === "" || st.t - st.louT > 8) { if (!st.louMsg) { st.louMsg = LOU.idle[0]; if (louSayEl) louSayEl.innerHTML = "<b>LOU:</b> “" + RP.u.esc(st.louMsg) + "”"; } }
         const mood = tz.t >= 70 ? "happy" : tz.t >= 45 ? "neutral" : tz.t >= 25 ? "worried" : "angry";
         if (st.t > st.louFlash) st.louExpr = mood;
         if (why !== undefined && why !== "sample" && why !== "bpm" && why !== "arr" && tz.t >= 70 && st.lastTaste < 70 && st.louFlash < st.t) louSayKey("good");
@@ -1064,7 +1061,7 @@ RP.mg.register("makTracks", {
     refreshGrid(); refreshRows(); refreshBank(); refreshPads(); setBpm(st.bpm);
     st.t = 0; onChange();
     setHint("Welcome to the studio. Tap the grid to program a beat, then press PLAY. Arrow keys + SPACE work too.");
-    if (withLou) { st.louMsg = LOU.idle[0]; louSay_el.innerHTML = "<b>LOU:</b> “" + RP.u.esc(st.louMsg) + "”"; }
+    if (withLou) { st.louMsg = LOU.idle[0]; louSayEl.innerHTML = "<b>LOU:</b> “" + RP.u.esc(st.louMsg) + "”"; }
     return new Promise(resolve => { resolveFn = resolve; host.cleanup(() => { if (resolveFn) { const f = resolveFn; resolveFn = null; f({ ok: false, score: 0, track: null }); } }); });
   }
 });

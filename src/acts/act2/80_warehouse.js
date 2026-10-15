@@ -179,7 +179,6 @@ async function planAfters(S) {
     "@twinkie Look at that. A crowd. A sound system. A basement.",
     "I need turntables. Where are my turntables?"
   ]);
-  RP.crowdOn && RP.crowdOn();
   await RP.say("Set up the decks: use the boxed turntables on the booth.", "nar");
 }
 

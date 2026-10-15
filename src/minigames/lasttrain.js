@@ -46,7 +46,8 @@ const CSS = `
 .lt-opt.go { border-color: #2a6a46; } .lt-opt.go:hover:not(:disabled) { border-color: var(--ok); color: var(--ok); }
 .lt-opt.cab { border-style: dashed; }
 .lt-line { display: inline-block; min-width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; border-radius: 2px; border: 1px solid #05030c; }
-.lt-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lt-row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px; }
+.lt-opt.mv { flex-direction: column; align-items: flex-start; gap: 1px; } .lt-opt.mv .c { text-align: left; white-space: normal; }
 .lt-lines { display: flex; gap: 6px; flex-wrap: wrap; font-size: 16px; color: var(--muted); }
 .lt-lines span { display: inline-flex; align-items: center; }
 .lt-log { font-size: 16px; color: var(--muted); line-height: 1.1; max-height: 4.6em; overflow: hidden; }
@@ -65,12 +66,12 @@ const MAPS = {
     key: "subway", name: "Night service map", river: true, fare: 3, cab: 38, startMin: 94, maxPairs: [["jkh", "atl"], ["fls", "hew"], ["eny", "gre"], ["gre", "flt"], ["nvy", "jam"], ["jam", "atl"], ["fls", "flt"], ["crt", "eny"]],
     stations: [
       S("gre", "Greenpoint Ave", "Greenpoint", 30, 45, 2, 0, true, "b"), S("crt", "Court Sq", "Court Sq", 100, 45, 3, 3, true, "t"), S("qbp", "Queensboro Plz", "Queensboro", 180, 45, 3, 3, false, "t"),
-      S("jkh", "Jackson Hts", "Jackson Hts", 245, 45, 2, 0, true, "t"), S("fls", "Flushing–Main St", "Flushing", 295, 45, 3, 0, true, "l"),
-      S("nvy", "Navy Yard", "Navy Yard", 20, 100, 1, 0, false, "b"), S("lor", "Lorimer St", "Lorimer", 58, 100, 2, 0, false, "b"), S("met", "Metropolitan Av", "Metropolitan", 100, 100, 3, 2, true, "l"),
-      S("hal", "Halsey St", "Halsey", 140, 100, 2, 0, false, "b"), S("myr", "Myrtle–Wyckoff", "Myrtle–Wyck.", 180, 100, 3, 2, true, "r"), S("brj", "Broadway Jct", "Broadway Jct", 250, 100, 3, 3, false, "t"),
-      S("jam", "Jamaica Av", "Jamaica Av", 295, 100, 2, 0, true, "l"),
+      S("jkh", "Jackson Hts", "Jackson Hts", 245, 45, 2, 0, true, "t"), S("fls", "Flushing–Main St", "Flushing", 295, 45, 3, 0, true, "b"),
+      S("nvy", "Navy Yard", "Navy Yard", 20, 100, 1, 0, false, "b"), S("lor", "Lorimer St", "Lorimer", 58, 100, 2, 0, false, "b"), S("met", "Metropolitan Av", "Metropolitan", 100, 100, 3, 2, true, "tl"),
+      S("hal", "Halsey St", "Halsey", 140, 100, 2, 0, false, "b"), S("myr", "Myrtle–Wyckoff", "Myrtle–Wyck.", 180, 100, 3, 2, true, "br"), S("brj", "Broadway Jct", "Broadway Jct", 250, 100, 3, 3, false, "t"),
+      S("jam", "Jamaica Av", "Jamaica Av", 295, 100, 2, 0, true, "b"),
       S("hew", "Hewes St", "Hewes St", 100, 150, 3, 2, false, "l"), S("atl", "Atlantic Av", "Atlantic Av", 100, 185, 3, 0, true, "r"),
-      S("jay", "Jay St", "Jay St", 180, 150, 2, 2, true, "t"), S("flt", "Flatbush Jct", "Flatbush", 180, 185, 2, 0, false, "r"), S("eny", "East New York", "E New York", 250, 150, 3, 0, true, "r")
+      S("jay", "Jay St", "Jay St", 180, 150, 2, 2, true, "tr"), S("flt", "Flatbush Jct", "Flatbush", 180, 185, 2, 0, false, "r"), S("eny", "East New York", "E New York", 250, 150, 3, 0, true, "r")
     ],
     lines: [
       { id: "teal", n: "TEAL", col: "#2fd0c0", st: ["gre", "crt", "qbp", "jkh", "fls"], rt: [3, 4, 3, 3], head: 12, last: 185 },
@@ -357,7 +358,7 @@ RP.mg.register("lastTrain", {
         const px = s.x / W * 100, py = s.y / H * 100;
         l.style.left = px + "%"; l.style.top = py + "%";
         const m = 9 * scale / 2 + 2; // gap in px
-        const t = { r: `translate(${m}px,-50%)`, l: `translate(calc(-100% - ${m}px),-50%)`, t: `translate(-50%,calc(-100% - ${m - 1}px))`, b: `translate(-50%,${m - 1}px)` }[s.lab];
+        const t = { r: `translate(${m}px,-50%)`, l: `translate(calc(-100% - ${m}px),-50%)`, t: `translate(-50%,calc(-100% - ${m - 1}px))`, b: `translate(-50%,${m - 1}px)`, tl: `translate(calc(-100% - ${m - 2}px),calc(-100% - ${m - 2}px))`, tr: `translate(${m - 2}px,calc(-100% - ${m - 2}px))`, bl: `translate(calc(-100% - ${m - 2}px),${m - 2}px)`, br: `translate(${m - 2}px,${m - 2}px)` }[s.lab];
         l.style.transform = t;
       });
     }
@@ -528,8 +529,8 @@ RP.mg.register("lastTrain", {
     function moveButtons(parent, fl, labelPrefix, fn, stId) {
       const stn = MAP.by[stId || Pl.st], tired = tiredNow();
       const row = el("div", { cls: "lt-row2" }, parent);
-      optBtn(row, labelPrefix + " STAIRS", costTxt([fl + " flights", stairsMin(fl, tired) + " min", "-" + stamCost(fl) + " breath"]), () => fn("stairs"));
-      optBtn(row, labelPrefix + " ELEVATOR", stn.el ? "~" + (3 + 1) + " min, no breath" : "", () => fn("elev"), stn.el ? null : "no elevator here");
+      optBtn(row, labelPrefix + "STAIRS", costTxt([fl + (fl === 1 ? " flight" : " flights"), stairsMin(fl, tired) + " min", "-" + stamCost(fl) + " breath"]), () => fn("stairs"), null, "mv");
+      optBtn(row, labelPrefix + "ELEVATOR", stn.el ? "about 4 min, no breath" : "", () => fn("elev"), stn.el ? null : "none here", "mv");
     }
     function renderPanel() {
       panel.textContent = "";
@@ -542,7 +543,7 @@ RP.mg.register("lastTrain", {
       const c = el("div", { cls: "lt-card" }, panel);
       if (Pl.loc === "street") {
         el("h3", { html: "<span>ON THE STREET</span><small>" + stn.n + "</small>" }, c);
-        el("p", { text: Pl.st === A.id && Pl.log.length <= 1 ? "The gig is over. " + GE.name + " are on your back. Pick a line and go down." : "Pick a line and go down." }, c);
+        el("p", { text: Pl.st === A.id && Pl.log.length <= 1 ? "The gig is over. You are carrying " + GE.name + ". Pick a line and go down." : "Pick a line and go down." }, c);
         stn.lines.forEach(lid => {
           const L = lineOf(lid), pay = L.fare > 0 && !Pl.paid;
           const card = el("div", { cls: "lt-card", style: "padding:6px 8px;border-style:dashed" }, c);
@@ -610,7 +611,7 @@ RP.mg.register("lastTrain", {
     }
     function renderInfo() {
       const s = MAP.by[sel], lines = s.lines.map(l => lineChip(l)).join("  ");
-      let h = "<b>" + s.n + "</b> &nbsp;" + lines + " &nbsp;<span style='color:var(--muted)'>" + s.fl + " flights down, " + (s.el ? "elevator" : "no elevator") + (s.id === B.id ? ", <span style='color:var(--lime)'>YOUR STOP</span>" : "") + "</span>";
+      let h = "<b>" + s.n + "</b> &nbsp;" + lines + " &nbsp;<span style='color:var(--muted)'>" + s.fl + (s.fl === 1 ? " flight down, " : " flights down, ") + (s.el ? "elevator" : "no elevator") + (s.id === B.id ? ", <span style='color:var(--lime)'>YOUR STOP</span>" : "") + "</span>";
       if (Pl.liveUntil >= 0) {
         const list = s.lines.flatMap(l => boardList(s.id, l, 2).map(it => lineOf(l).n + " to " + stName(it.T.term) + " " + clk(it.t))).slice(0, 4);
         if (list.length) h += "<br><span style='color:var(--pink)'>LIVE: " + list.join(" | ") + "</span>";
