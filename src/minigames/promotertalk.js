@@ -22,10 +22,11 @@ const CSS = `
 .pt-row.cur .lb { color: var(--pink); } .pt-row.cur { background: #1a1030; }
 .pt-row.lock .vl { color: var(--ok); } .pt-row.lock .vl::after { content: " [locked]"; color: var(--muted); font-size: 15px; }
 .pt-row.expo .vl { color: #ff6a6a; }
-.pt-play { display: grid; gap: 10px; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "stage hud" "stage deal" "stage notes" "say say" "choices choices" "tip tip"; align-items: start; }
+.pt-play { display: grid; gap: 10px; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 1fr auto auto auto; grid-template-areas: "stage hud" "stage notes" "say say" "choices choices" "tip tip"; align-items: start; }
+.pt-play.pt-neg { grid-template-rows: auto auto 1fr auto auto auto; grid-template-areas: "stage hud" "stage deal" "stage notes" "say say" "choices choices" "tip tip"; }
 .pt-play > .sk-stage { grid-area: stage; margin: 0; } .pt-play > .sk-hud { grid-area: hud; } .pt-play > .pt-dealbox { grid-area: deal; } .pt-play > .pt-notes { grid-area: notes; }
 .pt-play > .sk-say { grid-area: say; } .pt-play > .pt-choices { grid-area: choices; } .pt-play > .sk-tip { grid-area: tip; } .pt-play > .pt-brk { display: none; }
-@media (max-width: 959px) { .pt-play { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "hud" "deal" "notes" "say" "choices" "tip"; } .pt-play > .sk-stage { margin: 0 auto; } }
+@media (max-width: 959px) { .pt-play, .pt-play.pt-neg { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "stage" "hud" "notes" "say" "choices" "tip"; } .pt-play.pt-neg { grid-template-areas: "stage" "hud" "deal" "notes" "say" "choices" "tip"; } .pt-play > .sk-stage { margin: 0 auto; } }
 @media (max-height: 460px) and (min-width: 560px) {
   .pt-play { display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; height: calc(100vh - 56px); }
   .pt-play > * { grid-area: auto; box-sizing: border-box; }
@@ -342,7 +343,7 @@ async function run(host, p, SK) {
     extra: box => { const n = el("div", { cls: "sk-note" }, box); el("h3", { text: neg ? "WHAT MARCUS DUG UP ABOUT " + party.toUpperCase() : "YOUR HOMEWORK ON " + party.toUpperCase() }, n); const ul = el("ul", {}, n); notes.forEach(t => el("li", { text: t }, ul)); },
     button: "START"
   });
-  const play = el("div", { cls: "pt-play" }, wrap);
+  const play = el("div", { cls: "pt-play" + (neg ? " pt-neg" : "") }, wrap);
   const grid = play, side = play;
   const stageApi = SK.canvas(play, 320, 160, 2);
   const hud = el("div", { cls: "sk-hud" }, side);
