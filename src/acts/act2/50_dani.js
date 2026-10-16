@@ -181,8 +181,8 @@ RP.room({
   start: { x: 70, y: 232, face: "right" },
   update: A2.update,
   fx: [
-    { type: "steam", x: 506, y: 122, rise: 36, size: 8, drift: 4, color: "#f4f0e8" },
-    { type: "dust", rect: [76, 28, 220, 150], count: 22, color: "#ffd890" }
+    { type: "steam", count: 4, x: 506, y: 122, rise: 36, size: 7, drift: 4, color: "#f4f0e8" },
+    { type: "dust", rect: [76, 28, 220, 150], count: 13, color: "#ffd890" }
   ],
   actors: [{ id: "a2_dani", char: "a2_dani", x: 388, y: 222, face: "left", act: "stand", name: "Dani" }],
   sprites: [

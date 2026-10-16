@@ -151,7 +151,7 @@ RP.room({
   start: { x: 330, y: 232, face: "front" },
   update: A2.update,
   fx: [
-    { type: "steam", x: 489, y: 238, rise: 40, size: 9, drift: 6, color: "#e8e4f0" },
+    { type: "steam", count: 4, x: 489, y: 238, rise: 40, size: 7, drift: 6, color: "#e8e4f0" },
     { type: "cars", y: 232, dir: 1, period: 9000, on: () => dark(RP.state) }
   ],
   actors: S => [

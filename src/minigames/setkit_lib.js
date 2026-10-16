@@ -617,7 +617,9 @@ K.Floor = function (opts) {
         frame = tier === 0 ? [1, 1, 3, 1][k] : tier === 1 ? [1, 2, 1, 3][k] : [0, 2, 0, 3][k];
         if (tier === 2 && !o.reduced && k === 0) yo = -1 - (Es > 4.3 ? 1 : 0);
       }
-      RP.chars.draw(c, { def: p.def, x: p.x, y: p.y + yo, face: club ? "back" : "front", act, frame, scale: Math.round(p.scNow * 20) / 20 }, { lx: p.lx, rim: { color: T.rim, side: p.side }, shadow: 0.3 });
+      const psc = Math.round(p.scNow * 20) / 20;
+      ell(c, Math.round(p.x), Math.round(p.y), Math.round(10 * psc + 3), Math.max(1, Math.round(2 * psc)), K.dpat("#0a0410", 7));
+      RP.chars.draw(c, { def: p.def, x: p.x, y: p.y + yo, face: club ? "back" : "front", act, frame, scale: psc }, { lx: p.lx, rim: { color: T.rim, side: p.side }, shadow: 0 });
     });
     if (!club) drawBooth(c, t, pulse, F);
     if (F.lights > 0.01) { c.fillStyle = K.dpat("#fff2d0", Math.round(F.lights * 11)); c.fillRect(0, 0, W, H); }

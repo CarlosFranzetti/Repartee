@@ -253,11 +253,11 @@ RP.room({
   start: { x: 72, y: 232, face: "right" },
   update: A2.update,
   fx: [
-    { type: "smoke", x: 324, y: 128, rise: 36, size: 7, drift: 4, color: "#4a4658", on: () => !RP.state.f.a2_ampInstalled },
+    { type: "smoke", count: 4, x: 324, y: 128, rise: 36, size: 7, drift: 4, color: "#4a4658", on: () => !RP.state.f.a2_ampInstalled },
     { type: "haze", rect: [40, 90, 560, 150], color: "#9a8ae0", density: 3, on: () => !!RP.state.f.a2_loftFixed },
     { type: "beams", origins: [[160, 14], [320, 14], [480, 14], [600, 14]], colors: ["#ff3fa4", "#39d0ff", "#a05cff", "#ffd23f"], base: Math.PI / 2, swing: 0.55, len: 230, width: 16, alpha: 0.14, period: 1300, on: () => !!RP.state.f.a2_loftFixed },
     { type: "strobe", period: 2600, flash: 50, alpha: 0.12, on: () => !!RP.state.f.a2_loftFixed },
-    { type: "dust", rect: [60, 60, 540, 140], count: 28, color: "#ffe2c0", on: () => !RP.state.f.a2_loftFixed }
+    { type: "dust", rect: [60, 60, 540, 140], count: 16, color: "#ffe2c0", on: () => !RP.state.f.a2_loftFixed }
   ],
   actors: S => [
     { id: "a2_moxie", char: "a2_moxie", x: 236, y: 232, face: "right", act: "stand", name: "Moxie" },

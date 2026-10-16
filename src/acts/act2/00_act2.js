@@ -98,7 +98,25 @@ A2.night = S => { const m = /(\d+):(\d+)\s*(AM|PM)/.exec(S.clock || ""); if (!m)
 A2.fareGuard = S => { for (const k in RP.locations) { const l = RP.locations[k]; if (l.act === 2) l.fare = S.money >= 3 ? 3 : 0; } };
 A2.update = (dt, S) => { A2.fareGuard(S); };
 // cached sprite: depth-sorted props are painted once per state key into an offscreen canvas, then blitted each frame
-A2.cs = (fn, keyFn) => { const cache = {}; return (c, S) => { const k = keyFn ? String(keyFn(S)) : ""; let cv = cache[k]; if (!cv) { cv = cache[k] = RP.u.mk(640, 256); fn(cv.getContext("2d"), S); } c.drawImage(cv, 0, 0); }; };
+A2.cs = (fn, keyFn) => {
+  const cache = {};
+  return (c, S) => {
+    const k = keyFn ? String(keyFn(S)) : "";
+    let e = cache[k];
+    if (!e) {
+      const full = RP.u.mk(640, 256), g = full.getContext("2d");
+      fn(g, S);
+      // crop to the painted bounds so the per-frame blit stays tiny
+      const d = g.getImageData(0, 0, 640, 256).data;
+      let x0 = 640, y0 = 256, x1 = -1, y1 = -1;
+      for (let y = 0; y < 256; y++) for (let x = 0; x < 640; x++) if (d[(y * 640 + x) * 4 + 3] > 0) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < 0) e = { cv: null };
+      else { const cv = RP.u.mk(x1 - x0 + 1, y1 - y0 + 1); cv.getContext("2d").drawImage(full, x0, y0, cv.width, cv.height, 0, 0, cv.width, cv.height); e = { cv, x: x0, y: y0 }; }
+      cache[k] = e;
+    }
+    if (e.cv) c.drawImage(e.cv, e.x, e.y);
+  };
+};
 // story beats advance the HUD clock (time only moves on story beats)
 A2.CLOCKS = ["MON 2:20 PM", "MON 5:10 PM", "MON 8:30 PM", "TUE 11:10 AM", "WED 3:25 PM", "THU 6:15 PM", "THU 9:40 PM"];
 A2.beat = S => { const n = S.f.a2_beats || 0; if (n < A2.CLOCKS.length) RP.setClock(A2.CLOCKS[n]); S.f.a2_beats = n + 1; };

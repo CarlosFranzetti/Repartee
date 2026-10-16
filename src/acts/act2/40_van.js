@@ -252,7 +252,7 @@ RP.room({
   start: { x: 70, y: 236, face: "right" },
   update: A2.update,
   fx: [
-    { type: "dust", rect: [200, 70, 260, 130], count: 22, color: "#ffe2a0", on: () => dark(RP.state) },
+    { type: "dust", rect: [200, 70, 260, 130], count: 13, color: "#ffe2a0", on: () => dark(RP.state) },
     { type: "cars", y: 28, dir: -1, period: 4200, width: 640, color: "#ffd890" }
   ],
   actors: [{ id: "eddie", char: "eddie", x: 222, y: 224, face: "right", act: "stand", name: "Eddie Two-Times" }],

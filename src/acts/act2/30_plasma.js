@@ -257,7 +257,7 @@ RP.room({
   start: { x: 70, y: 232, face: "right" },
   update: A2.update,
   fx: [
-    { type: "dust", rect: [90, 20, 180, 140], count: 18, color: "#ffffff" },
+    { type: "dust", rect: [90, 20, 180, 140], count: 10, color: "#ffffff" },
     { type: "blink", items: [{ r: [602, 140, 2, 2], color: "#3fd07a", rate: 600, phase: 0 }, { r: [606, 140, 2, 2], color: "#ff3a3a", rate: 900, phase: 1 }] }
   ],
   drawFront,

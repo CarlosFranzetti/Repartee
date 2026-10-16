@@ -443,8 +443,8 @@ RP.room({
   walk: [[10, 206], [630, 206], [630, 252], [10, 252]],
   start: { x: 300, y: 232, face: "front" },
   fx: [
-    { type: "dust", rect: [74, 26, 150, 150], count: 26, color: "#fff4d6", on: () => !party(RP.state) && !dark(RP.state) },
-    { type: "steam", x: 446, y: 160, rise: 36, size: 8, drift: 6, color: "#f4f4ff", on: () => !party(RP.state) },
+    { type: "dust", rect: [74, 26, 150, 150], count: 15, color: "#fff4d6", on: () => !party(RP.state) && !dark(RP.state) },
+    { type: "steam", count: 4, x: 446, y: 160, rise: 36, size: 7, drift: 6, color: "#f4f4ff", on: () => !party(RP.state) },
     { type: "beams", origins: [[300, 8], [560, 8]], colors: ["#ff3fa4", "#39d0ff"], base: Math.PI / 2, swing: 0.5, len: 220, width: 16, alpha: 0.12, period: 1500, on: () => party(RP.state) }
   ],
   update: A2.update,

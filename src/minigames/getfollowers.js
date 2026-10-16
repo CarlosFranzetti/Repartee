@@ -55,7 +55,7 @@ const ACT = {
 const ORDER = ["post", "practice", "dig", "network", "collab", "sleep"];
 const SLOTS = ["MORNING", "AFTERNOON", "NIGHT"];
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-const GOALS = [260, 340, 440, 560, 700];
+const GOALS = [250, 330, 420, 520, 620];
 
 function newGame(p, diffIn) {
   const diff = clamp(Math.round(diffIn || p.difficulty || 2), 1, 5);
@@ -79,9 +79,9 @@ function act(G, id, rnd) {
   const tm = tired && id !== "sleep" ? 0.5 : 1;
   G.E = clamp(G.E - a.cost, 0, 100);
   if (id === "post") {
-    const q = 0.4 + 0.6 * Math.min(1, (G.K * 0.6 + G.M * 0.4) / 70);
-    const fresh = G.M >= 15, qq = fresh ? q : Math.min(q, 0.5);
-    const base = 22 + G.F * 0.06, sm = slot === 2 ? 1.2 : slot === 1 ? 1.05 : 0.95;
+    const q = 0.12 + 0.88 * Math.min(1, (G.K * 0.6 + G.M * 0.4) / 70);
+    const fresh = G.M >= 15, qq = fresh ? q : Math.min(q, 0.3);
+    const base = 20 + G.F * 0.05, sm = slot === 2 ? 1.2 : slot === 1 ? 1.05 : 0.95;
     const vir = G.viral > 0 ? 1.4 : 1;
     dF = Math.round(base * qq * (1 + G.H / 100) * algoMult(G, "post") * sm * vir * rr(0.75, 1.3) * tm);
     G.M = Math.max(0, G.M - 15); G.H = clamp(G.H + 6, 0, 100); G.postsToday++; G.posts++;
@@ -110,12 +110,11 @@ function act(G, id, rnd) {
     msg = s < 0.6 ? "The collab is... fine. Your partner mouths 'practice' at you." : "A collab clip. Two DJs, one very good loop. It travels.";
     sfx = "success";
   } else { // sleep
-    G.E = clamp(G.E + (slot === 2 ? 46 : 38) * 1 - 0, 0, 100) ; G.E = clamp(G.E, 0, 100); G.H = clamp(G.H - 3, 0, 100);
-    G.E = Math.min(100, G.E); msg = "You sleep. In a bed. Like a person."; sfx = "whoosh";
+    G.E = clamp(G.E + (slot === 2 ? 8 : 0), 0, 100); G.H = clamp(G.H - 3, 0, 100);
+    msg = "You sleep. In a bed. Like a person."; sfx = "whoosh";
   }
-  if (id === "sleep") { /* cost was negative: already added once above; avoid double counting */ G.E = clamp(G.E - 0, 0, 100); }
   G.F = Math.max(0, G.F + dF);
-  if (G.E <= 0 && id !== "sleep") { const loss = Math.round(G.F * 0.04); G.F -= loss; G.E = 20; msg += " At 3 AM you post a rant. -" + loss + " followers. You sleep it off."; sfx = "buzz"; }
+  if (G.E <= 0 && id !== "sleep") { const loss = Math.round(G.F * 0.06); G.F -= loss; G.E = 12; msg += " At 3 AM you post a rant. -" + loss + " followers. You sleep it off."; sfx = "buzz"; }
   return { dF, msg, sfx, tag: id };
 }
 function endOfDay(G) {

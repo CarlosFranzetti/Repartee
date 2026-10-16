@@ -348,8 +348,8 @@ RP.room({
   fx: [
     { type: "haze", rect: [30, 80, 580, 150], color: "#9a8ae0", density: 3, on: () => crowdOn(RP.state) },
     { type: "beams", origins: [[240, 46], [300, 46], [360, 46], [420, 46], [480, 46]], colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a"], base: Math.PI / 2, swing: 0.5, len: 170, width: 14, alpha: 0.14, period: 1400, on: () => crowdOn(RP.state) },
-    { type: "dust", rect: [40, 40, 540, 150], count: 26, color: "#fff4d6", on: () => !crowdOn(RP.state) },
-    { type: "steam", x: 440, y: 236, rise: 30, size: 8, drift: 4, color: "#8a86a0" }
+    { type: "dust", rect: [40, 40, 540, 150], count: 15, color: "#fff4d6", on: () => !crowdOn(RP.state) },
+    { type: "steam", count: 4, x: 440, y: 236, rise: 30, size: 7, drift: 4, color: "#8a86a0" }
   ],
   actors: S => [
     { id: "twinkie", char: "twinkie", x: 300, y: 232, face: "right", act: "stand", name: "Twinkie" },

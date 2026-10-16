@@ -40,7 +40,7 @@ function scoreOrder(R, order) {
     if (A.good.some(v => hasV(r, v)) && R.arc !== "journey") bonus += 0.012;
     if (A.weirdMid && hasV(r, "weird") && u > 0.25 && u < 0.7) bonus += 0.04;
     if (hasV(r, "weird") && (i === 0 || i === N - 1) && R.arc !== "closer") { bonus -= 0.05; issues.push({ i, w: 1, text: "Slot " + (i + 1) + ": a weird record is risky as " + (i === 0 ? "an opener" : "the last record") + "." }); }
-    if (R.arc === "journey" && (hasV(r, "closer") || hasV(r, "sunrise")) && u < 0.5) { bonus -= 0.05; issues.push({ i, w: 1.1, text: "Slot " + (i + 1) + ": a closing record too early." }); }
+    if (R.arc === "journey" && hasV(r, "closer") && u < 0.5) { bonus -= 0.05; issues.push({ i, w: 1.1, text: "Slot " + (i + 1) + ": a closing record too early." }); }
   });
   if (A.first && recs[0]) bonus += hasV(recs[0], A.first) ? 0.08 : -0.03;
   if (A.last && recs[N - 1]) { const ok = A.last.some(v => hasV(recs[N - 1], v)); bonus += ok ? 0.14 : -0.12; if (!ok) issues.push({ i: N - 1, w: 1.8, text: "The last record should be a real closer (try one tagged CLOSER or SUNRISE)." }); }
@@ -177,7 +177,7 @@ const CSS = `
 @media (max-width: 700px) {
   .pl-slot { min-height: 70px; padding: 3px; } .pl-slot .t { display: none; } .pl-slot .m .pips { display: none; }
   .pl-pool { grid-template-columns: minmax(0, 1fr); }
-  .pl-mid { grid-template-columns: minmax(0, 1fr); } .pl-grade { flex-direction: row; flex-wrap: wrap; }
+  .pl-mid { grid-template-columns: minmax(0, 1fr); } .pl-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; } .pl-grade .big { grid-column: 1 / -1; } .pl-grade .mini { grid-template-columns: 52px minmax(0, 1fr); }
 }
 `;
 let cssDone = false;
@@ -372,7 +372,7 @@ RP.mg.register("playlistOrder", {
         } else if (sc.filled === N) el("div", { cls: "why good", text: "No problems found. Lock it in when you like the curve." }, info);
         else el("div", { cls: "mg-sub", text: "Hover or focus a record to see its details. Problems with your arrangement show up here." }, info);
         // always append the top issue under a record preview
-        if (id && sc.issues.length) el("div", { cls: "why", text: "! " + sc.issues[0].text }, info);
+        if (id && item.kind === "slot") { const mine = sc.issues.find(x => Math.abs(x.i - item.i) <= 0.5); if (mine) el("div", { cls: "why", text: "! " + mine.text }, info); }
       }
 
       function drawGraph(sc) {

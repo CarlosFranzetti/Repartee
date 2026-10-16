@@ -151,7 +151,7 @@ RP.room({
   start: { x: 70, y: 232, face: "right" },
   update: A2.update,
   draw,
-  fx: [{ type: "dust", rect: [140, 20, 140, 140], count: 14, color: "#ffe2a0" }, { type: "dust", rect: [420, 20, 120, 140], count: 14, color: "#ffe2a0" }],
+  fx: [{ type: "dust", rect: [140, 20, 140, 140], count: 8, color: "#ffe2a0" }, { type: "dust", rect: [420, 20, 120, 140], count: 8, color: "#ffe2a0" }],
   hotspots: [
     { id: "a2_stairs", name: "stairs down", r: [0, 90, 84, 78], z: 30, walk: [70, 224, "left"], exit: "travel", look: "The stairs: four flights of worn wood, a banister polished by a thousand hands and a smell of other people's cooking. The street's at the bottom, and so is Brooklyn.", push: "I'd rather walk than push stairs." },
     { id: "a2_4a", name: "door 4A", r: [106, 38, 50, 128], z: 20, walk: [130, 214, "back"], look: "4A. I've lived down the hall for two years and I've never seen anyone go in or out. I assume ghosts. Or finance.", use: "Knock? No. If 4A answers, I'll find out what's in 4A. I'm not ready.", open: "It's locked. Everything in this building is locked except my windows.", talk: "Silence. Maybe a faint hum. Finance, probably." },
