@@ -71,6 +71,14 @@ node tests/run.mjs mg crowdRead out.png
 node tools/screens.mjs               # regenerates the screenshots in docs/screenshots/
 ```
 
+### Deploy to Vercel
+
+The repo includes a `vercel.json`: Vercel runs `node tools/build.mjs` (no dependencies to install) and
+serves `dist/`, so `/` is the full game and `/level1` is Level 1 on its own. Import the GitHub repo at
+vercel.com (framework preset "Other"; the settings come from `vercel.json`) or run `npx vercel` in the
+repo root. Pushes to the production branch (`main` by default) update the live site; other branches
+get preview URLs.
+
 Docs for contributors: [`docs/ENGINE_API.md`](docs/ENGINE_API.md), [`docs/STORY.md`](docs/STORY.md),
 [`docs/STYLE.md`](docs/STYLE.md), [`docs/MINIGAMES.md`](docs/MINIGAMES.md), [`docs/PAINTKIT.md`](docs/PAINTKIT.md),
 research notes in [`docs/research/`](docs/research/).
