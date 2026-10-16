@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>re:parteé</title>
+<meta name="description" content="A pixel-art point-and-click DJ adventure. From broke-ass bedroom DJ to festival headliner, one bad decision at a time.">
+<link rel="stylesheet" href="src/fonts.css">
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<script src="src/core/util.js"></script>
+<script src="src/core/chars.js"></script>
+<script src="src/core/fx.js"></script>
+<script src="src/core/audio.js"></script>
+<script src="src/core/icons.js"></script>
+<script src="src/core/paint.js"></script>
+<script src="src/core/engine.js"></script>
+<script src="src/data/cast.js"></script>
+<script src="src/data/gear.js"></script>
+<script src="src/data/lore.js"></script>
+<script src="src/data/records_house.js"></script>
+<script src="src/data/records_more.js"></script>
+<script src="src/minigames/afterparty.js"></script>
+<script src="src/minigames/beatmatch.js"></script>
+<script src="src/minigames/buygear.js"></script>
+<script src="src/minigames/clubdrama.js"></script>
+<script src="src/minigames/cratedigging.js"></script>
+<script src="src/minigames/crowdread.js"></script>
+<script src="src/minigames/digkit_lib.js"></script>
+<script src="src/minigames/gearkit_lib.js"></script>
+<script src="src/minigames/getfollowers.js"></script>
+<script src="src/minigames/godigging.js"></script>
+<script src="src/minigames/guestlist.js"></script>
+<script src="src/minigames/lasttrain.js"></script>
+<script src="src/minigames/maktracks.js"></script>
+<script src="src/minigames/nightkit_lib.js"></script>
+<script src="src/minigames/playlistorder.js"></script>
+<script src="src/minigames/promotertalk.js"></script>
+<script src="src/minigames/recordhunt.js"></script>
+<script src="src/minigames/setkit_lib.js"></script>
+<script src="src/minigames/settime.js"></script>
+<script src="src/minigames/socialkit_lib.js"></script>
+<script src="src/minigames/soundcheck.js"></script>
+<script src="src/acts/act1/00_act1.js"></script>
+<script src="src/acts/act1/01_lib.js"></script>
+<script src="src/acts/act1/05_chars.js"></script>
+<script src="src/acts/act1/06_items.js"></script>
+<script src="src/acts/act1/10_bedroom.js"></script>
+<script src="src/acts/act1/15_home.js"></script>
+<script src="src/acts/act1/20_hall.js"></script>
+<script src="src/acts/act1/30_stoop.js"></script>
+<script src="src/acts/act1/32_bodega.js"></script>
+<script src="src/acts/act1/34_sals.js"></script>
+<script src="src/acts/act1/40_subway.js"></script>
+<script src="src/acts/act1/50_synergex.js"></script>
+<script src="src/acts/act1/52_breakroom.js"></script>
+<script src="src/acts/act1/60_deepcuts.js"></script>
+<script src="src/acts/act1/70_nowhere_door.js"></script>
+<script src="src/acts/act1/72_nowhere.js"></script>
+<script src="src/acts/act1/90_walkthrough.js"></script>
+<script src="src/acts/act2/00_act2.js"></script>
+<script src="src/acts/act2/10_couch.js"></script>
+<script src="src/acts/act2/20_street.js"></script>
+<script src="src/acts/act2/30_plasma.js"></script>
+<script src="src/acts/act2/40_van.js"></script>
+<script src="src/acts/act2/50_dani.js"></script>
+<script src="src/acts/act2/60_hall.js"></script>
+<script src="src/acts/act2/70_loftdoor.js"></script>
+<script src="src/acts/act2/72_loft.js"></script>
+<script src="src/acts/act2/80_warehouse.js"></script>
+<script src="src/acts/act2/99_walkthrough.js"></script>
+<script src="src/acts/act3/00_act3.js"></script>
+<script src="src/acts/act3/10_apartment.js"></script>
+<script src="src/acts/act3/20_street.js"></script>
+<script src="src/acts/act3/30_halcyon.js"></script>
+<script src="src/acts/act3/31_booth.js"></script>
+<script src="src/acts/act3/32_office.js"></script>
+<script src="src/acts/act3/35_nights.js"></script>
+<script src="src/acts/act3/40_deepcuts.js"></script>
+<script src="src/acts/act3/41_fair.js"></script>
+<script src="src/acts/act3/42_estate.js"></script>
+<script src="src/acts/act3/50_platform.js"></script>
+<script src="src/acts/act3/90_walkthrough.js"></script>
+<script src="src/acts/act4/00_act4.js"></script>
+<script src="src/acts/act4/01_art.js"></script>
+<script src="src/acts/act4/10_studio.js"></script>
+<script src="src/acts/act4/20_jfk.js"></script>
+<script src="src/acts/act4/21_baggage.js"></script>
+<script src="src/acts/act4/22_security.js"></script>
+<script src="src/acts/act4/30_plane.js"></script>
+<script src="src/acts/act4/40_platform.js"></script>
+<script src="src/acts/act4/41_street.js"></script>
+<script src="src/acts/act4/50_halle_door.js"></script>
+<script src="src/acts/act4/51_halle.js"></script>
+<script src="src/acts/act4/60_hotel.js"></script>
+<script src="src/acts/act4/99_walkthrough.js"></script>
+<script src="src/acts/act5/00_act5.js"></script>
+<script src="src/acts/act5/01_art.js"></script>
+<script src="src/acts/act5/10_studio.js"></script>
+<script src="src/acts/act5/20_boutique.js"></script>
+<script src="src/acts/act5/30_radio.js"></script>
+<script src="src/acts/act5/40_gate.js"></script>
+<script src="src/acts/act5/50_grounds.js"></script>
+<script src="src/acts/act5/60_backstage.js"></script>
+<script src="src/acts/act5/65_axl.js"></script>
+<script src="src/acts/act5/70_wings.js"></script>
+<script src="src/acts/act5/80_mainstage.js"></script>
+<script src="src/acts/act5/85_pier.js"></script>
+<script src="src/acts/act5/99_walkthrough.js"></script>
+<script src="src/game.js"></script>
+</body>
+</html>
