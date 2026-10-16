@@ -160,15 +160,24 @@ function stepAndDraw(fx, c, dt, t, camX) {
       break;
     }
     case "haze": {
-      // drifting dithered fog band
+      // drifting fog band: a soft translucent layer, built once and scrolled (period 128px so it wraps cleanly)
       const [x0, y0, w, h] = s.rect, col = s.color || "#b8a8ff";
-      const off = Math.floor(t / (s.slow || 90));
-      c.fillStyle = col;
-      for (let y = y0; y < y0 + h; y++) {
-        const k = 1 - Math.abs((y - y0) / h * 2 - 1);
-        const lvl = Math.floor(k * (s.density || 3));
-        for (let x = x0; x < x0 + w; x++) if (bayer(x + off, y + (off >> 2)) < lvl && ((x * 7 + y * 13 + off) % 5 !== 0)) c.fillRect(x, y, 1, 1);
+      if (!s._cv || s._cvKey !== col + w + "x" + h) {
+        const cw = w + 128, cv = mk(cw, h), g = cv.getContext("2d"), img = g.createImageData(cw, h), dd = img.data;
+        const [r, gg, b] = hex(col), dens = Math.min(2, (s.density || 3) / 3), TAU = Math.PI * 2;
+        for (let y = 0; y < h; y++) {
+          const k = Math.pow(1 - Math.abs(y / h * 2 - 1), 1.4);
+          for (let x = 0; x < cw; x++) {
+            const u = x / 128 * TAU;
+            const n = 0.62 + 0.24 * Math.sin(u + y / 7) + 0.14 * Math.sin(u * 3 + y / 4 + 1.7);
+            const i = (y * cw + x) * 4;
+            dd[i] = r; dd[i + 1] = gg; dd[i + 2] = b; dd[i + 3] = Math.round(255 * Math.min(0.5, k * n * 0.2 * dens));
+          }
+        }
+        g.putImageData(img, 0, 0); s._cv = cv; s._cvKey = col + w + "x" + h;
       }
+      const off = reduced ? 0 : Math.floor(t / (s.slow || 90)) % 128;
+      c.drawImage(s._cv, off, 0, w, h, x0, y0, w, h);
       break;
     }
     case "beams": {

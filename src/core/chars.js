@@ -344,12 +344,12 @@ function paintFrontBack(B, P, d, m, pose) {
 
 function face(B, P, d, m, cy, pose, dir) {
   const skin = d.skin, ry = m.ry;
-  const eye = "#1a1020", brow = darker(d.hair.color === "#e8e0d0" ? "#9a9aa6" : d.hair.color, 0.1);
+  const eye = "#1a1020", sclera = mix(skin, "#f4f0ff", 0.72), brow = darker(d.hair.color === "#e8e0d0" ? "#9a9aa6" : d.hair.color, 0.1);
   const expr = pose.expr || "neutral";
   if (dir === 0) {
     const ey = cy - 1;
     if (pose.blink) { B.rect(P.face, -3, ey + 1, 1, 1, darker(skin, 0.35)); B.rect(P.face, 3, ey + 1, 1, 1, darker(skin, 0.35)); }
-    else { B.rect(P.face, -3, ey, 1, 2, eye); B.rect(P.face, 3, ey, 1, 2, eye); }
+    else { B.rect(P.face, -4, ey, 1, 2, sclera); B.rect(P.face, 4, ey, 1, 2, sclera); B.rect(P.face, -3, ey, 1, 2, eye); B.rect(P.face, 3, ey, 1, 2, eye); }
     // brows
     if (expr === "angry") { B.px(P.face, -4, ey - 3, brow); B.px(P.face, -3, ey - 2, brow); B.px(P.face, 4, ey - 3, brow); B.px(P.face, 3, ey - 2, brow); }
     else if (expr === "sad" || expr === "worried") { B.px(P.face, -4, ey - 2, brow); B.px(P.face, -3, ey - 3, brow); B.px(P.face, 4, ey - 2, brow); B.px(P.face, 3, ey - 3, brow); }
@@ -373,7 +373,7 @@ function face(B, P, d, m, cy, pose, dir) {
   } else {
     // side view, facing +x (mirrored later for left)
     const ex = 4, ey = cy - 1;
-    if (pose.blink) B.px(P.face, ex, ey + 1, darker(skin, 0.35)); else B.rect(P.face, ex, ey, 1, 2, eye);
+    if (pose.blink) B.px(P.face, ex, ey + 1, darker(skin, 0.35)); else { B.rect(P.face, ex - 1, ey, 1, 2, sclera); B.rect(P.face, ex, ey, 1, 2, eye); }
     if (expr === "angry") { B.px(P.face, ex - 1, ey - 3, brow); B.px(P.face, ex, ey - 2, brow); }
     else B.rect(P.face, ex - 1, ey - 3, 2, 1, brow);
     B.px(P.head, m.hx + 1, cy + 1, skin); B.px(P.face, m.hx + 1, cy + 2, darker(skin, 0.2));

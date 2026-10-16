@@ -18,13 +18,14 @@ function paint(c, S) {
   ell(c, 320, 238, 190, 14, "#8a1a2a"); ell(c, 320, 238, 184, 12, "#a02a3e"); ell(c, 320, 238, 150, 9, "#c04860"); ell(c, 320, 238, 146, 8, "#a02a3e");
   /* vanity mirror: a wall of bulbs */
   const mx = 34, my = 22, mw = 190, mh = 112;
-  R(c, mx - 6, my - 6, mw + 12, mh + 12, "#2a1018"); R(c, mx, my, mw, mh, "#cfe0ea"); PK.gradV(c, mx, my, mw, mh, ["#e8f4fa", "#b8d0e0", "#98b8cc"], { dither: 1 });
+  R(c, mx - 6, my - 6, mw + 12, mh + 12, "#2a1018"); R(c, mx, my, mw, mh, "#e0d0a8"); PK.gradV(c, mx, my, mw, mh, ["#fff0c8", "#e8d098", "#c8a468"], { dither: 1 });
   PK.util.dshade(c, mx, my, mw, mh, "#ffffff", (px, py) => ((px - mx) * 0.8 + (py - my) + 900) % 60 < 6 ? 1 : 0, 0.28);
   PK.util.dshade(c, mx, my, mw, mh, "#ffffff", (px, py) => ((px - mx) * 0.8 + (py - my) + 900 - 30) % 120 < 3 ? 1 : 0, 0.2);
   for (let i = 0; i < mw + 12; i += 9) { [my - 6, my + mh + 2].forEach(by => { R(c, mx - 6 + i, by, 4, 4, "#fff0b0"); P(c, mx - 6 + i, by, "#ffffff"); em.push([mx - 6 + i, by, 4, 4]); }); }
   for (let i = 9; i < mh + 12; i += 9) { [mx - 6, mx + mw + 2].forEach(bx => { R(c, bx, my - 6 + i, 4, 4, "#fff0b0"); P(c, bx, my - 6 + i, "#ffffff"); em.push([bx, my - 6 + i, 4, 4]); }); }
   /* a reflection of nothing: the room behind the camera */
-  ell(c, mx + 150, my + 40, 22, 28, "#a8c0d4"); R(c, mx + 130, my + 70, 40, 42, "#98b0c4");
+  for (let i = 0; i < 8; i++) { R(c, mx + 14 + i * 22, my + 8, 3, 3, "#ffffff"); }
+  R(c, mx + 120, my + 60, 56, 52, "#b89458"); ell(c, mx + 148, my + 50, 14, 18, "#c8a468"); PK.util.dshade(c, mx + 100, my + 30, 100, 82, "#8a6a34", (px, py) => 0.4, 0.2);
   em.push([mx, my, mw, mh]);
   /* a sign over the mirror */
   R(c, 90, 6, 80, 14, "#17131f"); txtC(c, "NO EYE CONTACT", 130, 10, "#ffd23f", 1, 1); em.push([90, 6, 80, 14]);
@@ -54,9 +55,9 @@ function paint(c, S) {
 
 function drawCutout(c, S) {
   /* a life-size cardboard Axl, with a brown easel back */
-  R(c, 252, 128, 3, 70, "#8a6a4a"); R(c, 300, 128, 3, 70, "#8a6a4a");
-  RP.chars.draw(c, { id: "axl", x: 278, y: 206, face: "front", act: "stand", scale: 1.1 }, { lx: -0.3, rim: null, shadow: 0.2 });
-  R(c, 262, 206, 32, 3, "#c8a870"); HL(c, 262, 206, 32, "#e8d098"); txt(c, "AXL!", 272, 208, "#c0302c", 1, 1);
+  R(c, 310, 128, 3, 70, "#8a6a4a"); R(c, 358, 128, 3, 70, "#8a6a4a");
+  RP.chars.draw(c, { id: "axl", x: 336, y: 206, face: "front", act: "stand", scale: 1.1 }, { lx: -0.3, rim: null, shadow: 0.2 });
+  R(c, 320, 206, 32, 3, "#c8a870"); HL(c, 320, 206, 32, "#e8d098"); txt(c, "AXL!", 330, 208, "#c0302c", 1, 1);
 }
 function drawRider(c, S) {
   /* the rider: twelve identical bottles, a bowl of ONLY blue candies, a wheel of cheese, a blender */
@@ -145,7 +146,7 @@ RP.room({
   id: "a5_axl", act: 5, name: "Axl's trailer", paint, cacheKey: S => "x", light: lightMap, ambience: "room",
   walk: [[10, 222], [560, 222], [560, 252], [10, 252]],
   start: { x: 120, y: 232, face: "right" },
-  actors: [{ id: "axl", char: "axl", x: 238, y: 224, face: "right", act: "stand", name: "Axl Vanta", expr: "angry" }],
+  actors: [{ id: "axl", char: "axl", x: 214, y: 226, face: "right", act: "stand", name: "Axl Vanta", expr: "angry" }],
   sprites: [
     { y: 208, draw: art.sprite((c, S) => drawCutout(c, S)) },
     { y: 191, draw: art.sprite((c, S) => drawRider(c, S)) },
@@ -158,7 +159,7 @@ RP.room({
     { id: "a5_xmirror", name: "vanity mirror", r: [28, 16, 202, 124], z: 20, walk: [130, 226, "back"], look: "A vanity mirror framed by sixty lights. Axl needs his reflection lit from every angle at once. That's a lot of watts for self-esteem.", talk: "I say \"hi\" to the mirror. Axl says \"don't talk to my mirror.\"", use: "Axl: \"DO NOT TOUCH. It has a relationship with my face.\"", pickup: "Absolutely not." },
     { id: "a5_xsign", name: "sign", r: [86, 4, 90, 18], z: 28, walk: [130, 226, "back"], look: "A sign above the mirror: NO EYE CONTACT. It's gold lettering. It's not a joke. It might be a rider clause." },
     { id: "a5_xvanity", name: "vanity table", r: [18, 118, 226, 56], z: 18, walk: [130, 228, "back"], look: "Hairspray cans lined up like soldiers, a comb for a mohawk, a gold trophy that says ONE BILLION in tiny letters. The cans outnumber the guests.", pickup: "Not touching Axl's hairspray. It's a flame hazard and a personality.", use: "Axl: \"That's my station. Touch it and I'll feel it.\"" },
-    { id: "a5_xcutout", name: "Axl cardboard cutout", r: [250, 122, 56, 90], z: 22, walk: [278, 228, "back"], look: "A life-size cardboard Axl. He's pointing at me. The real Axl is pointing at me too. It's like having two of them.", talk: "\"Nice mohawk.\" The cutout doesn't answer. It's the better listener.", push: "I push the cutout. It wobbles. Axl gasps. I stop.", pickup: "It's his. Also it's taller than me." },
+    { id: "a5_xcutout", name: "Axl cardboard cutout", r: [306, 122, 60, 90], z: 22, walk: [336, 230, "back"], look: "A life-size cardboard Axl. He's pointing at me. The real Axl is pointing at me too. It's like having two of them.", talk: "\"Nice mohawk.\" The cutout doesn't answer. It's the better listener.", push: "I push the cutout. It wobbles. Axl gasps. I stop.", pickup: "It's his. Also it's taller than me." },
     { id: "a5_xrec", name: "platinum records", r: [252, 28, 112, 74], z: 20, walk: [300, 226, "back"], look: "Six framed records: three gold, three platinum. ONE BILLION STREAMS, in gold letters under them. Not one of them is vinyl. I respect the plaque, not the format.", pickup: "They're glued to the wall. The wall is glued to the trailer." },
     { id: "a5_xtable", name: "rider table", r: [376, 110, 148, 90], z: 30, walk: [450, 232, "back"], look: "A rider table with TWELVE identical bottles of water, a bowl of only blue candies, a wheel of cheese and a blender. A sign: NO. NOT THAT ONE. There's a story behind it. I don't want to know.", use: "I'm not touching the rider. The rider has teeth.", pickup: "The blue candies are tempting. The sign says no. I take nothing." },
     { id: "a5_xrack", name: "rack of white tanks", r: [538, 36, 84, 80], z: 20, walk: [575, 232, "back"], look: "A rack of identical white tank tops, nine of them. I can't tell them apart. Neither can his stylist. They're all \"the one.\"", pickup: "Not stealing a tank top. It would be too small. And too obvious.", use: "Axl: \"That's the TANK rack. Don't breathe near it.\"" },

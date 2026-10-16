@@ -306,6 +306,8 @@ RP.mg.register("playlistOrder", {
 
       /* ---------- rendering ---------- */
       function render() {
+        const ae = document.activeElement, prevKey = ae && ae.dataset && ae.dataset.key && root.contains(ae) ? ae.dataset.key : null;
+        if (!focusKey && prevKey) focusKey = prevKey;
         // slots
         slotsEl.innerHTML = "";
         const sc = scoreOrder(R, slots);
