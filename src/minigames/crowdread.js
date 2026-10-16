@@ -175,7 +175,7 @@ const CSS = `
 .cr-msg { min-height: 1.2em; } .cr-say { min-height: 1.2em; }
 .cr-timer { font-size: 18px; color: var(--muted); } .cr-timer.low { color: #ff6a6a; }
 @media (max-width: 860px) {
-  .cr-main { display: flex; flex-direction: column; gap: 8px; }
+  .cr-main { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
   .cr-left, .cr-side { display: contents; }
   .cr-scene { order: 1; } .cr-now { order: 2; } .cr-gauge { order: 3; } .cr-chips { order: 4; } .cr-msg { order: 5; } .cr-say { order: 6; } .cr-tell { order: 7; }
   .cr-hand { order: 8; } .cr-act { order: 9; } .cr-hist { order: 10; }
@@ -482,7 +482,7 @@ RP.mg.register("crowdRead", {
         if (finished || e.ctrlKey || e.metaKey || e.altKey) return;
         const k = e.key;
         if (phase === "pick" && /^[1-9]$/.test(k)) { const c = cards[+k - 1]; if (c && !S.used.has(c.rec.id)) { e.preventDefault(); select(c.rec.id); c.b.focus({ preventScroll: true }); } }
-        else if ((k === "Enter") && !(document.activeElement && document.activeElement.tagName === "BUTTON")) {
+        else if (k === "Enter" && (!document.activeElement || document.activeElement.tagName !== "BUTTON" || (document.activeElement.closest && document.activeElement.closest(".cr-hand")))) {
           e.preventDefault(); if (phase === "pick") doPlay(); else if (phase === "wait") next();
         }
       });

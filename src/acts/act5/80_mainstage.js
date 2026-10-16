@@ -246,14 +246,14 @@ RP.room({
     { type: "beams", origins: [[160, 38], [260, 38], [360, 38], [480, 38], [600, 38], [700, 38], [800, 38]], colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a", "#ff3fa4", "#39d0ff"], base: Math.PI / 2, swing: 0.7, len: 240, width: 16, alpha: 0.18, period: 1100, on: () => show(RP.state) },
     { type: "haze", rect: [250, 134, 460, 44], color: "#b8a8ff", density: 3, on: () => show(RP.state) },
     { type: "strobe", period: 3200, flash: 60, alpha: 0.18, on: () => show(RP.state) && !!RP.state.f.a5_pyro },
-    { type: "confetti", count: 140, width: 960, floor: 250, colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#9be15d", "#ffffff"], on: () => !!RP.state.f.a5_confetti }
+    { type: "confetti", count: 90, width: 960, floor: 250, colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#9be15d", "#ffffff"], on: () => !!RP.state.f.a5_confetti }
   ],
   actors: S => [
     { id: "a5_tech1", char: "a5_tech1", x: 210, y: 177, face: "right", act: "stand", name: "Stagehand", vis: S2 => !show(S2) },
     { id: "a5_tech2", char: "a5_tech2", x: 740, y: 176, face: "left", act: "stand", name: "Stagehand", vis: S2 => !show(S2) },
     { id: "lou", char: "lou", x: 110, y: 176, face: "right", act: "stand", name: "Lou", vis: S2 => !!S2.f.a5_louOnStage && !S2.f.a5_setDone },
     { id: "kosmo", char: "kosmo", x: 860, y: 176, face: "left", act: "stand", name: "Kosmo Delacroix", vis: S2 => !!S2.f.a5_kosmoName && !S2.f.a5_setDone },
-    { crowd: { n: 22, rect: [30, 236, 900, 14], seed: 91, face: "back", act: "dance", scale: 0.5, vis: S2 => show(S2) } },
+    { crowd: { n: 16, rect: [30, 236, 900, 14], seed: 91, face: "back", act: "dance", scale: 0.5, vis: S2 => show(S2) } },
     { id: "a5_mmarcus", char: "marcus", x: 330, y: 246, face: "back", act: "dance", scale: 0.55, name: "Marcus", clickable: false, vis: S2 => show(S2) },
     { id: "a5_mjess", char: "jess", x: 400, y: 248, face: "back", act: "dance", scale: 0.55, name: "Jess", clickable: false, vis: S2 => show(S2) },
     { id: "a5_mray", char: "ray", x: 560, y: 247, face: "back", act: "stand", scale: 0.55, name: "Ray", clickable: false, vis: S2 => show(S2) },

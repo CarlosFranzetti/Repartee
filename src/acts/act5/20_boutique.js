@@ -335,8 +335,8 @@ async function eddieTalk(S) {
     { text: "What's in it for you?", once: true, run: async () => {
       await RP.lines(["@eddie Me? I'm a facilitator. I see a need, I fill the need, and I take a little off the top. Twice. That's the two-time part.", "That's not a deal, that's a tax with a smile.", "@eddie Same thing, kid. Same thing."]);
     } },
-    { text: "Remember my first turntables?", once: true, run: async () => {
-      await RP.lines(["@eddie The AT-LP120s! Beautiful! Do they still work?", "They do. I almost bought the broken pair next to them.", "@eddie Hey, it was working this morning! This one works NOW."]);
+    { text: "Remember my first pair of decks?", once: true, run: async () => {
+      await RP.lines(["@eddie Your first pair! Beautiful! Do they still work?", "They do. Mostly. They've done more miles than I have.", "@eddie Hey, it was working this morning! This one works NOW."]);
     } },
     { text: "Later, Eddie.", end: true }
   ]);

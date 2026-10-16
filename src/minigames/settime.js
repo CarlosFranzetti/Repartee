@@ -296,7 +296,7 @@ const CSS = `
 @media (max-width: 860px) {
   .st-evbox { position: static; margin-top: 8px; border-color: var(--pink); } .st-evbox .ch { flex-direction: column; } .st-evbox .ch .btn { flex: none; }
   .st-briefbox { position: static; background: #120e24; border-radius: 4px; margin-top: 8px; }
-  .st-main { display: flex; flex-direction: column; gap: 8px; }
+  .st-main { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
   .st-left, .st-right { display: contents; }
   .st-sceneBox { order: 1; } .st-clock { order: 2; } .st-slotBox { order: 3; } .st-g1 { order: 4; } .st-g2 { order: 5; } .st-chiprow { order: 6; } .st-tr { order: 7; } .st-ctl { order: 8; } .st-msg { order: 9; } .st-say { order: 10; } .st-crate { order: 11; }
   .st-ctl.sticky { position: sticky; bottom: 0; z-index: 5; background: rgba(10, 8, 22, .97); padding: 6px; border-color: var(--pink); }

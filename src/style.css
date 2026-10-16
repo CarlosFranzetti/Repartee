@@ -63,7 +63,7 @@ button { font-family: var(--ui); }
 
 /* portrait phones */
 body.p { overflow: auto; }
-body.p #app { justify-content: flex-start; padding-block: 12px; height: auto; min-height: 100%; }
+body.p #app { justify-content: center; padding-block: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-bottom, 0px) + 12px); height: auto; min-height: 100%; }
 body.p #below { display: flex; }
 body.p #hint { display: block; }
 body.p #sentence { position: relative; left: auto; top: auto; width: 100%; height: auto; font-size: 20px; border: 1px solid var(--line); display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 2px 10px; padding: 4px 8px; }

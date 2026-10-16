@@ -227,7 +227,7 @@ RP.room({
   scale: [208, 0.96, 250, 1.04],
   start: { x: 592, y: 238, face: "left" },
   fx: [
-    { type: "dust", rect: [60, 30, 500, 130], count: 16, color: "#f4fff4" },
+    { type: "dust", rect: [60, 30, 500, 130], count: 8, color: "#f4fff4" },
     { type: "smoke", x: 28, y: 160, rise: 90, size: 20, drift: 18, color: "#6a6670", count: 12, speed: 0.5, on: () => RP.state.f.a1_alarm },
     { type: "strobe", period: 900, flash: 150, alpha: 0.12, color: "#ff2a2a", on: () => RP.state.f.a1_alarm }
   ],

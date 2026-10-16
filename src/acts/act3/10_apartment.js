@@ -236,8 +236,8 @@ RP.room({
       use: S => S.f.a3_opener ? "Practice time. A few mixes, loud, and Lou stays quiet. Progress." : "I've got a gig. The decks can wait; the booth has better ones.",
       push: "Please don't touch the jog wheel. It's got feelings.", pickup: "I'm not carrying those up and down. The club has house gear." },
     { id: "a3_tt", name: "turntables", rects: [[340, 108, 72, 36], [566, 108, 72, 36]], z: 30, walk: [492, 214, "back"],
-      look: S => isTechnics(S) ? "Technics SL-1210MK2. Satin black, quartz-locked, built like a tank. They belonged to Hal Pruitt, and now they belong to my bad habits." : "Audio-Technica AT-LP120-USB. My first pair. Introduced in 2009, aimed at people who couldn't afford the real thing. Me.",
-      use: S => isTechnics(S) ? "I put a record on and tweak the pitch. The slider has a 'heft.' Lou's wall does a drumroll." : "I put a record on. The AT-LP120 sounds fine. I just want the other ones.",
+      look: S => isTechnics(S) ? "Technics SL-1210MK2. Satin black, quartz-locked, built like a tank. They belonged to Hal Pruitt, and now they belong to my bad habits." : (S.gear.turntables === "numark_tt1650" ? "Numark TT1650s. My first pair. Budget direct-drive, bought from a man who calls himself Two-Times. They hold pitch. Mostly." : "Audio-Technica AT-LP120-USB. My first pair. Introduced in 2009, aimed at people who couldn't afford the real thing. Me."),
+      use: S => isTechnics(S) ? "I put a record on and tweak the pitch. The slider has a 'heft.' Lou's wall does a drumroll." : "I put a record on. It sounds fine. I just want the other ones.",
       push: "I'm not touching that. Platters get angry.", pickup: "Those weigh a lot, and I only carry things that are emotionally heavy." },
     { id: "a3_mixer", name: "mixer", r: [468, 110, 44, 34], z: 31, walk: [492, 214, "back"],
       look: S => isDjm(S) ? "Pioneer DJM-350. Budget two-channel, launched alongside the CDJ-350. Two channels, zero crackle, zero vodka." : "Numark M101 USB. Two channels. Channel 2 still smells faintly of vodka.",
@@ -268,7 +268,7 @@ RP.room({
     ["a3_usb", "a3_laptop", () => RP.state.f.a3_swap ? "I'm not putting that back in. It's got a certain... Brandon smell." : "It's already synced. If I plug it in again, the laptop will cry."],
     ["a3_usb", "a3_cdjs", "I'll plug it in at the club. The house CDJs are nicer, and they don't owe me any money."],
     ["a3_bag", "a3_cdjs", "The records go on turntables, not CDJs. That's the whole bag's personality."],
-    ["a3_bag", "a3_tt", () => RP.state.gear.turntables === "technics_sl_1210mk2" ? "I could play a few. But Lou's pipe has opinions after nine." : "AT-LP120s. I can play records on them. The records deserve better."],
+    ["a3_bag", "a3_tt", () => RP.state.gear.turntables === "technics_sl_1210mk2" ? "I could play a few. But Lou's pipe has opinions after nine." : (() => { const g = RP.gearInfo(RP.state.gear.turntables); return (g ? "The " + g.brand + " " + g.model + "s" : "These turntables") + ". I can play records on them. The records deserve better."; })()],
     ["a3_list", "a3_hole", "Lou doesn't read lipstick. Lou reads the paper."]
   ],
   self: { look: "Jacket, headphones round the neck. A DJ. I got the outfit before the bank balance.", talk: "I'd answer, but I'm busy being somebody with a residency." }

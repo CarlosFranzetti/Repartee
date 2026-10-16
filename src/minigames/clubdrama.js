@@ -18,6 +18,7 @@ const CSS = `
 @media (max-width: 559px) { .cd-round { display: none; } }
 .cd-vs { font-size: 17px; color: var(--muted); letter-spacing: .08em; }
 .cd-end { font-size: 22px; line-height: 1.1; }
+.cd-flow .sk-say { min-height: 68px; padding-top: 6px; padding-bottom: 8px; } .cd-flow .sk-choice { padding-top: 4px; padding-bottom: 4px; min-height: 34px; font-size: 21px; } .cd-flow .sk-choices { gap: 4px; }
 `;
 let cssDone = false;
 
@@ -28,7 +29,7 @@ let cssDone = false;
 const SC = {};
 
 SC.rival = {
-  title: "The Rival", scene: "booth", npc: "brandon", start: "r1",
+  title: "The Rival", scene: "booth", npc: "brandon", start: "r1", bias: 4,
   intro: "{npc} is a resident here. He has hair like a toaster ad and a rotating list of grievances. It is 11:40 PM. Your set is at midnight.",
   nodes: {
     r1: { mood: "happy", say: [["nar", "Halcyon Room, 11:40 PM. The booth. Twenty minutes to your set."], ["npc", ["Oh hey, {me}. Just warming up your gear. For you. As a friend.", "Hey, {me}! I was just making sure your gear works. It does. Barely. Like you."]], ["npc", "Nice crate, by the way. Is it a rental?"]],
@@ -252,7 +253,7 @@ SC.backstage = {
 };
 
 SC.ego = {
-  title: "The Superstar", scene: "dock", npc: "axl", start: "e1",
+  title: "The Superstar", scene: "dock", npc: "axl", start: "e1", bias: 2,
   intro: "{npc} headlines the main stage and believes the sun sets when he says so. His people want your 10 PM slot. You need it more than he does.",
   nodes: {
     e1: { mood: "happy", say: [["nar", "Harbor Lights. Backstage by the water. 6:30 PM. Your set is at ten."], ["npc", ["Hey. You. The local act. Great news. Your slot's moving to 3 AM. It's a promotion. Of time.", "Oh hey, local guy. We moved you to 3 AM. It's very exclusive. Nobody will be there. Perfect."]], ["nar", "{npc}'s assistant hands him a golden towel. He holds it like a trophy."]],
@@ -456,7 +457,7 @@ async function run(host, p, SK) {
   let leaveRes = null;
   const leaveP = new Promise(res => { leaveRes = res; });
   SK.leave(host, head, S, () => leaveRes({ ok: false, score: 0, outcome: "lose", left: true, scenario: scnKey }));
-  const wrap = el("div", { cls: "sk-wrap" }, root);
+  const wrap = el("div", { cls: "sk-wrap cd-flow" }, root);
   return Promise.race([leaveP, flow()]);
 
   async function flow() {
@@ -561,13 +562,14 @@ async function run(host, p, SK) {
     }
     // ---------- payoff
     const sum = st.rep + st.vibe;
-    const outcome = sum >= 134 + thrShift ? "legend" : sum >= 112 + thrShift ? "win" : sum >= 92 + Math.round(thrShift * 0.66) ? "draw" : "lose";
+    const bias = sc.bias || 0;
+    const outcome = sum >= 134 + bias + thrShift ? "legend" : sum >= 124 + bias + thrShift ? "win" : sum >= 112 + bias + Math.round(thrShift * 0.66) ? "draw" : "lose";
     const end = sc.endings[outcome];
     cast.npcExpr = outcome === "legend" || outcome === "lose" ? (outcome === "lose" ? "happy" : "surprised") : outcome === "win" ? "worried" : "";
     cast.meExpr = outcome === "lose" ? "sad" : "happy";
     RP.sfx(outcome === "lose" ? "fail" : outcome === "legend" ? "cheer" : "success");
     for (const [who, text] of end.lines) { await speak(who, text); await pause(850); }
-    const score = clamp(Math.round(sum - 50), 0, 100);
+    const score = clamp(Math.round((sum - bias - 78) * 1.6), 0, 100);
     const ok = outcome !== "lose";
     await S.wait(250);
     cw.style.display = "none"; say.box.style.display = "none"; wrap.querySelectorAll(".sk-tip").forEach(n => { n.style.display = "none"; });

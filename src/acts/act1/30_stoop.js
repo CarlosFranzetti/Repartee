@@ -302,7 +302,7 @@ RP.room({
   scale: [206, 0.96, 236, 1.04],
   start: { x: 350, y: 236, face: "front" },
   fx: [
-    { type: "steam", x: 758, y: 222, rise: 60, size: 14, drift: 6, color: "#e8e4f0", count: 9, speed: 0.5 },
+    { type: "steam", x: 758, y: 222, rise: 56, size: 10, drift: 6, color: "#e8e4f0", count: 5, speed: 0.5 },
     { type: "cars", y: 250, dir: 1, period: 7400, width: W },
     { type: "cars", y: 252, dir: -1, period: 11000, width: W, color: "#ff6a5a" },
     { type: "dust", rect: [440, 20, 60, 140], count: 8, color: "#ffd890", on: () => A1.tod(RP.state) === "night" },
