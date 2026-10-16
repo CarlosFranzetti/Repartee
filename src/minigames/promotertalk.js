@@ -28,10 +28,10 @@ const CSS = `
 @media (max-width: 959px) { .pt-play { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "hud" "deal" "notes" "say" "choices" "tip"; } .pt-play > .sk-stage { margin: 0 auto; } }
 @media (max-height: 460px) and (min-width: 560px) {
   .pt-play { display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; height: calc(100vh - 56px); }
-  .pt-play > * { grid-area: auto; }
+  .pt-play > * { grid-area: auto; box-sizing: border-box; }
   .pt-play > .sk-stage { order: 1; width: 330px; } .pt-play > .pt-dealbox { order: 2; width: 330px; } .pt-play > .pt-notes { order: 3; width: 330px; }
   .pt-play > .pt-brk { display: block; order: 4; flex: 0 0 100%; width: 0; }
-  .pt-play > .sk-hud { order: 5; width: calc(100% - 350px); } .pt-play > .sk-say { order: 6; width: calc(100% - 350px); } .pt-play > .pt-choices { order: 7; width: calc(100% - 350px); } .pt-play > .sk-tip { order: 8; }
+  .pt-play > .sk-hud { order: 5; width: calc(100% - 346px); } .pt-play > .sk-say { order: 6; width: calc(100% - 346px); } .pt-play > .pt-choices { order: 7; width: calc(100% - 346px); } .pt-play > .sk-tip { order: 8; }
   .pt-deal { grid-template-columns: 1fr 1fr; column-gap: 8px; } .pt-row { grid-template-columns: 1fr; gap: 0; font-size: 17px; padding: 1px 4px; } .pt-row .lb { font-size: 13px; } .pt-row.lock .vl::after { content: " *"; }
 }
 .pt-peek { margin-top: 6px; }
@@ -370,9 +370,9 @@ async function run(host, p, SK) {
     S.extraKey = e => { if (e.key === "n" || e.key === "N") peek(); };
     host.cleanup(() => { S.extraKey = null; });
   }
-  const say = SK.say(S, wrap);
-  const choiceBox = el("div", {}, wrap);
-  const tipEl = el("div", { cls: "sk-tip", text: "Keys 1-6 pick a line · click or Space skips the typing" }, wrap);
+  const say = SK.say(S, play);
+  const choiceBox = el("div", { cls: "pt-choices" }, play);
+  const tipEl = el("div", { cls: "sk-tip", text: "Keys 1-6 pick a line · click or Space skips the typing" }, play);
 
   // ---- scene
   const scene = paintOffice(party, pname, seed, null);
