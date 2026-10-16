@@ -139,10 +139,10 @@ RP.room({
     { id: "lou", char: "lou", x: 530, y: 236, face: "left", act: "stand", name: "Lou", vis: S2 => !!S2.f.a5_louArrived }
   ],
   sprites: [
-    { y: 192, draw: (c, S) => drawBooth(c, S) },
-    { y: 226, draw: (c, S) => drawDesk(c, S) },
-    { y: 236, draw: (c, S) => drawStool(c, S) },
-    { y: 240, draw: (c, S) => drawFoot(c, S) }
+    { y: 192, draw: art.sprite((c, S) => drawBooth(c, S)) },
+    { y: 226, draw: art.sprite((c, S) => drawDesk(c, S), S => mode(S)) },
+    { y: 236, draw: art.sprite((c, S) => drawStool(c, S)) },
+    { y: 240, draw: art.sprite((c, S) => drawFoot(c, S)) }
   ],
   hotspots: [
     { id: "a5_wback", name: "stairs down", r: [0, 150, 22, 104], z: 25, walk: [92, 236, "left"], look: "The stairs back to the compound. And to the people who'd like to hold my hand.", exit: { room: "a5_backstage", x: 880, y: 236, face: "left" } },

@@ -161,14 +161,16 @@ function paintFrontBack(B, P, d, m, pose) {
   const legLift = act === "walk" ? [0, 2, 0, 2][f % 4] : 0;
   const which = act === "walk" ? (f % 4 === 1 ? -1 : f % 4 === 3 ? 1 : 0) : 0;
   const hipW = Math.max(tw - 4, lw * 2 + 2) + (curvy ? 2 : 0);
+  const seat = Math.round(legTop * 0.5);   // underside of the thighs = chair height (legTop < 0)
   if (sit) {
-    // seated, facing out: foreshortened thighs, shins straight down
-    const seat = -26;
-    B.rect(P.pants, -hipW / 2, seat - 6, hipW, 8, bst === "skirt" || bst === "none" ? topColor(d) : pc);
+    // seated, facing out: hips drop to the chair, thighs foreshortened toward us, knees a little apart, shins down
+    const thighC = bst === "skirt" || bst === "none" ? (bst === "skirt" ? d.bottom.color : topColor(d)) : pc;
+    B.rect(P.pants, -hipW / 2 - 1, seat - 7, hipW + 2, 8, thighC);
     [-1, 1].forEach(s => {
       const x = s < 0 ? -lw - 2 : 2;
-      const shin = bst === "shorts" || bst === "skirt" || bst === "none" ? skin : pc;
-      B.rect(s < 0 ? P.legB : P.legF, x, seat + 2, lw, -seat - 6, shin);
+      const shin = bst === "shorts" || bst === "skirt" || bst === "none" ? (d.bottom.tights || skin) : pc;
+      B.rect(s < 0 ? P.legB : P.legF, x, seat + 1, lw, -seat - 5, shin);
+      if (/jeans|pants|cargo|track/.test(bst)) B.rect(s < 0 ? P.legB : P.legF, x, -5, lw, 1, darker(pc, 0.3));
       shoe(B, s < 0 ? P.shoeB : P.shoeF, x - 1, 0, lw + 2, d, 0);
     });
   } else {
@@ -197,8 +199,8 @@ function paintFrontBack(B, P, d, m, pose) {
   }
   /* ---- torso ---- */
   const tc = topColor(d), st = d.top.style;
-  const tTop = sit ? -26 - (legTop - torsoTop) - 6 : ty;
-  const tBot = sit ? -30 : ly + 1;
+  const tBot = sit ? seat - 5 : ly + 1;
+  const tTop = sit ? tBot - (legTop + 1 - torsoTop) : ty;
   const offY = sit ? tTop - ty : 0; // shift for upper body when seated
   const T = (y) => y + offY;
   const half = tw / 2;
@@ -321,8 +323,9 @@ function paintFrontBack(B, P, d, m, pose) {
     }
   };
   if (act === "sit") {
-    // hands resting on knees
-    [-1, 1].forEach(side => { const x0 = side < 0 ? -armX - aw : armX; const pt = side < 0 ? P.armB : P.armF; B.rect(pt, x0, tTop + 1, aw, armLen - 6, sl ? sleeveC : skin); if (sl < armLen - 6) B.rect(pt, x0, tTop + 1 + sl, aw, armLen - 6 - sl, skin); B.rect(P.hand, x0 + (side < 0 ? 2 : -2), tTop + armLen - 5, aw + 1, 3, skin); });
+    // hands resting on the thighs
+    const aH = (seat - 7) - (tTop + 1), sl2 = sleeveLen(d, aH);
+    [-1, 1].forEach(side => { const x0 = side < 0 ? -armX - aw : armX; const pt = side < 0 ? P.armB : P.armF; B.rect(pt, x0, tTop + 1, aw, aH, sl2 ? sleeveC : skin); if (sl2 < aH) B.rect(pt, x0, tTop + 1 + sl2, aw, aH - sl2, skin); B.rect(P.hand, x0 + (side < 0 ? 2 : -2), seat - 8, aw + 1, 3, skin); });
   } else { drawArm(-1); drawArm(1); }
   /* ---- neck & head ---- */
   const hY = sit ? hcy + offY : hcy;
@@ -551,15 +554,26 @@ function paintSide(B, P, d, m, pose) {
   const stv = walking ? [4, 0, -4, 0][f % 4] : 0;
   const bob = walking && (f % 2 === 1) ? -1 : 0;
   const crouch = act === "crouch" ? 10 : 0;
-  const ly = legTop + bob + crouch, ty = torsoTop + bob + crouch, hcy = m.headCy + bob + crouch;
+  const sit = act === "sit", seat = Math.round(legTop * 0.5);
+  const drop = sit ? seat - 6 - legTop : 0;           // seated: the hip line sits on the chair
+  const ly = legTop + bob + crouch + drop, ty = torsoTop + bob + crouch + drop, hcy = m.headCy + bob + crouch + drop;
   const pc = pantsCol(d), bst = d.bottom.style;
   const sw = Math.max(10, Math.round(tw * 0.62)) + (belly ? 2 : 0);
+  const thigh = Math.round(-legTop * 0.42) + 2;      // seated: hip to knee, reaching forward
   // legs: back leg first (darker), front leg
   const leg = (s, pt, sh, back) => {
     let thighCol = pc, shinCol = pc;
     if (bst === "shorts") shinCol = skin;
     if (bst === "skirt" || bst === "none") { thighCol = d.bottom.tights || skin; shinCol = thighCol; }
     const kneeY = ly + Math.round((-5 - ly) * 0.48);
+    if (sit) {
+      const dx = back ? -2 : 0, kx = -3 + dx + thigh;
+      B.rect(pt, -3 + dx, ly, thigh + lw, seat - ly + 1, thighCol);
+      B.rect(pt, kx, seat, lw, -5 - seat, shinCol);
+      if (/jeans|pants|cargo|track/.test(bst)) B.rect(pt, kx, -6, lw, 1, darker(pc, 0.3));
+      shoe(B, sh, kx, 0, lw + 2, d, 1);
+      return;
+    }
     if (crouch) {
       B.rect(pt, -3 + 4, ly, lw, 7, thighCol); B.rect(pt, -3 + 6, ly + 6, lw, -5 - ly - 6, shinCol);
       shoe(B, sh, 2, 0, lw + 2, d, 1);
@@ -573,7 +587,10 @@ function paintSide(B, P, d, m, pose) {
   leg(-stv, P.legB, P.shoeB, true);
   leg(stv, P.legF, P.shoeF, false);
   if (bst !== "skirt" && bst !== "none") B.rect(P.pants, -sw / 2 + 1, ly, sw - 1, 6, pc);
-  if (bst === "skirt") B.trap(P.skirt, ly - 1, -sw / 2, sw / 2, ly + Math.round((-5 - ly) * 0.45), -sw / 2 - 2, sw / 2 + 3, d.bottom.color);
+  if (bst === "skirt") {
+    if (sit) B.rect(P.skirt, -sw / 2, ly - 1, sw / 2 + thigh, seat - ly + 3, d.bottom.color);
+    else B.trap(P.skirt, ly - 1, -sw / 2, sw / 2, ly + Math.round((-5 - ly) * 0.45), -sw / 2 - 2, sw / 2 + 3, d.bottom.color);
+  }
   // far arm (behind torso)
   const armLen = (ly - 2) - (ty + 1);
   const sl = sleeveLen(d, armLen);
@@ -585,7 +602,15 @@ function paintSide(B, P, d, m, pose) {
     B.rect(pt, -1 + a, ty + 12, aw, armLen - 11, sl > 12 ? sleeveC : skin);
     B.rect(P.hand, -1 + a, ly - 2, aw, 4, skin);
   };
-  if (act !== "reach" && act !== "point" && act !== "phone") arm(P.armB, -swing, true);
+  const armSit = (pt, dx) => {
+    // upper arm down, forearm forward to rest the hand on the thigh
+    const ey = ty + 12, x0 = -1 + dx, hx2 = thigh - 7 + dx, hy = ly - 3, n = Math.max(1, hx2 - x0);
+    B.rect(pt, x0, ty + 1, aw, ey - ty, sl ? sleeveC : skin);
+    for (let i = 0; i <= n; i++) B.rect(pt, x0 + i, ey + Math.round((hy - ey) * i / n), 1, aw, sl > 12 && i < n - 2 ? sleeveC : skin);
+    B.rect(P.hand, hx2, hy, 3, aw + 1, skin);
+  };
+  if (sit) armSit(P.armB, -2);
+  else if (act !== "reach" && act !== "point" && act !== "phone") arm(P.armB, -swing, true);
   // torso
   const st = d.top.style;
   for (let y = ty; y <= ly + 1; y++) {
@@ -597,8 +622,11 @@ function paintSide(B, P, d, m, pose) {
     B.rect(P.torso, x0, y, x1 - x0, 1, tc);
   }
   if (st === "coat" || st === "dress") {
-    const hemY = st === "coat" ? ly + Math.round((-5 - ly) * 0.6) : ly + Math.round((-5 - ly) * 0.42);
-    B.trap(P.skirt, ly, -sw / 2, sw / 2, hemY, -sw / 2 - 2, sw / 2 + 3, tc);
+    if (sit) { B.rect(P.skirt, -sw / 2, ly, sw / 2 + thigh - 1, seat - ly + 2, tc); B.rect(P.skirt, thigh - 6, seat, 6, st === "coat" ? 8 : 5, tc); }
+    else {
+      const hemY = st === "coat" ? ly + Math.round((-5 - ly) * 0.6) : ly + Math.round((-5 - ly) * 0.42);
+      B.trap(P.skirt, ly, -sw / 2, sw / 2, hemY, -sw / 2 - 2, sw / 2 + 3, tc);
+    }
   }
   if (st === "hoodie") B.rect(P.torso, -sw / 2 - 1, ty - 1, 5, 6, darker(tc, 0.08));
   if (st === "jacket" || st === "suit" || st === "bomber" || st === "cardigan") B.rect(P.print, Math.ceil(sw / 2) - 2, ty + 1, 2, ly - ty - 2, d.top.color2 || "#efeaf6");
@@ -624,7 +652,8 @@ function paintSide(B, P, d, m, pose) {
     B.rect(P.armF, 0, ty + 1, aw, 11, sl ? sleeveC : skin);
     B.rect(P.armF, 2, hcy + 3, aw, ty - hcy + 10, sl > 11 ? sleeveC : skin);
     B.rect(P.hand, 2, hcy, aw, 4, skin); B.rect(P.acc, 2, hcy - 4, 2, 9, "#1c1a24");
-  } else arm(P.armF, swing, false);
+  } else if (sit) armSit(P.armF, 0);
+  else arm(P.armF, swing, false);
   accessories(B, P, d, m, hcy, "side", ty, ly, sw / 2);
 }
 
@@ -819,7 +848,7 @@ function draw(ctx, inst, light = {}) {
 }
 
 /* head-top position for speech anchoring */
-function headTop(id, scale = 1) { const d = DEFS[id]; if (!d) return 100; const m = metrics(d); return (-(m.headCy - m.ry) + 10) * scale; }
+function headTop(id, scale = 1, act) { const d = DEFS[id]; if (!d) return 100; const m = metrics(d); const drop = act === "sit" ? Math.round(m.legTop * 0.5) - 6 - m.legTop : act === "crouch" ? 10 : 0; return (-(m.headCy - m.ry) + 10 - drop) * scale; }
 
 /* inventory/portrait icon of a character face */
 function portrait(id, size = 32) {

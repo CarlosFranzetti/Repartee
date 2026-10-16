@@ -193,8 +193,8 @@ RP.room({
     { id: "a5_dana", char: "a5_dana", x: 220, y: 204, face: "front", act: "stand", name: "Dana Okafor" }
   ],
   sprites: [
-    { y: 232, draw: (c, S) => drawTable(c, S) },
-    { y: 228, draw: (c, S) => drawCart(c, S) }
+    { y: 232, draw: art.sprite((c, S) => drawTable(c, S)) },
+    { y: 228, draw: art.sprite((c, S) => drawCart(c, S)) }
   ],
   hotspots: [
     { id: "a5_rdoor", name: "door to the lobby", r: [0, 34, 40, 132], z: 20, walk: [34, 224, "left"], look: "STUDIO B. A heavy soundproof door with a little window. The hallway is the same beige as every radio station hallway in the world.", exit: "travel" },

@@ -554,6 +554,7 @@ K.Floor = function (opts) {
     if (F.emotes.length > 24) F.emotes.splice(0, F.emotes.length - 24);
   };
   F.snap(1);
+  const light = U.mk(W, H), lc = light.getContext("2d"); let lightT = -9;
 
   /* ---- per-frame ---- */
   F.draw = function (t) {
@@ -561,20 +562,23 @@ K.Floor = function (opts) {
     F.Es += (F.E - F.Es) * (1 - Math.exp(-dt * 1.6));
     const Es = F.Es, e5 = Es / 5, beat = (t * F.bpm / 60) % 1, pulse = o.reduced ? 0.4 : Math.max(0, 1 - beat * 3.2);
     c.drawImage(bg, 0, 0);
-    // floor glow
-    const gy = club ? 120 : 108;
-    K.glow(c, W / 2, gy, 140, 26, T.glow, 1 + e5 * 3 + pulse);
-    K.glow(c, W / 2, gy, 84, 14, T.beams[0], 1 + e5 * 3.5 + pulse * 1.5);
-    // beams
-    const nb = club ? 4 : 3;
-    for (let i = 0; i < nb; i++) {
-      const ox = club ? 106 + i * 36 : 50 + i * 110, y0 = club ? 6 : 0, yE = club ? 104 : 112;
-      const sw = o.reduced ? 0 : Math.sin(t * (0.5 + i * 0.17) + i * 2) * 34, tx = ox + (i - (nb - 1) / 2) * (club ? 30 : 22) + sw, col = T.beams[i % T.beams.length], wd = 14 + e5 * 14;
-      poly(c, [[ox - 2, y0], [ox + 2, y0], [tx + wd, yE], [tx - wd, yE]], K.dpat(col, 1 + Math.round(e5 * 2)));
-      poly(c, [[ox - 1, y0], [ox + 1, y0], [tx + wd * 0.45, yE], [tx - wd * 0.45, yE]], K.dpat(col, 1 + Math.round(e5 * 2.4)));
-      K.glow(c, tx, yE, 20 + e5 * 6, 4 + e5 * 2, col, 3 + Math.round(e5 * 4));
+    // floor glow + beams live on a cached light layer (redrawn ~25x/s: cheap to the eye, much cheaper than per-frame dither fills)
+    if (t - lightT > 0.04 || lightT > t) {
+      lightT = t; lc.clearRect(0, 0, W, H);
+      const gy = club ? 120 : 108;
+      K.glow(lc, W / 2, gy, 140, 26, T.glow, 1 + e5 * 3 + pulse);
+      K.glow(lc, W / 2, gy, 84, 14, T.beams[0], 1 + e5 * 3.5 + pulse * 1.5);
+      const nb = club ? 4 : 3;
+      for (let i = 0; i < nb; i++) {
+        const ox = club ? 106 + i * 36 : 50 + i * 110, y0 = club ? 6 : 0, yE = club ? 104 : 112;
+        const sw = o.reduced ? 0 : Math.sin(t * (0.5 + i * 0.17) + i * 2) * 34, tx = ox + (i - (nb - 1) / 2) * (club ? 30 : 22) + sw, col = T.beams[i % T.beams.length], wd = 14 + e5 * 14;
+        poly(lc, [[ox - 2, y0], [ox + 2, y0], [tx + wd, yE], [tx - wd, yE]], K.dpat(col, 1 + Math.round(e5 * 2)));
+        poly(lc, [[ox - 1, y0], [ox + 1, y0], [tx + wd * 0.45, yE], [tx - wd * 0.45, yE]], K.dpat(col, 1 + Math.round(e5 * 2.4)));
+        K.glow(lc, tx, yE, 20 + e5 * 6, 4 + e5 * 2, col, 3 + Math.round(e5 * 4));
+      }
+      if (T.dark && !o.reduced && Es > 3.6 && ((t * 7) | 0) % 8 === 0) { lc.fillStyle = K.dpat("#ffffff", 3); lc.fillRect(0, 0, W, hz); }
     }
-    if (T.dark && !o.reduced && Es > 3.6 && ((t * 7) | 0) % 8 === 0) { c.fillStyle = K.dpat("#ffffff", 3); c.fillRect(0, 0, W, hz); }
+    c.drawImage(light, 0, 0);
     // club stage
     if (club) {
       const { x, w, top } = STG;

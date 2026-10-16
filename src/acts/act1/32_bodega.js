@@ -92,7 +92,7 @@ function paintBodega(c, S) {
   U.dshade(c, 0, 0, W, 16, "#140c24", (px, py) => 0.4, 0.4);
   [[60, 6, 80], [260, 6, 80], [470, 6, 80]].forEach(([tx, ty, tw]) => { R(c, tx - 2, ty - 1, tw + 4, 6, "#c8c4b0"); R(c, tx, ty, tw, 4, "#f4fff4"); R(c, tx, ty, tw, 1, "#ffffff"); em.push([tx, ty, tw, 4]); });
   /* ---- floor ---- */
-  PK.tiles(c, 0, FY, W, 256 - FY, { a: "#d8d0b4", b: "#8a7a5a", checker: true, size: 30, horizonY: 100, vx: 320, grout: "#a89c78", seed: 73 });
+  PK.tiles(c, 0, FY, W, 256 - FY, { a: "#cfc5a8", b: "#a89a78", checker: true, size: 30, horizonY: 100, vx: 320, grout: "#a89c78", seed: 73 });
   U.dshade(c, 0, FY + 20, W, 60, "#3a2a18", (px, py) => 0.3 + Math.sin(px / 30 + py / 8) * 0.1, 0.12);
   /* ---- front door + window glass (left) ---- */
   R(c, 0, 30, 58, 138, "#2a2a38"); R(c, 2, 32, 54, 134, night ? "#241a3a" : "#c8e8ff");
@@ -102,7 +102,7 @@ function paintBodega(c, S) {
   R(c, 28, 30, 3, 138, "#5a566c"); R(c, 28, 30, 1, 138, "#9a96ac"); R(c, 2, 96, 54, 3, "#5a566c"); R(c, 2, 164, 54, 4, "#3a364a");
   em.push([4, 34, 50, 62]);
   U.dshade(c, 2, 32, 54, 134, "#ffffff", (px, py) => { const q = ((px - 2) * 0.9 + (py - 32) + 600) % 70; return q < 5 ? 1 : 0; }, 0.14);
-  R(c, 8, 70, 24, 9, "#c0302c"); txt(c, "OPEN", 11, 72, "#fff6dc"); R(c, 36, 46, 16, 10, "#ffd23f"); txt(c, "THANK", 37, 47, "#2a1a10"); txt(c, "YOU", 39, 51, "#2a1a10");
+  R(c, 8, 70, 24, 9, "#c0302c"); txt(c, "OPEN", 11, 72, "#fff6dc"); R(c, 34, 46, 20, 10, "#ffd23f"); txt(c, "THANK", 35, 47, "#2a1a10", 1, 0); txt(c, "YOU", 38, 51, "#2a1a10");
   R(c, 58, 14, 2, 154, "#8a8060");
   /* ---- can machine ---- */
   em.push.apply(em, canMachine(c, 66, 64));
@@ -140,7 +140,7 @@ function outlineSign(c, x, y, w, h, col) { R(c, x, y, w, 1, col); R(c, x, y + h 
 function lightBodega(S) {
   const night = A1.tod(S) === "night", dusk = A1.tod(S) === "dusk";
   return {
-    ambient: "#a09aa4",
+    ambient: "#8c8696",
     lights: [
       { x: 100, y: 8, r: 260, color: "#e8fff0", steps: 4, sy: 1.2 }, { x: 300, y: 8, r: 260, color: "#e8fff0", steps: 4, sy: 1.2 }, { x: 510, y: 8, r: 260, color: "#e8fff0", steps: 4, sy: 1.2 },
       { box: [4, 34, 50, 130], r: 100, color: night ? "#ffb04a" : dusk ? "#ffb078" : "#fff6e8", steps: 3, power: night ? 0.55 : 0.9 },

@@ -363,8 +363,9 @@ async function run(host, p, SK) {
     }
     function drawPerson(pr, x, y, scale, o, lt) {
       if (!pr) return;
-      const b = (blinkQ[pr.idx] = blinkQ[pr.idx] || SK.blinker());
-      SK.drawChar(c, pr.def, x, y, Object.assign({ face: o.face || "front", act: o.act || "stand", frame: o.frame || 0, scale, blink: b(0.016), expr: o.expr || undefined, mouth: o.mouth, alpha: o.alpha }, {}), lt || lightQ);
+      let bl = false;
+      if (o.idle) { const b = (blinkQ[pr.idx] = blinkQ[pr.idx] || SK.blinker()); bl = b(0.016); }
+      SK.drawChar(c, pr.def, x, y, { face: o.face || "front", act: o.act || "stand", frame: o.frame || 0, scale, blink: bl, expr: o.expr || undefined, mouth: o.mouth, alpha: o.alpha }, lt || lightQ);
     }
     function draw(dt) {
       c.drawImage(scene.far, 0, 0);
@@ -398,7 +399,7 @@ async function run(host, p, SK) {
           else { x = 84 - 150 * e; sc = 2; face = "left"; act = "walk"; frame = Math.floor(anim.t * 10) % 4; }
         }
         const talking = anim.talking && say.talking;
-        drawPerson(f, x, y, sc, { face, act, frame, mouth: talking && Math.floor(performance.now() / 110) % 2 === 0, expr: anim.expr, alpha }, lightFront);
+        drawPerson(f, x, y, sc, { face, act, frame, mouth: talking && Math.floor(performance.now() / 110) % 2 === 0, expr: anim.expr, alpha, idle: anim.mode === "idle" }, lightFront);
       }
       c.drawImage(scene.near, 0, 0);
       floats.draw(c, dt);
@@ -473,8 +474,21 @@ async function run(host, p, SK) {
     lockActs(false);
     const speak = (pr, text, o = {}) => say.say(pr.label === "???" ? "STRANGER" : pr.label, text, Object.assign({ color: pr.vip ? "#ffd27a" : "#ffffff", pitch: 300 + (pr.seed % 250), speed: 75 }, o));
 
+    // warm the sprites of whoever is next so arrivals/exits never hitch a frame
+    const warmPerson = (pr) => {
+      if (!pr) return;
+      const jobs = [];
+      [false, true].forEach(m => jobs.push(() => SK.warm(pr.def, { face: "front", mouth: m }, lightFront)));
+      [0, 1, 2, 3].forEach(f => jobs.push(() => SK.warm(pr.def, { face: "front", act: "walk", frame: f }, lightFront)));
+      [0, 1, 2, 3].forEach(f => jobs.push(() => SK.warm(pr.def, { face: "back", act: "walk", frame: f }, lightFront)));
+      [0, 1, 2, 3].forEach(f => jobs.push(() => SK.warm(pr.def, { face: "left", act: "walk", frame: f }, lightFront)));
+      ["happy", "sad", "angry"].forEach(e => jobs.push(() => SK.warm(pr.def, { face: "front", expr: e }, lightFront)));
+      jobs.push(() => SK.warm(pr.def, { face: "front", blink: true }, lightFront));
+      SK.warmQueue(S, jobs, 55);
+    };
     // ---------- main loop
     people.forEach(q => queue.push(q));
+    warmPerson(queue[0]);
     let decided = 0;
     while (queue.length && !S.dead) {
       const pr = queue[0];
@@ -486,6 +500,8 @@ async function run(host, p, SK) {
       awaiting = true; lockActs(true);
       if (inside >= cap && !pr.reentry) bYes.disabled = true;
       SK.__last = { cur: { allowed: pr.allowed, size: pr.size, type: pr.type, vip: pr.vip, reentry: pr.reentry }, room: cap - inside, held };
+      warmPerson(queue[1]);
+      [queue[5], queue[6]].forEach(q => { if (q) SK.warmQueue(S, [() => SK.warm(q.def, { face: "front", act: "stand" }, lightQ), () => SK.warm(q.def, { face: "front", act: "phone" }, lightQ)], 70); });
       speak(pr, pr.claim);
       const choice = await new Promise(res => { decide = res; });
       decide = null; awaiting = false; lockActs(false); say.skip();

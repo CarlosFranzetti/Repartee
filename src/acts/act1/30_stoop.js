@@ -199,8 +199,8 @@ function paintStoop(c, S) {
   PK.manhole(c, 740, 218, { w: 36, h: 10 });
   em.push.apply(em, PK.subwayStairs(c, 786, 186, {}));
   R(c, 790, 148, 2, 40, "#2a2438"); R(c, 790, 148, 1, 40, "#5a5272");
-  R(c, 756, 142, 50, 16, "#10304a"); R(c, 756, 142, 50, 1, "#6a98c0"); R(c, 756, 157, 50, 1, "#06101c"); R(c, 756, 142, 1, 16, "#4a78a0");
-  ell(c, 765, 150, 5, 5, "#9a9caa"); txtC(c, "L", 765, 148, "#ffffff", 1); txt(c, "JEFFERSON", 772, 145, "#e8f4ff"); txt(c, "ST L TRAIN", 772, 151, "#9fb0ff");
+  R(c, 756, 142, 58, 16, "#10304a"); R(c, 756, 142, 58, 1, "#6a98c0"); R(c, 756, 157, 58, 1, "#06101c"); R(c, 756, 142, 1, 16, "#4a78a0");
+  ell(c, 765, 150, 5, 5, "#9a9caa"); txtC(c, "L", 765, 148, "#ffffff", 1); txt(c, "JEFFERSON", 773, 145, "#e8f4ff"); txt(c, "ST. TRAIN", 773, 151, "#9fb0ff");
   /* puddles that catch the neon */
   [[600, 226, 22, 3], [330, 220, 16, 2], [520, 230, 14, 2], [830, 232, 18, 3]].forEach(([px, py, rx, ry]) => { ell(c, px, py, rx, ry, night ? "#2e2858" : dusk ? "#8a5a78" : "#9aa0c8"); ell(c, px - 2, py - 1, rx - 4, Math.max(0, ry - 1), night ? "#4a4a8a" : dusk ? "#c88a8a" : "#c8d0f0"); });
   if (night) { U.dshade(c, 584, 224, 40, 8, "#ff5a4a", (px, py) => 0.6, 0.35); U.dshade(c, 496, 228, 40, 6, "#ffb04a", (px, py) => 0.5, 0.28); }

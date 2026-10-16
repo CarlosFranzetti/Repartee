@@ -200,9 +200,9 @@ RP.room({
     { crowd: { n: 22, rect: [330, 232, 270, 18], seed: 33, face: "back", act: "dance", scale: 0.9, vis: S2 => A5.day(S2) === 3 } }
   ],
   sprites: [
-    { y: 218, draw: (c, S) => drawFrontProps(c, S) },
-    { y: 226, draw: (c, S) => drawCamp(c, S) },
-    { y: 222, draw: (c, S) => drawLamps(c, S) }
+    { y: 218, draw: art.sprite((c, S) => drawFrontProps(c, S)) },
+    { y: 226, draw: art.sprite((c, S) => drawCamp(c, S), S => fri(S)) },
+    { y: 222, draw: art.sprite((c, S) => drawLamps(c, S), S => dusk(S)) }
   ],
   hotspots: [
     { id: "a5_gsub", name: "subway stairs", r: [4, 160, 66, 54], z: 20, walk: [40, 232, "back"], look: "The subway stairs. It's where I come from and where I'll end up at 4 AM, probably.", exit: S => S.f.noTravel ? "Priya would murder me. The festival's all I've got today." : "travel" },

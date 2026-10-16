@@ -334,6 +334,29 @@ SK.drawChar = function (c, def, x, y, o = {}, light = {}) {
     return RP.chars.draw(c, inst, Object.assign({ lx: -0.5, shadow: 0, cast: false }, light));
   } catch (e) { return null; }
 };
+/* pre-build character sprites in the background so the first draw of a pose never spikes a frame */
+SK.warm = function (def, o, light) {
+  try {
+    const d = typeof def === "string" ? RP.chars.get(def) : def; if (!d) return;
+    const face = o.face || "front", view = face === "left" || face === "right" ? "side" : face;
+    const pose = { view, act: o.act || "stand", frame: o.frame || 0, mouth: o.mouth, blink: o.blink, expr: o.expr || undefined, flip: face === "left" };
+    RP.chars.sprite(d, pose, (light && light.lx) || 0, light && light.rim ? { color: light.rim.color, side: light.rim.side } : null);
+  } catch (e) { /* ignore */ }
+};
+/* run jobs (functions) one at a time, gap ms apart, until the session ends */
+SK.warmQueue = function (S, jobs, gap = 45) {
+  let i = 0;
+  const step = () => { if (S.dead || i >= jobs.length) return; try { jobs[i++](); } catch (e) { /* ignore */ } S.later(step, gap); };
+  S.later(step, 60);
+};
+/* the usual pose set for a talking head: expressions x mouth, a blink, optional extra acts */
+SK.headJobs = function (def, face, light, exprs, extraActs) {
+  const jobs = [];
+  (exprs || ["", "happy", "angry", "sad", "surprised", "worried"]).forEach(e => { [false, true].forEach(m => jobs.push(() => SK.warm(def, { face, expr: e, mouth: m }, light))); });
+  jobs.push(() => SK.warm(def, { face, blink: true }, light));
+  (extraActs || []).forEach(a => [false, true].forEach(m => jobs.push(() => SK.warm(def, { face, act: a, mouth: m }, light))));
+  return jobs;
+};
 SK.charDef = (id) => { try { return RP.chars.get(id) || null; } catch (e) { return null; } };
 SK.voiceOf = (def, fallback) => { const d = typeof def === "string" ? SK.charDef(def) : def; return (d && d.voice && d.voice !== "#ffffff") ? d.voice : (fallback || "#ffd27a"); };
 

@@ -179,6 +179,9 @@ RP.mg.register("crateDigging", {
         const dx = (x - L.cx) / (W * 0.5), dy = (y - 14) / (H * 0.95), d = Math.sqrt(dx * dx + dy * dy); if (d > 1) continue;
         if ((1 - d) * 0.8 * 16 > RP.u.bayer(x, y)) { cc.fillStyle = "#ffe2a0"; cc.fillRect(x, y, 1, 1); }
       }
+      /* static piles furniture: trash can (junk) and Mort's folding table (sell) */
+      safe(() => PK.trashCan(c, L.junkX - 11, L.floorY - 29, { full: true, w: 22, h: 28, seed: 1 }));
+      safe(() => PK.table(c, L.tx, L.tableY, L.tw, H_TABLE(), { color: "#8a6a4a", top: "#c8b090", seed: 3 }));
       /* the box the records stand in */
       boxCv = DK.cv(L.boxW, 20); DK.drawBinFront(boxCv.getContext("2d"), 0, 0, L.boxW, 20, null, { wood: "#c8925a" });
       const bc = boxCv.getContext("2d"); R(bc, Math.floor(L.boxW / 2) - 8, 0, 16, 4, "#d8c8a0"); R(bc, Math.floor(L.boxW / 2) - 8, 3, 16, 1, "#a8986a");
@@ -288,7 +291,8 @@ RP.mg.register("crateDigging", {
       const gemFrac = gems.length ? gemSum / gems.length : 1;
       const decided = copies.filter(c => c.decision).length;
       let mistakes = S.mistakes + kept.filter(c => c.cond.id === "beat").length + (kept.length - keptBest.length) + S.junkSales;
-      const profitPts = 40 * clamp((net + 0.15 * budget) / (0.65 * budget), 0, 1);
+      const bs = Math.max(10, budget);
+      const profitPts = 40 * clamp((net + 0.15 * bs) / (0.65 * bs), 0, 1);
       const collPts = 25 * clamp(coll, 0, 1), gemPts = 20 * gemFrac;
       const tidyPts = clamp(15 * (decided / N) - 2.5 * mistakes, 0, 15);
       const bonus = decided === N ? 5 * clamp(S.t / timeTotal, 0, 1) : 0;
@@ -408,7 +412,6 @@ RP.mg.register("crateDigging", {
       const fy = L.floorY, nar = L.narrow;
       /* JUNK (left of the box): trash can */
       const jx = L.junkX;
-      safe(() => PK.trashCan(c, jx - 11, fy - 29, { full: true, w: 22, h: 28, seed: 1 }));
       for (let i = 0; i < Math.min(S.junk.length, 4); i++) { const it = S.junk[S.junk.length - 1 - i]; c.drawImage(DK.sleeveCanvas(it.rec, it, 24), 0, 0, 24, 10, jx - 9 + i * 3, fy - 36 - i, 14, 6); }
       DK.txtO(c, "JUNK " + S.junk.length, jx - Math.floor(RP.u.txtW("JUNK " + S.junk.length, 1, 1) / 2), fy - 48, "#ff9a9a", 1);
       /* KEEP (right of the box): milk crate with the kept sleeves standing in it */
@@ -423,7 +426,6 @@ RP.mg.register("crateDigging", {
       const kt = "KEEP " + S.keep.length + "/" + slots; DK.txtO(c, kt, kx - Math.floor(RP.u.txtW(kt, 1, 1) / 2), fy - 38, S.keep.length >= slots ? "#ffd23f" : "#9be15d", 1);
       /* SELL (below the box): Mort's folding table with the cash tin */
       const tx = L.tx, ty = L.tableY, tw = L.tw;
-      safe(() => PK.table(c, tx, ty, tw, H_TABLE(), { color: "#8a6a4a", top: "#c8b090", seed: 3 }));
       for (let i = 0; i < Math.min(S.sold.length, 6); i++) { const it = S.sold[S.sold.length - 1 - i]; c.drawImage(DK.sleeveCanvas(it.rec, it, 24), 0, 0, 24, 10, tx + 5 + (i % 3) * 3, ty - 6 - Math.floor(i / 2), 18, 7); }
       R(c, tx + tw - 22, ty - 9, 15, 8, "#8a8698"); R(c, tx + tw - 22, ty - 9, 15, 1, "#c8c4d8"); R(c, tx + tw - 21, ty - 13, 13, 4, "#9be15d"); RP.u.txt(c, "$", tx + tw - 16, ty - 8, "#1d3a2a", 1, 0);
       const st = "SELL " + S.sold.length + "  " + money(S.cash); DK.txtO(c, st, L.cx - Math.floor(RP.u.txtW(st, 1, 1) / 2), ty + 11, "#ffd23f", 1);

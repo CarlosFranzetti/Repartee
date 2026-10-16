@@ -19,7 +19,7 @@ function whiteboard(c, x, y) {
   txt(c, "Q3 SYNERGY", x + 4, y + 4, "#2a50c8"); R(c, x + 4, y + 11, 40, 1, "#2a50c8");
   [[6, 18, 18, 10], [30, 18, 18, 10], [18, 34, 18, 10]].forEach(([bx, by, bw, bh]) => { R(c, x + bx, y + by, bw, 1, "#c0302c"); R(c, x + bx, y + by + bh, bw, 1, "#c0302c"); R(c, x + bx, y + by, 1, bh, "#c0302c"); R(c, x + bx + bw, y + by, 1, bh + 1, "#c0302c"); });
   line(c, x + 24, y + 23, x + 30, y + 23, "#2a2a3a"); line(c, x + 27, y + 28, x + 27, y + 34, "#2a2a3a"); txt(c, "???", x + 24, y + 38, "#2a2a3a");
-  txt(c, "LEVERAGE", x + 44, y + 22, "#3a8a3a"); txt(c, "PIVOT", x + 44, y + 30, "#3a8a3a"); R(c, x + 4, y + 47, 60, 2, "#c8c4d0");
+  txt(c, "LEVER", x + 46, y + 22, "#3a8a3a"); txt(c, "PIVOT", x + 46, y + 30, "#3a8a3a"); R(c, x + 4, y + 47, 60, 2, "#c8c4d0");
   R(c, x + 6, y + 44, 3, 6, "#c0302c"); R(c, x + 12, y + 44, 3, 6, "#2a50c8");
 }
 function poster(c, x, y, w, h, bg, fg, a, b, d) {
@@ -96,8 +96,8 @@ function paintOffice(c, S) {
   whiteboard(c, 314, 32);
   em.push.apply(em, PK.copier(c, 336, 126, { seed: 206 }));
   PK.waterCooler(c, 306, 122, {});
-  poster(c, 396, 40, 36, 52, "#1a3a6a", "#e8f0ff", "TEAMWORK", "(SOMEONE ELSE", "WILL DO IT)");
-  poster(c, 440, 44, 36, 48, "#6a1a2a", "#ffe8d0", "SYNERGY", "IT'S A WORD", "WE USE");
+  poster(c, 394, 40, 40, 52, "#1a3a6a", "#e8f0ff", "TEAMWORK", "SOMEONE", "ELSE DOES");
+  poster(c, 440, 44, 40, 48, "#6a1a2a", "#ffe8d0", "SYNERGY", "IT IS A", "WORD");
   PK.clock(c, 488, 40, { d: 22, hour: 9, min: 2, color: "#3a3e50" });
   PK.frame(c, 486, 70, 28, 22, { color: "#8a8c9c", kind: "portrait", seed: 207 });
   txt(c, "EMPLOYEE", 484, 94, "#3a3e50"); txt(c, "OF THE MONTH", 480, 100, "#3a3e50");

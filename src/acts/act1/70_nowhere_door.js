@@ -146,7 +146,7 @@ RP.room({
   start: { x: 76, y: 238, face: "right" },
   fx: [
     { type: "steam", x: 84, y: 214, rise: 70, size: 14, drift: 6, color: "#b8a8d8", count: 8, speed: 0.5 },
-    { type: "haze", rect: [0, 170, 640, 70], color: "#8a6ad8", density: 2 },
+    { type: "haze", rect: [0, 176, 640, 40], color: "#8a6ad8", density: 2 },
     { type: "dust", rect: [300, 60, 120, 120], count: 10, color: "#ff8ac8" },
     { type: "blink", items: [{ r: [366, 52, 2, 2], color: "#ff3fa4", off: "#3a1030", rate: 900 }] }
   ],
@@ -160,7 +160,7 @@ RP.room({
     ...[150, 200, 250, 300].map((px, i) => ({ y: 194, draw: (c, S) => { A1.blit(c, B.post(), px - 7, 158); } })),
     { y: 196, draw: (c, S) => { [[150, 200], [200, 250], [250, 300]].forEach(([a, b]) => { for (let x = a + 6; x < b - 6; x++) { const t = (x - a - 6) / (b - a - 12), sag = Math.sin(t * Math.PI) * 6; P(c, x, 168 + sag, "#a02a2a"); P(c, x, 169 + sag, "#6a1a1a"); } }); } },
     { y: 216, draw: c => A1.blit(c, B.dumpster(), 528, 148) },
-    { y: 232, draw: c => { PK.trashBags(c, 30, 196, {}); } }
+    { y: 232, draw: c => A1.blit(c, A1.memo("nd_bags", 52, 34, cc => { PK.trashBags(cc, 2, 2, {}); }), 30, 200) }
   ],
   enter: async (S, from) => {
     S.f.noTravel = false; RP.setClock("SAT 9:40 PM");

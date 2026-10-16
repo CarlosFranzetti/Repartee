@@ -265,16 +265,18 @@ const CSS = `
 .st-ctl .btn.ready { box-shadow: 0 0 0 2px var(--ok); }
 .st-ctl .btn.hold { background: #1d2a52; border-color: var(--cyan); color: var(--cyan); }
 .st-ctl .btn small { font-size: 14px; opacity: .7; margin-left: 4px; }
-.st-ev, .st-brief { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 8px; min-height: 120px; }
-.st-ev canvas, .st-brief canvas { width: 64px; height: 64px; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid #000; background: #1a1230; grid-row: 1 / span 2; }
+.st-ev, .st-brief { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 8px; }
+.st-ev canvas, .st-brief canvas { width: 56px; height: 56px; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid #000; background: #1a1230; grid-row: 1 / span 2; }
 .st-ev .who { font-size: 16px; color: var(--muted); letter-spacing: .06em; } .st-ev .who b { color: var(--pink); font-weight: 400; }
-.st-ev .tx { font-size: 20px; line-height: 1.05; color: #fff; }
+.st-ev .tx { font-size: 19px; line-height: 1.05; color: #fff; }
 .st-ev .ch { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
-.st-ev .ch .btn { font-size: 18px; padding: 4px 10px; text-align: left; line-height: 1.05; }
+.st-ev .ch .btn { font-size: 17px; padding: 3px 9px; text-align: left; line-height: 1.05; }
 .st-ev .ch .btn kbd { font-family: var(--ui); color: var(--amber); margin-right: 6px; }
 .st-ev .tm { grid-column: 1 / -1; height: 5px; background: #241d48; } .st-ev .tm i { display: block; height: 100%; background: var(--amber); }
 .st-ev .out { grid-column: 1 / -1; font-size: 19px; color: var(--ok); } .st-ev .out.bad { color: #ff7a7a; } .st-ev .out.mid { color: var(--amber); }
-.st-ev.idle { opacity: .75; }
+.st-ev.idle { display: none; }
+.st-evbox { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; background: rgba(8, 5, 18, .95); border: 1px solid var(--pink); border-radius: 0; min-height: 0; }
+.st-evbox .ch { flex-direction: row; flex-wrap: wrap; } .st-evbox .ch .btn { flex: 1 1 30%; min-width: 150px; }
 .st-sceneBox { position: relative; }
 .st-briefbox { position: absolute; inset: 0; background: rgba(8, 5, 18, .93); border: 1px solid var(--line); overflow: auto; display: flex; align-items: center; }
 .st-briefbox[hidden] { display: none; }
@@ -292,12 +294,12 @@ const CSS = `
 .st-chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .st-msg { min-height: 1.2em; } .st-say { min-height: 1.2em; }
 @media (max-width: 860px) {
+  .st-evbox { position: static; margin-top: 8px; border-color: var(--pink); } .st-evbox .ch { flex-direction: column; } .st-evbox .ch .btn { flex: none; }
   .st-briefbox { position: static; background: #120e24; border-radius: 4px; margin-top: 8px; }
   .st-main { display: flex; flex-direction: column; gap: 8px; }
   .st-left, .st-right { display: contents; }
-  .st-sceneBox { order: 1; } .st-clock { order: 2; } .st-slotBox { order: 3; } .st-g1 { order: 4; } .st-g2 { order: 5; } .st-chiprow { order: 6; } .st-msg { order: 7; } .st-say { order: 8; }
-  .st-tr { order: 9; } .st-evbox { order: 10; } .st-crate { order: 11; }
-  .st-ctl.sticky { position: sticky; bottom: 0; z-index: 5; background: rgba(10, 8, 22, .96); padding: 6px 0; margin-inline: -4px; padding-inline: 4px; border-top: 1px solid var(--line); }
+  .st-sceneBox { order: 1; } .st-clock { order: 2; } .st-slotBox { order: 3; } .st-g1 { order: 4; } .st-g2 { order: 5; } .st-chiprow { order: 6; } .st-tr { order: 7; } .st-ctl { order: 8; } .st-msg { order: 9; } .st-say { order: 10; } .st-crate { order: 11; }
+  .st-ctl.sticky { position: sticky; bottom: 0; z-index: 5; background: rgba(10, 8, 22, .97); padding: 6px; border-color: var(--pink); }
   .st-time { font-size: 38px; }
 }
 @media (prefers-reduced-motion: reduce) { .st-ctl .btn.ready { box-shadow: 0 0 0 2px var(--ok); } }
@@ -351,7 +353,7 @@ RP.mg.register("setTime", {
       const trk = el("div", { cls: "st-trk", role: "progressbar", "aria-label": "Current record" }, tr);
       const trkFill = el("i", {}, trk), trkWin = el("s", {}, trk), trkTxt = el("span", {}, trk);
       const nextEl = el("div", { cls: "st-next" }, tr);
-      const ctl = el("div", { cls: "st-ctl sticky" }, tr);
+      const ctl = el("div", { cls: "mg-panel st-ctl sticky" }, left);
       const mixBtn = el("button", { cls: "btn primary", type: "button", html: "MIX IN ▶ <small>Space</small>", disabled: "disabled" }, ctl);
       const fltBtn = el("button", { cls: "btn", type: "button", html: "FILTER <small>hold F</small>" }, ctl);
       fltBtn.style.touchAction = "none";
@@ -361,7 +363,7 @@ RP.mg.register("setTime", {
       const giveUp = el("button", { cls: "btn", type: "button", text: "GIVE UP" }, ctl);
       const msg = el("div", { cls: "mg-msg st-msg", "aria-live": "polite" }, left);
       const say = el("div", { cls: "mg-say st-say" }, left);
-      const evBox = el("div", { cls: "mg-panel st-ev st-evbox idle" }, left);
+      const evBox = el("div", { cls: "mg-panel st-ev st-evbox idle" }, sceneBox);
       const briefBox = el("div", { cls: "st-briefbox" }, sceneBox);
       // right column
       const clockBox = el("div", { cls: "st-clock" }, right);
@@ -449,12 +451,7 @@ RP.mg.register("setTime", {
         else msg.textContent = "The clock is running. Cue a record and MIX IN inside the green window.";
         refresh(true);
       }
-      function showIdle() {
-        evBox.className = "mg-panel st-ev st-evbox idle"; evBox.innerHTML = "";
-        el("canvas", { width: 32, height: 32 }, evBox).getContext("2d").drawImage(RP.chars.portrait("kid", 32), 0, 0);
-        el("div", { cls: "who", html: "<b>YOU</b> · BEHIND THE DECKS" }, evBox);
-        el("div", { cls: "tx", text: "Nothing needs you right now. Mind the music, mind the clock." }, evBox);
-      }
+      function showIdle() { evBox.className = "mg-panel st-ev st-evbox idle"; evBox.innerHTML = ""; }
 
       /* ---------- crate ---------- */
       function buildCrate() {

@@ -214,11 +214,11 @@ RP.room({
     { id: "marcus", char: "marcus", x: 626, y: 240, face: "left", act: "stand", name: "Marcus", vis: S2 => !!S2.f.a5_louArrived }
   ],
   sprites: [
-    { y: 220, draw: (c, S) => drawCateringTable(c, S) },
-    { y: 232, draw: (c, S) => drawRedCarpet(c, S) },
-    { y: 230, draw: (c, S) => drawBoard(c, S) },
-    { y: 233, draw: (c, S) => drawCases(c, S) },
-    { y: 219, draw: (c, S) => drawLoungeFurniture(c, S) }
+    { y: 220, draw: art.sprite((c, S) => drawCateringTable(c, S), S => !!S.f.a5_smoothie) },
+    { y: 232, draw: art.sprite((c, S) => drawRedCarpet(c, S)) },
+    { y: 230, draw: art.sprite((c, S) => drawBoard(c, S), S => (RP.has("a5_pass") && !S.f.a5_passFixed ? "p" : "f") + A5.pName(S)) },
+    { y: 233, draw: art.sprite((c, S) => drawCases(c, S)) },
+    { y: 219, draw: art.sprite((c, S) => drawLoungeFurniture(c, S)) }
   ],
   hotspots: [
     { id: "a5_bwest", name: "back to the grounds", r: [0, 120, 24, 134], z: 25, walk: [12, 232, "left"], look: "West: the gate, Gloria, the lawn and the rest of the festival. I've got a stage to get to. And a pass I'd like to keep.", exit: { room: "a5_grounds", x: 800, y: 234, face: "left" } },

@@ -107,6 +107,15 @@ RP.mg.register("goDigging", {
     if (Array.isArray(p.bins) && p.bins.length) {
       bins = p.bins.filter(b => b && Array.isArray(b.records)).map((b, i) => ({ label: b.label || "BIN " + (i + 1), mult: b.mult || 1, items: b.records.map(id => mk(recOf(id), { mult: b.mult || 1, bin: i })) }));
     }
+    if (bins.length && want) {
+      /* story-supplied bins: make sure at least one non-beat copy of a matching record is affordable */
+      const okCopy = c => DK.matchWant(c.rec, want, c.base) && c.cond.id !== "beat";
+      if (!bins.some(b => b.items.some(okCopy))) {
+        let best = null;
+        bins.forEach((b, bi) => b.items.forEach((c, ci) => { if (DK.matchWant(c.rec, want, null) && (!best || c.rec.price < best.c.rec.price)) best = { b, bi, ci, c }; }));
+        if (best) best.b.items[best.ci] = mk(best.c.rec, { cond: "vg+", mult: best.b.mult || 1, bin: best.bi });
+      }
+    }
     if (!bins.length) {
       const used = new Set();
       const takeFrom = (pred, n) => { const pool = DK.shuffle(all.filter(r => !used.has(r.id) && !owned.has(r.id) && pred(r)), rnd).slice(0, n); pool.forEach(r => used.add(r.id)); return pool; };

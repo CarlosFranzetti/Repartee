@@ -278,10 +278,10 @@ RP.room({
     { crowd: { n: 6, rect: [360, 238, 330, 12], seed: 79, face: "back", act: "dance", scale: 0.95, vis: S2 => night(S2) } }
   ],
   sprites: [
-    { y: 216, draw: (c, S) => drawRayCounter(c, S) },
-    { y: 215, draw: (c, S) => drawBarCounter(c, S) },
-    { y: 243, draw: (c, S) => drawWaterSign(c, S) },
-    { y: 245, draw: (c, S) => drawCarrier(c, S) }
+    { y: 216, draw: art.sprite((c, S) => drawRayCounter(c, S)) },
+    { y: 215, draw: art.sprite((c, S) => drawBarCounter(c, S)) },
+    { y: 243, draw: art.sprite((c, S) => drawWaterSign(c, S)) },
+    { y: 245, draw: art.sprite((c, S) => drawCarrier(c, S)) }
   ],
   hotspots: [
     { id: "a5_wexit", name: "back to the gate", r: [0, 150, 22, 104], z: 25, walk: [12, 232, "left"], look: "West: the main gate, the subway and the rest of Brooklyn. I've got nothing there until after the set.", exit: S => ({ room: "a5_gate", x: 590, y: 232, face: "left" }) },

@@ -423,7 +423,7 @@ function speakerAnchor(who) {
   if (v && v.anchor && !(inRoom && visible(inRoom))) { const a = evalv(v.anchor, S); return [a[0], a[1]]; }
   if (who === "nar") return [(cur ? cur.camX : 0) + W / 2, 70];
   const a = actorById(who === "kid" ? "kid" : who);
-  if (a) { const sc = (a.scale || 1) * depthScale(a.y); return [a.x, a.y - RP.chars.headTop(a.char, sc) - 2]; }
+  if (a) { const sc = (a.scale || 1) * depthScale(a.y); return [a.x, a.y - RP.chars.headTop(a.char, sc, a.act) - 2]; }
   return [(cur ? cur.camX : 0) + W / 2, 60];
 }
 function speakerColor(who) {

@@ -153,7 +153,7 @@ RP.room({
     { id: "kosmo", char: "kosmo", x: 250, y: 200, face: "right", act: "stand", name: "Kosmo Delacroix" }
   ],
   sprites: [
-    { y: 192, draw: (c, S) => drawBench(c, S) }, { y: 238, draw: (c, S) => drawCooler(c, S) }, { y: 242, draw: (c, S) => drawSign(c, S) }
+    { y: 192, draw: art.sprite((c, S) => drawBench(c, S)) }, { y: 238, draw: art.sprite((c, S) => drawCooler(c, S)) }, { y: 242, draw: art.sprite((c, S) => drawSign(c, S)) }
   ],
   hotspots: [
     { id: "a5_psun", name: "the sunrise", r: [0, 0, 400, 180], z: 6, walk: [170, 226, "right"],

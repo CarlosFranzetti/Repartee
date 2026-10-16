@@ -185,23 +185,30 @@ function score(G) {
 
 /* ------------------------------------------------------------------------------------------ phone drawing */
 function fmtNum(n) { return Math.round(n).toLocaleString("en-US"); }
-function drawPhone(c, W, H, G, shown, ui, name) {
+function phoneBg(W, H) {
+  const cv = U.mk(W, H), c = cv.getContext("2d");
   c.fillStyle = "#07040f"; c.fillRect(0, 0, W, H);
-  const compact = W > H;
   const k = K("#2a2640");
-  // body
   U.R(c, 2, 1, W - 4, H - 2, "#0a0716"); U.R(c, 3, 2, W - 6, H - 4, k[2]); U.R(c, 3, 2, W - 6, 1, k[4]); U.R(c, 3, 2, 1, H - 4, k[3]); U.R(c, W - 4, 3, 1, H - 6, k[0]); U.R(c, 3, H - 3, W - 6, 1, k[0]);
   const sx = 7, sy = 7, sw = W - 14, sh = H - 14;
-  const flash = ui.flash > 0 ? Math.floor(performance.now() / 120) % 2 : 0;
   U.R(c, sx, sy, sw, sh, "#120a2c");
-  for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x += 1) { if ((bayer(sx + x, sy + y) + 0.5) / 16 < y / sh * 0.6) { c.fillStyle = "#2a1450"; c.fillRect(sx + x, sy + y, 1, 1); } }
+  c.fillStyle = "#2a1450";
+  for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) if ((bayer(sx + x, sy + y) + 0.5) / 16 < y / sh * 0.6) c.fillRect(sx + x, sy + y, 1, 1);
+  return cv;
+}
+function drawPhone(c, W, H, G, shown, ui, name) {
+  if (!ui.bg) { ui.bg = phoneBg(W, H); try { ui.portrait = RP.chars.portrait("kid", 32); } catch (e) { ui.portrait = null; } }
+  c.drawImage(ui.bg, 0, 0);
+  const compact = W > H;
+  const sx = 7, sy = 7, sw = W - 14, sh = H - 14;
+  const flash = ui.flash > 0 ? Math.floor(performance.now() / 120) % 2 : 0;
   if (flash && !ui.reduced) { c.globalAlpha = 0.22; U.R(c, sx, sy, sw, sh, "#ff3fa4"); c.globalAlpha = 1; }
   // status bar
   txt(c, "9:41", sx + 2, sy + 2, "#c8c0e8", 1, 1);
   const bx = sx + sw - 16; U.R(c, bx, sy + 2, 12, 5, "#c8c0e8"); U.R(c, bx + 1, sy + 3, 10, 3, "#0a0716"); const bw = Math.round(10 * G.E / 100); U.R(c, bx + 1, sy + 3, bw, 3, G.E < 25 ? "#ff5a5a" : "#9be15d"); U.R(c, bx + 12, sy + 3, 1, 3, "#c8c0e8");
   if (compact) {
     // left: counter
-    try { const pc = RP.chars.portrait("kid", 32); c.imageSmoothingEnabled = false; c.drawImage(pc, 0, 0, 32, 32, sx + 3, sy + 12, 16, 16); } catch (e) { /* ignore */ }
+    if (ui.portrait) { c.imageSmoothingEnabled = false; c.drawImage(ui.portrait, 0, 0, 32, 32, sx + 3, sy + 12, 16, 16); }
     txt(c, String(name).slice(0, 14), sx + 22, sy + 14, "#ffffff", 1, 1); txt(c, "@" + String(name).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12), sx + 22, sy + 21, "#8c84b8", 1, 1);
     txtC(c, fmtNum(shown), sx + 44, sy + 32, "#ffffff", 3, 1); txtC(c, "FOLLOWERS", sx + 44, sy + 50, "#8c84b8", 1, 1);
     // goal bar
@@ -210,7 +217,7 @@ function drawPhone(c, W, H, G, shown, ui, name) {
     if (ui.delta) txt(c, (ui.delta > 0 ? "+" : "") + ui.delta, sx + 92, sy + 54, ui.delta > 0 ? "#9be15d" : "#ff6a6a", 1, 1);
     txt(c, "GOAL " + fmtNum(G.goal), sx + 92, sy + 62, "#ffc44d", 1, 1);
   } else {
-    try { const pc = RP.chars.portrait("kid", 32); c.imageSmoothingEnabled = false; c.drawImage(pc, 0, 0, 32, 32, sx + 3, sy + 12, 18, 18); } catch (e) { /* ignore */ }
+    if (ui.portrait) { c.imageSmoothingEnabled = false; c.drawImage(ui.portrait, 0, 0, 32, 32, sx + 3, sy + 12, 18, 18); }
     txt(c, String(name).slice(0, 12), sx + 24, sy + 15, "#ffffff", 1, 1); txt(c, "@" + String(name).toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 11), sx + 24, sy + 22, "#8c84b8", 1, 1);
     txtC(c, fmtNum(shown), sx + sw / 2, sy + 40, "#ffffff", 3, 1); txtC(c, "FOLLOWERS", sx + sw / 2, sy + 58, "#8c84b8", 1, 1);
     if (ui.delta) txtC(c, (ui.delta > 0 ? "+" : "") + ui.delta, sx + sw / 2, sy + 66, ui.delta > 0 ? "#9be15d" : "#ff6a6a", 1, 1);

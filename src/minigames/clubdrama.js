@@ -461,6 +461,13 @@ async function run(host, p, SK) {
 
   async function flow() {
     const thrShift = (diff - 2) * 3;
+    { const sceneL = { lx: SC[scnKey].scene === "dock" ? 0.4 : SC[scnKey].scene === "bar" || SC[scnKey].scene === "party" ? -0.4 : SC[scnKey].scene === "corridor" ? -0.3 : -0.35 };
+      const npcKeys = [sc.npc].concat(scnKey === "backstage" ? ["kosmo", "gus"] : []).filter((v, i, a) => a.indexOf(v) === i);
+      const rimOf = { booth: { color: "#ff3fa4", side: -1 }, bar: { color: "#ffb04a", side: -1 }, party: { color: "#ffb04a", side: -1 }, corridor: { color: "#7af0a0", side: 1 }, dock: { color: "#ffb04a", side: 1 } }[sc.scene];
+      const rim2Of = { booth: { color: "#39d0ff", side: 1 }, bar: { color: "#ff3fa4", side: 1 }, party: { color: "#ff3fa4", side: 1 }, corridor: { color: "#ffc44d", side: -1 }, dock: { color: "#9a5ae0", side: -1 } }[sc.scene];
+      let jobs = SK.headJobs(kidDef, "right", { lx: sceneL.lx, rim: rimOf }, ["", "worried", "angry", "happy", "sad"]);
+      npcKeys.forEach(k => { jobs = jobs.concat(SK.headJobs(defFor(k), "left", { lx: -sceneL.lx, rim: rim2Of }, null)); });
+      SK.warmQueue(S, jobs, 40); }
     await SK.intro(S, wrap, {
       kicker: sc.title.toUpperCase(),
       title: "Choose your response",

@@ -244,7 +244,7 @@ RP.room({
   start: { x: 110, y: 177, face: "right" },
   fx: [
     { type: "beams", origins: [[160, 38], [260, 38], [360, 38], [480, 38], [600, 38], [700, 38], [800, 38]], colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff", "#5cff9a", "#ff3fa4", "#39d0ff"], base: Math.PI / 2, swing: 0.7, len: 240, width: 16, alpha: 0.18, period: 1100, on: () => show(RP.state) },
-    { type: "haze", rect: [76, 118, 808, 70], color: "#b8a8ff", density: 3, on: () => show(RP.state) },
+    { type: "haze", rect: [250, 134, 460, 44], color: "#b8a8ff", density: 3, on: () => show(RP.state) },
     { type: "strobe", period: 3200, flash: 60, alpha: 0.18, on: () => show(RP.state) && !!RP.state.f.a5_pyro },
     { type: "confetti", count: 140, width: 960, floor: 250, colors: ["#ff3fa4", "#39d0ff", "#ffd23f", "#9be15d", "#ffffff"], on: () => !!RP.state.f.a5_confetti }
   ],
@@ -262,7 +262,7 @@ RP.room({
   ],
   sprites: [
     { y: 172, draw: (c, S) => drawBooth(c, S) },
-    { y: 160, draw: (c, S) => drawFloor(c, S) },
+    { y: 160, draw: art.sprite((c, S) => drawFloor(c, S)) },
     { y: 252, vis: S => show(S), draw: (c, S) => { /* Marcus's sign: PLUS 30, held over the crowd */ R(c, 316, 214, 26, 14, "#c8925a"); R(c, 316, 214, 26, 1, "#e0b078"); txt(c, "+30", 321, 218, "#17131f", 1, 1); R(c, 328, 228, 2, 10, "#8a6a4a"); } }
   ],
   hotspots: [

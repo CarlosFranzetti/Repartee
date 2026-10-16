@@ -310,6 +310,8 @@ async function run(host, p, SK) {
   return Promise.race([leaveP, flow()]);
 
   async function flow() {
+  const lightPro0 = { lx: -0.4, rim: { color: "#ff3fa4", side: -1 } };
+  SK.warmQueue(S, SK.headJobs(proDef, "front", lightPro0, null, ["phone"]).concat(SK.headJobs(kidDef || proDef, "back", { lx: 0.35, rim: { color: "#ff3fa4", side: 1 } }, [""])), 40);
   await SK.intro(S, wrap, {
     kicker: neg ? "ACT IV \u00B7 THE BOOKING" : "THE BACK OFFICE",
     title: neg ? "Don't get lowballed" : "Get booked. Don't beg.",

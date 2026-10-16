@@ -147,11 +147,11 @@ RP.room({
   start: { x: 120, y: 232, face: "right" },
   actors: [{ id: "axl", char: "axl", x: 238, y: 224, face: "right", act: "stand", name: "Axl Vanta", expr: "angry" }],
   sprites: [
-    { y: 208, draw: (c, S) => drawCutout(c, S) },
-    { y: 191, draw: (c, S) => drawRider(c, S) },
-    { y: 198, draw: (c, S) => drawSmoothieOnTable(c, S) },
-    { y: 234, draw: (c, S) => drawChair(c, S) },
-    { y: 213, draw: (c, S) => drawSofa(c, S) }
+    { y: 208, draw: art.sprite((c, S) => drawCutout(c, S)) },
+    { y: 191, draw: art.sprite((c, S) => drawRider(c, S)) },
+    { y: 198, draw: art.sprite((c, S) => drawSmoothieOnTable(c, S), S => !!S.f.a5_axlSmoothieOn) },
+    { y: 234, draw: art.sprite((c, S) => drawChair(c, S)) },
+    { y: 213, draw: art.sprite((c, S) => drawSofa(c, S)) }
   ],
   hotspots: [
     { id: "a5_xdoor", name: "door", r: [594, 52, 46, 116], z: 20, walk: [600, 226, "right"], look: "The way out. It's solid gold-colored. Probably it's just paint. I shouldn't scratch it.", exit: S => S.f.a5_axlDone ? { room: "a5_backstage", x: 462, y: 234, face: "back" } : "Not yet. We're mid-argument and he's got the high ground." },

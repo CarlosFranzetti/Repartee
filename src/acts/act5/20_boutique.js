@@ -354,9 +354,9 @@ RP.room({
     { id: "eddie", char: "eddie", x: 438, y: 232, face: "right", act: "stand", name: "Eddie Two-Times" }
   ],
   sprites: [
-    { y: 205, draw: (c, S) => drawCounter(c, S) },
-    { y: 207, draw: (c, S) => drawPlinth(c, S) },
-    { y: 216, draw: (c, S) => drawCore(c, S) }
+    { y: 205, draw: art.sprite((c, S) => drawCounter(c, S)) },
+    { y: 207, draw: art.sprite((c, S) => drawPlinth(c, S)) },
+    { y: 216, draw: art.sprite((c, S) => drawCore(c, S)) }
   ],
   hotspots: [
     { id: "a5_bdoor", name: "door", r: [594, 34, 46, 134], z: 20, walk: [612, 222, "right"], look: "A door with a bell that sounds expensive. Outside is Williamsburg and a guy selling something in a tote bag.", exit: "travel" },

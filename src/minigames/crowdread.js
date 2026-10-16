@@ -265,6 +265,7 @@ RP.mg.register("crowdRead", {
       kit.fit(host, histCv, 160, 46, left, 2);
 
       /* ----- state ----- */
+      let lastDn = -1;
       let S, cards, sel = null, phase = "pick", pickTimer = 0, timerOn = false, last = null, nextAt = 0;
       const timeLimit = [0, 0, 32, 26, 20][R.diff - 1];
       const barPct = e => Math.round(clamp(e / 5, 0, 1) * 1000) / 10 + "%";
@@ -498,7 +499,7 @@ RP.mg.register("crowdRead", {
         floor.draw(t);
         sc.imageSmoothingEnabled = false;
         sc.drawImage(floor.canvas, 0, 0);
-        cDance.innerHTML = "DANCING <b>" + floor.dancing() + "/" + floor.people.length + "</b>";
+        const dn = floor.dancing(); if (dn !== lastDn) { lastDn = dn; cDance.innerHTML = "DANCING <b>" + dn + "/" + floor.people.length + "</b>"; }
       });
       host.cleanup(() => { finished = true; });
     });

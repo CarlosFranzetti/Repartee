@@ -166,11 +166,11 @@ RP.room({
   scale: [206, 0.96, 250, 1.04],
   start: { x: 52, y: 238, face: "right" },
   fx: [
-    { type: "haze", rect: [0, 100, 640, 110], color: "#8a70d8", density: 3 },
+    { type: "haze", rect: [0, 136, 640, 56], color: "#8a70d8", density: 2 },
     { type: "beams", origins: LAMPS, colors: ["#ff3fa4", "#39d0ff", "#a05cff", "#ffd23f", "#39d0ff", "#ff3fa4"], base: Math.PI / 2, swing: 0.55, len: 200, width: 14, alpha: 0.14, period: 1600 },
-    { type: "dust", rect: [120, 40, 400, 150], count: 24, color: "#ffc8ff" },
+    { type: "dust", rect: [120, 40, 400, 150], count: 16, color: "#ffc8ff" },
     { type: "strobe", period: 2200, flash: 70, alpha: 0.1, color: "#ffffff", on: () => RP.state.f.a1_setGood },
-    { type: "confetti", count: 50, floor: 250, on: () => RP.state.f.a1_setGood }
+    { type: "confetti", count: 36, floor: 250, on: () => RP.state.f.a1_setGood }
   ],
   actors: [
     { id: "dante", char: "dante", x: 196, y: 232, face: "right", act: "stand", name: "Dante" },

@@ -93,25 +93,42 @@ function buildScenario(rec, p, rnd, diff, DK) {
     s5: { id: "s5", short: "Mrs. Feld wants a referral", text: "Mrs. Feld only opens up for people the church-fair dealers send." }
   };
   let places = order.map(k => P[k]), final = "apt", start = "c1";
-  /* custom clue strings replace the default tips in order */
-  if (Array.isArray(p.clues) && p.clues.length) { ["c1", "c2", "c3"].forEach((id, i) => { if (p.clues[i]) clues[id].text = String(p.clues[i]); }); }
-  /* custom places: generic engine (any ask at the final spot finds it; elsewhere a dead end that hands out the next clue) */
+  /* custom places: generic engine. Every clue you were given is already in the notebook; asking about
+     one at the final spot finds the record, elsewhere it is a funny dead end. */
+  let startClues = [start];
   if (Array.isArray(p.places) && p.places.length) {
-    const used = new Set(), kinds = ["flea", "fair", "apt", "thrift", "back", "swap"];
+    const kinds = ["flea", "fair", "apt", "thrift", "back", "swap"], used = new Set();
+    const HOODS = { "east village": [0.43, 0.54], "lower east side": [0.44, 0.6], "williamsburg": [0.6, 0.58], "bushwick": [0.66, 0.66], "greenpoint": [0.58, 0.52], "woodside": [0.78, 0.38], "rego park": [0.83, 0.4], "queens": [0.8, 0.36], "brooklyn": [0.62, 0.68], "bronx": [0.67, 0.1], "harlem": [0.5, 0.2], "upper west side": [0.48, 0.3], "midtown": [0.47, 0.42], "staten island": [0.2, 0.78], "manhattan": [0.46, 0.4], "coney island": [0.62, 0.8], "red hook": [0.55, 0.74] };
+    const GEN = {
+      flea: { npc: "dk_ronnie", name: "VENDOR", intro: ["VENDOR: \"Everything's negotiable except the coffee.\""], fb: ["VENDOR: \"Never heard of it. Wanna buy a lamp shaped like a saxophone? It plays nothing.\""] },
+      fair: { npc: "dk_deacon", name: "DEALER", intro: ["DEALER: \"Browse. Don't bend the sleeves. Don't ask for a discount.\""], fb: ["DEALER: \"Records? Everyone here has records. Be specific.\"", "Another dealer, not looking up: \"We don't do favors. We do trades.\""] },
+      apt: { npc: "dk_clerk", name: "OWNER", intro: ["OWNER: \"Come in. Mind the cat. Mind the other cat.\""], fb: ["OWNER: \"Records? Not here. Try the people who actually have them.\""] },
+      thrift: { npc: "dk_clerk", name: "CLERK", intro: ["CLERK: \"Everything's two dollars. Except the stuff that's three.\""], fb: ["CLERK: \"Records? One box. Polka, hymns, and a whale-sounds LP somebody cried over.\""], junk: true },
+      back: { npc: "dk_clerk", name: "CLERK", intro: ["CLERK: \"Back room's staff only. ...Fine. Five minutes.\""], fb: ["CLERK: \"Eurodance, a cat, and a water stain shaped like a mistake. That's the whole room.\""] },
+      swap: { npc: "dk_swap", name: "VENDOR", intro: ["VENDOR: \"Everything's one price: make an offer, I'll be offended.\""], fb: ["VENDOR: \"We do boats here. And lamps. No records.\"", "He sells you nothing. You still feel ripped off."], junk: true }
+    };
     const base = p.places.map((q, i) => {
-      const kind = q.kind || (/flea|market|swap/i.test(q.label || "") ? "flea" : /fair|church/i.test(q.label || "") ? "fair" : /apt|walk-up|apartment|feld|home|house/i.test(q.label || "") ? "apt" : /thrift/i.test(q.label || "") ? "thrift" : /back|store|shop|records/i.test(q.label || "") ? "back" : kinds[i % kinds.length]);
-      const d = P[kind] || P.flea, id = q.id || ("p" + i);
-      return Object.assign({}, d, { id, label: q.label || d.label, hint: q.hint || d.hint, kind, area: q.area || d.area, generic: true, asks: {}, fallback: Object.assign({}, d.fallback, { gives: null }), custom: true,
-        u: q.u != null ? q.u : d.u + (used.has(kind) ? 0.05 : 0), v: q.v != null ? q.v : d.v + (used.has(kind) ? 0.05 : 0), opens: q.opens != null ? q.opens : d.opens, closes: q.closes != null ? q.closes : d.closes, found: !!q.found, say: q.say }, (q.fee != null ? { fee: q.fee } : {}));
+      const label0 = String(q.label || ("Spot " + (i + 1))), parts = label0.split(","), nm = parts[0].trim(), hood = parts.slice(1).join(",").trim();
+      const kind = q.kind || (/deep cuts|record shop|record store|back room|stockroom/i.test(label0) ? "back" : /flea|market|swap/i.test(label0) ? (/swap/i.test(label0) ? "swap" : "flea") : /fair|church|convention/i.test(label0) ? "fair" : /apt|walk-up|apartment|house|home|estate|residence|brownstone/i.test(label0) ? "apt" : /thrift|goodwill|salvage/i.test(label0) ? "thrift" : kinds[i % kinds.length]);
+      const d = P[kind] || P.flea, g = GEN[kind] || GEN.flea, key = Object.keys(HOODS).find(h => label0.toLowerCase().includes(h) || String(q.area || "").toLowerCase().includes(h));
+      const dup = used.has(kind) ? 0.05 : 0; used.add(kind);
+      const pos = key ? HOODS[key] : [d.u + dup, d.v + dup];
+      const isRay = /deep cuts/i.test(label0) && kind === "back";
+      return Object.assign({}, d, { id: q.id || ("p" + i), label: nm, hint: q.hint || d.hint, kind, area: q.area || hood || d.area, generic: true, asks: {}, custom: true, late: null,
+        npc: isRay ? "ray" : g.npc, npcName: isRay ? "RAY" : g.name, intro: isRay ? ["RAY: \"You again. Make it quick. The cat's trying to sleep.\""] : g.intro,
+        fallback: { say: isRay ? ["RAY: \"I already told you everything I know. That was the rude part.\""] : g.fb, find: true, junk: !!g.junk },
+        u: q.u != null ? q.u : Math.min(0.95, pos[0] + (key && used.size > 1 ? (i % 2 ? 0.03 : -0.03) : 0)), v: q.v != null ? q.v : Math.min(0.9, pos[1] + (key ? (i % 3) * 0.02 : 0)),
+        opens: q.opens != null ? q.opens : d.opens, closes: q.closes != null ? q.closes : d.closes, fee: q.fee != null ? q.fee : (kind === "fair" ? 0 : d.fee), found: !!q.found, say: q.say });
     });
-    base.forEach(b => used.add(b.kind));
     final = (base.find(b => b.found) || base[base.length - 1]).id;
-    places = base; const extra = (Array.isArray(p.clues) ? p.clues : []).slice(1);
-    clues.g = extra.map((t, i) => ({ id: "g" + i, text: t }));
+    places = base; startClues = [];
+    (Array.isArray(p.clues) && p.clues.length ? p.clues : [clues.c1.text]).forEach((t, i) => { const id = "u" + i; clues[id] = { id, text: String(t), short: String(t).length > 58 ? String(t).slice(0, 56) + "…" : String(t) }; startClues.push(id); });
     places.forEach(b => { b.found = b.id === final; });
+  } else if (Array.isArray(p.clues) && p.clues.length) {
+    ["c1", "c2", "c3"].forEach((id, i) => { if (p.clues[i]) clues[id].text = String(p.clues[i]); });
   }
   places.forEach(b => { if (b.id === final) b.final = true; });
-  return { places, clues, final, start };
+  return { places, clues, final, start, startClues };
 }
 
 RP.mg.register("recordHunt", {
@@ -143,7 +160,8 @@ RP.mg.register("recordHunt", {
       const c = clueList[id] || extraG.find(g => g.id === id); if (!c || S.clues.includes(id)) return null;
       S.clues.push(id); S.newClue = id; return c;
     };
-    giveClue(sc.start);
+    (sc.startClues || [sc.start]).forEach(giveClue);
+    if (sc.startClues && sc.startClues.length > 1) S.newClue = null;
     const clueObj = id => clueList[id] || extraG.find(g => g.id === id);
     const distMin = (a, b) => 10 + Math.round(Math.hypot((a.u - b.u) * 1.7, (a.v - b.v)) * 95 / 5) * 5;
 
@@ -289,7 +307,7 @@ RP.mg.register("recordHunt", {
       const avail = root.clientWidth >= 820 ? Math.min(680, root.clientWidth - 300) : root.clientWidth;
       const fit = DK.fit(cv, { clientWidth: avail }, { scale: 2, minW: 160, maxW: 340, h: W => W < 240 ? 150 : 188, fallback: 328 });
       L = layout(fit.W, fit.H); sceneCache = {}; buildMap(); placePins();
-      if (!notes.hasAttribute("data-init")) { notes.setAttribute("data-init", "1"); if (!L.narrow) notes.open = true; }
+      if (!notes.hasAttribute("data-init")) { notes.setAttribute("data-init", "1"); if (!L.narrow) { notes.setAttribute("data-auto", "1"); notes.open = true; } }
     };
     const pinsDom = {};
     function placePins() {
@@ -415,9 +433,9 @@ RP.mg.register("recordHunt", {
       const q = byId[S.at]; if (S.min >= endMin) { gameOver("late"); return; }
       advance(10); const key = q.id + ":" + clueId; const first = !S.asked[key]; S.asked[key] = true;
       let ent = q.asks && q.asks[clueId];
-      if (q.generic) {                                          /* custom places: the final spot finds it, others hand out the next clue */
-        if (q.final) ent = { say: q.say ? [].concat(q.say) : ["YOU: \"I'm looking for '" + rec.title + "'.\"", "\"...You're in luck.\""], found: true };
-        else ent = { say: [q.say ? [].concat(q.say)[0] : q.fallback.say[0]], gives: (extraG.find(g => !S.clues.includes(g.id)) || {}).id || null };
+      if (q.generic) {
+        if (q.final) ent = { say: q.say ? [].concat(q.say) : ["YOU: \"I'm after '" + rec.title + "'. Somebody said it was here.\"", "\"...Under the dust sheet. Where it's always been. Careful with the sleeve.\""], found: true };
+        else ent = null;
       }
       S.log = S.log.slice(-3);
       if (ent) {
@@ -493,7 +511,7 @@ RP.mg.register("recordHunt", {
     el("li", { html: "Pick a spot on the map. <b class='s'>Subway</b> costs " + money(FARE) + " and is quick. <b class='k'>Walking</b> is free and takes three times as long." }, ul);
     el("li", { html: "At a spot, <b>ASK ABOUT</b> a clue from your notebook. Right question, right place: a new lead. Wrong place: a funny dead end, usually with a hint." }, ul);
     el("li", { html: "Mind the opening hours. Some places close early, and the clock doesn't care." }, ul);
-    el("li", { html: "You have " + money(startMoney) + ". Start with Ray's tip." }, ul);
+    el("li", { html: "You have " + money(startMoney) + ". Read your notebook first." }, ul);
     const irow = el("div", { cls: "row" }, intro); const bL2 = el("button", { cls: "btn", type: "button", text: "LEAVE" }, irow); el("div", { cls: "spacer" }, irow); const bStart = el("button", { cls: "btn primary", type: "button", text: "START HUNTING" }, irow);
     blurM(bL2); blurM(bStart);
     const startGame = () => { if (S.mode !== "intro") return; S.mode = "map"; intro.remove(); mainBits.forEach(n => { n.style.display = ""; }); pinLayer.style.display = ""; RP.sfx("whoosh"); renderCard(); msg.textContent = "Tip: read the notebook, then pick the spot that fits the clue."; };

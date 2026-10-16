@@ -278,10 +278,10 @@ RP.room({
   start: { x: 300, y: 232, face: "front" },
   fx: [{ type: "dust", rect: [250, 40, 110, 130], count: 24, color: "#fff4d6", on: () => !night(RP.state) }],
   sprites: [
-    { y: 224, draw: (c, S) => drawCrate(c, S) },
-    { y: 214, draw: (c, S) => PK.plant(c, 304, 145, { size: 3, seed: 8 }) },
-    { y: 223, vis: S => !!S.f.a5_gearDone, draw: (c, S) => drawBoxes(c, S) },
-    { y: 212, draw: (c, S) => drawFloorLamp(c, S) }
+    { y: 224, draw: art.sprite((c, S) => drawCrate(c, S)) },
+    { y: 214, draw: art.sprite((c, S) => PK.plant(c, 304, 145, { size: 3, seed: 8 })) },
+    { y: 223, vis: S => !!S.f.a5_gearDone, draw: art.sprite((c, S) => drawBoxes(c, S), S => hasTaula(S)) },
+    { y: 212, draw: art.sprite((c, S) => drawFloorLamp(c, S), S => night(S)) }
   ],
   hotspots: [
     { id: "a5_door", name: "door", r: [598, 34, 42, 134], z: 20, walk: [612, 218, "right"], look: "The hallway, four flights of stairs, a stoop, the L train, and then the rest of New York.",
