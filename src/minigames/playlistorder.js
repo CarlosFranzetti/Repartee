@@ -144,7 +144,7 @@ function solve(R) {
    UI
    ====================================================================== */
 const CSS = `
-.pl-board { width: 100%; max-width: 920px; margin-inline: auto; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pl-board { width: 100%; max-width: 820px; margin-inline: auto; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .pl-mid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: stretch; }
 .pl-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
 .pl-top .arc { font-family: var(--logo); font-size: clamp(13px, 3.2vw, 17px); color: var(--pink); }
@@ -165,7 +165,7 @@ const CSS = `
 .pl-slot:hover { border-color: var(--pink); }
 .pl-slot:focus-visible, .sk-card:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
 .pl-slot.drag, .sk-card.drag { opacity: .35; }
-.pl-info { font-size: 19px; line-height: 1.1; min-height: 4.6em; display: flex; flex-direction: column; gap: 3px; }
+.pl-info { font-size: 19px; line-height: 1.1; min-height: 3.4em; display: flex; flex-direction: column; gap: 3px; }
 .pl-info .fact { color: var(--cyan); font-size: 16px; } .pl-info .why { color: #ff8a8a; font-size: 17px; } .pl-info .why.good { color: var(--ok); }
 .pl-pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 5px; padding: 6px; border: 1px dashed transparent; border-radius: 3px; }
 .pl-grade { display: flex; flex-direction: column; gap: 4px; justify-content: center; min-width: 150px; }
