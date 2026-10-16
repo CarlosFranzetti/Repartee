@@ -16,6 +16,12 @@ const CSS = `
 .cd-hud .sk-meter { flex: 1 1 0; min-width: 0; }
 .cd-round { align-self: center; font-family: var(--logo); font-size: 10px; letter-spacing: .06em; color: var(--amber); background: #0c0919; padding: 6px 10px; border: 1px solid #2d2456; text-align: center; white-space: nowrap; }
 @media (max-width: 559px) { .cd-round { display: none; } }
+.cd-play { display: flex; flex-direction: column; gap: 10px; }
+@media (max-height: 460px) and (min-width: 560px) {
+  .cd-play { display: grid; grid-template-columns: 330px minmax(0, 1fr); grid-template-areas: "cw say" "cw choices"; gap: 5px 10px; align-items: start; }
+  .cd-play > .cd-wrap { grid-area: cw; } .cd-play > .sk-say { grid-area: say; } .cd-play > .cd-choices { grid-area: choices; } .cd-round { display: none; }
+  .cd-hud { margin-bottom: 4px; }
+}
 .cd-vs { font-size: 17px; color: var(--muted); letter-spacing: .08em; }
 .cd-end { font-size: 22px; line-height: 1.1; }
 .cd-flow .sk-say { min-height: 68px; padding-top: 6px; padding-bottom: 8px; } .cd-flow .sk-choice { padding-top: 4px; padding-bottom: 4px; min-height: 34px; font-size: 21px; } .cd-flow .sk-choices { gap: 4px; }
@@ -439,6 +445,7 @@ async function run(host, p, SK) {
   if (!cssDone) { el("style", { text: CSS }, document.head); cssDone = true; }
   SK.css();
   const S = SK.session(host), root = host.root;
+  try { host.ov.classList.add("sk-g"); } catch (e) { /* ignore */ }
   const diff = clamp(Math.round(p.difficulty || 2), 1, 5);
   const rnd = Math.random;
   const keys = Object.keys(SC);
@@ -482,7 +489,8 @@ async function run(host, p, SK) {
       pill: "DIFFICULTY " + diff,
       button: "START"
     });
-    const cw = el("div", { cls: "cd-wrap" }, wrap);
+    const play = el("div", { cls: "cd-play" }, wrap);
+    const cw = el("div", { cls: "cd-wrap" }, play);
     const hud = el("div", { cls: "cd-hud" }, cw);
     const mRep = SK.meter(hud, { label: "REPUTATION", color: "#ff3fa4", max: 100, value: 50 });
     const roundEl = el("div", { cls: "cd-round", text: "BEAT 1/3" }, hud);
@@ -572,7 +580,7 @@ async function run(host, p, SK) {
     const score = clamp(Math.round((sum - bias - 78) * 1.6), 0, 100);
     const ok = outcome !== "lose";
     await S.wait(250);
-    cw.style.display = "none"; say.box.style.display = "none"; wrap.querySelectorAll(".sk-tip").forEach(n => { n.style.display = "none"; });
+    play.style.display = "none";
     const stamp = { w: 64, h: 24, k: 4, draw(g) { const col = outcome === "lose" ? "#ff6a6a" : outcome === "draw" ? "#ffc44d" : "#9be15d", w = outcome === "legend" ? "LEGEND" : outcome === "win" ? "YOU WIN" : outcome === "draw" ? "DRAW" : "OUCH"; R(g, 0, 0, 64, 24, "#0a0716"); R(g, 1, 1, 62, 22, col); R(g, 3, 3, 58, 18, "#0a0716"); txtC(g, w, 32, 8, col, 2, 2); } };
     await SK.endCard(S, wrap, { kicker: sc.title.toUpperCase(), title: end.title, lines: [tok(end.lines[end.lines.length - 1][1])], stats: [["REPUTATION", st.rep, st.rep >= 60 ? "ok" : st.rep < 40 ? "bad" : ""], ["VIBE", st.vibe, st.vibe >= 60 ? "ok" : st.vibe < 40 ? "bad" : ""]], score, ok, stamp, rank: outcome === "legend" ? "LEGEND" : outcome === "win" ? "SMOOTH" : outcome === "draw" ? "SURVIVED" : "BURNED" });
     return { ok, score, outcome, ending: outcome, scenario: scnKey, rep: st.rep, vibe: st.vibe, title: end.title };

@@ -16,14 +16,24 @@ const { el, clamp, R, P, ell, mulberry, hashStr, ramp, txt, txtC, txtW } = U;
 const K = ramp;
 
 const CSS = `
-.pt-deal { width: 100%; border-collapse: collapse; font-size: 19px; }
-.pt-deal td { padding: 3px 4px; border-bottom: 1px dashed #2d2456; vertical-align: top; }
-.pt-deal td:first-child { color: var(--muted); font-size: 16px; letter-spacing: .08em; white-space: nowrap; }
-.pt-deal tr.cur td:first-child { color: var(--pink); }
-.pt-deal tr.cur td { background: #1a1030; }
-.pt-deal tr.lock td:last-child { color: var(--ok); }
-.pt-deal tr.lock td:last-child::after { content: " [locked]"; color: var(--muted); font-size: 15px; }
-.pt-deal tr.expo td:nth-child(2) { color: #ff6a6a; }
+.pt-deal { display: grid; grid-template-columns: 1fr; }
+.pt-row { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 6px; padding: 3px 4px; border-bottom: 1px dashed #2d2456; font-size: 19px; line-height: 1.05; }
+.pt-row .lb { color: var(--muted); font-size: 16px; letter-spacing: .08em; }
+.pt-row.cur .lb { color: var(--pink); } .pt-row.cur { background: #1a1030; }
+.pt-row.lock .vl { color: var(--ok); } .pt-row.lock .vl::after { content: " [locked]"; color: var(--muted); font-size: 15px; }
+.pt-row.expo .vl { color: #ff6a6a; }
+.pt-play { display: grid; gap: 10px; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "stage hud" "stage deal" "stage notes" "say say" "choices choices" "tip tip"; align-items: start; }
+.pt-play > .sk-stage { grid-area: stage; margin: 0; } .pt-play > .sk-hud { grid-area: hud; } .pt-play > .pt-dealbox { grid-area: deal; } .pt-play > .pt-notes { grid-area: notes; }
+.pt-play > .sk-say { grid-area: say; } .pt-play > .pt-choices { grid-area: choices; } .pt-play > .sk-tip { grid-area: tip; } .pt-play > .pt-brk { display: none; }
+@media (max-width: 959px) { .pt-play { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "hud" "deal" "notes" "say" "choices" "tip"; } .pt-play > .sk-stage { margin: 0 auto; } }
+@media (max-height: 460px) and (min-width: 560px) {
+  .pt-play { display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; height: calc(100vh - 56px); }
+  .pt-play > * { grid-area: auto; }
+  .pt-play > .sk-stage { order: 1; width: 330px; } .pt-play > .pt-dealbox { order: 2; width: 330px; } .pt-play > .pt-notes { order: 3; width: 330px; }
+  .pt-play > .pt-brk { display: block; order: 4; flex: 0 0 100%; width: 0; }
+  .pt-play > .sk-hud { order: 5; width: calc(100% - 350px); } .pt-play > .sk-say { order: 6; width: calc(100% - 350px); } .pt-play > .pt-choices { order: 7; width: calc(100% - 350px); } .pt-play > .sk-tip { order: 8; }
+  .pt-deal { grid-template-columns: 1fr 1fr; column-gap: 8px; } .pt-row { grid-template-columns: 1fr; gap: 0; font-size: 17px; padding: 1px 4px; } .pt-row .lb { font-size: 13px; } .pt-row.lock .vl::after { content: " *"; }
+}
 .pt-peek { margin-top: 6px; }
 .pt-hide { display: none; }
 `;
@@ -267,6 +277,7 @@ async function run(host, p, SK) {
   if (!cssDone) { el("style", { text: CSS }, document.head); cssDone = true; }
   SK.css();
   const S = SK.session(host), root = host.root;
+  try { host.ov.classList.add("sk-g"); } catch (e) { /* ignore */ }
   const diff = clamp(Math.round(p.difficulty || 2), 1, 5);
   const pname = String(p.promoter || "Vic");
   const ask = String(p.ask || "a monthly");
@@ -331,9 +342,9 @@ async function run(host, p, SK) {
     extra: box => { const n = el("div", { cls: "sk-note" }, box); el("h3", { text: neg ? "WHAT MARCUS DUG UP ABOUT " + party.toUpperCase() : "YOUR HOMEWORK ON " + party.toUpperCase() }, n); const ul = el("ul", {}, n); notes.forEach(t => el("li", { text: t }, ul)); },
     button: "START"
   });
-  const grid = el("div", { cls: "sk-grid" }, wrap);
-  const stageApi = SK.canvas(grid, 320, 160, 2);
-  const side = el("div", { cls: "sk-side" }, grid);
+  const play = el("div", { cls: "pt-play" }, wrap);
+  const grid = play, side = play;
+  const stageApi = SK.canvas(play, 320, 160, 2);
   const hud = el("div", { cls: "sk-hud" }, side);
   const startPat = clamp(Math.round(p.patience || (neg ? [12, 11, 10, 9, 8] : [9, 8, 7, 7, 6])[diff - 1]), 3, 20);
   const startInt = neg ? [45, 40, 35, 30, 25][diff - 1] : [35, 30, 25, 20, 15][diff - 1];
@@ -342,12 +353,14 @@ async function run(host, p, SK) {
   const dealRows = {};
   let peeked = true, notesApi = null;
   if (neg) {
-    const dealBox = el("div", { cls: "sk-note" }, side);
+    const dealBox = el("div", { cls: "sk-note pt-dealbox" }, side);
     el("h3", { text: "THE OFFER \u2014 " + party.toUpperCase() }, dealBox);
-    const t = el("table", { cls: "pt-deal" }, dealBox);
-    ["fee", "flights", "hotel", "rider"].forEach(id => { const tr = el("tr", {}, t); el("td", { text: TERMS[id].label }, tr); const td = el("td", { text: "-" }, tr); dealRows[id] = { tr, td }; });
+    const t = el("div", { cls: "pt-deal" }, dealBox);
+    ["fee", "flights", "hotel", "rider"].forEach(id => { const tr = el("div", { cls: "pt-row" }, t); el("span", { cls: "lb", text: TERMS[id].label }, tr); const td = el("span", { cls: "vl", text: "-" }, tr); dealRows[id] = { tr, td }; });
   }
   notesApi = SK.noteBox(side, neg ? "WHAT YOU KNOW" : "NOTES ON " + party.toUpperCase(), notes);
+  notesApi.box.classList.add("pt-notes");
+  el("div", { cls: "pt-brk" }, play);
   if (diff >= 4 && !neg) {
     peeked = false; notesApi.set(false);
     const pk = el("button", { cls: "kbtn pt-peek", type: "button", text: "CHECK NOTES (-1 PATIENCE) [N]" }, notesApi.box);
@@ -534,7 +547,7 @@ async function run(host, p, SK) {
     const order = ["fee"].concat(SK.shuffle(["flights", "hotel", "rider"], rnd));
     const T = {};
     order.forEach(id => { T[id] = { id, rung: TERMS[id].init, top: TERMS[id].rungs.length - 1, locked: false, counters: 0 }; });
-    const setRow = (id, cls) => { const row = dealRows[id], t = T[id]; row.td.textContent = fmt(TERMS[id].rungs[t.rung][0]); row.tr.className = (cls || "") + (t.locked ? " lock" : "") + (id === "fee" && t.rung === 0 ? " expo" : ""); };
+    const setRow = (id, cls) => { const row = dealRows[id], t = T[id]; row.td.textContent = fmt(TERMS[id].rungs[t.rung][0]); row.tr.className = "pt-row " + (cls || "") + (t.locked ? " lock" : "") + (id === "fee" && t.rung === 0 ? " expo" : ""); };
     order.forEach(id => { dealRows[id].td.textContent = "?"; });
     setExpr("", "stand");
     await proSay("Alright. " + party + " wants you. Here's the offer. Brace yourself.");
@@ -668,8 +681,7 @@ async function run(host, p, SK) {
     stats.push(["FEE", deal.terms.fee, fr >= 3 ? "ok" : fr === 0 ? "bad" : ""], ["FLIGHTS", deal.terms.flights], ["HOTEL", deal.terms.hotel], ["RIDER", deal.terms.rider]);
   }
   await S.wait(500);
-  wrap.querySelectorAll(".sk-grid,.sk-say,.sk-tip").forEach(n => { n.style.display = "none"; });
-  choiceBox.style.display = "none";
+  play.style.display = "none";
   const stamp = { w: 64, h: 24, k: 4, draw(g) {
     const col = ok ? "#9be15d" : "#ff6a6a", w = ok ? (neg ? "BOOKED" : deal.slot === "monthly" ? "BOOKED" : "TRIAL") : "NO DEAL";
     R(g, 0, 0, 64, 24, "#0a0716"); R(g, 1, 1, 62, 22, col); R(g, 3, 3, 58, 18, "#0a0716");

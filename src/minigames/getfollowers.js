@@ -12,7 +12,8 @@ const { el, clamp, R, P, ell, line, poly, mulberry, hashStr, ramp, txt, txtC, tx
 const K = ramp;
 
 const CSS = `
-.gf-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.gf-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "stage side" "log log"; gap: 12px; align-items: start; }
+.gf-grid > .sk-stage { grid-area: stage; } .gf-grid > .gf-side { grid-area: side; } .gf-grid > .gf-log { grid-area: log; }
 .gf-grid .sk-stage { margin: 0; }
 .gf-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .gf-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -38,7 +39,13 @@ const CSS = `
 .gf-ev h3 { margin: 0; font-family: var(--logo); font-weight: 400; font-size: 12px; letter-spacing: .04em; color: var(--amber); line-height: 1.5; }
 .gf-ev p { margin: 0; font-size: 21px; line-height: 1.06; }
 .gf-log { min-height: 1.2em; font-size: 21px; color: #ff8fcf; line-height: 1.05; }
-@media (max-width: 959px) { .gf-grid { grid-template-columns: minmax(0, 1fr); } .gf-grid .sk-stage { margin: 0 auto; } }
+@media (max-width: 959px) { .gf-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "side" "log"; } .gf-grid .sk-stage { margin: 0 auto; } }
+@media (max-height: 460px) and (min-width: 560px) {
+  .gf-grid { grid-template-columns: 330px minmax(0, 1fr); grid-template-areas: "stage side" "log side"; gap: 6px 10px; } .gf-grid .sk-stage { margin: 0; }
+  .gf-side { gap: 5px; } .gf-status { font-size: 18px; } .gf-day { padding: 2px; font-size: 13px; gap: 2px; } .gf-cell { height: 14px; font-size: 14px; }
+  .gf-act { min-height: 38px; font-size: 20px; padding: 3px 8px; } .gf-act small { font-size: 13px; margin-top: 1px; }
+  .gf-ev { padding: 5px 8px; gap: 4px; } .gf-ev h3 { font-size: 10px; } .gf-ev p { font-size: 19px; } .gf-log { font-size: 19px; }
+}
 @media (max-width: 559px) { .gf-act { font-size: 21px; padding: 5px 6px; } .gf-act small { font-size: 14px; } .gf-day { font-size: 13px; } }
 `;
 let cssDone = false;
@@ -270,6 +277,7 @@ async function run(host, p, SK) {
   if (!cssDone) { el("style", { text: CSS }, document.head); cssDone = true; }
   SK.css();
   const S = SK.session(host), root = host.root;
+  try { host.ov.classList.add("sk-g"); } catch (e) { /* ignore */ }
   const G = newGame(p);
   const rnd = Math.random;
   const name = SK.djName();
@@ -297,7 +305,7 @@ async function run(host, p, SK) {
     });
     const wide = (document.documentElement.clientWidth || 800) >= 960;
     const grid = el("div", { cls: "gf-grid" }, wrap);
-    const cvApi = wide ? SK.canvas(grid, 120, 176, 2) : SK.canvas(grid, 160, 76, 2);
+    const cvApi = wide ? SK.canvas(grid, 120, 176, 2) : SK.canvas(grid, 160, 76, 2, 2);
     cvApi.noSide = true; cvApi.fit();
     const side = el("div", { cls: "gf-side" }, grid);
     const stats = el("div", { cls: "gf-stats" }, side);
@@ -403,7 +411,7 @@ async function run(host, p, SK) {
     panel.textContent = "";
     await S.wait(600);
     const gained = G.F - G.start, ok = G.F >= G.goal, sc = score(G);
-    grid.style.display = "none"; logEl.style.display = "none"; wrap.querySelectorAll(".sk-tip").forEach(n => { n.style.display = "none"; });
+    grid.style.display = "none"; wrap.querySelectorAll(".sk-tip").forEach(n => { n.style.display = "none"; });
     const burned = G.E < 15;
     const title = ok ? (G.F >= G.goal * 1.3 ? "You blew up (a little)" : "Goal reached") : burned ? "Burned out" : "So close";
     const lines = [ok ? "You made it to " + fmtNum(G.F) + " followers. Lou asks what a follower is. You explain. He says, \"So, a regular.\"" : "You ended the week at " + fmtNum(G.F) + ". The goal was " + fmtNum(G.goal) + ". The algorithm sends its regards."];

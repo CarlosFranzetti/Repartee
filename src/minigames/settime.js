@@ -302,6 +302,25 @@ const CSS = `
   .st-ctl.sticky { position: sticky; bottom: 0; z-index: 5; background: rgba(10, 8, 22, .97); padding: 6px; border-color: var(--pink); }
   .st-time { font-size: 38px; }
 }
+@media (max-height: 460px) {
+  .overlay.mg-setTime { padding: 4px 8px; }
+  .mg-setTime .mg-wrap { gap: 4px; }
+  .mg-setTime .mg-head { flex-wrap: nowrap; align-items: baseline; }
+  .mg-setTime .mg-logo { font-size: 13px; } .mg-setTime .mg-sub { font-size: 15px; }
+  .st-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 36%); gap: 8px; align-items: start; }
+  .st-left, .st-right { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .st-time { font-size: 28px; } .st-time small { font-size: 15px; }
+  .st-slotl, .st-chiprow { display: none; }
+  .st-g .lab { font-size: 15px; } .st-bar { height: 11px; }
+  .st-tr { padding: 5px 8px; gap: 3px; } .st-now { font-size: 16px; } .st-now small { font-size: 13px; } .st-trk { height: 14px; } .st-trk span { font-size: 13px; line-height: 14px; } .st-next { font-size: 15px; }
+  .st-ctl.sticky { position: static; padding: 3px 6px; gap: 4px; } .st-ctl .btn { padding: 3px 8px; font-size: 17px; } .st-ctl .btn small { display: none; }
+  .st-msg { font-size: 16px; min-height: 0; line-height: 1.05; max-height: 2.2em; overflow: hidden; } .st-say { display: none; }
+  .st-crate { max-height: calc(100vh - 150px); overflow-y: auto; gap: 3px; padding-right: 2px; }
+  .st-evbox { position: absolute; margin: 0; max-height: 100%; overflow: auto; }
+  .st-evbox .ch { flex-direction: row; } .st-evbox .ch .btn { flex: 1 1 30%; min-width: 120px; }
+  .st-ev .tx { font-size: 16px; } .st-ev .who { font-size: 14px; } .st-ev canvas { width: 40px; height: 40px; } .st-ev { grid-template-columns: 40px minmax(0, 1fr); padding: 5px; }
+  .st-briefbox { position: absolute; margin: 0; } .st-brief { padding: 6px 10px; gap: 3px; } .st-brief p, .st-brief ul { font-size: 15px; } .st-brief h3 { font-size: 13px; } .st-brief .goal { font-size: 16px; }
+}
 @media (prefers-reduced-motion: reduce) { .st-ctl .btn.ready { box-shadow: 0 0 0 2px var(--ok); } }
 `;
 let cssDone = false;
@@ -346,7 +365,7 @@ RP.mg.register("setTime", {
       const sceneBox = el("div", { cls: "st-sceneBox" }, left);
       const W = 320, H = 144;
       const cv = el("canvas", { cls: "sk-cv px", width: W, height: H, role: "img", "aria-label": "The club from the dance floor" }, sceneBox), sc = cv.getContext("2d");
-      kit.fit(host, cv, W, H, sceneBox);
+      kit.fit(host, cv, W, H, sceneBox, 0, 222);
       // transport
       const tr = el("div", { cls: "mg-panel st-tr" }, left);
       const now = el("div", { cls: "st-now" }, tr);

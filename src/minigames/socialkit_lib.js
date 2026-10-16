@@ -82,7 +82,7 @@ const CSS = `
 .sk-note b { font-weight: 400; color: var(--cyan); }
 .sk-note { position: relative; } .sk-note .sk-tg { display: none; position: absolute; right: 8px; top: 6px; font-size: 16px; padding: 2px 10px; min-width: 0; }
 .sk-note.closed ul { display: none; } .sk-note.closed h3 { margin-bottom: 0; }
-@media (max-width: 559px) { .sk-note .sk-tg { display: block; } }
+@media (max-width: 559px), (max-height: 460px) { .sk-note .sk-tg { display: block; } }
 .sk-intro, .sk-end { background: #120e24; border: 2px solid #3a3070; box-shadow: inset 0 0 0 2px #0c0919, 0 6px 0 #000; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
 .sk-intro { align-items: stretch; text-align: left; }
 .sk-intro h2, .sk-end h2 { margin: 0; font-family: var(--logo); font-weight: 400; font-size: clamp(16px, 4vw, 26px); line-height: 1.25; color: #fff; text-shadow: 0 3px 0 #2a0d3a; }
@@ -105,6 +105,19 @@ const CSS = `
 @media (max-width: 480px) {
   .sk-say .tx { font-size: 23px; } .sk-choice { font-size: 21px; padding: 7px 8px; } .sk-intro, .sk-end { padding: 12px; }
   .sk-intro ol { font-size: 21px; }
+}
+@media (max-height: 460px) {
+  .overlay.sk-g { padding-top: 4px; padding-bottom: 4px; }
+  .sk-g .mg-wrap { gap: 5px; margin-block: 0; }
+  .sk-g .mg-logo { font-size: 15px; } .sk-g .mg-sub { font-size: 16px; }
+  .sk-g .sk-wrap { gap: 6px; }
+  .sk-g .sk-say { min-height: 50px; padding: 4px 10px 6px; } .sk-g .sk-say .nm { font-size: 10px; margin-bottom: 2px; } .sk-g .sk-say .tx { font-size: 21px; }
+  .sk-g .sk-choices { gap: 3px; } .sk-g .sk-choice { min-height: 30px; padding: 2px 8px; font-size: 19px; } .sk-g .sk-choice .tag { font-size: 12px; margin-right: 5px; }
+  .sk-g .sk-meter .lab { font-size: 15px; } .sk-g .sk-meter .bar { height: 12px; } .sk-g .sk-meter.pips .bar { height: 16px; }
+  .sk-g .sk-note { padding: 4px 8px; font-size: 17px; } .sk-g .sk-note h3 { font-size: 15px; margin-bottom: 2px; }
+  .sk-g .sk-intro, .sk-g .sk-end { padding: 8px 12px; gap: 5px; } .sk-g .sk-intro ol { font-size: 18px; gap: 2px; } .sk-g .sk-intro h2, .sk-g .sk-end h2 { font-size: 15px; }
+  .sk-g .sk-end .score { font-size: 24px; } .sk-g .sk-end .stat b { font-size: 21px; } .sk-g .sk-end canvas { width: 128px !important; height: 48px !important; } .sk-g .sk-end .sub { font-size: 19px; }
+  .sk-g .sk-tip { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .sk-say .more { animation: none; } .sk-meter .fill { transition: none; } .sk-meter.hit .bar { animation: none; } }
 `;
@@ -145,7 +158,7 @@ SK.leave = function (host, head, S, onLeave) {
 };
 
 /* ------------------------------------------------------------------ canvas */
-SK.canvas = function (parent, w, h, maxK = 2) {
+SK.canvas = function (parent, w, h, maxK = 2, shortK = 1) {
   const stage = el("div", { cls: "sk-stage" }, parent);
   const cv = el("canvas", { cls: "px", width: w, height: h, role: "img" }, stage);
   const c = cv.getContext("2d");
@@ -155,7 +168,7 @@ SK.canvas = function (parent, w, h, maxK = 2) {
     const vw = document.documentElement.clientWidth || window.innerWidth || 800, vh = document.documentElement.clientHeight || window.innerHeight || 600;
     const availW = Math.min(vw - 32, 980) - (vw >= 960 && !api.noSide ? 326 : 0);
     let k = Math.floor((availW - 4) / w);
-    if (vh < 600) k = Math.min(k, 1);
+    if (vh < 600) k = Math.min(k, shortK);
     k = clamp(k, 1, maxK);
     api.k = k;
     cv.style.width = w * k + "px"; cv.style.height = h * k + "px";
@@ -313,7 +326,7 @@ SK.endCard = function (S, root, o) {
 SK.noteBox = function (parent, title, items, o = {}) {
   const box = el("div", { cls: "sk-note" }, parent);
   const h = el("h3", { text: title }, box);
-  const narrow = (document.documentElement.clientWidth || window.innerWidth) < 560;
+  const narrow = (document.documentElement.clientWidth || window.innerWidth) < 560 || (window.innerHeight || 800) < 460;
   const ul = el("ul", {}, box);
   items.forEach(t => el("li", { text: t }, ul));
   const tg = el("button", { cls: "kbtn sk-tg", type: "button", text: "SHOW" }, box);

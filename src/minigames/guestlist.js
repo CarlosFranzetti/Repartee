@@ -42,6 +42,16 @@ const CSS = `
 .gl-go.yes { border-color: #2a6a46; color: var(--ok); } .gl-go.yes:hover:not(:disabled) { background: #123020; border-color: var(--ok); color: var(--ok); }
 .gl-go.no { border-color: #6a2a3a; color: #ff8a8a; } .gl-go.no:hover:not(:disabled) { background: #301018; border-color: #ff6a6a; color: #ff8a8a; }
 @media (max-width: 559px) { .gl-row { padding: 4px; min-height: 56px; } .gl-layout { gap: 6px; } .gl-layout .sk-say { min-height: 70px; padding: 6px 10px 8px; } .gl-layout .sk-say .tx { font-size: 21px; } .gl-acts { position: sticky; bottom: 6px; z-index: 4; background: rgba(5, 3, 10, .94); padding: 6px; border: 1px solid var(--line); grid-template-columns: 1fr 1fr; } .gl-step { grid-column: 1 / -1; justify-content: center; } .gl-row { grid-template-columns: 84px minmax(0, 1fr); } .gl-row canvas { width: 80px; height: 50px; } }
+@media (max-height: 460px) and (min-width: 560px) {
+  .sk-g .gl-layout { grid-template-columns: 330px minmax(0, 1fr); grid-template-areas: "stage side" "say side" "acts side"; gap: 6px 10px; }
+  .sk-g .gl-layout > .sk-side { display: flex; grid-area: side; gap: 5px; }
+  .sk-g .gl-layout .gl-meters, .sk-g .gl-layout .gl-case, .sk-g .gl-layout .gl-clip { grid-area: auto; }
+  .sk-g .gl-row { grid-template-columns: 84px minmax(0, 1fr); padding: 3px 5px; min-height: 52px; } .sk-g .gl-row canvas { width: 80px; height: 50px; } .sk-g .gl-row .what { font-size: 17px; }
+  .sk-g .gl-clip { font-size: 16px; padding: 3px 8px 4px; border-top-width: 8px; } .sk-g .gl-clip h3 { margin: 0; cursor: pointer; font-size: 15px; }
+  .sk-g .gl-acts { position: static; background: none; padding: 0; border: 0; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); } .sk-g .gl-acts .gl-go { font-size: 21px !important; padding: 6px 4px !important; }
+  .sk-g .gl-step { padding: 1px 4px; } .sk-g .gl-step b { font-size: 20px; min-width: 52px; }
+}
+.gl-clip h3 { cursor: pointer; } .gl-clip.closed ul { display: none; } .gl-clip.closed h3::after { content: " [+]"; } .gl-clip:not(.closed) h3::after { content: " [-]"; }
 `;
 let cssDone = false;
 
@@ -52,7 +62,7 @@ const VIP_DEFAULT = ["Kosmo Delacroix", "Twinkie", "Axl Vanta"];
 const VIP_CHAR = { kosmo: "kosmo", twinkie: "twinkie", axl: "axl", dante: "dante", eddie: "eddie", lou: "lou", ray: "ray", jess: "jess" };
 
 const CLAIMS = {
-  listed: ["Hi. {first} {last}. I'm on the list.", "{last}. {first} {last}. Should be on there.", "Name's {last}. Be gentle, I've been standing here since the Obama administration.", "{first} {last}. Yes, with the two Ns."],
+  listed: ["Hi. {first} {last}. I'm on the list.", "{last}. {first} {last}. Should be on there.", "Name's {last}. Be gentle, I've been standing here since the first snow.", "{first} {last}. Yes, with the two Ns."],
   listedPlus: ["{first} {last}, plus {n}. We're all very normal.", "{last}, plus {n}. They're quiet. Mostly.", "It's {last} plus {n}. The {n} are my cousins. They're fine."],
   overplus: ["{first} {last}, plus {n}. That's what I was told.", "It's {last}, plus {n}. A guy said plus {n}. A confident guy."],
   stranger: ["I'm with the DJ.", "I know {dj}. Personally. From the thing.", "I'm on the list. Under... something. Check under 'cool'.", "The bartender said it's fine.", "Do I look like I need to be on a list?", "My cousin knows the guy who knows Dante. I'm basically on the list.", "I'm a friend of a friend of {dj}. Who? The friend. Of the friend.", "I'm with the DJ. The other DJ. The DJ's DJ."],
@@ -272,6 +282,7 @@ async function run(host, p, SK) {
   if (!cssDone) { el("style", { text: CSS }, document.head); cssDone = true; }
   SK.css();
   const S = SK.session(host), root = host.root;
+  try { host.ov.classList.add("sk-g"); } catch (e) { /* ignore */ }
   const diff = clamp(Math.round(p.difficulty || 2), 1, 5);
   const rnd = Math.random;
   const G = makeCrowd(p, diff, rnd, SK);
