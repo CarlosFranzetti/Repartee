@@ -419,7 +419,8 @@ const wait = ms => new Promise(r => setTimeout(r, fast ? 0 : ms));
 RP.wait = wait;
 function speakerAnchor(who) {
   const v = VOICES[who];
-  if (v && v.anchor) { const a = evalv(v.anchor, S); return [a[0], a[1]]; }
+  const inRoom = who !== "nar" && actorById(who === "kid" ? "kid" : who);
+  if (v && v.anchor && !(inRoom && visible(inRoom))) { const a = evalv(v.anchor, S); return [a[0], a[1]]; }
   if (who === "nar") return [(cur ? cur.camX : 0) + W / 2, 70];
   const a = actorById(who === "kid" ? "kid" : who);
   if (a) { const sc = (a.scale || 1) * depthScale(a.y); return [a.x, a.y - RP.chars.headTop(a.char, sc) - 2]; }
@@ -734,7 +735,11 @@ MG.register = (id, def) => { MG.reg[id] = Object.assign({ id, title: id }, def);
 MG.list = () => Object.values(MG.reg);
 MG.play = async function (id, params = {}) {
   const def = MG.reg[id];
-  if (!def) { console.warn("missing mini-game " + id); return { ok: true, score: 0, missing: true }; }
+  if (!def) {
+    console.warn("missing mini-game " + id);
+    const q = fast && RP.test.mgQ.length ? RP.test.mgQ.shift() : null;
+    return Object.assign({ ok: true, score: 0, missing: true }, q || {});
+  }
   if (fast) {
     const q = RP.test.mgQ.length ? RP.test.mgQ.shift() : null;
     const r = q || (def.auto ? def.auto(params, S) : { ok: true, score: 100 });
@@ -876,6 +881,7 @@ function walkPointFor(id, px, py) {
 }
 async function goExit(h) {
   let ex = evalv(h.exit, S);
+  if (ex && typeof ex.then === "function") ex = await ex;
   if (typeof ex === "string" && ex === "travel") { await RP.travel(); return; }
   if (typeof ex === "string") { await say(ex); return; }
   if (!ex) return;

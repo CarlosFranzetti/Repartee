@@ -211,7 +211,13 @@ RP.defineAct({
     const base = ["everything_but_the_girl_missing", "phuture_acid_tracks", "white_nyc93", "cece_peniston_finally", "mood_ii_swing_closer", "hardrive_deep_inside",
       "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "crystal_waters_gypsy_woman", "mr_fingers_washing_machine_can_you_feel_it", "francois_k_fk_ep", "kerri_chandler_the_mood_ep"];
     if (!carry) { S.money = 120; S.followers = 400; S.records = base.slice(); }
-    else { if (!Array.isArray(S.records)) S.records = []; ["everything_but_the_girl_missing", "phuture_acid_tracks", "white_nyc93", "cece_peniston_finally"].forEach(id => { if (!S.records.includes(id)) S.records.push(id); }); if (!S.records.includes("sylvester_you_make_me_feel_mighty_real")) S.records.push("sylvester_you_make_me_feel_mighty_real"); if (!(S.followers > 0)) S.followers = 400; if (!(S.money >= 0)) S.money = 120; }
+    else {
+      // six months of a residency later: the crate has grown and people know the name
+      if (!Array.isArray(S.records)) S.records = [];
+      base.forEach(id => { if (!S.records.includes(id)) S.records.push(id); });
+      S.followers = Math.max(S.followers || 0, 400);
+      S.money = Math.max(Number(S.money) || 0, 120);   // six months of Thursday pay, minus rent
+    }
     S.inv = ["phone", "wallet"];
     S.gear = Object.assign({ decks: "pioneer_cdj_350", turntables: "at_lp120_usb", mixer: "numark_m101usb", monitors: "krk_rokit_5_g4" }, carry ? S.gear : {});
     S.clock = "THU 4:10 PM";
