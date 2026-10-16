@@ -190,7 +190,7 @@ async function buyDeck(S) {
   RP.money(-spent);
   RP.setGear("turntables", gid);
   RP.give("a2_tts");
-  S.f.a2_turntables = true; S.f.a2_paid = spent;
+  S.f.a2_turntables = true; S.f.a2_paid = spent; S.f.firstTT = gid;
   RP.followers(10);
   RP.sfx("success");
   const g = RP.gearInfo(gid);
