@@ -19,11 +19,11 @@ const SHOTS = [
   { file: "level1-bedroom.png", act: 1, room: "bedroom", x: 300, y: 228, face: "front" },
   { file: "level1-stoop.png", act: 1, room: "a1_stoop", x: 420, y: 232, face: "front" },
   { file: "level1-nowhere.png", act: 1, room: "a1_nowhere", state: { f: { time: "sat", a1_sat: true } } },
-  { file: "level2-loft.png", act: 2, room: "a2_loft", state: { f: { a2_loftFixed: true } } },
+  { file: "level2-loft.png", act: 2, room: "a2_loft", clock: "SAT 11:48 PM", state: { f: { a2_loftFixed: true } } },
   { file: "level3-halcyon.png", act: 3, room: "a3_halcyon", state: { f: { a3_floor: "full" } } },
   { file: "level4-berlin.png", act: 4, room: "a4_halle" },
-  { file: "level5-mainstage.png", act: 5, room: "a5_mainstage", state: { f: { a5_phase: 3 } } },
-  { file: "level5-pier.png", act: 5, room: "a5_pier" },
+  { file: "level5-mainstage.png", act: 5, room: "a5_mainstage", clock: "SAT 11:40 PM", state: { f: { a5_phase: 3 } } },
+  { file: "level5-pier.png", act: 5, room: "a5_pier", clock: "SUN 6:12 AM" },
   { file: "minigame-beatmatch.png", mg: "beatMatch" },
   { file: "minigame-crowdread.png", mg: "crowdRead" },
   { file: "minigame-godigging.png", mg: "goDigging" },
@@ -46,7 +46,7 @@ for (const s of SHOTS) {
   } else if (s.mg) {
     await p.evaluate(id => { document.querySelectorAll("#title").forEach(e => e.remove()); window.RP.mg.play(id, { arcade: true, difficulty: 2 }); }, s.mg);
     await p.waitForTimeout(1800);
-    await p.screenshot({ path: out });
+    await (await p.$(".mg-wrap")).screenshot({ path: out });
   } else {
     await p.evaluate(async s => {
       const RP = window.RP;
@@ -59,11 +59,20 @@ for (const s of SHOTS) {
       const S = RP.state;
       if (s.state && s.state.f) Object.assign(S.f, s.state.f);
       await RP.goto(s.room, s.x, s.y, s.face, { instant: true });
+      if (s.clock) RP.setClock(s.clock);
       RP.relight();
       RP.test.setFast(false);
     }, s);
     await p.waitForTimeout(1200);
-    if (s.full) await p.screenshot({ path: out });
+    if (s.full) {
+      // phone: just the scene, the sentence line and the controls under it, with a small margin
+      const clip = await p.evaluate(() => {
+        const rs = ["#frameBox", "#below", "#hint"].map(q => document.querySelector(q)).filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.height > 0);
+        const x0 = Math.min(...rs.map(r => r.left)), y0 = Math.min(...rs.map(r => r.top)), x1 = Math.max(...rs.map(r => r.right)), y1 = Math.max(...rs.map(r => r.bottom));
+        return { x: Math.max(0, x0 - 12), y: Math.max(0, y0 - 12), width: Math.min(innerWidth, x1 + 12) - Math.max(0, x0 - 12), height: y1 - y0 + 24 };
+      });
+      await p.screenshot({ path: out, clip });
+    }
     else await (await p.$("#frame")).screenshot({ path: out });
   }
   console.log((errors.length ? "ERR  " : "ok   ") + s.file + (errors.length ? "  " + errors.slice(0, 2).join(" | ") : ""));
