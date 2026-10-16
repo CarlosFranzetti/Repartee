@@ -180,6 +180,25 @@ const CSS = `
   .cr-scene { order: 1; } .cr-now { order: 2; } .cr-gauge { order: 3; } .cr-chips { order: 4; } .cr-msg { order: 5; } .cr-say { order: 6; } .cr-tell { order: 7; }
   .cr-hand { order: 8; } .cr-act { order: 9; } .cr-hist { order: 10; }
 }
+
+@media (max-height: 460px) {
+  .overlay.mg-crowdRead { padding: 4px 8px; }
+  .mg-crowdRead .mg-wrap { gap: 4px; }
+  .mg-crowdRead .mg-head { flex-wrap: nowrap; align-items: baseline; }
+  .mg-crowdRead .mg-logo { font-size: 13px; } .mg-crowdRead .mg-sub { font-size: 15px; }
+  .cr-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 36%); gap: 8px; align-items: start; }
+  .cr-left, .cr-side { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .cr-scene, .cr-now, .cr-gauge, .cr-chips, .cr-msg, .cr-say, .cr-tell, .cr-hand, .cr-act, .cr-hist { order: 0; }
+  .cr-now, .cr-say, canvas.cr-hist { display: none; }
+  .cr-msg { font-size: 17px; min-height: 0; line-height: 1.05; max-height: 2.2em; overflow: hidden; }
+  .cr-gauge .lab { font-size: 15px; } .cr-bar { height: 12px; }
+  .cr-chips .sk-chip { font-size: 14px; padding: 0 5px; }
+  .cr-tell { padding: 0; border: 0; background: none; min-height: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cr-tell > :not(:first-child) { display: none; }
+  .cr-hand { max-height: calc(100vh - 76px); overflow-y: auto; gap: 3px; padding-right: 2px; }
+  .cr-hand .sk-card { padding: 2px 5px 2px 3px; }
+  .cr-act .btn { padding: 4px 12px; font-size: 19px; }
+}
 `;
 let cssDone = false;
 
@@ -240,7 +259,7 @@ RP.mg.register("crowdRead", {
       const W = 320, H = 144;
       const cv = el("canvas", { cls: "sk-cv px", width: W, height: H, role: "img", "aria-label": "The dance floor, seen from the DJ booth" }, sceneWrap);
       const sc = cv.getContext("2d");
-      kit.fit(host, cv, W, H, sceneWrap);
+      kit.fit(host, cv, W, H, sceneWrap, 0, 190);
 
       /* ----- under the scene ----- */
       const now = el("div", { cls: "cr-now" }, left);
@@ -291,7 +310,7 @@ RP.mg.register("crowdRead", {
         hand.innerHTML = ""; cards = [];
         const ranked = R.ids.map(id => RP.rec(id));
         ranked.forEach((rec, i) => {
-          const b = kit.card(host, rec, { key: String(i + 1) });
+          const b = kit.card(host, rec, { key: String(i + 1), compact: true });
           b.setAttribute("role", "option"); b.setAttribute("aria-selected", "false");
           b.addEventListener("click", () => { if (phase !== "pick" || S.used.has(rec.id)) return; if (sel === rec.id) doPlay(); else select(rec.id); });
           hand.appendChild(b); cards.push({ rec, b, jump: el("span", { cls: "jmp" }, b.t3) });

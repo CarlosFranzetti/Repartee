@@ -124,6 +124,13 @@ const CSS = `
 .sc-two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .sc-note { font-size: 16px !important; }
 .sc-over { position: relative; }
+.sc-main.compact { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "stage right" "info right" "acts right"; grid-template-rows: auto auto 1fr; gap: 4px 8px; }
+.sc-main.compact .sc-stage { margin: 0; } .sc-main.compact .sc-queue, .sc-main.compact .sc-qlabel { display: none; }
+.sc-main.compact .sc-panel { min-height: 0; overflow-y: auto; padding: 6px; gap: 5px; } .sc-main.compact .sc-panel > p, .sc-main.compact .sc-panel .sc-note { display: none; } .sc-main.compact .sc-panel h3 { font-size: 17px; }
+.sc-main.compact .sc-right { gap: 4px; } .sc-main.compact .sc-test { padding: 4px; gap: 4px; } .sc-main.compact .sc-test .kbtn { padding: 3px 2px; font-size: 16px; }
+.sc-main.compact .sc-tabs { gap: 3px; } .sc-main.compact .sc-tab { padding: 2px 1px; font-size: 15px; border-bottom-width: 2px; }
+.sc-main.compact .sc-eq input { height: 52px; } .sc-main.compact .sc-card { padding: 4px 6px; gap: 3px; } .sc-main.compact .sc-card .t { font-size: 17px; } .sc-main.compact .sc-strip { padding: 4px; gap: 3px; }
+.sc-main.compact .sc-info { gap: 2px; } .sc-main.compact .sc-clock { font-size: 18px; } .sc-main.compact .sc-acts { gap: 6px; }
 @media (max-width: 860px) { .sc-clock { font-size: 20px; } .sc-panel { min-height: 0; } .sc-info .mg-msg { font-size: 20px; } .sc-acts .btn { padding: 6px 12px; } }
 @media (max-width: 420px) { .sc-test .kbtn { font-size: 16px; } .sc-tab { font-size: 16px; } .sc-eq input { height: 74px; } }
 @media (prefers-reduced-motion: reduce) { .sc-scene { cursor: pointer; } }
@@ -1049,13 +1056,23 @@ RP.mg.register("soundCheck", {
       rebuildHot(); tabSelect("decks"); syncAll();
       NK.onResize(host, layout);
       function layout() {
+        const compact = NK.isCompact();
+        NK.setCompact(host, compact);
         const avail = root.clientWidth || 700;
-        const wide = avail >= 940;
-        main.classList.toggle("wide", wide);
-        const boxW = wide ? 640 : avail;
-        const sc = NK.fit(scene.cv, { clientWidth: boxW }, W, H, wide ? 640 : 820);
+        const wide = !compact && avail >= 940;
+        main.classList.toggle("wide", wide); main.classList.toggle("compact", compact);
+        let sc;
+        if (compact) {
+          const w = Math.max(280, Math.min(avail * 0.5, (window.innerHeight - 170) * 1.6));
+          sc = w / W; scene.cv.style.width = Math.round(w) + "px"; scene.cv.style.height = Math.round(H * sc) + "px";
+          panel.style.maxHeight = Math.max(120, window.innerHeight - 24 - (test.offsetHeight || 64) - (tabsEl.offsetHeight || 52) - 36) + "px";
+        } else {
+          panel.style.maxHeight = "";
+          const boxW = wide ? 640 : avail;
+          sc = NK.fit(scene.cv, { clientWidth: boxW }, W, H, wide ? 640 : 820);
+        }
         queue.cv.style.width = scene.cv.style.width; queue.cv.style.height = Math.round(14 * sc) + "px";
-        ql.style.width = scene.cv.style.width; ql.style.marginInline = wide ? "0" : "auto";
+        ql.style.width = scene.cv.style.width; ql.style.marginInline = wide || compact ? "0" : "auto";
       }
       layout();
       let last = null, accSync = 0, lastLeft = -1;

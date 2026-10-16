@@ -172,18 +172,20 @@ let cssDone = false;
 K.css = function () { if (cssDone) return; cssDone = true; el("style", { text: CSS }, document.head); };
 
 /* fit a low-res canvas into its container: integer scale when it can, otherwise shrink */
-K.fit = function (host, cv, W, H, parent, maxK) {
+K.fit = function (host, cv, W, H, parent, maxK, reserve) {
   const apply = () => {
     const p = parent || cv.parentElement; if (!p) return;
     const avail = Math.max(120, p.clientWidth || 320);
     let k = avail >= W * 2 ? Math.floor(avail / W) : (avail >= W ? 1 : avail / W);
+    if (reserve && window.innerHeight <= 460) k = Math.max(0.5, Math.min(avail / W, (window.innerHeight - reserve) / H)); // landscape phones: fit the height
     if (maxK) k = Math.min(k, maxK);
     cv.style.width = Math.round(W * k) + "px"; cv.style.height = Math.round(H * k) + "px";
   };
   apply();
   let ro = null;
-  try { ro = new ResizeObserver(apply); ro.observe(parent || cv.parentElement); } catch (e) { window.addEventListener("resize", apply); }
-  host.cleanup(() => { try { ro ? ro.disconnect() : window.removeEventListener("resize", apply); } catch (e) { /* ignore */ } });
+  window.addEventListener("resize", apply);
+  try { ro = new ResizeObserver(apply); ro.observe(parent || cv.parentElement); } catch (e) { /* resize listener is enough */ }
+  host.cleanup(() => { try { window.removeEventListener("resize", apply); ro && ro.disconnect(); } catch (e) { /* ignore */ } });
   return apply;
 };
 

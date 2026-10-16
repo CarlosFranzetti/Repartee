@@ -19,6 +19,22 @@ NK.css = (id, text) => {
 NK.pick = (a, rnd) => a[Math.floor((rnd || Math.random)() * a.length)];
 NK.shuffle = (a, rnd) => { const r = rnd || Math.random, b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 
+/* landscape phones: short viewport, so the games switch to a compact side-by-side layout */
+NK.CSS_COMPACT = `
+.nk-compact { gap: 4px !important; }
+.nk-compact .mg-head { gap: 6px; align-items: baseline; flex-wrap: nowrap; justify-content: space-between; }
+.nk-compact .mg-logo { font-size: 14px; } .nk-compact .mg-sub { font-size: 15px; }
+.nk-compact .mg-msg { font-size: 17px; } .nk-compact .mg-say { font-size: 15px; }
+.nk-compact .btn { font-size: 18px; padding: 3px 12px; }
+.nk-compact .nk-end { gap: 4px; padding: 8px 10px; } .nk-compact .nk-end h2 { font-size: 14px; } .nk-compact .nk-end .nk-kick { font-size: 15px; }
+.nk-compact .nk-end .nk-stamp { width: 144px; height: 60px; } .nk-compact .nk-end .nk-score { display: none; }
+.nk-compact .nk-end .nk-blurb { font-size: 16px; line-height: 1.05; } .nk-compact .nk-end ul { column-count: 2; column-gap: 14px; width: 100%; } .nk-compact .nk-end li { font-size: 15px; break-inside: avoid; }
+`;
+NK.isCompact = () => { try { return window.innerHeight <= 460 && window.innerWidth >= 560; } catch (e) { return false; } };
+NK.setCompact = (host, on) => {
+  try { NK.css("nk-compact-css", NK.CSS_COMPACT); host.root.classList.toggle("nk-compact", !!on); host.ov.style.paddingTop = on ? "6px" : ""; host.ov.style.paddingBottom = on ? "6px" : ""; } catch (e) { /* ignore */ }
+};
+
 /* minutes after midnight (may exceed 1440) -> "4:07 AM" */
 NK.clock = mins => {
   let m = Math.round(mins) % 1440; if (m < 0) m += 1440;

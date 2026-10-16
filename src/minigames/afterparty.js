@@ -76,6 +76,13 @@ const CSS = `
 .ap-back { align-self: flex-start; }
 .ap-msg { min-height: 2.2em; }
 .ap-legend { font-size: 16px; color: var(--muted); line-height: 1.05; }
+.ap-main.compact { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "hud phone" "stage phone" "plan phone" "msg phone" "acts phone"; grid-template-rows: auto auto auto auto 1fr; gap: 4px 8px; }
+.ap-main.compact .ap-stage { margin: 0; justify-self: start; }
+.ap-main.compact .ap-hud { gap: 4px; flex-wrap: nowrap; } .ap-main.compact .ap-chip { padding: 1px 5px; font-size: 16px; gap: 3px; white-space: nowrap; } .ap-main.compact .ap-chip small { display: none; } .ap-main.compact .ap-bat { width: 22px; height: 9px; }
+.ap-main.compact .ap-plan { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; } .ap-main.compact .ap-slot { display: block; padding: 2px 5px; } .ap-main.compact .ap-slot b { width: auto; font-size: 13px; display: flex; } .ap-main.compact .ap-slot span { font-size: 15px; line-height: 1; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ap-main.compact .ap-slot small { display: none; }
+.ap-main.compact .ap-msg { min-height: 0; font-size: 15px; line-height: 1; overflow: hidden; max-height: 2em; }
+.ap-main.compact .ap-phone { padding: 4px 6px 6px; border-radius: 14px; max-width: 440px; justify-self: start; width: 100%; gap: 3px; } .ap-main.compact .ap-phone::before { display: none; } .ap-main.compact .ap-status { font-size: 15px; }
+.ap-main.compact .ap-screen { height: auto; flex: 1 1 0; min-height: 0; max-height: none; padding: 5px; gap: 4px; } .ap-main.compact .ap-row { min-height: 32px; } .ap-main.compact .ap-bubble { font-size: 18px; padding: 4px 7px; } .ap-main.compact .ap-opt { font-size: 18px; padding: 4px 8px; } .ap-main.compact .ap-who canvas { width: 40px; height: 40px; } .ap-main.compact .ap-who { grid-template-columns: 40px minmax(0, 1fr); } .ap-main.compact .ap-legend { display: none; }
 @media (max-width: 860px) { .ap-plan { grid-template-columns: 1fr; gap: 4px; } .ap-slot { flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; } .ap-slot b { flex: none; width: 70px; } .ap-slot span { flex: 1; } .ap-slot small { display: none; } .ap-screen { max-height: none; } }
 @media (prefers-reduced-motion: reduce) { .ap-scene { } }
 `;
@@ -799,9 +806,15 @@ RP.mg.register("afterParty", {
       resolveFn = resolve;
       NK.onResize(host, layout);
       function layout() {
-        const avail = root.clientWidth || 700, wide = avail >= 940;
-        main.classList.toggle("wide", wide);
-        NK.fit(scene.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 720);
+        const compact = NK.isCompact();
+        NK.setCompact(host, compact);
+        const avail = root.clientWidth || 700, wide = !compact && avail >= 940;
+        main.classList.toggle("wide", wide); main.classList.toggle("compact", compact);
+        if (compact) {
+          const w = Math.max(280, Math.min(avail * 0.5, (window.innerHeight - 172) * (W / H)));
+          scene.cv.style.width = Math.round(w) + "px"; scene.cv.style.height = Math.round(w * H / W) + "px";
+          phone.style.height = Math.max(200, window.innerHeight - 22) + "px";
+        } else { phone.style.height = ""; NK.fit(scene.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 720); }
       }
       layout(); updateHud(); showHome();
       setMsg("It's 4:10 AM and the party is dead. You need people, a place and a sound system before sunrise. Start with Twinkie.");

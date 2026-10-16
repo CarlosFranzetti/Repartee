@@ -55,6 +55,9 @@ const CSS = `
 .lt-alerts { display: flex; flex-direction: column; gap: 4px; font-size: 17px; line-height: 1.07; color: #ffc9e6; }
 .lt-alerts div { border-left: 3px solid var(--pink); padding-left: 6px; }
 .lt-gear { display: flex; align-items: center; gap: 6px; font-size: 18px; color: var(--fg); }
+.lt-main.compact { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "hud panel" "map panel" "info panel" "acts panel"; grid-template-rows: auto auto auto 1fr; gap: 4px 8px; }
+.lt-main.compact .lt-mapbox { margin: 0; } .lt-main.compact .lt-hud { gap: 4px; flex-wrap: nowrap; } .lt-main.compact .lt-chip { padding: 1px 5px; font-size: 16px; gap: 3px; white-space: nowrap; } .lt-main.compact .lt-chip small { font-size: 12px; } .lt-main.compact .lt-bar { width: 24px; height: 8px; }
+.lt-main.compact .lt-info { font-size: 16px; min-height: 0; line-height: 1.02; } .lt-main.compact .lt-panel { overflow-y: auto; gap: 4px; padding-right: 2px; } .lt-main.compact .lt-card { padding: 5px 7px; gap: 4px; } .lt-main.compact .lt-card h3 { font-size: 17px; } .lt-main.compact .lt-card p { font-size: 16px; } .lt-main.compact .lt-opt { padding: 3px 7px; font-size: 18px; } .lt-main.compact .lt-opt.mv { flex-direction: row; align-items: center; justify-content: space-between; } .lt-main.compact .lt-row2 { grid-template-columns: 1fr 1fr; gap: 4px; } .lt-main.compact .lt-ann { font-size: 17px; padding: 4px 8px; } .lt-main.compact .lt-log { display: none; } .lt-main.compact .lt-phonecard { flex-direction: row; flex-wrap: wrap; align-items: center; } .lt-main.compact .lt-phonecard .lt-opt { width: auto; flex: 1 1 130px; } .lt-main.compact .lt-phonecard p, .lt-main.compact .lt-phonecard .lt-alerts { flex: 1 1 100%; } .lt-main.compact .lt-phonecard h3 { flex: 1 1 100%; } .lt-main.compact .lt-lab { }
 @media (max-width: 860px) { .lt-info { font-size: 18px; } .lt-opt { font-size: 19px; } }
 @media (prefers-reduced-motion: reduce) { .lt-map { } }
 `;
@@ -593,7 +596,7 @@ RP.mg.register("lastTrain", {
         optBtn(c, ending ? "Get off (the train is done)" : "Get off here", "", getOff);
       }
       /* phone */
-      const pc = el("div", { cls: "lt-card" }, panel);
+      const pc = el("div", { cls: "lt-card lt-phonecard" }, panel);
       el("h3", { html: "<span>PHONE</span><small>" + Math.round(Pl.bat) + "%</small>" }, pc);
       if (Pl.liveUntil >= 0) {
         el("p", { text: "Live until " + clk(Pl.liveUntil) + ". Train positions are on the map. Alerts:" }, pc);
@@ -692,9 +695,16 @@ RP.mg.register("lastTrain", {
       resolveFn = resolve;
       NK.onResize(host, layout);
       function layout() {
-        const avail = root.clientWidth || 700, wide = avail >= 940;
-        main.classList.toggle("wide", wide);
-        const sc = NK.fit(map.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 760);
+        const compact = NK.isCompact();
+        NK.setCompact(host, compact);
+        const avail = root.clientWidth || 700, wide = !compact && avail >= 940;
+        main.classList.toggle("wide", wide); main.classList.toggle("compact", compact);
+        let sc;
+        if (compact) {
+          const w = Math.max(280, Math.min(avail * 0.52, (window.innerHeight - 118) * (W / H)));
+          sc = w / W; map.cv.style.width = Math.round(w) + "px"; map.cv.style.height = Math.round(H * sc) + "px";
+          panel.style.maxHeight = Math.max(160, window.innerHeight - 52) + "px";
+        } else { panel.style.maxHeight = ""; sc = NK.fit(map.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 760); }
         placeLabels(sc);
       }
       layout();
