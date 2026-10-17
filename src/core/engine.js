@@ -1061,7 +1061,8 @@ RP.revealHotspots = revealHotspots;
 /* ======================================================================
    save / load
    ====================================================================== */
-const SAVE_KEY = "reparte.save.v2";
+// level pages (tools/build.mjs) save in their own slot, so they never touch a full-game save on the same site
+const SAVE_KEY = "reparte.save.v2" + (window.RP_SITE && window.RP_SITE.level ? ".level" + window.RP_SITE.level : "");
 function save() {
   if (!cur || RP.test.noSave) return;
   S.kx = Math.round(kid.x); S.ky = Math.round(kid.y); S.face = kid.face;

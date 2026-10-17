@@ -187,3 +187,7 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .namebox { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .namebox input { font-family: var(--ui); font-size: 24px; background: #110d24; color: var(--fg); border: 1px solid var(--line); padding: 4px 10px; width: 220px; text-transform: uppercase; }
 @media (prefers-reduced-motion: reduce) { .toastItem { transition: none; } }
+.levelnav { font-size: 20px; letter-spacing: .08em; background: rgba(10, 6, 24, .78); padding: 4px 12px; }
+.levelnav a { color: var(--cyan); padding: 0 4px; }
+.levelnav a:hover, .levelnav a:focus-visible { color: var(--pink); }
+.levelnav b { color: var(--pink); padding: 0 4px; }
