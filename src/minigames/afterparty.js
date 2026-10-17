@@ -472,7 +472,7 @@ RP.mg.register("afterParty", {
       NK.drawChar(c, RP.chars.get("twinkie") || "twinkie", 140, 156, { face: "left", act: "stand", scale: 0.8, expr: "happy" });
       if (G.battery > 0) NK.glow(c, 118, 106, 7, "#7ad8ff", 0.9);
       /* steam */
-      if (!reduced) for (let k = 0; k < 6; k++) { const ph = (t * 0.5 + k / 6) % 1, x = 74 + Math.sin(ph * 6 + k) * 5, y = 158 - ph * 30; if (bayer(Math.round(x), Math.round(y)) < 8 * (1 - ph)) R(c, x, y, 2, 2, "#8a84a8"); }
+      if (!reduced) for (let k = 0; k < 6; k++) { const ph = (t * 0.5 + k / 6) % 1, x = 74 + Math.sin(ph * 6 + k) * 5, y = 158 - ph * 30; c.globalAlpha = Math.round((1 - ph) * 5) / 5 * 0.8; R(c, x, y, 2, 2, "#8a84a8"); c.globalAlpha = 1; }
       else R(c, 73, 148, 3, 6, "#5a5470");
     }
 

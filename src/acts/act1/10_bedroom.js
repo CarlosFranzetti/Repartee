@@ -101,7 +101,8 @@ function paint(c, S) {
   for (let i = 0; i < 1100; i++) P(c, rnd() * W, rnd() * 162, C.wallL);
   for (let i = 0; i < 700; i++) P(c, rnd() * W, rnd() * 162, C.wallD);
   [[150, 22, 10, 5], [366, 26, 7, 5], [566, 150, 9, 4], [22, 136, 7, 5], [190, 70, 6, 4]].forEach(([x, y, rx, ry]) => { ell(c, x, y, rx, ry, C.patch); ell(c, x + 1, y + 1, rx - 2, ry - 2, C.patchI); });
-  for (let y = 0; y < 12; y++) for (let x = 0; x < W; x++) if (bayer(x, y) < (12 - y) * 1.4) P(c, x, y, C.ceil);
+  for (let y = 0; y < 12; y++) { c.globalAlpha = Math.min(1, Math.round((12 - y) * 1.4 / 16 * 8) / 8); R(c, 0, y, W, 1, C.ceil); }
+  c.globalAlpha = 1;
   [[300, 4], [301, 5], [301, 6], [302, 7], [302, 8], [303, 9], [302, 10], [303, 11], [304, 12], [304, 13]].forEach(([x, y]) => P(c, x, y, C.wallD));
   R(c, 0, 163, W, 9, C.base); R(c, 0, 163, W, 1, C.baseL);
   const ys = [172, 176, 181, 187, 194, 202, 211, 221, 232, 244, 257];

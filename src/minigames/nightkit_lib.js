@@ -5,7 +5,7 @@
 (function () {
 "use strict";
 const RP = window.RP;
-const { R, P, line, txt, txtC, bayer, ramp, el, clamp } = RP.u;
+const { R, P, line, txt, txtC, bayer, ramp, el, clamp, mix } = RP.u;
 const NK = RP.nightkit = {};
 
 /* ---------- environment ---------- */
@@ -79,21 +79,21 @@ NK.bevel = (c, x, y, w, h, base, hi) => {
   R(c, x, y, w, 1, hi ? r[4] : r[3]); R(c, x, y, 1, h, r[3]);
   R(c, x, y + h - 1, w, 1, r[0]); R(c, x + w - 1, y, 1, h, r[1]);
 };
-/* vertical dithered gradient between evenly spaced colour stops */
+/* vertical gradient between evenly spaced colour stops, in flat 1/8 steps (no dither dots) */
+const HEX6 = /^#[0-9a-f]{6}$/i;
 NK.dgrad = (c, x, y, w, h, stops, ox) => {
   const n = stops.length;
   for (let j = 0; j < h; j++) {
-    const t = n === 1 ? 0 : (j / Math.max(1, h - 1)) * (n - 1), i = Math.min(n - 2, Math.floor(t)), f = t - i;
-    for (let i2 = 0; i2 < w; i2++) {
-      const col = bayer(x + i2 + (ox || 0), y + j) / 16 >= f ? stops[i] : stops[Math.min(n - 1, i + 1)];
-      c.fillStyle = col; c.fillRect(x + i2, y + j, 1, 1);
-    }
+    const t = n === 1 ? 0 : (j / Math.max(1, h - 1)) * (n - 1), i = Math.min(n - 2, Math.floor(t)), f = Math.round((t - i) * 8) / 8;
+    const A = stops[Math.max(0, i)], B = stops[Math.min(n - 1, i + 1)];
+    c.fillStyle = f <= 0 ? A : f >= 1 ? B : HEX6.test(A) && HEX6.test(B) ? mix(A, B, f) : f < 0.5 ? A : B;
+    c.fillRect(x, y + j, w, 1);
   }
 };
-/* checker/bayer dark overlay: density 0..16 */
+/* flat translucent overlay: density 0..16 is the share of the colour laid over the area */
 NK.dither = (c, x, y, w, h, col, density, ox) => {
-  c.fillStyle = col;
-  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (bayer(x + i + (ox || 0), y + j) < density) c.fillRect(x + i, y + j, 1, 1);
+  if (density <= 0) return;
+  c.save(); c.globalAlpha = Math.min(1, density / 16); c.fillStyle = col; c.fillRect(x, y, w, h); c.restore();
 };
 NK.speckle = (c, x, y, w, h, cols, rnd, amount) => {
   const n = Math.round(w * h * amount);
@@ -122,16 +122,16 @@ NK.along = (pts, d) => {
   }
   return pts[pts.length - 1];
 };
-/* soft light pool: concentric alpha bands with ordered dithering between them (no speckle) */
+/* soft light pool: fine concentric alpha steps with an eased falloff (no dither dots) */
 NK.glow = (c, cx, cy, r, col, strength) => {
-  const bands = 4, st = strength == null ? 1 : strength;
+  const bands = 12, st = strength == null ? 1 : strength;
   c.save(); c.fillStyle = col;
   let lastA = -1;
   for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) {
     const d = Math.sqrt(x * x + y * y); if (d >= r) continue;
-    const lv = (1 - d / r) * bands, k0 = Math.floor(lv), k = k0 + (bayer(cx + x, cy + y) / 16 < lv - k0 ? 1 : 0);
+    const k = Math.round((1 - d / r) * bands);
     if (k <= 0) continue;
-    const a = Math.min(1, k / bands * 0.55 * st);
+    const a = Math.min(1, Math.pow(k / bands, 1.6) * 0.6 * st);
     if (a !== lastA) { c.globalAlpha = a; lastA = a; }
     c.fillRect(Math.round(cx + x), Math.round(cy + y), 1, 1);
   }

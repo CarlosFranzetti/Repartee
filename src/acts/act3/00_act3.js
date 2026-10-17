@@ -162,7 +162,8 @@ A3.sprite = function (key, w, h, fn) {
 A3.hex = U.hex;
 A3.pixelShadow = function (c, x, y, w, h, a) {
   c.save(); c.globalAlpha = a == null ? 0.35 : a; c.fillStyle = "#0c0618";
-  for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (U.bayer(x + xx, y + yy) < (1 - yy / h) * 14) c.fillRect(x + xx, y + yy, 1, 1);
+  const a0 = a == null ? 0.35 : a;
+  for (let yy = 0; yy < h; yy++) { c.globalAlpha = a0 * Math.round(Math.min(1, (1 - yy / h) * 14 / 16) * 8) / 8; c.fillRect(x, y + yy, w, 1); }
   c.restore();
 };
 

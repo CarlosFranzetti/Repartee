@@ -1,25 +1,33 @@
 /* re:parteé — room lighting and particle effects.
-   Lighting: every room gets a multiply light map (ambient + banded, dithered light pools,
-   emissive rects kept full bright) and an additive halo layer. Characters read the same
-   light definition for their key-light direction and colored rim light.
+   Lighting: every room gets a multiply light map (ambient + soft light pools in fine color steps,
+   emissive rects kept full bright) and an additive glow layer. No ordered dithering: light falls
+   off in smooth, slightly posterized steps so it reads as pixel art without dot patterns.
+   Characters read the same light definition for their key-light direction and colored rim light.
    Effects: dust motes, rain, steam, haze, sweeping beams, strobes, confetti, blinking
    neon, passing headlights. All cheap, all pixel-snapped. */
 (function () {
 "use strict";
 const RP = window.RP;
-const { bayer, mk, clamp, hex, mulberry, R, P } = RP.u;
+const { mk, clamp, hex, mulberry, R, P } = RP.u;
+
+/* light levels: fine steps (posterized, never dithered) */
+const STEPS = 32;
+const smooth = t => t * t * (3 - 2 * t);
+/* night rooms keep their color but never sink below a readable floor */
+const LIFT = 0.1;
 
 /* ---------------- light map ---------------- */
 function buildLightmap(L, width, height) {
   const cv = mk(width, height), c = cv.getContext("2d");
   const img = c.createImageData(width, height), d = img.data;
-  const amb = hex(L.ambient || "#ffffff");
+  const a0 = hex(L.ambient || "#ffffff");
+  const lift = L.lift == null ? LIFT : L.lift;
+  const amb = a0.map(v => v + (255 - v) * lift);
   const lights = (L.lights || []).map(l => ({ x: l.x, y: l.y, r: l.r || 120, sy: l.sy || 1.2, steps: l.steps || 4,
     col: hex(l.color || "#ffffff"), power: l.power == null ? 1 : l.power, gamma: l.gamma || 1,
     box: l.box || null }));
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     let r = amb[0], g = amb[1], b = amb[2];
-    const th = bayer(x, y) / 16;
     for (let i = 0; i < lights.length; i++) {
       const l = lights[i];
       let dd;
@@ -29,8 +37,9 @@ function buildLightmap(L, width, height) {
       } else { const dx = x - l.x, dy = (y - l.y) * l.sy; dd = Math.sqrt(dx * dx + dy * dy); }
       let t = 1 - dd / l.r;
       if (t <= 0) continue;
+      t = smooth(t);
       if (l.gamma !== 1) t = Math.pow(t, l.gamma);
-      t = Math.floor(t * l.steps + th * 0.999) / l.steps * l.power;
+      t = Math.round(t * STEPS) / STEPS * l.power;
       if (t <= 0) continue;
       // screen blend toward the light color
       r = 255 - (255 - r) * (1 - l.col[0] / 255 * t);
@@ -45,20 +54,28 @@ function buildLightmap(L, width, height) {
   return cv;
 }
 
+/* additive glow around lamps, neon and screens: a bright core and a wide soft bloom, in fine steps */
 function buildHalos(L, width, height) {
   if (!L.halos || !L.halos.length) return null;
   const cv = mk(width, height), c = cv.getContext("2d");
+  const img = c.createImageData(width, height), d = img.data;
   L.halos.forEach(h => {
-    const col = hex(h.color || "#ffd27a"), r = h.r || 20, st = h.strength || 1;
-    const shades = [0.45, 0.24, 0.11].map(k => `rgb(${col[0] * k * st | 0},${col[1] * k * st | 0},${col[2] * k * st | 0})`);
-    for (let y = Math.floor(h.y - r); y <= h.y + r; y++) for (let x = Math.floor(h.x - r); x <= h.x + r; x++) {
-      const dd = Math.hypot(x - h.x, (y - h.y) * (h.sy || 1)) / r;
+    const col = hex(h.color || "#ffd27a"), r = (h.r || 20) * 1.35, st = h.strength || 1, sy = h.sy || 1;
+    const x0 = Math.max(0, Math.floor(h.x - r)), x1 = Math.min(width - 1, Math.ceil(h.x + r));
+    const y0 = Math.max(0, Math.floor(h.y - r / sy)), y1 = Math.min(height - 1, Math.ceil(h.y + r / sy));
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const dd = Math.hypot(x - h.x, (y - h.y) * sy) / r;
       if (dd >= 1) continue;
-      let i = dd < 0.35 ? 0 : dd < 0.65 ? 1 : 2;
-      if (i === 1 && bayer(x, y) > 9) i = 2; else if (i === 2 && bayer(x, y) > 4) continue;
-      c.fillStyle = shades[i]; c.fillRect(x, y, 1, 1);
+      const k = 1 - dd;
+      // core (tight, bright) + bloom (wide, faint)
+      let v = (Math.pow(k, 3) * 0.55 + k * k * 0.22) * st;
+      v = Math.round(v * 48) / 48;
+      if (v <= 0) continue;
+      const o = (y * width + x) * 4;
+      d[o] = Math.min(255, d[o] + col[0] * v); d[o + 1] = Math.min(255, d[o + 1] + col[1] * v); d[o + 2] = Math.min(255, d[o + 2] + col[2] * v); d[o + 3] = 255;
     }
   });
+  c.putImageData(img, 0, 0);
   return cv;
 }
 
@@ -150,12 +167,13 @@ function stepAndDraw(fx, c, dt, t, camX) {
         if (p.age > 3) p.age -= 3;
         const a = p.age / 3, rad = 2 + a * (s.size || 9);
         const cx = s.x + Math.sin(p.ph + p.age * 1.7) * 4 * a + (s.drift || 0) * a, cy = s.y - a * (s.rise || 40);
-        const lvl = Math.floor((1 - a) * 9);
-        for (let y = -rad; y <= rad; y++) for (let x = -rad; x <= rad; x++) {
-          if (x * x + y * y > rad * rad) continue;
-          const px = Math.round(cx + x), py = Math.round(cy + y);
-          if (bayer(px, py) < lvl - 3) P(c, px, py, col);
-        }
+        // a translucent puff that thins out as it rises
+        const al = Math.round((1 - a) * 6) / 6 * 0.32;
+        if (al <= 0) continue;
+        const pa = c.globalAlpha; c.globalAlpha = al; c.fillStyle = col;
+        const rr = Math.round(rad);
+        for (let y = -rr; y <= rr; y++) { const hw = Math.round(Math.sqrt(rr * rr - y * y)); c.fillRect(Math.round(cx - hw), Math.round(cy + y), hw * 2 + 1, 1); }
+        c.globalAlpha = pa;
       }
       break;
     }
@@ -219,7 +237,8 @@ function stepAndDraw(fx, c, dt, t, camX) {
       const x = s.dir < 0 ? w + 60 - k * (w + 120) : -60 + k * (w + 120);
       c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = 0.5;
       c.fillStyle = s.color || "#fff2c0";
-      for (let i = 0; i < 26; i++) for (let j = -3; j <= 3; j++) if (bayer(i, j + 4) < 10 - i * 0.35) c.fillRect(Math.round(x + (s.dir < 0 ? -i : i)), s.y + j, 1, 1);
+      // a beam that fades out ahead of the car, in steps
+      for (let i = 0; i < 26; i++) { c.globalAlpha = 0.5 * Math.round((1 - i / 26) * 6) / 6; const hw = 2 + Math.round(i / 9); c.fillRect(Math.round(x + (s.dir < 0 ? -i : i)), s.y - hw, 1, hw * 2 + 1); }
       c.restore();
       break;
     }

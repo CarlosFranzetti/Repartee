@@ -692,7 +692,8 @@ async function travelTo(l) {
 function paintMap(c, locs) {
   const w = 320, h = 200;
   R(c, 0, 0, w, h, "#0d1a2a");
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (bayer(x, y) < 2) P(c, x, y, "#12243a");
+  for (let y = 0; y < h; y += 8) R(c, 0, y, w, 1, "#12243a");   // faint map grid
+  for (let x = 0; x < w; x += 8) R(c, x, 0, 1, h, "#12243a");
   // Manhattan
   U.poly(c, [[118, 0], [150, 0], [168, 60], [160, 120], [140, 150], [126, 128], [118, 70]], "#2a2440");
   // Brooklyn / Queens

@@ -2,7 +2,7 @@
 (function () {
 "use strict";
 const RP = window.RP;
-const { el, $, esc, mk, R, P, ell, bayer, mulberry, clamp, store } = RP.u;
+const { el, $, esc, mk, R, P, ell, bayer, mix, mulberry, clamp, store } = RP.u;
 
 /* the protagonist */
 RP.chars.define("kid", { name: "you", height: 96, skin: "#e0a27a", hair: { style: "messy", color: "#5a3520" },
@@ -14,7 +14,7 @@ const DEMO = window.RP_DEMO || null;   // set by the Level 1 build (tools/build.
 function paintTitle(c) {
   const w = 320, h = 180, rnd = mulberry(11);
   const sky = ["#0d0826", "#160c38", "#22104a", "#36155a", "#521d66", "#6e2a6e"];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const t = y / 130 + (bayer(x, y) / 16 - 0.5) * 0.12; P(c, x, y, sky[clamp(Math.floor(t * 6), 0, 5)]); }
+  for (let y = 0; y < h; y++) { const t = clamp(y / 130 * 5, 0, 5), i = Math.min(4, Math.floor(t)), f = Math.round((t - i) * 2) / 2; R(c, 0, y, w, 1, f >= 1 ? sky[i + 1] : f > 0 ? mix(sky[i], sky[i + 1], f) : sky[i]); }
   for (let i = 0; i < 60; i++) P(c, rnd() * w, rnd() * 70, rnd() > 0.6 ? "#ffffff" : "#9c8cff");
   ell(c, 262, 34, 9, 9, "#f2e7c4"); P(c, 259, 31, "#d8cca4"); P(c, 265, 37, "#d8cca4");
   let bx = 0;
@@ -32,7 +32,7 @@ function paintTitle(c) {
   [[40, 40], [140, 40]].forEach(([x, th]) => { R(c, x, 128 - th, 5, th, "#1a1030"); R(c, x - 1, 128 - th, 7, 3, "#1a1030"); });
   for (let i = 0; i <= 100; i++) { const t = i / 100; P(c, 42 + t * 100, 90 + Math.sin(t * Math.PI) * 30, "#3a2860"); }
   for (let x = 0; x < 200; x += 4) P(c, x, 127, (x / 4) % 2 ? "#ffd27a" : "#ff6cbb");
-  for (let y = 132; y < h; y++) for (let x = 0; x < w; x++) P(c, x, y, bayer(x, y) < 6 ? "#0b0720" : "#130b2e");
+  for (let y = 132; y < h; y++) R(c, 0, y, w, 1, (y - 132) % 5 === 4 ? "#0b0720" : "#130b2e");
   for (let i = 0; i < 260; i++) { const x = rnd() * w | 0, y = 134 + rnd() * 44 | 0; R(c, x, y, 2 + rnd() * 4, 1, ["#ffd27a", "#ff6cbb", "#9fe8ff"][rnd() * 3 | 0]); }
   R(c, 0, 168, w, 12, "#2a1c30"); R(c, 0, 168, w, 1, "#4a3450");
 }

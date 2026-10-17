@@ -1,5 +1,5 @@
 // Captures the README screenshots into docs/screenshots/ from the built game.
-// usage: node tools/build.mjs && node tools/screens.mjs [--page dist/index.html]
+// usage: node tools/build.mjs && node tools/screens.mjs [--page dist/index.html] [--out dir]
 // Each shot loads a fresh page, puts the player in a room with a given state (or opens a mini-game),
 // waits for the scene to settle, and saves the game frame. Uses the pre-installed Chromium (Playwright).
 import { createRequire } from "module";
@@ -11,7 +11,8 @@ const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..")
 const args = process.argv.slice(2);
 const pi = args.indexOf("--page");
 const page = path.resolve(pi >= 0 ? args[pi + 1] : path.join(root, "dist/index.html"));
-const outDir = path.join(root, "docs/screenshots");
+const oi = args.indexOf("--out");
+const outDir = oi >= 0 ? path.resolve(args[oi + 1]) : path.join(root, "docs/screenshots");
 fs.mkdirSync(outDir, { recursive: true });
 
 const SHOTS = [
