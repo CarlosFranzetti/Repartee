@@ -5604,7 +5604,7 @@ function say(text, who = "kid") {
   return new Promise(res => {
     dom.talk.innerHTML = "";
     if (fast) { RP.test.log.push((who || "kid") + ": " + text); res(); return; }
-    const e = el("div", { cls: "line" + (who === "nar" ? " nar" : "") }, dom.talk);
+    const e = el("div", { cls: "line" + (who === "nar" ? " nar" : ""), "data-who": who }, dom.talk);
     const v = VOICES[who];
     e.textContent = (v && v.prefix ? v.prefix : "") + text;
     e.style.color = speakerColor(who);

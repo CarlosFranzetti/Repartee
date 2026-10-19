@@ -82,6 +82,9 @@ node tests/run.mjs walk act2 --act 2 # one level's walkthrough (add --page dist/
 node tests/run.mjs shot a2_couch out.png --act 2
 node tests/run.mjs mg crowdRead out.png
 node tools/screens.mjs               # regenerates the screenshots in docs/screenshots/
+node tools/blindplay.mjs serve --level 1 --port 7101 --out runs/level1   # play a level one command at a time
+                                     # through the real UI while recording video (commands: see the file header)
+node tools/blindplay-cut.mjs runs/level1 level1.mp4                      # cut the paused time out of that video
 ```
 
 ### Deploy to Vercel
