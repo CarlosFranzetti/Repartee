@@ -279,7 +279,7 @@ RP.room({
     { id: "trash", name: "trash can", r: [264, 212, 26, 34], z: 24, walk: [250, 232, "right"], look: "A trash can full of printed emails and a single, impossible sandwich. Corporate waste.", pickup: "Nope. I'm not digging through an office bin. I'd find ties.", open: "It's a bin. Open and fully informed." },
     { id: "exitsign", name: "exit sign", r: [554, 22, 28, 14], z: 14, walk: [566, 218, "back"], look: "EXIT. Green, glowing, certain. Everything I want my life to be." },
     { id: "strobe", name: "fire alarm", r: [302, 22, 22, 14], z: 20, walk: [316, 214, "back"], look: S => S.f.a1_alarm ? "The alarm strobe. It's flashing red, and so is my conscience." : "A fire alarm strobe. White. Patient. Waiting for its moment.", pull: "There's no lever on this one. The pull stations are in the stairwells, under a camera. I'm not that stupid. Or that brave.", use: "A fire alarm. The lever's elsewhere. Ideas are forming." },
-    { id: "firePlan", name: "evacuation plan", r: [286, 88, 16, 18], z: 14, walk: [300, 214, "back"], look: "A floor plan showing the exits. Stairwell A. Stairwell B. A tiny sticker says \"YOU ARE HERE.\" I am. Unfortunately." }
+    { id: "firePlan", name: "evacuation plan", r: [286, 88, 16, 18], z: 16, walk: [300, 214, "back"], look: "A floor plan showing the exits. Stairwell A. Stairwell B. A tiny sticker says \"YOU ARE HERE.\" I am. Unfortunately." }
   ],
   combos: [
     ["usb_cat", "a1_brenda", () => RP.lines(["@a1_brenda A personal storage device! Corporate policy eleven! Hand it over!", "No. That's Mr. Whiskers.", "@a1_brenda ...Who?", "My ex's cat. Four thousand photos.", "@a1_brenda ...Keep it. I won't be on the wrong side of a cat."])],

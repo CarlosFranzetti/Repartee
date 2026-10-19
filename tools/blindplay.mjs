@@ -287,14 +287,25 @@ if (argv[0] !== "serve") {
   async function clickText(text) {
     const cands = await page.evaluate(() => {
       const vis = e => e.offsetParent !== null || getComputedStyle(e).position === "fixed";
+      // whatever is on top (mini-game, card, phone, title menu, dialogue choices) wins over the verb bar
+      const top = e => !!e.closest(".mg-wrap, #overlays, #title, #choices");
       return [...document.querySelectorAll("button, a, [role=button], input[type=button]")].filter(e => vis(e) && !e.disabled).map((e, i) => {
         const r = e.getBoundingClientRect();
-        return { i, name: (e.innerText || e.value || e.getAttribute("aria-label") || e.title || "").trim().replace(/\s+/g, " "), x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
-      }).filter(c => c.name && c.w > 0 && c.h > 0 && c.x >= 0 && c.y >= 0);
+        return { i, top: top(e), name: (e.innerText || e.value || e.getAttribute("aria-label") || e.title || "").trim().replace(/\s+/g, " "), x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
+      }).filter(c => c.name && c.w > 0 && c.h > 0);
     });
-    const m = pick(cands, text);
+    let m = pick(cands.filter(c => c.top), text);
+    if (!m.length) m = pick(cands, text);
     if (!m.length) throw new Error("no button \"" + text + "\". Buttons on screen: " + cands.map(c => c.name).slice(0, 40).join(" | "));
-    await clickAt(m[0].x, m[0].y);
+    // bring that one into view (long lists scroll), then click its centre
+    const at = await page.evaluate(i => {
+      const vis = e => e.offsetParent !== null || getComputedStyle(e).position === "fixed";
+      const e = [...document.querySelectorAll("button, a, [role=button], input[type=button]")].filter(e => vis(e) && !e.disabled)[i];
+      e.scrollIntoView({ block: "nearest" });
+      const r = e.getBoundingClientRect();
+      return [r.left + r.width / 2, r.top + r.height / 2];
+    }, m[0].i);
+    await clickAt(at[0], at[1]);
     return m[0].name;
   }
 
@@ -384,6 +395,7 @@ if (argv[0] !== "serve") {
           let i = /^\d+$/.test(q) ? +q - 1 : -1;
           if (i < 0) { const texts = await Promise.all(opts.map(o => o.textContent())); i = texts.findIndex(t => norm(t).includes(norm(q))); }
           if (i < 0 || i >= opts.length) throw new Error("no such option: " + q);
+          await opts[i].scrollIntoViewIfNeeded();
           const bb = await opts[i].boundingBox();
           await clickAt(bb.x + bb.width / 2, bb.y + bb.height / 2);
         }, 300, W8);

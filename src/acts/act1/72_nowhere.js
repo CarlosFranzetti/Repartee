@@ -127,7 +127,7 @@ async function playSet(S) {
   await RP.fadeTo(0, 700);
   await RP.lines(["@dante Hey. HEY.", "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
   RP.sfx("success");
-  await RP.lines(["Three records, a stolen USB, a flyer with my name wrong, and a slice. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
+  await RP.lines(["A handful of records, a stolen USB, a flyer with my name wrong, and a slice for the doorman. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
   await RP.completeAct([
     [!!S.f.a1_texts, "Charged the phone and called Dante"],
     [!!S.f.a1_mixer, "Cleaned channel 2 with vodka"],

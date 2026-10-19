@@ -409,7 +409,7 @@ async function retrieveAcid(S) {
   if (!S.f.a1_acidUnder) return false;
   if (night(S)) { await RP.say("Not yet. It needs the whole night."); return true; }
   await RP.walkTo(110, 222, "back");
-  S.f.a1_acidUnder = false; S.f.a1_acidFlat = true; RP.give("rec_acid"); RP.addRecord(REC_ACID, true); RP.refreshInv();
+  S.f.a1_acidUnder = false; S.f.a1_acidFlat = true; delete S.f["warped_" + REC_ACID]; RP.give("rec_acid"); RP.addRecord(REC_ACID, true); RP.refreshInv();
   await RP.lines(["Flat as a subway seat.", "Okay. Temp job in Midtown, then Deep Cuts. Let's go be a professional."]);
   return true;
 }

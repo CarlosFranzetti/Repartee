@@ -444,6 +444,8 @@ function repositionSpeech() {
   e.style.top = clamp(ay - h, 4, SH - h - 4) + "px";
 }
 function say(text, who = "kid") {
+  const tag = /^@([\w-]+) ([\s\S]*)$/.exec(text);
+  if (tag) { who = tag[1]; text = tag[2]; }
   return new Promise(res => {
     dom.talk.innerHTML = "";
     if (fast) { RP.test.log.push((who || "kid") + ": " + text); res(); return; }

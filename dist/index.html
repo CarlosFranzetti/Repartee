@@ -63,7 +63,12 @@ button { font-family: var(--ui); }
 .slot canvas { width: 32px; height: 24px; image-rendering: crisp-edges; image-rendering: pixelated; }
 .slot span { font-size: 13px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding-inline: 2px; }
 .slot.empty { cursor: default; opacity: .45; }
-#choices { grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: center; gap: 0; padding-left: 6px; overflow-y: auto; }
+#choices { grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: flex-start; gap: 0; padding-left: 6px; overflow-y: auto; }
+/* auto margins centre a short list; a long one starts at the top and scrolls (justify-content: center would clip its first rows) */
+#choices > :first-child { margin-top: auto; }
+#choices > :last-child { margin-bottom: auto; }
+#panel.choosing { top: auto; bottom: 0; height: auto; min-height: 86px; max-height: 236px; }
+body.p #panel.choosing { max-height: none; }
 .choice { background: none; border: 0; text-align: left; color: var(--verb); font-size: 18px; line-height: 1; padding: 1px 4px; cursor: pointer; }
 .choice::before { content: "\25B8 "; color: #3a3070; }
 .choice:hover, .choice:focus-visible { color: var(--pink); }
@@ -5607,6 +5612,8 @@ function repositionSpeech() {
   e.style.top = clamp(ay - h, 4, SH - h - 4) + "px";
 }
 function say(text, who = "kid") {
+  const tag = /^@([\w-]+) ([\s\S]*)$/.exec(text);
+  if (tag) { who = tag[1]; text = tag[2]; }
   return new Promise(res => {
     dom.talk.innerHTML = "";
     if (fast) { RP.test.log.push((who || "kid") + ": " + text); res(); return; }
@@ -21121,7 +21128,7 @@ RP.item("a1_package", { name: "Smitty's package", short: "Package",
 
 /* ---- Sal's slice ---- */
 RP.item("a1_slice", { name: "Sal's slice", short: "Slice", icon: c => I.slice(c),
-  look: "A pepperoni slice from Sal's on a paper plate, folded right. It's still warm. In New York a warm slice is currency.",
+  look: "A pepperoni slice from Sal's on a paper plate, folded right. In New York a slice is currency.",
   use: "Eating it would be a victory for me and a loss for the story. I'm saving it.",
   open: "It's a slice. It's open. It's been open since 1959.", push: "I fold it harder. It folds. Slices are very cooperative." });
 
@@ -21571,7 +21578,7 @@ async function retrieveAcid(S) {
   if (!S.f.a1_acidUnder) return false;
   if (night(S)) { await RP.say("Not yet. It needs the whole night."); return true; }
   await RP.walkTo(110, 222, "back");
-  S.f.a1_acidUnder = false; S.f.a1_acidFlat = true; RP.give("rec_acid"); RP.addRecord(REC_ACID, true); RP.refreshInv();
+  S.f.a1_acidUnder = false; S.f.a1_acidFlat = true; delete S.f["warped_" + REC_ACID]; RP.give("rec_acid"); RP.addRecord(REC_ACID, true); RP.refreshInv();
   await RP.lines(["Flat as a subway seat.", "Okay. Temp job in Midtown, then Deep Cuts. Let's go be a professional."]);
   return true;
 }
@@ -23399,7 +23406,7 @@ RP.room({
     { id: "trash", name: "trash can", r: [264, 212, 26, 34], z: 24, walk: [250, 232, "right"], look: "A trash can full of printed emails and a single, impossible sandwich. Corporate waste.", pickup: "Nope. I'm not digging through an office bin. I'd find ties.", open: "It's a bin. Open and fully informed." },
     { id: "exitsign", name: "exit sign", r: [554, 22, 28, 14], z: 14, walk: [566, 218, "back"], look: "EXIT. Green, glowing, certain. Everything I want my life to be." },
     { id: "strobe", name: "fire alarm", r: [302, 22, 22, 14], z: 20, walk: [316, 214, "back"], look: S => S.f.a1_alarm ? "The alarm strobe. It's flashing red, and so is my conscience." : "A fire alarm strobe. White. Patient. Waiting for its moment.", pull: "There's no lever on this one. The pull stations are in the stairwells, under a camera. I'm not that stupid. Or that brave.", use: "A fire alarm. The lever's elsewhere. Ideas are forming." },
-    { id: "firePlan", name: "evacuation plan", r: [286, 88, 16, 18], z: 14, walk: [300, 214, "back"], look: "A floor plan showing the exits. Stairwell A. Stairwell B. A tiny sticker says \"YOU ARE HERE.\" I am. Unfortunately." }
+    { id: "firePlan", name: "evacuation plan", r: [286, 88, 16, 18], z: 16, walk: [300, 214, "back"], look: "A floor plan showing the exits. Stairwell A. Stairwell B. A tiny sticker says \"YOU ARE HERE.\" I am. Unfortunately." }
   ],
   combos: [
     ["usb_cat", "a1_brenda", () => RP.lines(["@a1_brenda A personal storage device! Corporate policy eleven! Hand it over!", "No. That's Mr. Whiskers.", "@a1_brenda ...Who?", "My ex's cat. Four thousand photos.", "@a1_brenda ...Keep it. I won't be on the wrong side of a cat."])],
@@ -24046,7 +24053,7 @@ async function showFlyer(S) {
 async function giveSlice(S) {
   if (S.f.a1_tankSlice) { await RP.say("You gave me one already. Don't be greedy.", "a1_tank"); return; }
   RP.take("a1_slice"); S.f.a1_tankSlice = true;
-  await RP.lines(["I hold out the slice from Sal's, still warm. Pepperoni.", "@a1_tank ...Is that Sal's?", "It's Sal's.", "@a1_tank (He takes it. He folds it, perfectly. He eats it in two bites with his eyes closed.)", "@a1_tank Mm.", "@a1_tank That's the best slice in Bushwick. I haven't said that out loud in nine years."]);
+  await RP.lines(["I hold out the slice from Sal's. Pepperoni, folded right.", "@a1_tank ...Is that Sal's?", "It's Sal's.", "@a1_tank (He takes it. He folds it, perfectly. He eats it in two bites with his eyes closed.)", "@a1_tank Mm.", "@a1_tank That's the best slice in Bushwick. I haven't said that out loud in nine years."]);
   if (tankOpen(S)) await letIn(S);
   else await RP.lines(["@a1_tank That helps. But I still need a reason to let you past. A reason with a name on it."]);
 }
@@ -24259,7 +24266,7 @@ async function playSet(S) {
   await RP.fadeTo(0, 700);
   await RP.lines(["@dante Hey. HEY.", "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
   RP.sfx("success");
-  await RP.lines(["Three records, a stolen USB, a flyer with my name wrong, and a slice. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
+  await RP.lines(["A handful of records, a stolen USB, a flyer with my name wrong, and a slice for the doorman. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
   await RP.completeAct([
     [!!S.f.a1_texts, "Charged the phone and called Dante"],
     [!!S.f.a1_mixer, "Cleaned channel 2 with vodka"],
