@@ -1975,12 +1975,12 @@ const audio = RP.audio;
 const BPM = 124, STEP = 60 / BPM / 4, BARS = 16, STEPS = BARS * 16;
 const midi = n => 440 * Math.pow(2, (n - 69) / 12);
 
-// four-bar progression, all minor: bass root, then the chord notes for stabs, pad and plucks
+// four-bar progression of minor 7th and 9th chords, the deep-house kind: bass root, then the chord notes for stabs, pad and plucks
 const PROG = [
-  { r: 40, ch: [52, 55, 59, 62] }, // Em7
-  { r: 40, ch: [52, 55, 59, 62] }, // Em7
-  { r: 33, ch: [57, 60, 64, 67] }, // Am7
-  { r: 35, ch: [59, 62, 66, 69] }  // Bm7
+  { r: 40, ch: [52, 55, 59, 62, 66] }, // Em9
+  { r: 40, ch: [52, 55, 59, 62, 66] }, // Em9
+  { r: 33, ch: [57, 60, 64, 67, 71] }, // Am9
+  { r: 35, ch: [59, 62, 66, 69] }      // Bm7
 ];
 // the bleep riff (semitones above the bar's chord root + 52; 0 = rest), repeated every bar with a different density
 const RIFF = [0, 24, 0, 31, 0, 25, 36, 0, 31, 0, 27, 0, 36, 0, 31, 24]; // minor third (27) and a flat second (25), no major thirds
@@ -2040,7 +2040,7 @@ function bass(t, note, len, dark, vol = 1) {
   saw.start(t); sub.start(t); saw.stop(t + len + 0.02); sub.stop(t + len + 0.02);
 }
 function stab(t, notes, len, vol) {
-  const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(1500, t); f.frequency.exponentialRampToValueAtTime(500, t + len);
+  const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(1100, t); f.frequency.exponentialRampToValueAtTime(380, t + len);
   const g = AC.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
   f.connect(g); g.connect(N.duck);
   notes.forEach(n => { const o = AC.createOscillator(); o.type = "sawtooth"; o.frequency.value = midi(n); o.detune.value = (n % 3 - 1) * 5; o.connect(f); o.start(t); o.stop(t + len + 0.02); });
@@ -2083,8 +2083,10 @@ function schedule(step, t) {
   if (s === 2 || s === 6 || s === 10) bass(t, ch.r, STEP * 3);
   if (s === 4 || s === 12) bass(t, ch.r + 12, STEP * 0.8, false, 0.45); // short octave ghost notes keep it rolling
   if (s === 14) bass(t, ch.r + 1, STEP * 3.4, true); // the dark offbeat note: a flat second above the root
-  if (bar >= 2 && (s === 3 || s === 6 || s === 10 || s === 14)) stab(t, ch.ch, STEP * 1.6, bar >= 8 ? 0.018 : 0.013);
-  if (s === 0 && bar >= 4) pad(t, ch.ch, STEP * 16);
+  // chords are sparse: one short minor stab a bar (on the "and" of beat two), a second only in every other bar of the second half, and a pad that holds for two bars
+  if (bar >= 2 && s === 6) stab(t, ch.ch, STEP * 2.2, 0.018);
+  if (bar >= 8 && bar % 2 === 1 && s === 11) stab(t, ch.ch.slice(0, 4), STEP * 1.8, 0.014);
+  if (s === 0 && bar >= 4 && bar % 2 === 0) pad(t, ch.ch, STEP * 32);
   // bleeps: sparse in the first four bars, then the full riff, with a filter that opens as the loop goes on
   const dense = bar < 4 ? (s % 4 === 0 || s === 7 || s === 11) : true;
   const r = RIFF[s];
