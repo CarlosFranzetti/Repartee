@@ -185,7 +185,7 @@ RP.ending = async function () {
   el("div", { cls: "kicker", text: "THE END" }, box);
   el("h2", { html: "re<span style='color:var(--pink)'>:</span>parte<span style='color:var(--pink)'>é</span>" }, box);
   const S = RP.state;
-  el("p", { text: (S.name || "You") + ": from four records and a crackling mixer to a festival headline." }, box);
+  el("p", { text: (S.name || "You") + ": from a milk crate of records and a crackling mixer to a festival headline." }, box);
   el("p", { text: S.records.length + " records in the crate. " + S.followers.toLocaleString("en-US") + " fans. " + RP.u.fmtMoney(S.money) + " in the bank (for now)." }, box);
   el("p", { text: "Thanks for playing. Go dig something." }, box);
   const row = el("div", { cls: "erow" }, box);

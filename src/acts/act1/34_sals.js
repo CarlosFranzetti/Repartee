@@ -163,7 +163,7 @@ async function salTalk(S) {
     { text: "Got any work?", when: S => !S.f.a1_delivered && !RP.has("a1_package"), once: true, run: () => RP.lines(["@a1_sal Work? Ask Smitty. He's got a thing. He always has a thing.", "@a1_sal Tell him Sal says it's overdue."]) },
     { text: "How's business?", once: true, run: () => RP.lines(["@a1_sal It's pizza. Business is the same as it was in 1959. Good. Slow. Salty.", "@a1_sal Someone's always hungry. That's my retirement plan."]) },
     { text: "What's the secret to the crust?", once: true, run: () => RP.lines(["@a1_sal The water. The yeast. Three days in the fridge. And not talking to it, like those new places do.", "@a1_sal Also oregano. Always oregano. Never run out of oregano."]) },
-    { text: "Do you know a guy called Tank?", when: S => S.f.a1_booked, once: true, run: () => RP.lines(["@a1_sal Tank? From Nowhere? Big guy. Shades.", "@a1_sal Comes in Saturdays at six, orders pepperoni, folds it perfect. Never says a word.", "@a1_sal I respect that. If you need him happy, you know where to find a slice."]) },
+    { text: "Do you know a guy called Tank?", when: S => S.f.a1_booked, once: true, run: () => RP.lines(["@a1_sal Tank? From Nowhere? Big guy. Shades.", "@a1_sal Grabs a pepperoni before every Saturday shift. Folds it perfect. Never says a word.", "@a1_sal I respect that. If you need him happy, you know where to find a slice."]) },
     { text: "Thanks, Sal.", end: true }
   ]);
 }

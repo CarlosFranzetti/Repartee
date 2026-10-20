@@ -5766,7 +5766,7 @@ RP.crateView = function () {
     el("h2", { text: "RECORD CRATE" }, head);
     el("span", { cls: "count", text: S.records.length + (S.records.length === 1 ? " record" : " records") }, head);
     const grid = el("div", { cls: "cgrid" }, box);
-    const detail = el("div", { cls: "cdetail", text: S.records.length ? "Pick a record." : "Your crate is empty. That's a problem for a DJ." }, box);
+    const detail = el("div", { cls: "cdetail", text: S.records.length ? "Pick a record." : S.f.crateHint || "Your crate is empty. That's a problem for a DJ." }, box);
     S.records.forEach(id => {
       const r = RP.rec(id);
       const bt = el("button", { type: "button", cls: "rec" }, grid);
@@ -20888,12 +20888,13 @@ const I = RP.icons;
 
 RP.defineAct({
   n: 1, id: "act1", title: "BEDROOM DJ", sub: "Tuesday night, Bushwick",
-  blurb: "Four records, a crackling mixer, a phone at 1%. Land your first gig.",
+  blurb: "Three records in a milk crate, a crackling mixer, a phone at 1%. Land your first gig.",
   start: { room: "bedroom", x: 300, y: 228, face: "front" },
   setup(S, carry) {
     S.money = 0; S.followers = 0;
     S.inv = ["phone", "usb_cat", "wallet"];
     S.records = [];
+    S.f.crateHint = "Nothing logged yet. My records are still in the milk crate by the bed.";
     S.gear = { decks: "pioneer_cdj_350", mixer: "numark_m101usb", monitors: "krk_rokit_5_g4" };
     S.f.time = "night";
     S.clock = "TUE 11:04 PM";
@@ -21614,7 +21615,7 @@ RP.room({
       open: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "crate").pickup),
       pickup: async S => {
         if (S.f.a1_crate) return "It's empty. The records are on me.";
-        S.f.a1_crate = true;
+        S.f.a1_crate = true; delete S.f.crateHint;
         RP.give("rec_first"); RP.give("rec_acid"); RP.give("rec_mom");
         [REC_FIRST, REC_ACID, REC_MOM].forEach(id => RP.addRecord(id, true));
         S.f["warped_" + REC_ACID] = true;
@@ -22867,7 +22868,7 @@ async function salTalk(S) {
     { text: "Got any work?", when: S => !S.f.a1_delivered && !RP.has("a1_package"), once: true, run: () => RP.lines(["@a1_sal Work? Ask Smitty. He's got a thing. He always has a thing.", "@a1_sal Tell him Sal says it's overdue."]) },
     { text: "How's business?", once: true, run: () => RP.lines(["@a1_sal It's pizza. Business is the same as it was in 1959. Good. Slow. Salty.", "@a1_sal Someone's always hungry. That's my retirement plan."]) },
     { text: "What's the secret to the crust?", once: true, run: () => RP.lines(["@a1_sal The water. The yeast. Three days in the fridge. And not talking to it, like those new places do.", "@a1_sal Also oregano. Always oregano. Never run out of oregano."]) },
-    { text: "Do you know a guy called Tank?", when: S => S.f.a1_booked, once: true, run: () => RP.lines(["@a1_sal Tank? From Nowhere? Big guy. Shades.", "@a1_sal Comes in Saturdays at six, orders pepperoni, folds it perfect. Never says a word.", "@a1_sal I respect that. If you need him happy, you know where to find a slice."]) },
+    { text: "Do you know a guy called Tank?", when: S => S.f.a1_booked, once: true, run: () => RP.lines(["@a1_sal Tank? From Nowhere? Big guy. Shades.", "@a1_sal Grabs a pepperoni before every Saturday shift. Folds it perfect. Never says a word.", "@a1_sal I respect that. If you need him happy, you know where to find a slice."]) },
     { text: "Thanks, Sal.", end: true }
   ]);
 }
@@ -30476,7 +30477,7 @@ RP.ending = async function () {
   el("div", { cls: "kicker", text: "THE END" }, box);
   el("h2", { html: "re<span style='color:var(--pink)'>:</span>parte<span style='color:var(--pink)'>é</span>" }, box);
   const S = RP.state;
-  el("p", { text: (S.name || "You") + ": from four records and a crackling mixer to a festival headline." }, box);
+  el("p", { text: (S.name || "You") + ": from a milk crate of records and a crackling mixer to a festival headline." }, box);
   el("p", { text: S.records.length + " records in the crate. " + S.followers.toLocaleString("en-US") + " fans. " + RP.u.fmtMoney(S.money) + " in the bank (for now)." }, box);
   el("p", { text: "Thanks for playing. Go dig something." }, box);
   const row = el("div", { cls: "erow" }, box);

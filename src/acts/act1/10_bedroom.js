@@ -445,7 +445,7 @@ RP.room({
       open: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "crate").pickup),
       pickup: async S => {
         if (S.f.a1_crate) return "It's empty. The records are on me.";
-        S.f.a1_crate = true;
+        S.f.a1_crate = true; delete S.f.crateHint;
         RP.give("rec_first"); RP.give("rec_acid"); RP.give("rec_mom");
         [REC_FIRST, REC_ACID, REC_MOM].forEach(id => RP.addRecord(id, true));
         S.f["warped_" + REC_ACID] = true;

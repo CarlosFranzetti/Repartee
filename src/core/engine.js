@@ -598,7 +598,7 @@ RP.crateView = function () {
     el("h2", { text: "RECORD CRATE" }, head);
     el("span", { cls: "count", text: S.records.length + (S.records.length === 1 ? " record" : " records") }, head);
     const grid = el("div", { cls: "cgrid" }, box);
-    const detail = el("div", { cls: "cdetail", text: S.records.length ? "Pick a record." : "Your crate is empty. That's a problem for a DJ." }, box);
+    const detail = el("div", { cls: "cdetail", text: S.records.length ? "Pick a record." : S.f.crateHint || "Your crate is empty. That's a problem for a DJ." }, box);
     S.records.forEach(id => {
       const r = RP.rec(id);
       const bt = el("button", { type: "button", cls: "rec" }, grid);

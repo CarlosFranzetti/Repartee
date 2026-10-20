@@ -5,7 +5,7 @@
 ![re:parteé title screen](docs/screenshots/title.png)
 
 A point-and-click adventure in the spirit of *Maniac Mansion*, *Zak McKracken* and *The Secret of
-Monkey Island*. You're a broke bedroom DJ in New York City with four records, a crackling mixer
+Monkey Island*. You're a broke bedroom DJ in New York City with three records, a crackling mixer
 and a phone at 1%. Hustle, dig, mix and talk your way from Bushwick to a festival headline set.
 
 - **Five levels:** Bedroom DJ → Underground Hustler → Club DJ → Touring DJ → Superstar DJ
