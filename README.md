@@ -38,8 +38,7 @@ Each level page starts you with a sensible setup (records, cash, gear for that p
 all sixteen mini-games in its arcade, and ends with a link to the next level. The full game carries your
 crate, cash and fans from level to level.
 
-**On claude.ai:** [Level 1](https://claude.ai/artifact/RPmqCfmHeBj3b1uwsdSdbN) and
-[the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N) are also published as artifacts.
+**On claude.ai:** [the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N) is also published as an artifact.
 
 **Offline:** open `dist/index.html` (full game) or `dist/level1.html` … `dist/level5.html` in a browser.
 Each is a single self-contained file that works from `file://` or hosted anywhere. On a phone, landscape
@@ -74,7 +73,7 @@ On a portrait phone the verbs and inventory drop under the scene at touch size.
 
 ```
 node tools/build.mjs                 # index.html (dev, one <script> per file), dist/index.html + dist/artifact.html (full game),
-                                     # dist/level1.html … dist/level5.html (each level on its own), dist/level1.artifact.html
+                                     # dist/level1.html … dist/level5.html (each level on its own)
 node tests/full.mjs                  # plays every level's walkthrough, then the whole game in one save
 node tests/run.mjs smoke             # boots every level and lists the mini-games
 node tests/perf.mjs                  # frame cost of every room (budget 8 ms)
