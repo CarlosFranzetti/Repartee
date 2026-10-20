@@ -40,6 +40,17 @@ through `tools/blindplay.mjs`). Nothing here has been fixed yet; fixed findings 
 | 2-6 | buy.Gear | In this run every test on Eddie's turntables came back clean, so haggling was the only decision. | design | L2 take 2 |
 | 2-7 | LifeDrop | The wall calendar shows "OCT 1". | polish | L2 take 2 |
 | 2-8 | Phone | Dani's text about pierogi isn't in Messages until later. | polish | L2 take 1 |
+| 2-9 | Story / time | Confirms 2-1: Tuesday 11:10 AM never advances on its own. "Management office Tuesdays 2:00-2:15" and Nurse Bev's "See you Thursday" can't be reached, and "Sleep until Friday" on the couch is the only way on. The tester spent about 40 commands looking for a way to pass time. The 4C lockout is never resolved either. | clarity | L2 audio take |
+| 2-10 | sound.Check | The main feedback is sound. Without it (muted or hard-of-hearing players), only the analyzer bars and paid tips help. | accessibility | L2 audio take |
+| 2-11 | after.Party | Sound options silently replace each other: picking Cal's speaker dropped Lou's boombox, and Lou's "done" flag then blocked re-borrowing it. | bug | L2 audio take |
+| 2-12 | after.Party | Cal's speaker costs 5 minutes and is worse than Lou's boombox, with no warning. Rafa's car (street level only) and Eddie's PA (+8 min) are bad fits for the loft, cued only by small text. The final breakdown says "Sound 0/30 - Lou's boombox" with no hint how to do better. | clarity | L2 audio take |
+| 2-13 | after.Party | Twinkie's referrals change between attempts (Lou and Rafa, then Rafa and Eddie). Probably randomized on purpose; it surprised the tester. | design | L2 audio take |
+| 2-14 | after.Party | In the cop event, "talk your way out" costs a favor, but the other two options don't say what they cost. | clarity | L2 audio take |
+| 2-15 | after.Party | The loft is "third floor" in its description but "Six floors" in the elevator event. | text | L2 audio take |
+| 2-16 | buy.Gear | The result screen says "Lemons caught 0/1" although the listing bought was clean. | bug | L2 audio take |
+| 2-17 | buy.Gear | Pricing mixes pair and listing: Eddie says 180 the pair in dialogue, the listing shows 215. | text | L2 audio take |
+| 2-18 | LifeDrop | Rhonda asks for "ID, bill and the form", but no ID ever appears in the inventory (the wallet covers it silently). | clarity | L2 audio take |
+| 2-19 | Money | Every subway trip costs 3 dollars and the ATM fee is 10, with no warning before a wasted trip. | design | L2 audio take |
 
 ## Harness notes (not game bugs)
 
