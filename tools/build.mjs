@@ -4,7 +4,6 @@
 //  3. dist/artifact.html       — the same, content only, for the claude.ai artifact host
 //  4. dist/level1.html … dist/level5.html — each level on its own (plus the mini-game arcade), built with the
 //     acts up to that level and started at it; finishing it links to the next level's page (Level 5 ends the game)
-//  5. dist/level1.artifact.html — Level 1 for the claude.ai artifact host
 // File order: core (fixed) → data → minigames → acts (act1..act5, files sorted by name) → game.js
 // Every page gets window.RP_SITE (level pages and the full game, with links between them): relative links
 // (level2.html, index.html) for dist/, which work from file:// and on Vercel; absolute ones for artifacts.
@@ -125,7 +124,6 @@ ${full.files.map(f => `<script src="${rel(f)}"></script>`).join("\n")}
   const sizes = LEVELS.map((_, i) => {
     const b = bundle({ level: i + 1 });
     write(path.join(root, "dist/level" + (i + 1) + ".html"), b.single);
-    if (i === 0) write(path.join(root, "dist/level1.artifact.html"), b.art);
     return kb(b.single);
   });
   console.log(`built index.html + dist/index.html (${full.files.length} scripts, ${kb(full.single)}) + dist/level1..5.html (${sizes.join(", ")})${note}`);
