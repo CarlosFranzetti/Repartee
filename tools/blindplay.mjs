@@ -6,6 +6,8 @@
 //
 // Game time is frozen between commands, so thinking time never costs anything in timed scenes or
 // mini-games, and those frozen stretches are cut out of the video afterwards (tools/blindplay-cut.mjs).
+// The game's sound is captured too: everything sent to the AudioContext's speakers is tapped and logged
+// with wall-clock timestamps (audio.raw), and the cutter lays it back under the cut video.
 // Each command runs the game until it settles (walking and dialogue done, or a choice / card / mini-game
 // waiting for input), then freezes it again and prints what the player saw: new dialogue, the room,
 // what is clickable, the inventory, any choices, overlay or mini-game text, and a screenshot path.
@@ -64,7 +66,7 @@ if (argv[0] !== "serve") {
   // time shim: performance.now / Date.now / rAF / timers / audio / CSS animations all stop while frozen
   const SHIM = `(() => {
     const realRAF = window.requestAnimationFrame.bind(window), realST = window.setTimeout.bind(window);
-    const realPN = performance.now.bind(performance), base = Date.now() - realPN();
+    const realPN = performance.now.bind(performance), realDN = Date.now.bind(Date), base = Date.now() - realPN();
     let frozen = false, frozenAt = 0, lost = 0;
     const vnow = () => (frozen ? frozenAt : realPN()) - lost;
     performance.now = vnow;
@@ -93,8 +95,31 @@ if (argv[0] !== "serve") {
       realRAF(frame);
     };
     realRAF(frame);
-    const AC = window.AudioContext || window.webkitAudioContext, ctxs = [];
-    if (AC) { const W = class extends AC { constructor(...a) { super(...a); ctxs.push(this); } }; window.AudioContext = W; window.webkitAudioContext = W; }
+    // audio: every context's speakers go through a tap that copies the mix into timestamped stereo chunks
+    const AC = window.AudioContext || window.webkitAudioContext, ctxs = [], aud = [];
+    if (AC) {
+      const W = class extends AC {
+        constructor(...a) {
+          super(...a); ctxs.push(this);
+          const tap = this.createGain(); tap.connect(super.destination);
+          const rec = this.createScriptProcessor(4096, 2, 2); tap.connect(rec); rec.connect(super.destination);
+          rec.onaudioprocess = e => {
+            const L = e.inputBuffer.getChannelData(0), R = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : L;
+            const out = new Int16Array(L.length * 2);
+            for (let i = 0; i < L.length; i++) { out[2 * i] = Math.max(-1, Math.min(1, L[i])) * 32767; out[2 * i + 1] = Math.max(-1, Math.min(1, R[i])) * 32767; }
+            aud.push([realDN(), this.sampleRate, out]);
+          };
+          this.__tap = tap; this.__rec = rec;
+        }
+        get destination() { return this.__tap || super.destination; }
+      };
+      window.AudioContext = W; window.webkitAudioContext = W;
+    }
+    window.__audPull = () => aud.splice(0).map(([t, sr, d]) => {
+      const u = new Uint8Array(d.buffer); let bin = "";
+      for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+      return [t, sr, btoa(bin)];
+    });
     window.__freeze = on => {
       if (on && !frozen) { frozenAt = realPN(); frozen = true; document.getAnimations().forEach(a => a.pause()); ctxs.forEach(c => c.state === "running" && c.suspend()); }
       else if (!on && frozen) { lost += realPN() - frozenAt; frozen = false; document.getAnimations().forEach(a => a.playState === "paused" && a.play()); ctxs.forEach(c => c.state === "suspended" && c.resume()); }
@@ -151,6 +176,23 @@ if (argv[0] !== "serve") {
   });
   await page.evaluate(() => window.__freeze(true));
 
+  // pull the captured sound out of the page a few times a second and append it to audio.raw:
+  // records of [float64 wall-clock ms][uint32 sample rate][uint32 frames][frames x 2 int16]
+  const audFile = path.join(out, "audio.raw");
+  let pulling = false;
+  async function pullAudio() {
+    if (pulling) return; pulling = true;
+    try {
+      const chunks = await page.evaluate(() => window.__audPull ? window.__audPull() : []);
+      for (const [t, sr, b64] of chunks) {
+        const data = Buffer.from(b64, "base64"), head = Buffer.alloc(16);
+        head.writeDoubleLE(t, 0); head.writeUInt32LE(sr, 8); head.writeUInt32LE(data.length / 4, 12);
+        fs.appendFileSync(audFile, Buffer.concat([head, data]));
+      }
+    } catch (e) { /* page closing */ } finally { pulling = false; }
+  }
+  const audTimer = setInterval(pullAudio, 300);
+
   const segments = [];
   let shotN = 0, lastRoom = null, cmdN = 0;
   const logFile = path.join(out, "session.jsonl");
@@ -181,10 +223,15 @@ if (argv[0] !== "serve") {
   }
   async function running(why, fn, minMs = 300, mgMs = 1200) {
     await page.evaluate(t => window.__caption(t), why || "");
-    const s = (Date.now() - T0) / 1000;
-    // the thought stays up on the paused scene long enough to read before anything moves
-    if (why) await page.waitForTimeout(Math.max(900, Math.min(2600, 500 + why.length * 35)));
+    // the thought stays up long enough to read before anything moves. Outside mini-games the scene keeps
+    // running meanwhile (music and idle animation carry on, so the cut video plays smoothly); in a mini-game
+    // it waits on the paused screen and that wait is left out of the video, so no timer is ever charged for it
+    const readMs = why ? Math.max(900, Math.min(2600, 500 + why.length * 35)) : 0;
+    const inMg = await page.evaluate(() => !!(window.RP && window.RP.mg.active));
+    if (inMg && readMs) await page.waitForTimeout(readMs);
     await page.evaluate(() => window.__freeze(false));
+    const s = (Date.now() - T0) / 1000;
+    if (!inMg && readMs) await page.waitForTimeout(readMs);
     try { await fn(); await settle(minMs, mgMs); await page.waitForTimeout(350); }
     finally {
       await page.evaluate(() => window.__freeze(true));
@@ -434,6 +481,7 @@ if (argv[0] !== "serve") {
       case "wait": await running(why, () => page.waitForTimeout(Math.min(60000, +a[0] || 1000)), 0, 0); return report();
       case "stop": {
         writeSegs();
+        clearInterval(audTimer); await pullAudio();
         await page.close(); await ctx.close();
         const v = fs.readdirSync(out).filter(f => f.endsWith(".webm")).map(f => path.join(out, f));
         setTimeout(() => browser.close().then(() => process.exit(0)), 300);
