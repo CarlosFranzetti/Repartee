@@ -20,6 +20,13 @@ through `tools/blindplay.mjs`). Nothing here has been fixed yet; fixed findings 
 | 1-10 | Synergex | The fire-alarm strobe is look-only, which is misleading (the real trigger is the microwave). The Form 27-B tray and the evacuation plan are dead ends. | design | L1 take 3 |
 | 1-11 | go.Digging | The goal asks for "a closer", but a record's role tag only shows after LISTEN. You can pay for a non-closer without knowing. | clarity | L1 take 1 |
 | 1-12 | crowd.Read | The round-2 hint "warm, not weird, not yet" seems to contradict the role tags (WARMUP/BUILDER/PEAK/CLOSER). In round 4 only one record is left, so there's no choice. | design | L1 take 3 |
+| 1-13 | go.Digging | A run failed at 0/100 with nothing kept after buying two house records under 8 dollars ("I Like To Move It", "Show Me Love"), both tagged peak. It's never clear what counts as a closer; the real ones were dollar-bin records. ASK RAY first says "try the dollar bin", later "filed under house". Hard to solve fairly. | clarity | L1 audio take |
+| 1-14 | go.Digging | Ray's fallback list prices "Finally" at 2 dollars; in the bin it was 1 dollar with deep scratches. | text | L1 audio take |
+| 1-15 | go.Digging | The mini-game's cash is capped at 10 dollars while the wallet held 21.90. | design | L1 audio take |
+| 1-16 | crowd.Read | "Missing" (126 BPM) is labelled "tempo fits" although the crowd's stated window is 108-124. | text | L1 audio take |
+| 1-17 | Synergex | Brenda says "Nobody stays on my floor", but staying in the supply closet during the alarm has no consequence. | design | L1 audio take |
+| 1-18 | Phone | Staffright's "wear a collared shirt" text and Mom's "Did you eat" text are never used; you never actually work the temp shift. | design | L1 audio take |
+| 1-19 | Phone | "Subway map" only appears in the phone menu after you've left home. Probably intended; noted because the tester looked for it. | clarity | L1 audio take |
 
 ## Level 2: Underground Hustler
 
@@ -37,6 +44,7 @@ through `tools/blindplay.mjs`). Nothing here has been fixed yet; fixed findings 
 ## Harness notes (not game bugs)
 
 - `click` picks the first of two buttons with the same text (sound.Check's per-deck PHONO / CH3); use `clickxy`.
+- A dollar sign inside a double-quoted shell argument gets expanded by the shell, so captions like "$28.90" come out mangled. Testers are told not to type it.
 
 ## Fixed (for reference)
 
