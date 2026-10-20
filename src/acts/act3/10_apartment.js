@@ -14,6 +14,7 @@ const W = 640;
 const mood = S => S.f.a3_end ? "dawn" : (!S.f.a3_opener || S.f.a3_thu3) ? "dusk" : "night";
 const gearSig = S => [S.gear.decks, S.gear.turntables, S.gear.mixer, S.gear.monitors].join("|");
 const isCdj900 = S => S.gear.decks === "pioneer_cdj_900";
+const deckName = S => { const g = RP.gearInfo(S.gear.decks); return g ? g.brand + " " + g.model + "s" : "decks"; };
 const isTechnics = S => S.gear.turntables === "technics_sl_1210mk2";
 const isDyn = S => S.gear.monitors === "dynaudio_bm5_mkiii";
 const isDjm = S => S.gear.mixer === "pioneer_djm_350";
@@ -160,7 +161,7 @@ async function endScene(S) {
   await RP.lines(["Amsterdam. An actual booking agent. In an actual other country.", "Saturday at the Halcyon Room. And now a continent.", "I'm going to sleep for a week. Right after I read that email four more times."]);
   S.f.a3_email = true;
   await RP.completeAct([
-    [true, "Opened an empty floor on Thursday"], [!!S.f.a3_cdj, "Bought used Pioneer CDJ-900s from Eddie"], [!!S.f.a3_dj350, "Got the DJM-350 from Gus (for a pickle)"],
+    [true, "Opened an empty floor on Thursday"], [!!S.f.a3_cdj, "Bought used " + deckName(S) + " from Eddie"], [!!S.f.a3_dj350, "Got the DJM-350 from Gus (for a pickle)"],
     [!!S.f.a3_estateDone, "Dug the Pruitt estate: Technics 1210s and a grail"], [!!S.f.a3_promo, "Built a following"], [!!S.f.a3_brandonDone, "Outmanoeuvred DJ Brandon Shine"],
     [!!S.f.a3_kosmoDone, "Followed Kosmo Delacroix (he called you " + A3.KOSMO_NAME + ")"], [!!S.f.a3_setDone, "Played the anniversary set"], [!!S.f.a3_train, "Got home on the last train"], [!!S.f.a3_saturday, "Earned the Saturday slot"]
   ]);
@@ -189,7 +190,7 @@ RP.room({
   },
   hotspots: [
     { id: "a3_door", name: "door", r: [4, 32, 50, 134], z: 20, walk: [64, 214, "left"],
-      look: "4C. The landlord fixed the lock in the spring. It's the only thing he's fixed since '09.",
+      look: "4C. Kowalski's deadbolt from last fall. This time I have a key. It still feels like a privilege.",
       exit: S => {
         if (S.f.a3_end) return "It's five in the morning. The only place I'm going is horizontal.";
         if (!S.f.a3_opener || S.f.a3_thu3) {
@@ -232,7 +233,7 @@ RP.room({
       talk: S => loulines(S), use: "It's a hole. It's for talking to Lou, and for nothing else.",
       give: async (S, item) => { if (item === "a3_chips") return "Lou doesn't need chips. Lou needs a better remote."; return "Lou doesn't want that. Lou wants quiet."; } },
     { id: "a3_cdjs", name: "CDJs", rects: [[414, 110, 54, 34], [512, 110, 54, 34]], z: 30, walk: [492, 214, "back"],
-      look: S => isCdj900(S) ? "Pioneer CDJ-900s, used, from Eddie. Launched in 2009 next to the CDJ-2000. They read USBs and they've never once judged me." : "A pair of Pioneer CDJ-350s. Entry-level, used, loyal. They've been with me since the bedroom.",
+      look: S => isCdj900(S) ? "Pioneer CDJ-900s, used, from Eddie. Launched in 2009 next to the CDJ-2000. They read USBs and they've never once judged me." : S.f.a3_cdj ? "A pair of " + deckName(S) + ", used, from Eddie. Not the 900s, but they're mine and they play." : "A pair of " + deckName(S) + ". Entry-level, used, loyal. They've been with me since the bedroom.",
       use: S => S.f.a3_opener ? "Practice time. A few mixes, loud, and Lou stays quiet. Progress." : "I've got a gig. The decks can wait; the booth has better ones.",
       push: "Please don't touch the jog wheel. It's got feelings.", pickup: "I'm not carrying those up and down. The club has house gear." },
     { id: "a3_tt", name: "turntables", rects: [[340, 108, 72, 36], [566, 108, 72, 36]], z: 30, walk: [492, 214, "back"],

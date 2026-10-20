@@ -149,6 +149,7 @@ async function afterShower(S, smooth) {
     "@a2_dani It's a banger and I don't have to see it anymore. We both win."
   ]);
   RP.followers(5);
+  await A2.dayCheck(S);
 }
 
 async function talkDani(S) {

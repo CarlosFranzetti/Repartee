@@ -264,7 +264,7 @@ const CSS = `
 .st-ctl .btn { padding: 6px 12px; font-size: 20px; }
 .st-ctl .btn.ready { box-shadow: 0 0 0 2px var(--ok); }
 .st-ctl .btn.hold { background: #1d2a52; border-color: var(--cyan); color: var(--cyan); }
-.st-ctl .btn small { font-size: 14px; opacity: .7; margin-left: 4px; }
+.st-ctl .btn small { font-size: 14px; margin-left: 4px; }
 .st-ev, .st-brief { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 8px; }
 .st-ev canvas, .st-brief canvas { width: 56px; height: 56px; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid #000; background: #1a1230; grid-row: 1 / span 2; }
 .st-ev .who { font-size: 16px; color: var(--muted); letter-spacing: .06em; } .st-ev .who b { color: var(--pink); font-weight: 400; }

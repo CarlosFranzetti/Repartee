@@ -1,6 +1,8 @@
 /* Act 1 — a1_deepcuts: Deep Cuts Records, East Village. Ray points you at the dollar bins; go.Digging buys the
-   closer (CeCe Peniston, "Finally", $2, or another affordable record). Ray gives you the flyer with your name
-   spelled wrong. Flags: a1_rayMet, a1_dug, a1_closer (record id), a1_flyer, a1_rayJob. */
+   closer (CeCe Peniston, "Finally", $2 for a clean copy, or another affordable one). Ray gives you the flyer with
+   your name spelled wrong. Flags: a1_rayMet, a1_dug, a1_closer (record id), a1_flyer, a1_rayJob, a1_digTip.
+   The records that really fit the want (closer + house + under $8) are Finally and Gypsy Woman in the dollar bin
+   and The Whistle Song in the house crate; the other house records there are builders/peaks. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -9,6 +11,7 @@ const { R, P, ell, line, poly, bayer, mulberry, clamp, txt, txtW, txtC, mix, ram
 const U = PK.util;
 const W = 640, FY = 164;
 const CLOSER_DEFAULT = "cece_peniston_finally";
+const DIG_BUDGET = 10;      // the most the dollar bins may take; the rest of the wallet stays put (fare home)
 const DOLLAR = ["cece_peniston_finally", "black_box_ride_on_time", "snap_rhythm_is_a_dancer", "cc_music_factory_gonna_make_you_sweat", "crystal_waters_gypsy_woman", "reel_2_real_i_like_to_move_it"];
 const HOUSE = ["inner_city_good_life", "ultra_nate_free", "robin_s_show_me_love", "frankie_knuckles_the_whistle_song", "roger_sanchez_another_chance"];
 const DISCO = ["chic_good_times", "cheryl_lynn_cheryl_lynn", "donna_summer_i_feel_love", "sylvester_you_make_me_feel_mighty_real"];
@@ -157,10 +160,15 @@ async function dig(S) {
   if (S.f.a1_closer && !S.f.a1_dig2) { S.f.a1_dig2 = true; await RP.lines(["@ray You've got your closer. The bins are open all day. Digging for more won't make you a better DJ.", "@ray It'll make you a poorer one."]); return; }
   if (S.f.a1_closer) { await RP.say("One closer is enough. Dante opens at ten, not on my dollar bin.", "ray"); return; }
   await RP.lines(["I roll up my sleeves. Literally. It's an ancient ritual.", "@ray Dollar bin's the cardboard one. Be gentle. And keep your fingers away from the Kenny G."]);
-  const budget = Math.max(0, Math.min(S.money, 10));
+  if (!S.f.a1_digTip) {
+    S.f.a1_digTip = true;
+    await RP.lines(["@ray A closer's the big, warm, sing-along record that ends the night. You can't tell by the sleeve. Put the needle down: the tag shows once you listen."]);
+    if (S.money > DIG_BUDGET + 0.004) await RP.lines(["@ray And ten bucks is the most I let anyone spend in here. The rest of your wallet is the train home."]);
+  }
+  const budget = Math.max(0, Math.min(S.money, DIG_BUDGET));
   if (budget < 2) { await RP.lines(["@ray You're broke. ...Don't tell me. It's the dollar bin and you can't spend a dollar?", "@ray Take it. \"Finally.\" On the house. Don't tell anyone, I have a reputation. Of being mean."]); await addCloser(S, CLOSER_DEFAULT); await finishDig(S); return; }
   const res = await RP.mg.play("goDigging", {
-    store: "Deep Cuts", budget,
+    store: "Deep Cuts", budget, wallet: S.money, budgetNote: "rest is fare home",
     bins: [{ label: "DOLLAR BIN", records: DOLLAR }, { label: "HOUSE $5-$8", records: HOUSE }, { label: "DISCO", records: DISCO }],
     want: { vibe: "closer", genre: "house", maxPrice: 8 }, difficulty: 2
   });
@@ -175,9 +183,10 @@ async function dig(S) {
     return;
   }
   /* missing game, gave up, or bought nothing: Ray hand-picks, never a dead end */
-  await RP.lines([res && res.missing ? "@ray The crates are being reorganized. By me. Hold on." : "@ray You flipped through the whole bin and bought nothing. Impressive.", "@ray Here. I'll pick. Three closers. Pick one."]);
-  const opts = [CLOSER_DEFAULT, "crystal_waters_gypsy_woman", "black_box_ride_on_time"].filter(id => RP.rec(id).price <= S.money + 1e-9 || id === CLOSER_DEFAULT);
-  const i = await RP.choose(opts.map(id => RP.rec(id).artist + ", \"" + RP.rec(id).title + "\" ($" + RP.rec(id).price + ")"));
+  /* Ray's own copies are clean (a VG+ sticker, the guide price); the bin's scratched copies can sell for less */
+  const opts = [CLOSER_DEFAULT, "crystal_waters_gypsy_woman", "frankie_knuckles_the_whistle_song"].filter(id => RP.rec(id).price <= S.money + 1e-9 || id === CLOSER_DEFAULT);
+  await RP.lines([res && res.missing ? "@ray The crates are being reorganized. By me. Hold on." : "@ray You flipped through the whole bin and bought nothing. Impressive.", "@ray Here. I'll pick. " + (opts.length > 1 ? opts.length + " closers" : "One closer") + ", clean copies from under the counter. Full guide price, no haggling. " + (opts.length > 1 ? "Pick one." : "Take it.")]);
+  const i = await RP.choose(opts.map(id => RP.rec(id).artist + ", \"" + RP.rec(id).title + "\" ($" + RP.rec(id).price + ", clean copy)"));
   const id = opts[i] || CLOSER_DEFAULT, price = RP.rec(id).price || 0;
   RP.money(-Math.min(price, S.money));
   await addCloser(S, id); await finishDig(S);
@@ -185,7 +194,7 @@ async function dig(S) {
 
 async function rayTalk(S) {
   await RP.convo([
-    { text: "What makes a good closer?", once: true, run: () => RP.lines(["@ray Something everyone knows and nobody's ashamed to sing. A voice. A hook. Four-on-the-floor with a heart.", "@ray The kind of record you play when you want them to forgive the last three hours."]) },
+    { text: "What makes a good closer?", once: true, run: () => RP.lines(["@ray Something everyone knows and nobody's ashamed to sing. A voice. A hook. Four-on-the-floor with a heart.", "@ray The kind of record you play when you want them to forgive the last three hours.", "@ray Don't trust the sleeve. Listen: the tag says CLOSER, PEAK, whatever it is. A peak is not a closer, kid. Peaks make them scream. Closers make them cry."]) },
     { text: "Tell me about \"Acid Tracks.\"", when: S => RP.hasRecord("phuture_acid_tracks"), once: true, run: () => RP.lines(["@ray Phuture. Trax Records, Chicago, 1987. Marshall Jefferson produced it. You warped it, didn't you.", "...In a hot car.", "@ray Of course you did. You sleep on it? Good. It's tradition. It's also the only thing that works."]) },
     { text: "What about \"Missing\"?", when: S => RP.hasRecord("everything_but_the_girl_missing"), once: true, run: () => RP.lines(["@ray Everything But The Girl. The Todd Terry mix. A 1995 Atlantic promo twelve-inch. People forget it's a promo. People forget a lot.", "@ray It's a warm-up. Don't open with a hit. A hit is a promise."]) },
     { text: "Ever seen this white label?", when: S => RP.has("white"), once: true, run: () => RP.lines(["@ray ...No label. No artist. 'NYC 93' in marker.", "@ray I've never seen it. Which means it's either garbage or the best record in your bag.", "@ray Keep it for after they've earned it."]) },

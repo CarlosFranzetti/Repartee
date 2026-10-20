@@ -9,7 +9,7 @@ const { R, P, ell, txt, txtC } = RP.u;
 const U = PK.util;
 const W = 640;
 const dark = S => A2.night(S);
-const PRICE = 180;   // the pair of AT-LP120-USB, after haggling ("two-time deal")
+const TAG = 215, PRICE = 180;   // the pair of AT-LP120-USB: the sticker (buy.Gear's scripted listing asks the same) and Eddie's haggled "two-time deal"
 
 function paint(c, S) {
   const N = dark(S), em = [];
@@ -148,14 +148,14 @@ async function fallbackBuy(params) {
   const S = RP.state, bud = Math.floor(S.money);
   await RP.say("Eddie spreads his hands over the table. \"Three listings. Choose carefully. Or choose fast. Both work.\"", "nar");
   for (;;) {
-    const i = await RP.choose(["The AT-LP120-USB pair, $190 \"firm\"", "The Numark TT1650 pair, $120", "The \"bargain\" pair, $60 (\"it worked this morning\")", "Walk away"]);
+    const i = await RP.choose(["The AT-LP120-USB pair, $" + TAG + " on the tag", "The Numark TT1650 pair, $120", "The \"bargain\" pair, $60 (\"it worked this morning\")", "Walk away"]);
     if (i === 3) return { ok: false, bought: null, paid: 0 };
     if (i === 2) { await RP.lines(["I put my hand on the platter. It wobbles like a drunk plate.", "@eddie It's vintage. It's a two-time deal: the second time it works.", "No. Absolutely not."]); continue; }
-    let price = i === 0 ? 190 : 120;
+    let price = i === 0 ? TAG : 120;
     if (i === 0) {
-      const h = await RP.choose(["Take it at $190", "Haggle: \"$150, cash, right now\"", "Walk away"]);
+      const h = await RP.choose(["Take it at $" + TAG, "Haggle: \"$150, cash, right now\"", "Walk away"]);
       if (h === 2) continue;
-      if (h === 1) { await RP.lines(["@eddie $150? That insults my mother. And my other mother. ...$170. That's my floor.", "I count out the bills like a hostage negotiator."]); price = 170; }
+      if (h === 1) { await RP.lines(["@eddie $150? That insults my mother. And my other mother. ...$" + PRICE + ". That's my floor.", "I count out the bills like a hostage negotiator."]); price = PRICE; }
     }
     if (bud < price) { await RP.say("You're short, kid. Come back when you're not.", "eddie"); await RP.say("I'm short by $" + (price - bud) + ". It's a rounding error with feelings."); continue; }
     return { ok: true, bought: i === 0 ? "at_lp120_usb" : "numark_tt1650", paid: price, fallback: true };
@@ -223,7 +223,8 @@ async function talkEddie(S) {
       S.f.a2_eddiePrice = true;
       await RP.lines([
         "@eddie Audio-Technica AT-LP120-USB. A direct-drive turntable with a built-in preamp and a USB output. Introduced 2009, built to be the successor when the SL-1200 line was winding down in 2010.",
-        "@eddie Listed at two forty each. For you? Because I like your face and I hate my competition? One-eighty the pair.",
+        "@eddie The tag on the table says two-fifteen the pair. That's the sticker price. The sticker is for strangers.",
+        "@eddie For you? Because I like your face and I hate my competition? One-eighty. That's the haggled deal.",
         "For the pair?",
         "@eddie It's a two-time deal. You pay once. I smile twice."
       ]);

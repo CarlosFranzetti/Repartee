@@ -286,7 +286,7 @@ async function smittyTalk(S) {
     { text: "Sal says hi.", when: S => S.f.a1_delivered, once: true, run: () => RP.lines(["@a1_smitty He pays. That's a rare quality in a New Yorker. Cherish it.", "Did the oregano land okay?", "@a1_smitty What oregano. I don't know what you're talking about."]) },
     { text: "Know anything about the door at Nowhere?", when: S => S.f.a1_booked, once: true, run: () => RP.lines(["@a1_smitty Tank? Big guy. Hasn't smiled since 2014.", "@a1_smitty Knows nobody, trusts nobody, loves Sal's. Pepperoni. Never says why.", "@a1_smitty I'm just saying. Slices are a love language."]) },
     { text: "What do you actually do out here?", once: true, run: () => RP.lines(["@a1_smitty I observe. I deliver. I'm in logistics.", "@a1_smitty Rent-free. Best address in Bushwick."]) },
-    { text: "Any tips for a broke DJ?", once: true, run: () => RP.lines(["@a1_smitty Cans. Five cents a pop. There's a bag on the curb by the scaffold every day. Canners leave 'em for the machine. Don't tell them I said.", "Thanks, I think."]) },
+    { text: "Any tips for a broke DJ?", once: true, run: () => RP.lines(["@a1_smitty Offices. Midtown, the temp-agency kind. They order supplies by the pallet and count nothing. Closets full of stuff nobody's opened since the Bush administration.", "@a1_smitty Not that I'd know. I'm in logistics.", "Thanks, I think."]) },
     { text: "Later, Smitty.", end: true }
   ]);
 }
@@ -357,7 +357,7 @@ RP.room({
     { id: "hydrant", name: "fire hydrant", r: [666, 212, 20, 26], z: 24, walk: [690, 232, "back"], look: "A fire hydrant. The one thing in New York that's always ready.", open: "I'm not opening a fire hydrant. The city has a thing about that.", use: "No. The last person who did that got on the news.", pull: "The cap won't budge. Somebody wanted it that way." },
     { id: "bike", name: "chained bike", r: [872, 204, 56, 36], z: 24, walk: [900, 232, "back"], look: "A bike chained to a pole. Just the frame and a seat. The wheels left for a better life.", pickup: "It's chained. And it's missing its wheels. A metaphor for my financial life." },
     { id: "recycling", name: "recycling bags", r: [880, 212, 50, 28], z: 28, walk: [904, 232, "back"], vis: S => (S.f.a1_bags || 0) < 6,
-      look: "Bags of recycling the canners haven't got to. Cans, in other words. Money, in other other words.",
+      look: "Bags of recycling the canners haven't got to. Cans, in other words. Money, in other other words. I could pick one up.",
       pickup: async S => {
         if (RP.has("cans2") || RP.has("cans")) return "I'm already carrying a bag. I'm not a camel.";
         S.f.a1_bags = (S.f.a1_bags || 0) + 1; RP.give("cans2");

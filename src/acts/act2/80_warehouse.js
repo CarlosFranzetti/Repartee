@@ -304,7 +304,24 @@ async function bookSlot(S) {
     "I have a monthly slot. I have turntables. I have a couch, a clean pair of jeans and a crowd that knows my name. Or my wrong name."
   ]);
   await RP.say("Sunday, 5:40 AM. The sun rises over Gowanus. I decide it's rising for me.", "nar");
+  await settleUp(S);
   await finishAct(S);
+}
+
+// closing beat: the rent, the lockout and the couch (Level 3 opens six months later with all three sorted)
+RP.voice("a2_kowalski", { color: "#d8c8a8", prefix: "KOWALSKI: ", anchor: [320, 90] });
+async function settleUp(S) {
+  await RP.fadeTo(1, 900);
+  RP.setClock("TUE 2:00 PM");
+  await RP.lines([
+    "@nar Tuesday, 2:00 PM. Management office hours. Fifteen minutes, exactly as advertised.",
+    "@nar I slide the rent across the desk: late, in cash, in an envelope that still smells like a basement.",
+    "@a2_kowalski ...It's all here. Huh. The lock change was temporary. Here's your key. Hot water: next week.",
+    "@nar It's always next week. It's the one thing in this building that never changes.",
+    "@nar 4C is mine again. Gerald is on the windowsill, leaning at the light like a hostage who has made peace with it. Lou has been watering him through the wall with a turkey baster."
+  ]);
+  RP.text("MARCUS", "i have my couch back. i'm in the exact middle of it. alone. feet up. best day of my life. take ur socks");
+  await RP.say("Marcus has his couch back. I have never seen a man so happy to lie down on his own furniture.", "nar");
 }
 
 async function finishAct(S) {
@@ -316,7 +333,8 @@ async function finishAct(S) {
     [!!S.f.a2_loftFixed, "Fixed a dead PA"],
     [!!S.f.a2_louSecret, "Learned the secret of \"NYC 93\""],
     [!!S.f.a2_turntables, "Bought your first turntables"],
-    [!!S.f.a2_slot, "Booked a monthly slot at Basement Tapes"]
+    [!!S.f.a2_slot, "Booked a monthly slot at Basement Tapes"],
+    [true, "Paid the rent, rescued Gerald, gave Marcus his couch back"]
   ]);
 }
 

@@ -167,6 +167,15 @@ A2.hint = nextHint;
 
 function readyToSleep(S) { return S.f.a2_plasma && S.f.a2_showered; }
 
+// signpost the couch: the moment plasma + shower are both done (whichever lands last), once
+A2.dayCheck = async S => {
+  if (S.f.a2_dayDone || ch(S) !== 1 || !readyToSleep(S)) return;
+  S.f.a2_dayDone = true;
+  await RP.say("That's the day done. I've got money, I'm clean, and nobody expects me anywhere until Friday.");
+  RP.text("MARCUS", "u set. crash on the couch, party's friday. wear pants");
+  await RP.say("Marcus has scheduled my whole week from a couch I'm sleeping on. Fine. Couch, then, and I'll wake up on Friday.");
+};
+
 /* ------------------------------------------------------------------ cutscenes */
 async function textDani(S) {
   RP.text("DANI (NOWHERE BAR)", "hey dj. marcus says ur homeless?? lol. come thru, im making pierogi. my shower has 7 settings.");
@@ -177,10 +186,12 @@ async function textDani(S) {
     "seven settings? i'll need to see them in person.",
     "what's the water pressure on setting seven?"
   ][i];
+  RP.text("ME", reply, true);
   await RP.say("Typing: " + reply);
   await RP.wait(500);
-  if (i === 2) await RP.lines(["@a2_dani_phone ...it's a 9. come over."]);
-  else await RP.lines(["@a2_dani_phone ha. come over whenever. 4th floor, no elevator, bring an appetite."]);
+  const back = i === 2 ? "...it's a 9. come over." : "ha. come over whenever. 4th floor, no elevator, bring an appetite.";
+  RP.text("DANI (NOWHERE BAR)", back, true);
+  await RP.lines(["@a2_dani_phone " + back]);
   S.f.a2_daniText = true;
   RP.unlock("a2_loc_dani");
   RP.toast("New place on the subway map: Dani's");

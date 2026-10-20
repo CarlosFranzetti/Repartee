@@ -166,7 +166,7 @@ async function buySnack(S) {
 }
 
 async function useEddie(S) {
-  if (S.f.a3_cdj) { await RP.lines(["@a3_eddie Everything good with the 900s? A two-time deal never breaks. It breaks twice.", "@a3_eddie Come back if you need speaker cable. I have cable. Cable I have."]); return; }
+  if (S.f.a3_cdj) { await RP.lines(["@a3_eddie Everything good with the " + (S.gear.decks === "pioneer_cdj_900" ? "900s" : "decks") + "? A two-time deal never breaks. It breaks twice.", "@a3_eddie Come back if you need speaker cable. I have cable. Cable I have."]); return; }
   if (!S.f.a3_eddieMet) {
     S.f.a3_eddieMet = true;
     await RP.lines(["@a3_eddie Hey, hey, the DJ with the residency! I heard. Everybody heard. I told them.",
@@ -178,15 +178,17 @@ async function useEddie(S) {
   if (i === 2) return;
   if (i === 1) { await RP.lines(["What if I told you I'm a loyal customer?", "@a3_eddie A loyal customer is a customer who comes back. Hi. Let's do the deal."]); }
   await RP.say("Okay. Don't touch the one with the sticker. That's a different deal.", "a3_eddie");
-  const res = await A3.mg("buyGear", { slot: "decks", options: ["pioneer_cdj_900", "gemini_cdj_700", "pioneer_cdj_400"], seller: "Eddie Two-Times", budget: Math.min(S.money, 260), scams: 1, difficulty: 2 },
+  const res = await A3.mg("buyGear", { slot: "decks", options: ["pioneer_cdj_900", "gemini_cdj_700", "pioneer_cdj_400"], flaws: ["ok", "cosmetic", "wobble"], asks: { pioneer_cdj_900: 280 }, seller: "Eddie Two-Times", budget: Math.min(S.money, 260), scams: 1, difficulty: 2 },
     { giveUp: "Not today", onFail: async () => { await RP.lines(["@a3_eddie You were about to buy the one with the wobble. I saved you from yourself. Same price.", "@a3_eddie ...Okay, I charge for that. Try again."]); },
       assist: async () => { await RP.say("It's a good pair, kid. I'd tell you if it wasn't. I would. Probably.", "a3_eddie"); } });
   if (res.giveUp) return;
   const paid = Math.min(S.money, Math.max(60, Math.round(res.paid != null ? res.paid : 180)));
   RP.money(-paid);
-  RP.setGear("decks", "pioneer_cdj_900");
+  const gid = res.bought && RP.gearInfo(res.bought) ? res.bought : "pioneer_cdj_900"; // auto() / walkthrough / assisted results may omit it: the 900s
+  RP.setGear("decks", gid);
   S.f.a3_cdj = true; RP.relight();
-  await RP.lines(["@a3_eddie Pioneer CDJ-900s. 2009, same press release as the CDJ-2000. They play USBs. They link. They're yours.", "@a3_eddie A two-time deal. I take the money, you take the decks. Twice if you count the handshake.", "Eddie hands me the decks. They're heavy and smell like a wedding. I love them."]);
+  if (gid === "pioneer_cdj_900") await RP.lines(["@a3_eddie Pioneer CDJ-900s. 2009, same press release as the CDJ-2000. They play USBs. They link. They're yours.", "@a3_eddie A two-time deal. I take the money, you take the decks. Twice if you count the handshake.", "Eddie hands me the decks. They're heavy and smell like a wedding. I love them."]);
+  else { const g = RP.gearInfo(gid); await RP.lines(["@a3_eddie The " + g.brand + " " + g.model + "s? Not the 900s. Your call, kid. A two-time deal is a two-time deal.", "Eddie hands me the decks. They play. That's the whole review."]); }
   if (!S.f.a3_dj350) await RP.say("Gear: decks done. Still need a mixer that doesn't smell like vodka.");
 }
 

@@ -9,12 +9,16 @@
        seller: "Eddie Two-Times" | any name | "boutique"   ("boutique" = act-5 showroom: no scams, a waitlist instead of a haggle)
        budget: $ cash in hand    default: enough for the best working unit only if you haggle
        scams: n                  how many listings are lemons (default by difficulty, always leaves >= 1 good unit)
+       flaws: [...]              scripted scenario: one flaw key per listing ("ok" | "cosmetic" | a lemon flaw). Prices are then
+                                 fixed (not rolled), so the story can quote the tag: AT-LP120-USB asks $215.
+       asks: { gearId: $ }       scripted scenario only: pin a listing's tag; its haggle floor scales with it (Act 3: CDJ-900 asks $280).
        difficulty: 1..5, seed, arcade }
+   Tags are ASKING prices before haggling. Turntables, decks and monitors are sold as a PAIR; the UI says so.
    Result: { ok, score (0..100), bought: gearId|null, paid: $ }
      ok     true only if you drove home with WORKING gear.
      bought the gear id you got (null if you left empty-handed OR bought a lemon).
      paid   $ that left your pocket (non-zero even when you bought a lemon: apply it to the player's money!).
-     extra  lemon: gearId|null (you bought junk), flaw, spotted (lemons you caught), haggled ($ saved), place + attempts (boutique).
+     extra  lemon: gearId|null (you bought junk), flaw, spotted (lemons you called out or found evidence on), haggled ($ saved), place + attempts (boutique).
    The calling level applies the purchase (RP.setGear / RP.money(-paid)); this game never touches RP.state. */
 (function () {
 "use strict";
@@ -38,6 +42,7 @@ const FLAWS = {
   box: ["dead", "fake"]
 };
 const EASY = ["wobble", "noPlay", "dead", "deadCh", "blown", "hum"];
+const PAIR = { turntables: 1, decks: 1, monitors: 1 }; // slots sold as a pair: the tag is for both units
 const PROBES = ["power", "ctl", "listen", "look", "paper"];
 const PLABEL = {
   turntable: ["SPIN PLATTER", "MOVE PITCH", "LISTEN", "LOOK CLOSER", "SERIAL / RECEIPT"],
@@ -140,12 +145,13 @@ function buildScenario(p) {
   if (forced) nScam = forced.filter(f => f && f !== "cosmetic" && f !== "ok").length;
   const scamIdx = forced ? new Set(forced.map((f, i) => (f && f !== "cosmetic" && f !== "ok" ? i : -1)).filter(i => i >= 0)) : new Set(order.slice(0, nScam));
   const usedFlaws = new Set();
+  const roll = (x, fixed) => (forced ? fixed : x); // a scripted scenario prices at fixed points (rnd() is still drawn, so seeds line up)
   const floorK = [0.84, 0.86, 0.88, 0.9, 0.92][diff - 1];
   let fakeUsed = false, cosmeticUsed = false;
   const listings = gears.map((g, i) => {
     const vk = vkOf(g);
     const L = { i, id: g.id, gear: g, vk, flaw: null, cosmetic: false, scam: false, seed: Math.floor(rnd() * 1000) };
-    const factor = boutique ? 1 : 0.58 + rnd() * 0.16;
+    const factor = boutique ? 1 : 0.58 + roll(rnd(), 0.5) * 0.16;
     let fair = r5(g.price * factor);
     if (scamIdx.has(i)) {
       L.scam = true;
@@ -156,13 +162,15 @@ function buildScenario(p) {
       L.flaw = forced && forced[i] ? forced[i] : pool[Math.floor(rnd() * pool.length)];
       if (L.flaw === "fake") fakeUsed = true;
       usedFlaws.add(L.flaw + vk);
-      L.ask = L.flaw === "fake" ? r5(fair * 0.36) : r5(fair * (0.96 + rnd() * 0.14));
+      L.ask = L.flaw === "fake" ? r5(fair * 0.36) : r5(fair * (0.96 + roll(rnd(), 0.5) * 0.14));
       L.floor = r5(L.ask * 0.8);
     } else {
       if ((forced && forced[i] === "cosmetic") || (!forced && !boutique && !cosmeticUsed && diff >= 2 && n >= 3 && rnd() < 0.55)) { L.cosmetic = true; cosmeticUsed = true; fair = r5(fair * 0.84); }
-      L.ask = boutique ? g.price : r5(fair * (1.16 + rnd() * 0.1));
+      L.ask = boutique ? g.price : r5(fair * (1.16 + roll(rnd(), 0.9) * 0.1));
       L.floor = boutique ? g.price : r5(fair * floorK);
     }
+    const pin = forced && p.asks ? Math.round(+p.asks[g.id]) : 0;
+    if (pin > 0) { L.floor = r5(L.floor * pin / L.ask); L.ask = pin; }
     L.askNow = L.ask; L.floor0 = L.floor; L.ask0 = L.ask;
     L.patience = [5, 4, 4, 3, 3][diff - 1];
     L.status = "open"; L.agreed = null; L.lastOffer = null; L.probes = {}; L.notes = {}; L.seen = false; L.called = false; L.powered = false; L.cosLev = false;
@@ -181,7 +189,7 @@ function buildScenario(p) {
   }
   const reachable = working.filter(l => l.floor <= budget);
   const best = reachable.slice().sort((a, b) => (b.gear.price - a.gear.price))[0] || null;
-  return { listings, slot, boutique, budget, diff, best, seed, seller: boutique ? "Mercè" : (typeof p.seller === "string" ? p.seller : "Eddie Two-Times") };
+  return { listings, slot, boutique, pair: !boutique && !!PAIR[slot], budget, diff, best, seed, seller: boutique ? "Mercè" : (typeof p.seller === "string" ? p.seller : "Eddie Two-Times") };
 }
 
 function scoreWorking(sc, L, paid, info) {
@@ -245,6 +253,7 @@ const CSS = `
 .bg-deal.stick { position: sticky; bottom: 0; z-index: 3; box-shadow: 0 -6px 0 rgba(5, 3, 10, .9); }
 .bg-ask { font-size: 20px; color: var(--muted); display: flex; flex-direction: column; line-height: 1; min-width: 92px; }
 .bg-ask b { font-weight: 400; font-size: 34px; color: var(--amber); font-variant-numeric: tabular-nums; }
+.bg-ask small { font-size: 15px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
 .bg-ask.deal b { color: var(--ok); }
 .bg-offer { display: flex; align-items: center; gap: 6px; flex: 1 1 230px; min-width: 0; }
 .bg-offer input[type=range] { flex: 1; min-width: 80px; accent-color: var(--pink); height: 28px; }
@@ -376,7 +385,7 @@ RP.mg.register("buyGear", {
       const b = el("button", { cls: "bg-card", type: "button", role: "listitem" }, cards);
       el("b", { text: l.gear.brand + " " + l.gear.model }, b);
       el("span", { cls: "pr", text: money(l.askNow) }, b);
-      el("span", { cls: "sub", text: (L.length > 1 ? "Listing " + (i + 1) : "On the stand") + (l.gear.year ? " · " + l.gear.year : "") }, b); el("span", { cls: "dots", text: "" }, b);
+      el("span", { cls: "sub", text: (L.length > 1 ? "#" + (i + 1) : "On the stand") + (sc.pair ? " · pair" : "") + (l.gear.year ? " · " + l.gear.year : "") }, b); el("span", { cls: "dots", text: "" }, b);
       b.addEventListener("click", () => select(i));
       return b;
     });
@@ -386,7 +395,7 @@ RP.mg.register("buyGear", {
         b.classList.toggle("sel", i === st.sel); b.classList.toggle("gone", l.status === "gone"); b.classList.toggle("junk", l.status === "busted");
         b.querySelector(".pr").textContent = l.status === "gone" ? "SOLD" : l.status === "busted" ? "JUNK" : money(l.agreed != null ? l.agreed : l.askNow);
         b.querySelector(".dots").textContent = PROBES.map(k => (l.probes[k] ? "●" : "○")).join("");
-        b.setAttribute("aria-label", l.gear.brand + " " + l.gear.model + ", " + (l.status === "open" ? "asking " + money(l.askNow) : l.status));
+        b.setAttribute("aria-label", l.gear.brand + " " + l.gear.model + ", " + (l.status === "open" ? "asking " + money(l.askNow) + (sc.pair ? " for the pair" : "") : l.status));
       });
     }
 
@@ -487,11 +496,11 @@ RP.mg.register("buyGear", {
     });
 
     /* ---------- the deal bar (van: haggle; boutique: waitlist) ---------- */
-    let ofEl = null, slider = null, offerVal = null, askEl = null, btnOffer = null, btnBuy = null, btnBS = null, meterPips = null, meterNum = null, btnTalk = null;
+    let ofEl = null, slider = null, offerVal = null, askEl = null, askLbl = null, askVal = null, askNote = null, btnOffer = null, btnBuy = null, btnBS = null, meterPips = null, meterNum = null, btnTalk = null;
     function buildDeal() {
       deal.innerHTML = "";
       if (boutique) {
-        askEl = el("div", { cls: "bg-ask" }, deal); el("span", { text: "PRICE (FIXED)" }, askEl); el("b", { text: "" }, askEl);
+        askEl = el("div", { cls: "bg-ask" }, deal); askLbl = el("span", { text: "PRICE (FIXED)" }, askEl); askVal = el("b", { text: "" }, askEl);
         const m = el("div", { cls: "bg-meter" }, deal);
         el("span", { text: "YOUR PLACE" }, m); meterNum = el("b", { text: "" }, m); meterPips = el("div", { cls: "bg-pips" }, m);
         for (let i = 0; i < 10; i++) el("i", {}, meterPips);
@@ -502,7 +511,7 @@ RP.mg.register("buyGear", {
         btnBuy.addEventListener("click", () => buy());
         return;
       }
-      askEl = el("div", { cls: "bg-ask" }, deal); el("span", { text: "ASKING" }, askEl); el("b", { text: "" }, askEl);
+      askEl = el("div", { cls: "bg-ask" }, deal); askLbl = el("span", { text: "ASKING" }, askEl); askVal = el("b", { text: "" }, askEl); askNote = el("small", { text: "" }, askEl);
       const o = el("div", { cls: "bg-offer" }, deal);
       ofEl = el("span", { cls: "of", text: "" }, o);
       const dn = el("button", { cls: "kbtn", type: "button", text: "−5", "aria-label": "Offer five dollars less" }, o);
@@ -524,7 +533,7 @@ RP.mg.register("buyGear", {
     function refreshDeal() {
       const l = cur(), open = l.status === "open" && !st.done, price = priceOf(l);
       if (boutique) {
-        askEl.lastChild.textContent = money(l.ask); askEl.classList.toggle("deal", st.place === 1);
+        askVal.textContent = money(l.ask); askEl.classList.toggle("deal", st.place === 1);
         meterNum.textContent = "#" + st.place;
         [...meterPips.children].forEach((e, i) => { const slot = 10 - i; e.className = slot === st.place ? "me" : slot > st.place ? "on" : ""; });
         btnBuy.textContent = st.buying ? "SURE? " + money(price) : sc.budget < price ? "NEED " + money(price - sc.budget) + " MORE" : st.place > 1 ? "BUY (LIST: #" + st.place + ")" : "BUY " + money(price);
@@ -533,11 +542,13 @@ RP.mg.register("buyGear", {
         btnTalk.disabled = st.done || st.audience;
         return;
       }
-      askEl.lastChild.textContent = money(price); askEl.firstChild.textContent = l.agreed != null ? "DEAL" : "ASKING"; askEl.classList.toggle("deal", l.agreed != null);
+      askVal.textContent = money(price); askEl.classList.toggle("deal", l.agreed != null);
+      askLbl.textContent = (l.agreed != null ? "DEAL" : "ASKING") + (sc.pair ? " · PAIR" : "");
+      askNote.textContent = l.agreed != null ? "after haggling" : l.askNow < l.ask0 ? "tag was " + money(l.ask0) : "tag price, before haggling";
       slider.max = String(Math.max(10, Math.round(l.askNow))); slider.min = String(Math.max(5, Math.round(l.ask0 * 0.3)));
       st.offer = clamp(st.offer, parseInt(slider.min, 10), parseInt(slider.max, 10)); slider.value = st.offer; offerVal.textContent = money(st.offer);
       slider.disabled = !open || l.agreed != null; btnOffer.disabled = !open || l.agreed != null;
-      ofEl.textContent = (l.agreed != null ? "DEAL " : "ASK ") + money(price);
+      ofEl.textContent = (l.agreed != null ? "DEAL " : "ASK ") + money(price) + (sc.pair ? " · PAIR" : "");
       btnBS.disabled = !open;
       btnBuy.textContent = st.buying ? "SURE? " + money(price) : sc.budget < price ? "NEED " + money(price - sc.budget) + " MORE" : "BUY " + money(price);
       btnBuy.classList.toggle("confirm", st.buying);
@@ -689,14 +700,21 @@ RP.mg.register("buyGear", {
       }
       let title, msg;
       if (!l) { title = boutique ? "NOT TODAY" : "WALKED AWAY"; msg = boutique ? "Mercè closes the ledger. You're #" + st.place + ". The list will move eventually." : "You left with your cash and your dignity. Eddie waves like he's got a plane to catch."; }
-      else if (res.ok) { title = "SOLD!"; msg = boutique ? "Mercè wraps the " + l.gear.model + " in velvet. “Take care of it. It will take care of you.”" : "You plug it in at home. It works. " + (res.haggled > 0 ? "You even shaved " + money(res.haggled) + " off Eddie's ask." : "Eddie wanted every dollar.") + " Rare for this van."; }
+      else if (res.ok) { title = "SOLD!"; msg = boutique ? "Mercè wraps the " + l.gear.model + " in velvet. “Take care of it. It will take care of you.”" : "You plug it in at home. It works. " + (res.haggled > 0 ? "You even shaved " + money(res.haggled) + " off Eddie's " + money(l.ask0) + " tag." : "Eddie wanted every dollar.") + " Rare for this van."; }
       else { title = "IT'S A LEMON"; msg = "You plug it in at home. " + noteText(l, PROBES.find(k => customFor(l, k)) || "look") + " You call Eddie. “It was working this morning!” NO REFUNDS."; }
       el("h2", { text: title }, card);
       if (l) el("div", { cls: "big", text: money(res.paid) }, card);
       el("p", { text: msg }, card);
       const ul = el("ul", {}, card);
-      if (l) el("li", { html: "<b>" + RP.u.esc(l.gear.brand + " " + l.gear.model) + "</b>" + (res.ok ? "" : " (broken)") }, ul);
-      if (!boutique) { el("li", { html: "Lemons you caught: <b>" + (res.spotted || 0) + " / " + L.filter(x => x.scam).length + "</b>" }, ul); if (st.falseCalls) el("li", { html: "False accusations: <b>" + st.falseCalls + "</b>" }, ul); }
+      if (l) el("li", { html: "<b>" + RP.u.esc(l.gear.brand + " " + l.gear.model) + "</b>" + (sc.pair || !res.ok ? " (" + [sc.pair && "pair", !res.ok && "broken"].filter(Boolean).join(", ") + ")" : "") }, ul);
+      if (!boutique) {
+        // about the van, not the purchase: how many lemons were laid out, what you did about them (called out = flagged with CALL BS)
+        const nL = L.filter(x => x.scam).length, nCalled = L.filter(x => x.scam && x.called).length;
+        const verdict = !l ? "you walked away" : l.scam ? (nL === 1 ? "you bought it" : "you bought one") : "you steered clear";
+        const what = [nCalled ? (nL === 1 ? "you called it out" : "you called out <b>" + nCalled + "</b> of " + nL) : "", verdict].filter(Boolean).join(" · ");
+        el("li", { html: (nL === 1 ? "Lemon in the van: " : "Lemons in the van: ") + "<b>" + (nL || "none") + "</b>" + (nL ? " · " + what : "") }, ul);
+        if (st.falseCalls) el("li", { html: "False accusations: <b>" + st.falseCalls + "</b>" }, ul);
+      }
       else el("li", { html: "Your place on the list: <b>#" + st.place + "</b>" }, ul);
       el("li", { html: "Score: <b>" + res.score + " / 100</b>" }, ul);
       const go = el("button", { cls: "btn primary", type: "button", text: "CONTINUE" }, card);
@@ -822,7 +840,7 @@ RP.mg.register("buyGear", {
     leave.addEventListener("click", () => { if (st.done) return; st.done = true; stopTone(); if (resolveFn) { const f = resolveFn; resolveFn = null; f({ ok: false, score: 0, bought: null, paid: 0 }); } });
     select(0, true);
     if (boutique) speak("Welcome. The " + L[0].gear.model + " is on the stand. " + pickR(BOUTIQUE_INTRO), "neutral");
-    else speak("Welcome to the van! " + (L.length > 1 ? "Take a look. Take your time. Don't take anything." : "One beauty. Touch it. Test it."), "happy");
+    else speak("Welcome to the van! " + (L.length > 1 ? "Take a look. Take your time. Don't take anything." : "One beauty. Touch it. Test it.") + (sc.pair ? " Tags are for the pair, before we haggle." : ""), "happy");
     return new Promise(resolve => { resolveFn = resolve; host.cleanup(() => { if (resolveFn) { const f = resolveFn; resolveFn = null; f({ ok: false, score: 0, bought: null, paid: 0 }); } }); });
   }
 });

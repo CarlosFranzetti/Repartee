@@ -294,7 +294,7 @@ const CSS = `
 .mt-bpm .kbtn { min-width: 32px; padding: 3px 6px; }
 .mt-hint { font-size: 19px; color: var(--cyan); min-height: 1.1em; }
 .mt-grid { display: grid; grid-template-columns: 124px repeat(16, minmax(0, 1fr)); grid-template-rows: 18px repeat(7, 32px); gap: 3px; position: relative; }
-.mt-num { grid-row: 1; grid-column: calc(var(--si) + 2); font-size: 13px; text-align: center; color: #6a5fa8; line-height: 18px; background: #0f0b20; border: 1px solid #241d48; }
+.mt-num { grid-row: 1; grid-column: calc(var(--si) + 2); font-size: 13px; text-align: center; color: #8c84b8; line-height: 18px; background: #0f0b20; border: 1px solid #241d48; }
 .mt-num.b { color: #b7aaf0; }
 .mt-num.play { background: var(--cyan); color: #12061a; border-color: var(--cyan); }
 .mt-rh { grid-column: 1; grid-row: calc(var(--ri) + 2); display: flex; align-items: center; gap: 4px; background: #0f0b20; border: 1px solid #241d48; padding: 0 3px; min-width: 0; }
@@ -321,14 +321,14 @@ const CSS = `
 .mt-pad .l b { font-weight: 400; color: var(--fg); }
 .mt-pad.sel { border-color: #fff var(--rc) var(--rc) #fff; background: #2a2050; }
 .mt-pad.hit { background: var(--pink); }
-.mt-pad.lock { opacity: .4; cursor: default; }
+.mt-pad.lock { filter: grayscale(.6) brightness(.8); cursor: default; }
 .mt-pad.lock::after { content: "LOCKED"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--amber); background: rgba(10, 8, 22, .6); }
 .mt-bank { display: flex; flex-wrap: wrap; gap: 5px; }
 .mt-bank .grp { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .mt-bank .gl { font-size: 15px; color: var(--muted); letter-spacing: .06em; margin-right: 2px; }
 .mt-vb { font-size: 17px; padding: 4px 9px; background: #1a1534; border: 2px solid; border-color: #3a3070 #0a0716 #0a0716 #3a3070; color: var(--fg); cursor: pointer; line-height: 1; }
 .mt-vb.sel { background: var(--rc); color: #12061a; border-color: var(--rl) var(--rd) var(--rd) var(--rl); }
-.mt-vb.lock { opacity: .45; cursor: default; }
+.mt-vb.lock { filter: grayscale(.6) brightness(.9); border-style: dashed; cursor: default; }
 .mt-vb.new { animation: mtnew .7s steps(2) 3; }
 @keyframes mtnew { 50% { background: var(--amber); color: #12061a; } }
 .mt-studio { border: 2px solid #3a2f78; box-shadow: 0 0 0 2px #120a2c, 0 5px 0 #000; line-height: 0; background: #05030a; }
