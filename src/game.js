@@ -77,7 +77,7 @@ function showTitle() {
   const first = [];
   if (RP.hasSave()) first.push(add("CONTINUE", async () => { closeTitle(); if (!(await RP.loadSave())) { showTitle(); } }));
   first.push(add(DEMO ? "PLAY LEVEL " + DEMO.level : "NEW GAME", () => newGame(panel)));
-  if (Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
+  if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
   add("MINI-GAME ARCADE", () => arcade(panel));
   add("HOW TO PLAY", () => toggle(panel, howTo));
   add("CREDITS", () => toggle(panel, credits));

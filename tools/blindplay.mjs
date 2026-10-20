@@ -141,7 +141,9 @@ if (argv[0] !== "serve") {
       const a = RP.actor && RP.actor(id);
       if (a) { if (a.name) return typeof a.name === "function" ? a.name(RP.S()) : a.name; const d = RP.chars.get(a.char); if (d && d.name) return d.name; }
       const d = RP.chars.get && RP.chars.get(id);
-      return d && d.name ? d.name : id;
+      if (d && d.name) return d.name;
+      const base = String(id).replace(/^a\d_/, "");
+      return base.endsWith("_phone") ? base.slice(0, -6) + " (phone)" : base.replace(/_/g, " ");
     };
     new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => {
       if (n.classList && n.classList.contains("line")) window.__bpLog.push(String(who(n.dataset.who || "kid")).toUpperCase() + ": " + n.textContent);

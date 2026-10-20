@@ -2,8 +2,8 @@
 //  1. index.html               — dev page that loads every source file with <script src> (works from file://)
 //  2. dist/index.html          — the full game as one self-contained file (fonts, CSS, JS inlined)
 //  3. dist/artifact.html       — the same, content only, for the claude.ai artifact host
-//  4. dist/level1.html … dist/level5.html — each level on its own (plus the mini-game arcade), built with
-//     only that level's act; finishing it links to the next level's page (Level 5 ends the game)
+//  4. dist/level1.html … dist/level5.html — each level on its own (plus the mini-game arcade), built with the
+//     acts up to that level and started at it; finishing it links to the next level's page (Level 5 ends the game)
 //  5. dist/level1.artifact.html — Level 1 for the claude.ai artifact host
 // File order: core (fixed) → data → minigames → acts (act1..act5, files sorted by name) → game.js
 // Every page gets window.RP_SITE (level pages and the full game, with links between them): relative links
@@ -54,7 +54,8 @@ const fonts = fs.readFileSync(path.join(root, "src/fonts.css"), "utf8");
 const css = fs.readFileSync(path.join(root, "src/style.css"), "utf8");
 
 function bundle({ level }) {
-  const acts = level ? sortJs(walk(path.join(root, "src/acts/act" + level))) : actsUpTo(9);
+  // a level page carries the earlier acts too: later acts reuse their items, voices and places (the wallet, the phone...)
+  const acts = actsUpTo(level || 9);
   const files = [...core, ...data, ...mgs, ...acts, ...game].filter(f => !broken.has(f));
   const title = level ? "re:parteé Level " + level + ": " + LEVELS[level - 1] : "re:parteé";
   const head = artifact => `window.RP_SITE = ${JSON.stringify(site(level, artifact))};\n`;

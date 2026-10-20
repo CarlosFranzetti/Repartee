@@ -80,7 +80,7 @@ RP.walkthroughs.act2 = W(
   exp("S.room === 'a2_dani'", "at Dani's"),
   hot("look", "a2_bath"),
   say(["pierogi", "seven settings"]), hot("talk", "a2_dani"), clear(),
-  exp("S.f.a2_showered && S.f.a2_daniName && RP.hasRecord('snap_rhythm_is_a_dancer') && S.unlocked.includes('a2_loc_loft')", "clean, Dani's name to drop, a new record"),
+  exp("S.f.a2_showered && S.f.a2_daniName && RP.hasRecord('snap_rhythm_is_a_dancer') && !S.unlocked.includes('a2_loc_loft')", "clean, Dani's name to drop, a new record (the loft opens Saturday)"),
   go("a2_exit", "a2_loc_couch"),
   hot("use", "a2_stoopdoor"),
   exp("S.room === 'a2_couch'", "home on the couch"),

@@ -219,7 +219,10 @@ RP.mg.register("afterParty", {
       { id: "club", label: "Can your club help?", cost: { min: 4, bat: 3 }, max: 1, run() { return { say: "Absolutely. Next week. I'll pay you for that other thing next week too.", chips: ["Nothing. Again."], bad: true }; } }
     ] });
     reg("jess", { name: "Jess", tag: "your ex", def: "jess", vis: true, greet: "...It's four AM.", opts: [
-      { id: "help", label: "Ask Jess for help", cost: { min: 3, bat: 3 }, max: 1, run() { return { say: "Do you have the USB? The one with Mr. Whiskers? ...No? Goodnight.", chips: ["She hung up"], bad: true }; } }
+      { id: "help", label: "Ask Jess for help", cost: { min: 3, bat: 3 }, max: 1, run() {
+        if (host.S && host.S.f && host.S.f.a2_usbBack) return { say: "You gave Mr. Whiskers back. Fine. My roommates are up anyway. We're coming.", chips: [addPeople(4)] };
+        return { say: "Do you have the USB? The one with Mr. Whiskers? ...No? Goodnight.", chips: ["She hung up"], bad: true };
+      } }
     ] });
     /* contacts the act wants on the phone from the start */
     const extra = Array.isArray(p.contacts) ? p.contacts : [];
