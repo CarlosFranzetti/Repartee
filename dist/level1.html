@@ -1616,6 +1616,7 @@ function ctx() {
   return AC;
 }
 audio.ctx = ctx;
+audio.buses = () => ({ music: musicBus, sfx: sfxBus, noise: noiseBuf });
 audio.setMute = m => {
   audio.muted = !!m;
   if (master && AC) { master.gain.cancelScheduledValues(AC.currentTime); master.gain.setTargetAtTime(m ? 0 : 0.85, AC.currentTime, 0.05); }
@@ -1963,6 +1964,206 @@ audio.now = () => (AC ? AC.currentTime : performance.now() / 1000);
 })();
 
 } catch (e) { console.error("load error in src/core/audio.js", e); (window.__loadErrors = window.__loadErrors || []).push("src/core/audio.js: " + e); }
+/* ---- src/core/titletheme.js ---- */
+try {
+/* Title theme: a 24-bar, 124 BPM loop in E minor, in the dark Detroit-electro vein: 16 bars of groove, then an 8-bar breakdown. A loud, deep, rolling bass leads, with one
+   darker offbeat note a flat second above the root; a broken electro kick; low, quiet bleeps, pad and stabs; and low-mid
+   plucks that land at random and ring out through a tempo-synced echo; percussion that alternates bar to bar. The breakdown
+   strips everything but kick, clap and hats and holds two dark, Halloween-style organ chords. Everything is synthesized with Web Audio (no audio
+   files). RP.audio.titleTheme.start() / .stop(fadeSec) / .running; start needs a user gesture (the title wires that up). */
+const RP = window.RP;
+const audio = RP.audio;
+const BPM = 124, STEP = 60 / BPM / 4, BARS = 24, STEPS = BARS * 16;
+const midi = n => 440 * Math.pow(2, (n - 69) / 12);
+
+// four-bar progression of minor 7th and 9th chords, the deep-house kind: bass root, then the chord notes for stabs, pad and plucks
+const PROG = [
+  { r: 40, ch: [52, 55, 59, 62, 66] }, // Em9
+  { r: 40, ch: [52, 55, 59, 62, 66] }, // Em9
+  { r: 33, ch: [57, 60, 64, 67, 71] }, // Am9
+  { r: 35, ch: [59, 62, 66, 69] }      // Bm7
+];
+// the bleep riff (semitones above the bar's chord root + 52; 0 = rest), repeated every bar with a different density
+const RIFF = [0, 24, 0, 31, 0, 25, 36, 0, 31, 0, 27, 0, 36, 0, 31, 24]; // minor third (27) and a flat second (25), no major thirds
+let AC = null, N = null; // N: the live node graph while running
+const T = audio.titleTheme = { running: false };
+
+function build() {
+  const b = audio.buses();
+  const out = AC.createGain(); out.gain.value = 0.0001; out.connect(b.music);
+  const duck = AC.createGain(); duck.connect(out);
+  // echo: a dotted eighth that repeats and darkens
+  const echoIn = AC.createGain();
+  const dl = AC.createDelay(2); dl.delayTime.value = STEP * 3;
+  const fb = AC.createGain(); fb.gain.value = 0.5;
+  const fl = AC.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 1700;
+  const echoOut = AC.createGain(); echoOut.gain.value = 0.6;
+  echoIn.connect(dl); dl.connect(fl); fl.connect(fb); fb.connect(dl); dl.connect(echoOut); echoOut.connect(out);
+  const bleepSend = AC.createGain(); bleepSend.gain.value = 0.3; bleepSend.connect(echoIn);
+  const pluckSend = AC.createGain(); pluckSend.gain.value = 0.95; pluckSend.connect(echoIn);
+  return { out, duck, echoIn, bleepSend, pluckSend, noise: b.noise };
+}
+
+/* ---- the band ---- */
+function kick(t) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.11);
+  g.gain.setValueAtTime(0.7, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  o.connect(g); g.connect(N.out); o.start(t); o.stop(t + 0.32);
+  N.duck.gain.setValueAtTime(0.35, t); N.duck.gain.linearRampToValueAtTime(1, t + 0.2); // sidechain pump
+}
+function hat(t, open) {
+  const s = AC.createBufferSource(); s.buffer = N.noise;
+  const f = AC.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7600;
+  const g = AC.createGain(), len = open ? 0.2 : 0.04;
+  g.gain.setValueAtTime(open ? 0.08 : 0.05, t); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+  s.connect(f); f.connect(g); g.connect(N.out); s.start(t, Math.random() * 0.4); s.stop(t + len + 0.02);
+}
+function clap(t) {
+  [0, 0.012, 0.024].forEach(o => {
+    const s = AC.createBufferSource(); s.buffer = N.noise;
+    const f = AC.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1300; f.Q.value = 1;
+    const g = AC.createGain(); g.gain.setValueAtTime(0.13, t + o); g.gain.exponentialRampToValueAtTime(0.001, t + o + (o > 0.02 ? 0.16 : 0.03));
+    s.connect(f); f.connect(g); g.connect(N.out); s.start(t + o, Math.random() * 0.4); s.stop(t + o + 0.2);
+  });
+}
+/* alternating percussion: a short rim click and a falling tom, both sent into the echo */
+function rim(t, vol) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = "square"; o.frequency.value = 1750;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+  o.connect(g); g.connect(N.out); g.connect(N.pluckSend); o.start(t); o.stop(t + 0.04);
+}
+function tom(t, f, vol) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.frequency.setValueAtTime(f * 1.6, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.08);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+  o.connect(g); g.connect(N.out); g.connect(N.pluckSend); o.start(t); o.stop(t + 0.3);
+}
+function shaker(t, vol) {
+  const s = AC.createBufferSource(); s.buffer = N.noise;
+  const f = AC.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 6200; f.Q.value = 2;
+  const g = AC.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  s.connect(f); f.connect(g); g.connect(N.out); s.start(t, Math.random() * 0.4); s.stop(t + 0.06);
+}
+/* breakdown chord: an organ (a sine and its first harmonics) with a slow tremolo, dark and a little ghostly, into the echo */
+function organ(t, notes, len) {
+  const g = AC.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.06, t + 0.5); g.gain.setValueAtTime(0.06, t + len - 0.6); g.gain.linearRampToValueAtTime(0.0001, t + len);
+  const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1300; f.Q.value = 1.5;
+  const trem = AC.createGain(); trem.gain.value = 0.8;
+  const lfo = AC.createOscillator(), lg = AC.createGain(); lfo.frequency.value = 5.2; lg.gain.value = 0.2; lfo.connect(lg); lg.connect(trem.gain);
+  f.connect(trem); trem.connect(g); g.connect(N.duck); g.connect(N.bleepSend);
+  notes.forEach(n => [[1, 1], [2, 0.5], [3, 0.22], [4, 0.1]].forEach(([h, a]) => {
+    const o = AC.createOscillator(), og = AC.createGain(); o.type = "sine"; o.frequency.value = midi(n) * h; og.gain.value = a / notes.length;
+    o.connect(og); og.connect(f); o.start(t); o.stop(t + len + 0.05);
+  }));
+  lfo.start(t); lfo.stop(t + len + 0.05);
+}
+function bass(t, note, len, dark, vol = 1) {
+  // a saw through a low, closing filter for the body plus a sine for weight; the dark note closes further and sits a little flat
+  const f = AC.createBiquadFilter(), g = AC.createGain();
+  f.type = "lowpass"; f.Q.value = dark ? 8 : 5;
+  f.frequency.setValueAtTime(dark ? 420 : 640, t); f.frequency.exponentialRampToValueAtTime(dark ? 95 : 130, t + len);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime((dark ? 0.8 : 0.9) * vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  f.connect(g); g.connect(N.duck);
+  const saw = AC.createOscillator(); saw.type = "sawtooth"; saw.frequency.value = midi(note); if (dark) saw.detune.value = -18;
+  const sub = AC.createOscillator(); sub.type = "sine"; sub.frequency.value = midi(note); if (dark) sub.detune.value = -18;
+  const sg = AC.createGain(); sg.gain.value = 1.1;
+  saw.connect(f); sub.connect(sg); sg.connect(g);
+  saw.start(t); sub.start(t); saw.stop(t + len + 0.02); sub.stop(t + len + 0.02);
+}
+function stab(t, notes, len, vol) {
+  const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(1100, t); f.frequency.exponentialRampToValueAtTime(380, t + len);
+  const g = AC.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  f.connect(g); g.connect(N.duck);
+  notes.forEach(n => { const o = AC.createOscillator(); o.type = "sawtooth"; o.frequency.value = midi(n); o.detune.value = (n % 3 - 1) * 5; o.connect(f); o.start(t); o.stop(t + len + 0.02); });
+}
+function pad(t, notes, len) {
+  const g = AC.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.014, t + 0.5); g.gain.setValueAtTime(0.014, t + len - 0.5); g.gain.linearRampToValueAtTime(0.0001, t + len);
+  const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 900;
+  f.connect(g); g.connect(N.duck);
+  notes.forEach(n => { const o = AC.createOscillator(); o.type = "triangle"; o.frequency.value = midi(n); o.connect(f); o.start(t); o.stop(t + len + 0.05); });
+}
+function bleep(t, note, vol, bright) {
+  const o = AC.createOscillator(), f = AC.createBiquadFilter(), g = AC.createGain();
+  o.type = "square"; o.frequency.setValueAtTime(midi(note) * 1.5, t); o.frequency.exponentialRampToValueAtTime(midi(note), t + 0.025);
+  f.type = "lowpass"; f.frequency.value = bright; f.Q.value = 6;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+  o.connect(f); f.connect(g); g.connect(N.out); g.connect(N.bleepSend); o.start(t); o.stop(t + 0.12);
+}
+
+/* a low-mid pluck: a triangle that drops in pitch, a woody click, a filter that closes; most of it goes to the echo */
+function pluck(t, note, vol) {
+  const f0 = midi(note);
+  const o = AC.createOscillator(), f = AC.createBiquadFilter(), g = AC.createGain();
+  o.type = "triangle"; o.frequency.setValueAtTime(f0 * 1.05, t); o.frequency.exponentialRampToValueAtTime(f0, t + 0.03);
+  f.type = "lowpass"; f.frequency.setValueAtTime(1800, t); f.frequency.exponentialRampToValueAtTime(380, t + 0.18); f.Q.value = 3;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+  o.connect(f); f.connect(g); g.connect(N.out); g.connect(N.pluckSend); o.start(t); o.stop(t + 0.25);
+  const s = AC.createBufferSource(); s.buffer = N.noise;
+  const nf = AC.createBiquadFilter(); nf.type = "bandpass"; nf.frequency.value = f0 * 5; nf.Q.value = 2;
+  const ng = AC.createGain(); ng.gain.setValueAtTime(vol * 0.5, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+  s.connect(nf); nf.connect(ng); ng.connect(N.pluckSend); ng.connect(N.out); s.start(t, Math.random() * 0.4); s.stop(t + 0.04);
+}
+
+function schedule(step, t) {
+  const bar = (step / 16) | 0, s = step % 16, ch = PROG[bar % 4];
+  // broken electro kick (0, 7, 10, and a pick-up at 14 every fourth bar)
+  if (s === 0 || s === 7 || s === 10 || (s === 14 && bar % 4 === 3)) kick(t);
+  if (s % 4 === 2) hat(t, s % 8 === 6);
+  if (bar >= 4 && (s === 4 || s === 12)) clap(t);
+  if (bar >= 8 && s % 2 === 1) hat(t, false);
+  if (bar >= 16) {
+    // breakdown: only kick, clap and hats (above) plus two dark organ chords, Em then F (a flat second up: the Halloween step)
+    if (s === 0 && bar % 4 === 0) organ(t, bar === 16 ? [40, 52, 55, 59] : [41, 53, 57, 60], STEP * 64);
+    if (bar === 23 && s >= 12) clap(t); // a clap fill into the top of the loop
+    return;
+  }
+  // percussion that alternates: even bars get a rim and a shaker, odd bars a pair of low toms; every fourth bar a tom fill
+  if (bar >= 4) {
+    if (bar % 2 === 0) { if (s === 3 || s === 9 || s === 14) rim(t, 0.05); if (s % 2 === 1) shaker(t, 0.03); }
+    else { if (s === 5) tom(t, 110, 0.12); if (s === 12) tom(t, 82, 0.12); }
+    if (bar % 4 === 3 && s >= 12) tom(t, [140, 120, 100, 82][s - 12], 0.09);
+  }
+  if (s === 2 || s === 6 || s === 10) bass(t, ch.r, STEP * 3);
+  if (s === 4 || s === 12) bass(t, ch.r + 12, STEP * 0.8, false, 0.45); // short octave ghost notes keep it rolling
+  if (s === 14) bass(t, ch.r + 1, STEP * 3.4, true); // the dark offbeat note: a flat second above the root
+  // chords are sparse: one short minor stab a bar (on the "and" of beat two), a second only in every other bar of the second half, and a pad that holds for two bars
+  if (bar >= 2 && s === 6) stab(t, ch.ch, STEP * 2.2, 0.018);
+  if (bar >= 8 && bar % 2 === 1 && s === 11) stab(t, ch.ch.slice(0, 4), STEP * 1.8, 0.014);
+  if (s === 0 && bar >= 4 && bar % 2 === 0) pad(t, ch.ch, STEP * 32);
+  // bleeps: sparse in the first four bars, then the full riff, with a filter that opens as the loop goes on
+  const dense = bar < 4 ? (s % 4 === 0 || s === 7 || s === 11) : true;
+  const r = RIFF[s];
+  // plucks at random: a few per bar from bar 3 on, now and then in pairs, never on the kick
+  if (bar >= 2 && s % 4 !== 0 && Math.random() < (bar >= 8 ? 0.3 : 0.2)) {
+    const pool = Math.random() < 0.25 ? ch.ch.map(n => n - 12) : ch.ch;
+    pluck(t, pool[(Math.random() * pool.length) | 0], 0.05 + Math.random() * 0.045);
+    if (Math.random() < 0.18) pluck(t + STEP * 0.5, pool[(Math.random() * pool.length) | 0], 0.035);
+  }
+  if (r && dense) bleep(t, ch.r + r + (bar >= 12 && s % 4 === 3 ? 12 : 0), bar < 4 ? 0.022 : 0.032, 1000 + (bar / 16) * 1800);
+}
+
+T.start = function (fadeSec = 1.2) {
+  if (T.running) return;
+  AC = audio.ctx(); if (!AC || !audio.buses().music) return;
+  N = build();
+  N.out.gain.setValueAtTime(0.0001, AC.currentTime); N.out.gain.linearRampToValueAtTime(0.9, AC.currentTime + fadeSec);
+  T.running = true;
+  let step = 0, next = AC.currentTime + 0.1;
+  const tick = () => { while (next < AC.currentTime + 0.18) { schedule(step, next); next += STEP; step = (step + 1) % STEPS; } };
+  tick();
+  N.timer = setInterval(tick, 30);
+};
+T.stop = function (fadeSec = 0.6) {
+  if (!T.running) return;
+  T.running = false;
+  const n = N; clearInterval(n.timer);
+  try { n.out.gain.cancelScheduledValues(AC.currentTime); n.out.gain.setValueAtTime(Math.max(n.out.gain.value, 0.0001), AC.currentTime); n.out.gain.linearRampToValueAtTime(0.0001, AC.currentTime + fadeSec); } catch (e) { /* context gone */ }
+  setTimeout(() => { try { n.out.disconnect(); } catch (e) { /* already gone */ } }, (fadeSec + 0.3) * 1000);
+};
+
+} catch (e) { console.error("load error in src/core/titletheme.js", e); (window.__loadErrors = window.__loadErrors || []).push("src/core/titletheme.js: " + e); }
 /* ---- src/core/icons.js ---- */
 try {
 /* re:parteé — 32x24 inventory icon painters that items can reuse.
@@ -24943,7 +25144,15 @@ function showTitle() {
   else el("p", { cls: "small", text: "Five levels. Sixteen mini-games. Sound on helps." }, box);
   if (SITE) levelNav(box);
   setTimeout(() => first[0] && first[0].focus({ preventScroll: true }), 50);
+  // the title theme starts on the first click or key (browsers won't play sound before that)
+  themeOn = false;
+  const wake = () => { themeOn = true; themeUp(); };
+  ov.addEventListener("pointerdown", wake, { once: true });
+  ov.addEventListener("keydown", wake, { once: true });
 }
+/* title music: plays on the title once the player has clicked or pressed a key, and steps aside for jukebox previews and mini-games */
+let themeOn = false;
+function themeUp() { if (themeOn && titleEl && !titleEl.hidden && !preview) RP.audio.titleTheme.start(); }
 /* a level page you haven't finished yet: point at the full game instead of starting mid-story */
 function lockedPage(box) {
   const n = DEMO.level;
@@ -24954,11 +25163,11 @@ function lockedPage(box) {
   link(DEMO.full, "PLAY THE FULL GAME", row, "btn primary").style.textDecoration = "none";
   levelNav(box);
 }
-function closeTitle() { stopPreview(); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
+function closeTitle() { themeOn = false; RP.audio.titleTheme.stop(0.5); stopPreview(true); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
 function toggle(panel, fill) { stopPreview(); if (!panel.hidden && panel.dataset.k === fill.name) { panel.hidden = true; return; } panel.innerHTML = ""; panel.className = "panelbox"; panel.dataset.k = fill.name; fill(panel); panel.hidden = false; }
 /* JUKEBOX: every record in the game, with a loop in its style (RP.audio.recordLoop) */
 let preview = null, previewId = null;
-function stopPreview() { if (preview) { try { preview.stop(); } catch (e) { /* already stopped */ } } preview = null; previewId = null; }
+function stopPreview(quiet) { if (preview) { try { preview.stop(); } catch (e) { /* already stopped */ } } preview = null; previewId = null; if (!quiet) themeUp(); }
 function jukebox(p) {
   const recs = (RP.data.records || []).slice().sort((a, b) => a.artist.localeCompare(b.artist) || a.year - b.year);
   el("h3", { text: "JUKEBOX" }, p);
@@ -24978,8 +25187,9 @@ function jukebox(p) {
       el("small", { text: [r.label, r.year, r.genre, "~" + r.bpm + " BPM"].filter(Boolean).join(" · ") }, t);
       el("span", { cls: "rb-play", text: on ? "STOP" : "PLAY" }, b);
       b.addEventListener("click", () => {
-        const was = on; stopPreview(); note.textContent = "";
-        if (!was) { RP.audio.ctx(); try { preview = RP.audio.recordLoop(r); preview.start(); previewId = r.id; } catch (e) { /* no audio here */ } note.textContent = r.fact || ""; }
+        const was = on; stopPreview(true); note.textContent = "";
+        if (!was) { RP.audio.ctx(); try { preview = RP.audio.recordLoop(r); preview.start(); previewId = r.id; RP.audio.titleTheme.stop(0.4); } catch (e) { /* no audio here */ } note.textContent = r.fact || ""; }
+        if (was) themeUp();
         render();
       });
     });
@@ -25049,9 +25259,9 @@ const bestScores = () => store.get("reparte.best") || {};
 const mgName = (t, parent, cls) => el("span", { cls: "mg-name" + (cls ? " " + cls : ""), html: esc(t).replace(".", "<i>.</i>") }, parent);
 const levelsOf = m => (MG_LEVELS[m.id] || []).join(" · ");
 async function playMg(m) {
-  stopPreview(); titleEl.hidden = true;
+  titleEl.hidden = true; stopPreview(true); RP.audio.titleTheme.stop(0.3);
   const r = await RP.mg.play(m.id, { arcade: true, difficulty: 2 });
-  titleEl.hidden = false;
+  titleEl.hidden = false; themeUp();
   if (r && r.score != null) {
     const sc = Math.round(r.score), b = bestScores();
     if (!(b[m.id] >= sc)) { b[m.id] = sc; store.set("reparte.best", b); }
