@@ -9,6 +9,9 @@ const U = PK.util;
 const W = 640;
 
 let glassLayer = null;
+// the wall calendar follows the HUD weekday: the story week starts Monday, October 1st
+const DOW = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const dayNo = S => Math.max(0, DOW.indexOf((S.clock || "").slice(0, 3))) + 1;
 
 function paint(c, S) {
   const em = [];
@@ -37,7 +40,7 @@ function paint(c, S) {
   PK.shelf(c, 170, 58, 80, 56, { items: "books", wood: "#8a6a4a", seed: 12 });
   PK.plant(c, 316, 100, { size: 1, seed: 3, pot: "#a0502a" });
   R(c, 268, 62, 28, 22, "#fff6d0"); U.outline(c, 268, 62, 28, 22, "#a89858"); txtC(c, "HAPPY", 282, 66, "#c0302c", 1, 0); txtC(c, "HOUR", 282, 72, "#c0302c", 1, 0); txtC(c, "NEVER", 282, 78, "#1d1622", 1, 0);
-  R(c, 330, 66, 16, 14, "#f4f0e8"); U.outline(c, 330, 66, 16, 14, "#8a869c"); txt(c, "OCT", 332, 68, "#c0302c", 1, 0); txt(c, "1", 337, 74, "#1d1622", 1, 0);
+  R(c, 330, 66, 16, 14, "#f4f0e8"); U.outline(c, 330, 66, 16, 14, "#8a869c"); txt(c, "OCT", 332, 68, "#c0302c", 1, 0); txt(c, String(dayNo(S)), 337, 74, "#1d1622", 1, 0);
   em.push.apply(em, PK.glow(c, 262, 52, 70, "#fff6d8", { strength: 0.5, ry: 24 }));
   // LED "NOW SERVING" sign above the window
   R(c, 212, 28, 112, 16, "#1a0a0a"); U.outline(c, 212, 28, 112, 16, "#4a4658");
@@ -144,11 +147,11 @@ async function submitDocs(S) {
   if (!RP.has("a2_form") || !S.f.a2_formDone) need.push(!RP.has("a2_form") ? "the form" : "a COMPLETED form");
   if (!RP.has("a2_bill")) need.push("proof of address");
   if (need.length) {
-    await RP.say("I need " + need.join(" and ") + ". And your ID, which I see you have. Wallet's a start.", "a2_rhonda");
+    await RP.say("I need " + need.join(" and ") + ". Your ID's covered, it's in your wallet. I can see the corner.", "a2_rhonda");
     if (!RP.has("a2_bill")) await RP.say("Proof of address. Not a vibe. An envelope.", "a2_rhonda");
     return;
   }
-  await RP.say("Here. ID, bill and the form.");
+  await RP.say("Here. ID out of my wallet, bill from Lou, form from my soul.");
   RP.sfx("click");
   await RP.lines([
     "@a2_rhonda This ID is you at nineteen. Who did this to you?",
@@ -164,6 +167,11 @@ async function submitDocs(S) {
   RP.toast("Cleared! Talk to Nurse Bev at bay 3.");
 }
 
+async function walletRhonda(S) {
+  if (!S.f.a2_cleared && S.f.a2_formDone && RP.has("a2_form") && RP.has("a2_bill")) return submitDocs(S);
+  await RP.say(S.f.a2_cleared ? "Keep your wallet, hon. You're in the system. I'm not allowed to touch it anyway, it's too sad." : "Keep your wallet, hon. I'm not allowed to touch it, it's too sad. The ID inside counts. Now the form and the bill.", "a2_rhonda");
+}
+
 async function talkRhonda(S) {
   if (!S.f.a2_numTaken) {
     S.f.a2_numTaken = true;
@@ -174,7 +182,7 @@ async function talkRhonda(S) {
     { text: "I'd like to donate plasma.", when: S2 => !S2.f.a2_formGot, once: true, run: async () => {
       await RP.lines([
         "@a2_rhonda New donor? Aren't you brave. Okay. ID, proof of address and Form 27-B.",
-        "Form 27-B?",
+        "ID's in my wallet. Proof of address is behind a locked door in Bushwick. What's Form 27-B?",
         "@a2_rhonda Voluntary Acknowledgment of Voluntary Donation. It's the one where you say you volunteered voluntarily.",
         "@a2_rhonda Pen's on the chain. Don't ask about the chain."
       ]);
@@ -200,7 +208,7 @@ async function talkBev(S) {
 }
 async function bevAfter(S) {
   if (S.f.a2_woozy) { await RP.say("Cookie. Juice. Table over there. Sit for five minutes. If you faint, faint toward the carpet.", "a2_bev"); return; }
-  await RP.say("See you Thursday. Don't lift anything heavy. Don't DJ. ...You DJ? Don't DJ.", "a2_bev");
+  await RP.say("Drink water. Don't lift anything heavy. Don't DJ. ...You DJ? Don't DJ. Go on, walk it off somewhere that isn't my chair.", "a2_bev");
 }
 async function donate(S) {
   await RP.walkTo(500, 214, "right");
@@ -244,13 +252,14 @@ async function aftercare(S) {
   ]);
   S.f.a2_ate = true; S.f.a2_woozy = false;
   RP.relight();
-  await RP.say("Good job. You're free to go. See you in a couple of days.", "a2_bev");
+  await RP.say("Good job. You're free to go. Drink water, hon.", "a2_bev");
+  await A2.dayCheck(S);
 }
 
 RP.room({
   id: "a2_plasma", act: 2, name: "LifeDrop Plasma Center",
   paint,
-  cacheKey: S => (S.f.a2_ate ? "a" : "n"),
+  cacheKey: S => (S.f.a2_ate ? "a" : "n") + dayNo(S),
   light,
   ambience: "office",
   walk: [[8, 208], [632, 208], [632, 252], [8, 252]],
@@ -295,7 +304,7 @@ RP.room({
       use: S => aftercare(S), pickup: S => aftercare(S), open: S => aftercare(S) },
     { id: "a2_hazard", name: "sharps bin", r: [504, 128, 14, 32], z: 24, walk: [510, 206, "back"], look: "A red sharps bin. Very red. Very sharp. Very much not for putting your phone in.", use: "No.", open: "I don't need to see what's inside. I know what's inside. It's the wild west." },
     { id: "a2_rhonda", name: "Rhonda", z: 80, look: "Rhonda: glasses, lanyard, a smile like a clipboard. She's been behind that glass longer than the glass has.", talk: S => talkRhonda(S),
-      give: async (S, item) => { if (item === "a2_form" || item === "a2_bill") return submitDocs(S); if (item === "wallet") return ["@a2_rhonda Keep your wallet, hon. I'm not allowed to touch it. It's too sad."]; return ["@a2_rhonda I'm not taking that."]; } },
+      give: async (S, item) => { if (item === "a2_form" || item === "a2_bill") return submitDocs(S); if (item === "wallet") return walletRhonda(S); return ["@a2_rhonda I'm not taking that."]; } },
     { id: "a2_bev", name: "Nurse Bev", z: 80, look: "Nurse Bev: gray bun, teal scrubs, the calmest hands in Brooklyn. She's seen everything. She's seen it twice.", talk: S => talkBev(S),
       give: async (S, item) => { if (item === "a2_card") return ["@a2_bev That's yours, hon. I only handle the ones I give out."]; return ["@a2_bev I can't take that. I'm on the clock."]; } }
   ],
@@ -305,7 +314,7 @@ RP.room({
     ["a2_bill", "a2_rhonda", S => submitDocs(RP.state)],
     ["a2_form", "a2_desk", S => submitDocs(RP.state)],
     ["a2_bill", "a2_desk", S => submitDocs(RP.state)],
-    ["wallet", "a2_rhonda", ["@a2_rhonda Keep your wallet, hon. I'm not allowed to touch it. It's too sad."]],
+    ["wallet", "a2_rhonda", S => walletRhonda(RP.state)],
     ["usb_cat", "a2_rhonda", "Rhonda doesn't want 4,000 cat photos. Rhonda has a cat. Rhonda has opinions."],
     ["a2_card", "a2_aftercare", "I'm not spending the card on a juice box. They're free. That's the only free thing in this building."],
     ["phone", "a2_desk", "I'd text Rhonda, but she's four feet away and thinks texts are a form of cowardice."]
