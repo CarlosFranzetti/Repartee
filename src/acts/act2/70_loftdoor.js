@@ -151,6 +151,8 @@ RP.room({
   walk: [[8, 204], [632, 204], [632, 252], [8, 252]],
   start: { x: 70, y: 232, face: "right" },
   update: A2.update,
+  // the loft only opens on Saturday; the street is painted at night, so the HUD clock catches up on arrival
+  enter: async S => { if (!S.f.a2_loftNight) { S.f.a2_loftNight = true; RP.setClock("SAT 10:25 PM"); } },
   fx: [
     { type: "beams", origins: [[170, 60], [300, 60], [430, 60], [500, 60]], colors: ["#ff3fa4", "#39d0ff", "#a05cff", "#ffd23f"], base: Math.PI / 2, swing: 0.4, len: 120, width: 14, alpha: 0.1, period: 1200 },
     { type: "smoke", count: 4, x: 380, y: 196, rise: 34, size: 7, drift: 5, color: "#8a86a0" },

@@ -6180,6 +6180,9 @@ function bindInput() {
     if (MG.active) return;
     if (e.key === "Escape") { if (busy && skipFn) { skipFn(); return; } verb = null; pending = null; updateVerbs(); renderInv(); updateSentence(); }
     if ((e.key === " " || e.key === "Enter" || e.key === ".") && busy && skipFn) { e.preventDefault(); skipFn(); }
+    // never steal keys from a text box (the DJ-name field): H used to vanish from typed names
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (typing) return;
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0 && (e.key === "h" || e.key === "H" || e.key === "Tab")) { e.preventDefault(); revealHotspots(); return; }
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0) {
       const map = { l: "look", p: "pickup", u: "use", o: "open", t: "talk", s: "push", c: "close", g: "give", y: "pull" };

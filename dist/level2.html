@@ -6180,6 +6180,9 @@ function bindInput() {
     if (MG.active) return;
     if (e.key === "Escape") { if (busy && skipFn) { skipFn(); return; } verb = null; pending = null; updateVerbs(); renderInv(); updateSentence(); }
     if ((e.key === " " || e.key === "Enter" || e.key === ".") && busy && skipFn) { e.preventDefault(); skipFn(); }
+    // never steal keys from a text box (the DJ-name field): H used to vanish from typed names
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (typing) return;
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0 && (e.key === "h" || e.key === "H" || e.key === "Tab")) { e.preventDefault(); revealHotspots(); return; }
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0) {
       const map = { l: "look", p: "pickup", u: "use", o: "open", t: "talk", s: "push", c: "close", g: "give", y: "pull" };
@@ -25065,7 +25068,7 @@ async function talkMarcus(S) {
       await RP.lines([
         "@marcus Toby's in there. Since Sunday.",
         "Is he okay?",
-        "@marcus He's doing a \"ritual.\" It's twelve steps and a livestream. I think we're on step nine.",
+        "@marcus He's doing a \"ritual.\" It's twelve steps and a livestream. I think we're on step seven.",
         "That's the only bathroom?",
         "@marcus You could also try Dani.",
         "Who?",
@@ -26631,6 +26634,8 @@ RP.room({
   walk: [[8, 204], [632, 204], [632, 252], [8, 252]],
   start: { x: 70, y: 232, face: "right" },
   update: A2.update,
+  // the loft only opens on Saturday; the street is painted at night, so the HUD clock catches up on arrival
+  enter: async S => { if (!S.f.a2_loftNight) { S.f.a2_loftNight = true; RP.setClock("SAT 10:25 PM"); } },
   fx: [
     { type: "beams", origins: [[170, 60], [300, 60], [430, 60], [500, 60]], colors: ["#ff3fa4", "#39d0ff", "#a05cff", "#ffd23f"], base: Math.PI / 2, swing: 0.4, len: 120, width: 14, alpha: 0.1, period: 1200 },
     { type: "smoke", count: 4, x: 380, y: 196, rise: 34, size: 7, drift: 5, color: "#8a86a0" },

@@ -379,7 +379,7 @@ async function talkMarcus(S) {
       await RP.lines([
         "@marcus Toby's in there. Since Sunday.",
         "Is he okay?",
-        "@marcus He's doing a \"ritual.\" It's twelve steps and a livestream. I think we're on step nine.",
+        "@marcus He's doing a \"ritual.\" It's twelve steps and a livestream. I think we're on step seven.",
         "That's the only bathroom?",
         "@marcus You could also try Dani.",
         "Who?",
