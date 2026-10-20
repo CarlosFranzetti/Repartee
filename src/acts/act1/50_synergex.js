@@ -196,8 +196,9 @@ async function takePack(S) {
   if (!closetOpen(S)) return "It's locked.";
   RP.give("a1_usb3"); S.f.a1_gotUSB = true; RP.setClock("WED 10:05 AM");
   await RP.lines(["The closet: shelves of toner, sticky notes, a lifetime supply of binder clips... and USB sticks. Whole racks of them.", "I take a 3-pack. Controlled assets, uncontrolled kid."]);
-  RP.text("DANTE (NOWHERE)", "also ask ray at deep cuts (east village) 4 a closer. tell him i sent u. he'll insult u. thats how u know its working");
+  RP.text("DANTE (NOWHERE)", "ps deep cuts should be on ur map now. ray insults everybody. thats how u know its working");
   if (S.f.a1_alarm) {
+    await RP.lines(["Nobody stays on Brenda's floor. Fourteen floors down she's counting heads on the sidewalk, and she's one short.", "She'll do the math soon. I have about a minute."]);
     S.f.a1_brendaGone = false; RP.place("a1_brenda", 624, 238, "left");
     await RP.lines(["@a1_brenda ALL CLEAR. ALL CLEAR! It was the microwave. WHO BURNT LINDA'S POPCORN?", "@a1_brenda ...Temp? Why are you in the closet?", "The alarm went off. I was looking for the exit. Got turned around.", "@a1_brenda The exit is the elevator. Which is closed. Because of the FIRE. Stairs. Left."]);
     S.f.a1_alarm = false; S.f.a1_lockBroken = true; S.f.a1_workersGone = false; RP.relight();
@@ -278,7 +279,7 @@ RP.room({
     { id: "plant", name: "ficus", r: [560, 150, 36, 80], z: 24, walk: [556, 232, "right"], look: "A ficus that's been dying since the Bloomberg administration. It's out of water, out of light, and out of options. Like me, but taller.", use: "I water it from the cooler. It thanks me with a leaf. No it doesn't.", pickup: "It's heavy and pot-bound and dying. Not unlike me.", talk: "\"Hang in there, buddy.\" The ficus doesn't answer. Gerald would've." },
     { id: "trash", name: "trash can", r: [264, 212, 26, 34], z: 24, walk: [250, 232, "right"], look: "A trash can full of printed emails and a single, impossible sandwich. Corporate waste.", pickup: "Nope. I'm not digging through an office bin. I'd find ties.", open: "It's a bin. Open and fully informed." },
     { id: "exitsign", name: "exit sign", r: [554, 22, 28, 14], z: 14, walk: [566, 218, "back"], look: "EXIT. Green, glowing, certain. Everything I want my life to be." },
-    { id: "strobe", name: "fire alarm", r: [302, 22, 22, 14], z: 20, walk: [316, 214, "back"], look: S => S.f.a1_alarm ? "The alarm strobe. It's flashing red, and so is my conscience." : "A fire alarm strobe. White. Patient. Waiting for its moment.", pull: "There's no lever on this one. The pull stations are in the stairwells, under a camera. I'm not that stupid. Or that brave.", use: "A fire alarm. The lever's elsewhere. Ideas are forming." },
+    { id: "strobe", name: "fire alarm", r: [302, 22, 22, 14], z: 20, walk: [316, 214, "back"], look: S => S.f.a1_alarm ? "The alarm strobe. It's flashing red, and so is my conscience." : "A fire alarm strobe. White. Patient. No button, no lever. It's wired to a detector somewhere, and a detector wants smoke. No smoke, no strobe.", pull: "There's no lever on this one. The pull stations are in the stairwells, under a camera. I'm not that stupid. Or that brave.", use: "It doesn't have a switch. It needs smoke to go off. Ideas are forming." },
     { id: "firePlan", name: "evacuation plan", r: [286, 88, 16, 18], z: 16, walk: [300, 214, "back"], look: "A floor plan showing the exits. Stairwell A. Stairwell B. A tiny sticker says \"YOU ARE HERE.\" I am. Unfortunately." }
   ],
   combos: [

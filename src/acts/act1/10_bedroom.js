@@ -277,7 +277,7 @@ RP.item("cans", { name: "bag of cans", short: "Cans", icon: c => { R(c, 5, 6, 22
 RP.item("rec_first", { name: "\"Missing\" (Todd Terry remix)", short: "Missing", icon: c => I.record(c, "#ff8a4c"), look: "Everything But The Girl, \"Missing,\" the Todd Terry remix. Atlantic, 1995. The first record I ever bought. It still smells like the store.", use: "No turntables at home. Someday." });
 RP.item("rec_acid", { name: S => S.f.a1_acidFlat ? "\"Acid Tracks\"" : "\"Acid Tracks\" (warped)", short: "Acid Tracks", icon: (c, S) => I.record(c, "#d8ff3a", !S.f.a1_acidFlat), iconKey: S => S.f.a1_acidFlat ? 1 : 0,
   look: S => S.f.a1_acidFlat ? "Phuture, \"Acid Tracks.\" Trax Records, 1987. Flat as a subway seat now." : "Phuture, \"Acid Tracks.\" Trax Records, Chicago, 1987. Somebody left it in a hot car. That somebody was me. It's warped like a potato chip.",
-  use: S => S.f.a1_acidFlat ? "Saturday. On real turntables." : "Not like this. It'd play like a waterbed." });
+  use: S => S.f.a1_acidFlat ? "Saturday. On real turntables." : "Not like this. It'd play like a waterbed. Something heavy and flat would fix that." });
 RP.item("rec_mom", { name: "\"Winelight\" (Mom's)", short: "Winelight", icon: c => { const sky = ["#3a1d5c", "#8a2a6e", "#e0568a", "#ff9a5a", "#ffd27a"]; for (let i = 0; i < 5; i++) R(c, 5, 1 + i * 4, 22, 4, sky[i]); ell(c, 16, 17, 5, 3, "#ffe8a0"); R(c, 5, 19, 22, 3, "#1a0f22"); R(c, 10, 6, 2, 9, "#1a0f22"); R(c, 11, 14, 4, 2, "#1a0f22"); R(c, 9, 5, 4, 1, "#1a0f22"); },
   look: "Grover Washington Jr., \"Winelight.\" Elektra, 1980. Mom's. It has \"Just the Two of Us\" on it, with Bill Withers singing.", use: "I'm not that tired." });
 RP.item("swabs", { name: "cotton swabs", short: "Swabs", icon: c => { for (let i = 0; i < 5; i++) { R(c, 7 + i * 4, 6, 1, 13, "#f4f0f8"); R(c, 6 + i * 4, 4, 3, 3, "#ffffff"); R(c, 6 + i * 4, 18, 3, 3, "#ffffff"); } }, look: "Cotton swabs. Dry. They won't cut through ten years of party on their own." });
@@ -292,7 +292,7 @@ async function chargePhone(S) {
   await RP.say("Plugging in.");
   await RP.fadeTo(1, 500);
   await RP.say("Twenty minutes of staring at the ceiling later...", "nar");
-  S.f.a1_charged = true; RP.refreshInv();
+  S.f.a1_charged = true; S.f.battery = "41%"; RP.refreshInv();
   await RP.fadeTo(0, 500);
   await RP.say("41%. Let's see who texted.");
   await readTexts(S);
@@ -319,6 +319,7 @@ async function testDecks(S) {
     await RP.lines(["...and channel 2 still sounds like bacon frying.", "Nobody's mixing anything through that."]);
     return;
   }
+  if (S.f.a1_louAngry && !S.f.a1_louHappy) { await RP.lines(["Not again. Lou's still on the pipe, and one more beat brings him through the wall.", "I can't play a track until he's sorted. The hole in the wall is right there."]); return; }
   if (!S.f.a1_louHappy) {
     await RP.say("Quick test. Just a few beats.");
     playing = true;
@@ -361,12 +362,19 @@ async function giveJazz(S) {
   RP.give("white"); RP.addRecord("white_nyc93"); S.f.a1_louHappy = true;
   await RP.lines(["A white label. No artist. Just \"NYC 93\" in marker.", "Lou, what is this?", "@lou Nothing. Go play your music."]);
 }
+/* what stands between the kid and the Dante call, in order: [still blocked?, what he says when he tries to call, what he says at the door] */
+const DANTE_GATES = [
+  [S => !S.f.a1_mixer && !S.f.a1_c1, "Before I call, I should make sure the decks actually work.", "Dante first. But I should check the decks work before I call."],
+  [S => !S.f.a1_mixer, "If I call now, I'm auditioning on a broken mixer. Channel 2 sounds like bacon.", "Dante first. But I can't audition on a mixer that fries bacon on channel 2."],
+  [S => !S.f.a1_louAngry && !S.f.a1_louHappy, "Let me run a quick test on the decks before I call.", "Dante first. The mixer's fixed. One quick test on the decks, then the call."],
+  [S => !S.f.a1_louHappy, "Not with Lou banging on the pipe. I can't take a call, or play a track, over that. Time to find out what Lou wants.", "Dante first. And I can't take a call with Lou banging on the pipe. Lou first."]
+];
+RP.act1DanteBlock = (S, door) => { const g = DANTE_GATES.find(g => g[0](S)); return g ? g[door ? 2 : 1] : (door ? "Dante first. The decks work and Lou's quiet. Time to make the call." : null); };
 async function callDante(S) {
   if (!S.f.a1_texts) { await readTexts(S); return; }
   if (S.f.a1_booked) { await RP.say("I'm not calling Dante again. You don't call twice."); return; }
-  if (!S.f.a1_mixer) { await RP.say(S.f.a1_c1 ? "If I call now, I'm auditioning on a broken mixer. Channel 2 sounds like bacon." : "Before I call, I should make sure the decks actually work."); return; }
-  if (!S.f.a1_louAngry && !S.f.a1_louHappy) { await RP.say("Let me run a quick test on the decks before I call."); return; }
-  if (!S.f.a1_louHappy) { await RP.say("If Lou starts banging mid-audition, it's over. I need to sort him out first."); return; }
+  const block = RP.act1DanteBlock(S);
+  if (block) { await RP.say(block); return; }
   await RP.walkTo(476, 214, "back");
   await RP.say("Okay. One shot.");
   RP.sfx("ring"); await RP.wait(1100);
@@ -380,10 +388,11 @@ async function callDante(S) {
   S.f.a1_booked = true; RP.setClock("TUE 11:58 PM"); RP.followers(12);
   RP.actor("kid").face = "front";
   await RP.lines(["I got a GIG.", "At NOWHERE."]);
+  RP.text("DANTE (NOWHERE)", "oh + vinyl hour = 4 records. u need a closer. ray at deep cuts (east village) can help. tell him i sent u");
   await RP.wait(400);
   await RP.lines(["Tracks on a USB. I have a USB.", "...Which holds 4,000 photos of my ex's cat, Mr. Whiskers. I promised her I'd never delete them."]);
   S.f.a1_usbSeen = true;
-  await RP.lines(["And a vinyl hour. I own a handful of records and a mystery white label. One of them's warped.", "Tomorrow: temp job in Midtown. Tonight: sleep. Or the bodega. Probably both."]);
+  await RP.lines(["And Dante's text says a vinyl hour is four records. I've got three, and one of them is warped. I need a closer. Ray, at Deep Cuts.", "Tomorrow: temp job in Midtown. Tonight: sleep. Or the bodega. Probably both."]);
 }
 RP.act1CallDante = callDante;
 RP.act1PhoneUse = async S => { if (S.act === 1 && S.f.a1_charged && !S.f.a1_booked && S.f.a1_texts && S.room === "bedroom") { const i = await RP.choose(["Call Dante", "Open the phone menu"]); if (i === 0) { await callDante(S); return true; } } return false; };
@@ -399,11 +408,11 @@ async function sleepNow(S) {
   await RP.walkTo(120, 222, "back");
   await RP.say("Big day tomorrow.");
   await RP.fadeTo(1, 900);
-  S.f.time = "morning"; S.f.a1_slept = true; RP.setClock("WED 7:42 AM"); RP.relight();
+  S.f.time = "morning"; S.f.a1_slept = true; S.f.battery = "100%"; RP.refreshInv(); RP.setClock("WED 7:42 AM"); RP.relight();
   await RP.say("Wednesday morning.", "nar");
   const k = RP.actor("kid"); k.x = 120; k.y = 224; k.face = "front";
   await RP.fadeTo(0, 900);
-  await RP.say(S.f.a1_acidUnder ? "Acid Tracks has been under there all night. Moment of truth." : "Morning.");
+  await RP.say(S.f.a1_acidUnder ? "Acid Tracks has been under there all night. Moment of truth. I just have to pick it up." : "Morning.");
 }
 async function retrieveAcid(S) {
   if (!S.f.a1_acidUnder) return false;
@@ -434,14 +443,14 @@ RP.room({
   hotspots: [
     { id: "cans", name: "empty cans", z: 60, vis: S => !S.f.a1_cans, rects: () => CANS.map(g => [g.x - 3, g.y - 11, 20, 14]),
       walk: () => { const k = RP.actor("kid"); const g = CANS.reduce((p, q) => Math.abs(q.x - k.x) < Math.abs(p.x - k.x) ? q : p); return [g.x + 4, g.y + 8, "front"]; },
-      look: "Empties. The bodega machine downstairs turns these into money.",
+      look: "Empties. The bodega machine downstairs turns these into money. Worth picking up.",
       pickup: async S => { S.f.a1_cans = true; RP.give("cans"); await RP.say("I gather every empty in the room. That is... a lot of empties."); } },
     { id: "pizza", name: "pizza box", r: [194, 220, 46, 16], z: 55, walk: [216, 242, "back"],
-      look: S => S.f.a1_pizza ? "Just the crust left. The crust can stay." : "Sunday's pizza. Or Saturday's. There's one crust left.",
+      look: S => S.f.a1_pizza ? "Just the crust left. The crust can stay." : "Sunday's pizza. Or Saturday's. There's one crust left, and something flat and green stuck to the cheese. I'd have to pick it up.",
       pickup: async S => { if (S.f.a1_pizza) return "Just the crust left. The crust can stay."; S.f.a1_pizza = true; RP.money(5); await RP.say("There's a $5 bill stuck to the cheese. Rent money, basically."); },
       open: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "pizza").pickup) },
     { id: "crate", name: "milk crate", r: [328, 180, 40, 44], z: 50, walk: [348, 234, "back"],
-      look: S => S.f.a1_crate ? "An empty milk crate. Soon to be a full milk crate." : "My record collection. All three of it.",
+      look: S => S.f.a1_crate ? "An empty milk crate. Soon to be a full milk crate." : "My record collection. All three of it. They're no use in a crate. I'd have to pick them up.",
       open: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "crate").pickup),
       pickup: async S => {
         if (S.f.a1_crate) return "It's empty. The records are on me.";
@@ -453,14 +462,14 @@ RP.room({
       },
       use: "It's a milk crate. You put records in it. I'm way ahead of you." },
     { id: "underbed", name: "under the bed", r: [16, 196, 174, 14], z: 45, walk: [110, 224, "back"],
-      look: S => S.f.a1_charger ? "Dust and one sock. The sock stays." : "Dust, one sock, and my phone charger. So that's where it went.",
+      look: S => S.f.a1_charger ? "Dust and one sock. The sock stays." : "Dust, one sock, and something cable-shaped way in the back. I'd have to reach for it.",
       pickup: async S => { if (S.f.a1_charger) return "Just dust and one sock. I'm leaving the sock."; S.f.a1_charger = true; RP.give("charger"); await RP.say("Got the charger."); } },
     { id: "laptop", name: "laptop", r: [126, 150, 34, 16], z: 47, walk: [142, 222, "back"],
       look: "A 2011 laptop held together with gaffer tape. Every track I own lives on it.",
       use: S => RP.act1LaptopUse ? RP.act1LaptopUse(S) : (S.f.a1_booked ? "Tracks onto a USB for Saturday. Which needs a USB with room on it." : "My whole music library is in there. The CD-Rs in the decks came out of this thing."),
       pickup: "It's safer on the bed. Everything is safer on the bed.", open: "It's already open. It doesn't close all the way anymore." },
     { id: "bed", name: "bed", r: [10, 116, 186, 80], z: 30, walk: [100, 222, "back"],
-      look: S => S.f.a1_acidUnder ? (night(S) ? "Acid Tracks is under the mattress. It needs a night of dead weight." : "Acid Tracks has been under there all night.") : "My bed. Also my couch, my office and my dining room.",
+      look: S => S.f.a1_acidUnder ? (night(S) ? "Acid Tracks is under the mattress. It needs a night of dead weight." : "Acid Tracks has been under there all night. I'd have to pick it up.") : (RP.has("rec_acid") && !S.f.a1_acidFlat) ? "My bed. Also my couch, my office and my dining room. Thin mattress, eight hours of me: that's basically a record press." : "My bed. Also my couch, my office and my dining room.",
       use: async S => { if (!night(S) && S.f.a1_acidUnder) { await retrieveAcid(S); return; } if (RP.act1BedUse) { const r = await RP.act1BedUse(S); if (r !== false) return; } await sleepNow(S); },
       pull: async S => { if (await retrieveAcid(S)) return; return "I'm not making the bed. That's a whole lifestyle."; },
       pickup: async S => { if (await retrieveAcid(S)) return; return "I'll pick it up when I move out. Rent-wise, that could be Friday."; },
@@ -489,7 +498,7 @@ RP.room({
       use: S => testDecks(S), push: S => testDecks(S), pull: "Pulling faders out of the mixer is how I got here." },
     { id: "desk", name: "desk", r: [370, 132, 214, 66], z: 15, walk: [470, 214, "back"], look: "Flat-pack desk. Assembled with seven screws left over. Still standing. Mostly." },
     { id: "drawer", name: "desk drawer", r: [516, 146, 64, 32], z: 40, walk: [548, 214, "back"],
-      look: S => S.f.a1_drawer ? ((S.f.a1_swabs && S.f.a1_vodka) ? "Three dead batteries and a takeout menu." : "Cotton swabs, a bottle of 100-proof vodka, three dead batteries and a takeout menu.") : "My junk drawer.",
+      look: S => S.f.a1_drawer ? ((S.f.a1_swabs && S.f.a1_vodka) ? "Three dead batteries and a takeout menu." : "Cotton swabs, a bottle of 100-proof vodka, three dead batteries and a takeout menu. Some of it's worth picking up.") : "My junk drawer. Shut. I'd have to open it to see what's in there.",
       open: async S => { if (S.f.a1_drawer) return "It's open."; S.f.a1_drawer = true; await RP.say(S.f.a1_swabs && S.f.a1_vodka ? "Batteries and a menu. The good stuff's gone." : "Cotton swabs, a bottle of 100-proof vodka, three dead batteries and a takeout menu."); },
       close: async S => { if (!S.f.a1_drawer) return "It's closed."; S.f.a1_drawer = false; },
       pickup: async S => {

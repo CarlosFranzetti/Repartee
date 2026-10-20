@@ -7,9 +7,9 @@ const A1 = RP.a1;
 
 /* ---- the bedroom door: hall, stairs, the rest of New York ---- */
 RP.act1DoorExit = S => {
-  if (!S.f.a1_texts) return "My phone's at 1%. I'm not going anywhere with a dying phone. It's my lifeline, my alarm, and my flashlight.";
-  if (S.f.time === "night" && !S.f.a1_booked) return "Dante first. I'm not leaving until I've called him. One shot, remember?";
-  if (S.f.time === "morning" && S.f.a1_acidUnder) return "Acid Tracks is still under the mattress. I'm not leaving it for the dust bunnies.";
+  if (!S.f.a1_texts) return "My phone's at 1%. It's my lifeline, my alarm and my flashlight, and I'm not going anywhere with it dying. The charger's in this room somewhere.";
+  if (S.f.time === "night" && !S.f.a1_booked) return RP.act1DanteBlock(S, true);
+  if (S.f.time === "morning" && S.f.a1_acidUnder) return "Acid Tracks is still under the mattress. I'm not leaving it for the dust bunnies. I should pick it up first.";
   if (S.f.time === "sat") return { room: "a1_hall", x: 566, y: 232, face: "left" };
   return { room: "a1_hall", x: 566, y: 232, face: "left" };
 };
@@ -47,7 +47,7 @@ async function sleepToSaturday(S) {
   await RP.fadeTo(1, 900);
   await RP.say("Thursday. Friday. Somewhere in there, rent was due. The landlord slid a note under the door. It says \"ha.\"", "nar");
   A1.setTime(S, "sat", "SAT 7:48 PM");
-  S.f.a1_sat = true; S.f.a1_lampOff = false;
+  S.f.a1_sat = true; S.f.a1_lampOff = false; S.f.battery = "100%"; RP.refreshInv();
   RP.unlock("a1_loc_nowhere");
   const k = RP.actor("kid"); k.x = 120; k.y = 224; k.face = "front";
   await RP.fadeTo(0, 900);

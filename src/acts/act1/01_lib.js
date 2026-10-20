@@ -50,7 +50,7 @@ A1.runVerb = (id, verb, ...args) => RP.runH(A1.hot(id)[verb], ...args);
 /* subway exit (shared by every "street" hotspot that opens the map) */
 A1.travelExit = (S, strict) => {
   if (S.f.time === "night" && !S.f.a1_slept) return "It's midnight. Nothing's open in Midtown but the lights. Tomorrow: the shift. Tonight: sleep.";
-  if (S.f.time === "morning" && S.f.a1_acidUnder) return "Acid Tracks is still under my mattress. I'm not leaving it to the dust bunnies.";
+  if (S.f.time === "morning" && S.f.a1_acidUnder) return "Acid Tracks is still under my mattress. I'm not leaving it to the dust bunnies. I should pick it up first.";
   if (strict && S.money < A1.fare - 1e-9) return "The fare's " + U.fmtMoney(A1.fare) + ". I've got " + U.fmtMoney(S.money) + ". Cans on the curb by the scaffold are worth a nickel each. The city runs on nickels.";
   return "travel";
 };

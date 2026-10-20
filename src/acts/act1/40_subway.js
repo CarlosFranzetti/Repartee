@@ -123,9 +123,17 @@ async function buskerTalk(S) {
     { text: "Got a dollar for a request?", run: async () => {
       if (!RP.canAfford(1)) return RP.lines(["@a1_busker Sir. I'm busking. You're asking me for money?", "@a1_busker I'll play the 'broke' request for free. It's easy: it's every song."]);
       RP.money(-1); RP.sfx("coin");
-      await RP.lines(["I drop a dollar in the bucket.", "@a1_busker Request?", "Something with a four-on-the-floor.", "@a1_busker Four-on-the-floor on a bucket. It's called 'a bucket.' ...Here."]);
-      await RP.wait(800);
-      await RP.say("It's actually kind of a groove. I could remix this. I shouldn't. I will, eventually.");
+      await RP.lines(["I drop a dollar in the bucket.", "@a1_busker Request?"]);
+      const r = await RP.choose(["Something with a four-on-the-floor.", "Something to wake up a dead room."]);
+      if (r === 0) {
+        await RP.lines(["Something with a four-on-the-floor.", "@a1_busker Four-on-the-floor on a bucket. It's called 'a bucket.' ...Here."]);
+        await RP.wait(800);
+        await RP.say("It's actually kind of a groove. I could remix this. I shouldn't. I will, eventually.");
+      } else {
+        await RP.lines(["Something to wake up a dead room.", "@a1_busker Dead room? Easy. One thing at a time. Kick. Eight bars, add the hat. Eight more, the snare.", "@a1_busker Nobody dances to the first drum. They dance when they can guess the next one."]);
+        await RP.wait(800);
+        await RP.lines(["He builds it, layer by layer. A guy waiting for the L starts nodding. Then his friend. Then a woman with a cello case.", "One guy nods and it's a rumor. A build is just patience in a good outfit. Noted."]);
+      }
     } },
     { text: "Anything I should know about Midtown?", once: true, run: () => RP.lines(["@a1_busker Midtown? The office towers do a fire drill every other month. Nobody ever takes it seriously.", "@a1_busker The second the alarm goes off, you could lead a parade out of there and nobody'd ask for ID. Not even the guard.", "@a1_busker Not that I'd know. I'm just a guy with a bucket."]) },
     { text: "How's the L today?", once: true, run: () => RP.lines(["@a1_busker It runs every six minutes. Except when it doesn't. Then it's every thirty. The schedule is a suggestion.", "@a1_busker I can tell you where the rat's going, though. Every day, same crust. Same route."]) },

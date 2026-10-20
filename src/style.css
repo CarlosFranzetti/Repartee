@@ -24,8 +24,9 @@ button { font-family: var(--ui); }
 #app { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 10px; box-sizing: border-box; gap: 8px; }
 #frameBox { position: relative; flex: none; overflow: hidden; }
 #frame { position: absolute; left: 0; top: 0; width: 640px; height: 360px; transform-origin: 0 0; background: #000; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
-#cv { position: absolute; left: 0; top: 0; width: 640px; height: 256px; image-rendering: crisp-edges; image-rendering: pixelated; cursor: crosshair; touch-action: none; }
-#cv.exit { cursor: pointer; }
+#cv { position: absolute; left: 0; top: 0; width: 640px; height: 256px; image-rendering: crisp-edges; image-rendering: pixelated; touch-action: none; }
+/* the game's own cursor everywhere in the frame: a chunky white pixel arrow with a black outline, as in the old adventure games */
+#frame, #frame * { cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAoCAYAAADg+OpoAAAAlklEQVR42t3V0QrAIAgFUB39/y+7l4QYsZWl3ib05lanG0VEJHW41kVB1U7kKosXiQiJiJssJSNXWZ7IS5Yv2i3DEe2S4YlWZbgiqwxfNCs7RzQqCxMV64fM/InUViyRrrzuf7cF6mYoCxlg3t6sp0MzaCTcO0XPrF76kzMaXdk5GU1ITFmFZsQRE4VmZH6CZv4VJvpf3f90XhJYWTJjAAAAAElFTkSuQmCC") 1 1, default; }
 #talk { position: absolute; left: 0; top: 0; width: 640px; height: 256px; pointer-events: none; }
 .line { position: absolute; max-width: 300px; text-align: center; font-size: 20px; line-height: 0.95; color: #fff;
   text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000; }
@@ -91,7 +92,11 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .btn:hover { border-color: var(--pink); color: var(--pink); }
 .btn.primary { background: var(--pink); color: #12061a; border-color: var(--pink); }
 .btn.primary:hover { background: #ff6cbb; color: #12061a; }
-.btn:disabled { opacity: .4; cursor: default; }
+/* disabled stays readable: a quiet outline and muted text instead of fading the whole button */
+.btn:disabled, .btn.primary:disabled { opacity: 1; background: #110d24; color: var(--muted); border: 1px dashed var(--line); cursor: default; }
+/* mini-games fade unavailable options with low opacity, which sinks the text (and its "why not" note) into the
+   background. Keep them legible: full opacity, a dashed outline and a slight grey-down instead */
+.mg-wrap button:disabled, .mg-wrap [role=button][aria-disabled=true] { opacity: 1 !important; filter: grayscale(.6) brightness(.9); border-style: dashed !important; }
 .erow { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .card { background: radial-gradient(ellipse at 50% 30%, #2a0d3a 0%, var(--bg) 70%); }

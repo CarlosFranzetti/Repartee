@@ -49,7 +49,7 @@ RP.location({ id: "a1_loc_nowhere", act: 1, label: "Nowhere", area: "Bushwick", 
 
 /* ---------------- items carried across the act ---------------- */
 RP.item("phone", {
-  name: S => S.f.a1_charged || S.act > 1 ? "phone" : "phone (1%)", short: "Phone",
+  name: S => S.act > 1 ? "phone" : S.f.a1_charged ? "phone (" + (S.f.battery || "41%") + ")" : "phone (1%)", short: "Phone",
   icon: (c, S) => I.phone(c, !!(S.f.a1_charged || S.act > 1)), iconKey: S => (S.f.a1_charged || S.act > 1) ? 1 : 0,
   useAlone: true,
   look: S => S.f.a1_charged || S.act > 1 ? "My phone. Messages, the subway map, my record crate. My whole life, cracked screen and all." : "1% battery. It has the energy of a Monday.",
