@@ -57,10 +57,10 @@ Put game-specific CSS in a `<style>` you inject once (see beatmatch.js).
 | `crowdRead` | crowd.Read | 1, 4, 5 | `records: [ids]` (the set you can play); `crowd: "empty-bar"|"house"|"techno"|"festival"|"loft"`; `rounds` (4); `goal` (energy target); `difficulty`; `venue` label | `{ok, score, played: [ids], peak}` |
 | `setTime` | set.Time | 3, 5 | `scenario: "opener"|"follow-legend"|"overrun"|"closing"`; `records`; `followName` ("Kosmo Delacroix"); `minutes`; `difficulty` | `{ok, score}` |
 | `playlistOrder` | playlist.Order | 3, 5 | `records: [ids]` (pool); `slots` (6–10); `arc: "warmup"|"peak"|"journey"|"closer"`; `difficulty` | `{ok, score, order: [ids]}` |
-| `goDigging` | go.Digging | 1, 3 | `store` ("Deep Cuts"); `budget` ($); `bins: [{label, records:[ids]}]`; `want: {vibe?, genre?, maxPrice?, id?}`; `difficulty` | `{ok, score, bought: [ids], spent}` |
+| `goDigging` | go.Digging | 1, 3 | `store` ("Deep Cuts"); `budget` ($); `bins: [{label, records:[ids]}]`; `want: {vibe?, genre?, maxPrice?, id?}`; `wallet` (total cash, shown beside the budget); `budgetNote` (what the rest is for); `difficulty` | `{ok, score, bought: [ids], spent}` |
 | `crateDigging` | crate.Digging | 3 | `records: [ids]` (the collection; junk + gems); `budget`; `time`; `difficulty` | `{ok, score, keep: [ids], sold: [ids], profit}` |
 | `recordHunt` | record.Hunt | 3 | `target` record id; `clues: [strings]`; `places: [{id,label,hint}]`; `difficulty` | `{ok, score, found: bool}` |
-| `buyGear` | buy.Gear | 2, 3, 5 | `slot` ("turntables"…); `options: [gearIds]`; `seller` ("Eddie Two-Times"); `budget`; `scams` (# of broken listings); `difficulty` | `{ok, score, bought: gearId|null, paid}` |
+| `buyGear` | buy.Gear | 2, 3, 5 | `slot` ("turntables"…); `options: [gearIds]`; `seller` ("Eddie Two-Times"); `budget`; `scams` (# of broken listings); `asks: {gearId: $}` (fixed asking prices); `flaws: [per listing: "ok", "cosmetic" or a fault]` (scripted listings); `difficulty` | `{ok, score, bought: gearId|null, paid}` |
 | `makTracks` | mak.Tracks | 4 | `sample` (record id to sample, e.g. "white_nyc93"); `bpm`; `genre`; `difficulty`; `collab` ("Lou") | `{ok, score, track: {name, bpm, pattern}}` |
 | `getFollowers` | get.Followers | 3, 4 | `days` (time budget); `start` followers; `goal`; `difficulty` | `{ok, score, gained}` |
 | `promoterTalk` | promoter.Talk | 2, 4 | `promoter` (name), `charId` (character id to draw), `ask` ("a monthly", "your fee"), `patience`, `difficulty` | `{ok, score, deal: {...}}` |

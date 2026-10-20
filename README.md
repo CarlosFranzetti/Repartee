@@ -34,9 +34,11 @@ one level at a time:
 | [**4: Touring DJ**](https://repartee-umber.vercel.app/level4) | A flight to Berlin and a 2 AM handover at Halle Neun. |
 | [**5: Superstar DJ**](https://repartee-umber.vercel.app/level5) | Headlining the Harbor Lights festival, then sunrise on the pier. |
 
-Each level page starts you with a sensible setup (records, cash, gear for that point in the story), has
-all sixteen mini-games in its arcade, and ends with a link to the next level. The full game carries your
-crate, cash and fans from level to level.
+Level 1 is open to everyone. Each later level page opens once you've finished that level in the full game
+(progress is kept in your browser); until then it shows a locked card that links to the full game. An open
+level page starts you with a sensible setup (records, cash, gear for that point in the story), has all
+sixteen mini-games, and ends with a link to the next level if you've unlocked it. The full game carries
+your crate, cash and fans from level to level.
 
 **On claude.ai:** [the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N) is also published as an artifact.
 
@@ -46,8 +48,11 @@ gives the full screen; portrait puts the controls under the scene.
 
 Controls: pick a verb, then click something. Click the floor to walk. Right-click looks.
 **H** or **Tab** labels everything clickable. **MENU** opens messages, the subway map, your
-record crate, your setup and saving. Mini-games explain their own controls and can be replayed
-from the title screen's Mini-Game Arcade. Chapter Select jumps to any level.
+record crate, your setup and saving.
+
+Title menu: **CONTINUE | NEW GAME**, then **HOW TO PLAY**, **CHAPTER SELECT** (replays the levels you've
+finished), **JUKEBOX** (plays every record in the game, with its story), **MINI-GAMES** (pick a tile, see its
+card, press PLAY; best scores are kept) and **CREDITS**.
 
 ## Screenshots
 

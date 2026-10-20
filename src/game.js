@@ -14,13 +14,19 @@ let titleEl = null;
 const SITE = window.RP_SITE || null;
 const DEMO = SITE && SITE.level ? SITE : null;
 const link = (href, text, parent, cls) => { const a = el("a", { cls, href, text }, parent); if (SITE && SITE.newTab) { a.target = "_blank"; a.rel = "noopener"; } return a; };
-/* "LEVELS 1 2 3 4 5 · FULL GAME" under the title menu (the current level is not a link) */
+/* progress: finishing level n stores n + 1 in reparte.unlocked (engine completeAct). Chapter Select and the level
+   pages only replay levels you've finished; Level 1's page is always open, since it is the start of the game */
+const finishedLevels = () => (store.get("reparte.unlocked") || []).map(n => n - 1).filter(n => n >= 1);
+const isFinished = n => finishedLevels().includes(n);
+const pageOpen = n => n === 1 || isFinished(n);
+/* "LEVELS 1 2 3 4 5 · FULL GAME" under the title menu (the current level and locked levels are not links) */
 function levelNav(box) {
   const p = el("p", { cls: "small levelnav" }, box);
-  p.appendChild(document.createTextNode(DEMO ? "LEVELS " : "EACH LEVEL ON ITS OWN: "));
+  p.appendChild(document.createTextNode(DEMO ? "LEVELS " : "REPLAY A LEVEL: "));
   SITE.pages.forEach((href, i) => {
     if (DEMO && DEMO.level === i + 1) el("b", { text: String(i + 1) }, p);
-    else link(href, String(i + 1), p).title = "Level " + (i + 1) + ": " + SITE.names[i];
+    else if (pageOpen(i + 1)) link(href, String(i + 1), p).title = "Level " + (i + 1) + ": " + SITE.names[i];
+    else el("span", { cls: "lockd", text: String(i + 1), title: "Locked: finish Level " + (i + 1) + " first" }, p);
     p.appendChild(document.createTextNode(" "));
   });
   if (DEMO) { p.appendChild(document.createTextNode("\u00b7 ")); link(SITE.full, "FULL GAME", p); }
@@ -71,23 +77,76 @@ function showTitle() {
   el("h1", { cls: "logo", html: 're<span class="c">:</span>parte<span class="e">é</span>' }, box);
   el("p", { cls: "tag", text: "A PIXEL-ART DJ ADVENTURE GAME" }, box);
   el("p", { cls: "tagline", text: "From broke-ass bedroom DJ to festival headliner. One bad decision at a time." }, box);
+  if (DEMO && !pageOpen(DEMO.level)) { lockedPage(box); return; }
   const menu = el("div", { cls: "menu" }, box);
   const panel = el("div", { cls: "panelbox", hidden: "" }, box);
-  const add = (label, fn) => { const b = el("button", { type: "button", text: label }, menu); b.addEventListener("click", () => { RP.audio.ctx(); fn(); }); return b; };
-  const first = [];
-  if (RP.hasSave()) first.push(add("CONTINUE", async () => { closeTitle(); if (!(await RP.loadSave())) { showTitle(); } }));
-  first.push(add(DEMO ? "PLAY LEVEL " + DEMO.level : "NEW GAME", () => newGame(panel)));
-  if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
-  add("MINI-GAME ARCADE", () => arcade(panel));
+  const go = fn => () => { RP.audio.ctx(); fn(); };
+  const add = (label, fn) => { const b = el("button", { type: "button", text: label }, menu); b.addEventListener("click", go(fn)); return b; };
+  // CONTINUE | NEW GAME as one split button; CONTINUE stays in place, greyed, until there is a save
+  const split = el("div", { cls: "split", role: "group", "aria-label": "Play" }, menu);
+  const saved = RP.hasSave();
+  const bCont = el("button", { type: "button", cls: "cont", text: "CONTINUE" }, split);
+  if (saved) bCont.addEventListener("click", go(async () => { closeTitle(); if (!(await RP.loadSave())) { showTitle(); } }));
+  else { bCont.disabled = true; bCont.title = "No saved game yet"; }
+  const bNew = el("button", { type: "button", cls: "new", text: DEMO ? "PLAY LEVEL " + DEMO.level : "NEW GAME" }, split);
+  bNew.addEventListener("click", go(() => newGame(panel)));
+  const first = [saved ? bCont : bNew];
   add("HOW TO PLAY", () => toggle(panel, howTo));
+  if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
+  add("JUKEBOX", () => toggle(panel, jukebox));
+  add("MINI-GAMES", () => toggle(panel, arcade));
   add("CREDITS", () => toggle(panel, credits));
   if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all sixteen mini-games in the arcade. Sound on helps." }, box);
   else el("p", { cls: "small", text: "Five levels. Sixteen mini-games. Sound on helps." }, box);
   if (SITE) levelNav(box);
   setTimeout(() => first[0] && first[0].focus({ preventScroll: true }), 50);
 }
-function closeTitle() { if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
-function toggle(panel, fill) { if (!panel.hidden && panel.dataset.k === fill.name) { panel.hidden = true; return; } panel.innerHTML = ""; panel.dataset.k = fill.name; fill(panel); panel.hidden = false; }
+/* a level page you haven't finished yet: point at the full game instead of starting mid-story */
+function lockedPage(box) {
+  const n = DEMO.level;
+  const card = el("div", { cls: "panelbox locked" }, box);
+  el("h3", { text: "LEVEL " + n + " IS LOCKED" }, card);
+  el("p", { text: "This page replays Level " + n + ", " + DEMO.names[n - 1] + ", once you've finished it. Play the story in the full game; finishing a level unlocks its page." }, card);
+  const row = el("div", { cls: "erow" }, card);
+  link(DEMO.full, "PLAY THE FULL GAME", row, "btn primary").style.textDecoration = "none";
+  levelNav(box);
+}
+function closeTitle() { stopPreview(); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
+function toggle(panel, fill) { stopPreview(); if (!panel.hidden && panel.dataset.k === fill.name) { panel.hidden = true; return; } panel.innerHTML = ""; panel.className = "panelbox"; panel.dataset.k = fill.name; fill(panel); panel.hidden = false; }
+/* JUKEBOX: every record in the game, with a loop in its style (RP.audio.recordLoop) */
+let preview = null, previewId = null;
+function stopPreview() { if (preview) { try { preview.stop(); } catch (e) { /* already stopped */ } } preview = null; previewId = null; }
+function jukebox(p) {
+  const recs = (RP.data.records || []).slice().sort((a, b) => a.artist.localeCompare(b.artist) || a.year - b.year);
+  el("h3", { text: "JUKEBOX" }, p);
+  el("p", { text: recs.length + " real records from the game. Pick one to hear a loop in its style; pick it again to stop." }, p);
+  const chips = el("div", { cls: "rb-chips" }, p);
+  const list = el("div", { cls: "rb-list" }, p);
+  const note = el("p", { cls: "rb-note" }, p);
+  let genre = "all";
+  const render = () => {
+    list.innerHTML = "";
+    recs.filter(r => genre === "all" || r.genre === genre).forEach(r => {
+      const on = previewId === r.id;
+      const b = el("button", { type: "button", cls: "rb-row" + (on ? " on" : ""), "aria-pressed": on ? "true" : "false" }, list);
+      const cv = el("canvas", { width: 24, height: 24 }, b); RP.sleeve(cv.getContext("2d"), r, 0, 0, 24);
+      const t = el("span", { cls: "rb-t" }, b);
+      el("b", { text: r.artist + " – " + r.title }, t);
+      el("small", { text: [r.label, r.year, r.genre, "~" + r.bpm + " BPM"].filter(Boolean).join(" · ") }, t);
+      el("span", { cls: "rb-play", text: on ? "STOP" : "PLAY" }, b);
+      b.addEventListener("click", () => {
+        const was = on; stopPreview(); note.textContent = "";
+        if (!was) { RP.audio.ctx(); try { preview = RP.audio.recordLoop(r); preview.start(); previewId = r.id; } catch (e) { /* no audio here */ } note.textContent = r.fact || ""; }
+        render();
+      });
+    });
+  };
+  ["all", ...new Set(recs.map(r => r.genre))].forEach(g => {
+    const c = el("button", { type: "button", cls: "rb-chip" + (g === genre ? " on" : ""), text: g.toUpperCase() }, chips);
+    c.addEventListener("click", () => { genre = g; chips.querySelectorAll(".rb-chip").forEach(x => x.classList.toggle("on", x === c)); render(); });
+  });
+  render();
+}
 function howTo(p) {
   [["Pick a verb", ", then click something in the scene. Click the floor to walk."],
    ["Use or Give an item:", " pick the verb, then the item, then the thing or person."],
@@ -126,30 +185,74 @@ async function newGame(panel) {
 }
 function chapters(panel) {
   panel.innerHTML = ""; panel.hidden = false; panel.dataset.k = "ch";
-  el("p", { text: "Jump to any level with a sensible starting setup." }, panel);
+  const done = finishedLevels();
+  el("p", { text: done.length ? "Replay any level you've finished, with a sensible starting setup." : "Nothing to replay yet. Finish a level in the story and it opens up here." }, panel);
   const list = el("div", { cls: "chapters" }, panel);
   Object.values(RP.acts).sort((a, b) => a.n - b.n).forEach(a => {
+    const open = done.includes(a.n);
     const b = el("button", { type: "button" }, list);
-    b.appendChild(document.createTextNode("LEVEL " + a.n + ": " + a.title));
-    el("small", { text: a.blurb || "" }, b);
+    b.appendChild(document.createTextNode("LEVEL " + a.n + ": " + (open ? a.title : "LOCKED")));
+    el("small", { text: open ? a.blurb || "" : "Finish it in the story to replay it here." }, b);
+    if (!open) { b.disabled = true; return; }
     b.addEventListener("click", async () => { closeTitle(); RP.reset(); RP.state.name = store.get("reparte.name") || "DJ NOBODY"; await RP.startAct(a.n); });
   });
 }
-function arcade(panel) {
-  panel.innerHTML = ""; panel.hidden = false; panel.dataset.k = "arc";
-  el("p", { text: "Play any mini-game on its own." }, panel);
-  const list = el("div", { cls: "chapters" }, panel);
-  RP.mg.list().sort((a, b) => (a.order || 99) - (b.order || 99)).forEach(m => {
-    const b = el("button", { type: "button" }, list);
-    b.appendChild(document.createTextNode(m.title));
-    el("small", { text: m.desc || "" }, b);
-    b.addEventListener("click", async () => {
-      titleEl.hidden = true;
-      const r = await RP.mg.play(m.id, { arcade: true, difficulty: 2 });
-      titleEl.hidden = false;
-      if (r && r.score != null) RP.toast(m.title + ": " + (r.ok ? "cleared" : "failed") + " · score " + Math.round(r.score));
+/* MINI-GAMES: a grid of cabinet tiles; picking one opens its card (what it is, where it's from, your best score)
+   and PLAY starts it. Best scores are kept per mini-game */
+const MG_LEVELS = { beatMatch: [1, 4, 5], crowdRead: [1, 4, 5], goDigging: [1, 3], guestList: [2, 5], soundCheck: [2, 5], afterParty: [2], buyGear: [2, 3, 5], promoterTalk: [2, 4],
+  setTime: [3, 5], playlistOrder: [3, 5], crateDigging: [3], recordHunt: [3], clubDrama: [3, 5], getFollowers: [3, 4], lastTrain: [3, 4], makTracks: [4] };
+const MG_TINT = ["#ff3fa4", "#39d0ff", "#ffd23f", "#7ef0a0", "#b18cff", "#ff9a5a"];
+const bestScores = () => store.get("reparte.best") || {};
+const mgName = (t, parent, cls) => el("span", { cls: "mg-name" + (cls ? " " + cls : ""), html: esc(t).replace(".", "<i>.</i>") }, parent);
+const levelsOf = m => (MG_LEVELS[m.id] || []).join(" · ");
+async function playMg(m) {
+  stopPreview(); titleEl.hidden = true;
+  const r = await RP.mg.play(m.id, { arcade: true, difficulty: 2 });
+  titleEl.hidden = false;
+  if (r && r.score != null) {
+    const sc = Math.round(r.score), b = bestScores();
+    if (!(b[m.id] >= sc)) { b[m.id] = sc; store.set("reparte.best", b); }
+    RP.toast(m.title + ": " + (r.ok ? "cleared" : "failed") + " · score " + sc);
+  }
+}
+function arcade(p, at) {
+  const games = RP.mg.list().sort((a, b) => (a.order || 99) - (b.order || 99));
+  const best = bestScores(), scoreText = m => best[m.id] != null ? "BEST " + best[m.id] : "NOT PLAYED";
+  p.innerHTML = ""; p.classList.add("arc");
+  el("h3", { text: "MINI-GAMES" }, p);
+  if (at == null) {
+    el("p", { text: "All sixteen from the story. Pick one to see what it is, then play it on its own." }, p);
+    const grid = el("div", { cls: "arc-grid" }, p);
+    games.forEach((m, i) => {
+      const b = el("button", { type: "button", cls: "arc-tile", style: "--tint:" + MG_TINT[i % MG_TINT.length] }, grid);
+      mgName(m.title, b);
+      el("span", { cls: "arc-desc", text: m.desc || "" }, b);
+      const f = el("span", { cls: "arc-foot" }, b);
+      el("span", { text: "LEVEL " + levelsOf(m) }, f); el("b", { text: scoreText(m) }, f);
+      b.addEventListener("click", () => arcade(p, i));
     });
-  });
+    return;
+  }
+  // the card: one game, arrows to the neighbours, PLAY to start, ALL MINI-GAMES to go back to the grid
+  const i = at, m = games[i];
+  const card = el("div", { cls: "arc-spot", style: "--tint:" + MG_TINT[i % MG_TINT.length] }, p);
+  const top = el("div", { cls: "arc-spot-top" }, card);
+  const prev = el("button", { type: "button", cls: "arc-arrow", text: "\u25c0", "aria-label": "Previous mini-game" }, top);
+  mgName(m.title, top, "big");
+  const next = el("button", { type: "button", cls: "arc-arrow", text: "\u25b6", "aria-label": "Next mini-game" }, top);
+  el("p", { cls: "arc-spot-desc", text: m.desc || "" }, card);
+  const facts = el("p", { cls: "arc-spot-facts" }, card);
+  facts.appendChild(document.createTextNode("IN LEVEL " + levelsOf(m) + " \u00b7 ")); el("b", { text: scoreText(m) }, facts);
+  const row = el("div", { cls: "erow" }, card);
+  const play = el("button", { type: "button", cls: "btn primary", text: "PLAY" }, row);
+  const back = el("button", { type: "button", cls: "btn", text: "ALL MINI-GAMES" }, row);
+  el("span", { cls: "arc-count", text: (i + 1) + " / " + games.length }, card);
+  prev.addEventListener("click", () => arcade(p, (i + games.length - 1) % games.length));
+  next.addEventListener("click", () => arcade(p, (i + 1) % games.length));
+  play.addEventListener("click", () => playMg(m));
+  back.addEventListener("click", () => arcade(p));
+  card.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); arcade(p); } if (e.key === "ArrowLeft") prev.click(); if (e.key === "ArrowRight") next.click(); });
+  setTimeout(() => play.focus({ preventScroll: true }), 0);
 }
 
 RP.onQuit = () => { RP.audio.stopAll(0.3); showTitle(); };
@@ -169,8 +272,9 @@ async function levelEnding() {
   el("p", { text: "Next up, Level " + next + ": " + DEMO.names[next - 1] + ". " + NEXT_TEASE[next - 1] }, box);
   el("p", { text: "Each level page starts you with a fresh setup. The full game carries your crate, cash and fans through all five levels." }, box);
   const row = el("div", { cls: "erow" }, box);
-  link(DEMO.pages[next - 1], "PLAY LEVEL " + next, row, "btn primary").style.textDecoration = "none";
-  link(DEMO.full, "FULL GAME", row, "btn").style.textDecoration = "none";
+  // the next level's page only opens once you've finished that level; until then the story goes on in the full game
+  if (pageOpen(next)) link(DEMO.pages[next - 1], "PLAY LEVEL " + next, row, "btn primary").style.textDecoration = "none";
+  link(DEMO.full, pageOpen(next) ? "FULL GAME" : "PLAY THE FULL GAME", row, pageOpen(next) ? "btn" : "btn primary").style.textDecoration = "none";
   const b = el("button", { cls: "btn", type: "button", text: "BACK TO TITLE" }, row);
   await new Promise(r => b.addEventListener("click", r));
   ov.remove();
