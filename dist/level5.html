@@ -272,6 +272,8 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .arc-count { font-size: 13px; color: var(--muted); letter-spacing: .1em; }
 
 </style>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+if (/^https?:$/.test(location.protocol)) { var s = document.createElement("script"); s.defer = true; s.src = "/_vercel/insights/script.js"; s.dataset.sdkn = "@vercel/analytics"; s.dataset.sdkv = "2.0.1"; document.head.appendChild(s); }</script>
 </head>
 <body>
 <script>
@@ -37715,7 +37717,7 @@ function showTitle() {
   bNew.addEventListener("click", go(() => newGame(panel)));
   const first = [saved ? bCont : bNew];
   add("HOW TO PLAY", () => toggle(panel, howTo));
-  if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
+  if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => { chapters(panel); themeSync(2000); });
   add("JUKEBOX", () => toggle(panel, jukebox));
   add("MINI-GAMES", () => toggle(panel, arcade));
   add("CREDITS", () => toggle(panel, credits));
@@ -37725,13 +37727,23 @@ function showTitle() {
   setTimeout(() => first[0] && first[0].focus({ preventScroll: true }), 50);
   // the title theme starts on the first click or key (browsers won't play sound before that)
   themeOn = false;
-  const wake = () => { themeOn = true; themeUp(); };
+  const wake = () => { themeOn = true; themeSync(0); };
   ov.addEventListener("pointerdown", wake, { once: true });
   ov.addEventListener("keydown", wake, { once: true });
 }
-/* title music: plays on the title once the player has clicked or pressed a key, and steps aside for jukebox previews and mini-games */
-let themeOn = false;
-function themeUp() { if (themeOn && titleEl && !titleEl.hidden && !preview) RP.audio.titleTheme.start(); }
+/* title music: plays on the title once the player has clicked or pressed a key. It fades out while the jukebox is open (and during a mini-game)
+   and fades back in 2 seconds after the jukebox closes. */
+let themeOn = false, themeTimer = 0;
+const jukeboxOpen = () => !!(titleEl && titleEl.querySelector('.panelbox[data-k="jukebox"]:not([hidden])'));
+const themeWanted = () => themeOn && !!titleEl && !titleEl.hidden && !jukeboxOpen() && !preview;
+function themeSync(delayMs) {
+  clearTimeout(themeTimer); themeTimer = 0;
+  const T = RP.audio.titleTheme;
+  if (!themeWanted()) { T.stop(0.8); return; }
+  if (T.running) return;
+  if (delayMs) themeTimer = setTimeout(() => { themeTimer = 0; if (themeWanted()) T.start(1.5); }, delayMs);
+  else T.start(1.2);
+}
 /* a level page you haven't finished yet: point at the full game instead of starting mid-story */
 function lockedPage(box) {
   const n = DEMO.level;
@@ -37742,11 +37754,11 @@ function lockedPage(box) {
   link(DEMO.full, "PLAY THE FULL GAME", row, "btn primary").style.textDecoration = "none";
   levelNav(box);
 }
-function closeTitle() { themeOn = false; RP.audio.titleTheme.stop(0.5); stopPreview(true); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
-function toggle(panel, fill) { stopPreview(); if (!panel.hidden && panel.dataset.k === fill.name) { panel.hidden = true; return; } panel.innerHTML = ""; panel.className = "panelbox"; panel.dataset.k = fill.name; fill(panel); panel.hidden = false; }
+function closeTitle() { themeOn = false; clearTimeout(themeTimer); themeTimer = 0; RP.audio.titleTheme.stop(0.5); stopPreview(); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
+function toggle(panel, fill) { stopPreview(); if (!panel.hidden && panel.dataset.k === fill.name) { panel.hidden = true; themeSync(2000); return; } panel.innerHTML = ""; panel.className = "panelbox"; panel.dataset.k = fill.name; fill(panel); panel.hidden = false; themeSync(2000); }
 /* JUKEBOX: every record in the game, with a loop in its style (RP.audio.recordLoop) */
 let preview = null, previewId = null;
-function stopPreview(quiet) { if (preview) { try { preview.stop(); } catch (e) { /* already stopped */ } } preview = null; previewId = null; if (!quiet) themeUp(); }
+function stopPreview() { if (preview) { try { preview.stop(); } catch (e) { /* already stopped */ } } preview = null; previewId = null; }
 function jukebox(p) {
   const recs = (RP.data.records || []).slice().sort((a, b) => a.artist.localeCompare(b.artist) || a.year - b.year);
   el("h3", { text: "JUKEBOX" }, p);
@@ -37766,9 +37778,8 @@ function jukebox(p) {
       el("small", { text: [r.label, r.year, r.genre, "~" + r.bpm + " BPM"].filter(Boolean).join(" · ") }, t);
       el("span", { cls: "rb-play", text: on ? "STOP" : "PLAY" }, b);
       b.addEventListener("click", () => {
-        const was = on; stopPreview(true); note.textContent = "";
-        if (!was) { RP.audio.ctx(); try { preview = RP.audio.recordLoop(r); preview.start(); previewId = r.id; RP.audio.titleTheme.stop(0.4); } catch (e) { /* no audio here */ } note.textContent = r.fact || ""; }
-        if (was) themeUp();
+        const was = on; stopPreview(); note.textContent = "";
+        if (!was) { RP.audio.ctx(); try { preview = RP.audio.recordLoop(r); preview.start(); previewId = r.id; } catch (e) { /* no audio here */ } note.textContent = r.fact || ""; }
         render();
       });
     });
@@ -37838,9 +37849,9 @@ const bestScores = () => store.get("reparte.best") || {};
 const mgName = (t, parent, cls) => el("span", { cls: "mg-name" + (cls ? " " + cls : ""), html: esc(t).replace(".", "<i>.</i>") }, parent);
 const levelsOf = m => (MG_LEVELS[m.id] || []).join(" · ");
 async function playMg(m) {
-  titleEl.hidden = true; stopPreview(true); RP.audio.titleTheme.stop(0.3);
+  titleEl.hidden = true; stopPreview(); themeSync(0);
   const r = await RP.mg.play(m.id, { arcade: true, difficulty: 2 });
-  titleEl.hidden = false; themeUp();
+  titleEl.hidden = false; themeSync(0);
   if (r && r.score != null) {
     const sc = Math.round(r.score), b = bestScores();
     if (!(b[m.id] >= sc)) { b[m.id] = sc; store.set("reparte.best", b); }
