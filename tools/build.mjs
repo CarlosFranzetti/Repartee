@@ -36,7 +36,7 @@ const site = (level, artifact) => ({
 });
 const DESC = "A pixel-art point-and-click DJ adventure. From broke-ass bedroom DJ to festival headliner, one bad decision at a time.";
 
-const core = ["util", "chars", "fx", "audio", "icons", "paint", "engine"].map(n => path.join(root, "src/core", n + ".js")).filter(f => fs.existsSync(f));
+const core = ["util", "chars", "fx", "audio", "titletheme", "icons", "paint", "engine"].map(n => path.join(root, "src/core", n + ".js")).filter(f => fs.existsSync(f));
 const data = sortJs(walk(path.join(root, "src/data")));
 const mgs = sortJs(walk(path.join(root, "src/minigames")));
 const actsUpTo = max => { const a = []; for (let i = 1; i <= max; i++) a.push(...sortJs(walk(path.join(root, "src/acts/act" + i)))); return a; };

@@ -32,6 +32,7 @@ function ctx() {
   return AC;
 }
 audio.ctx = ctx;
+audio.buses = () => ({ music: musicBus, sfx: sfxBus, noise: noiseBuf });
 audio.setMute = m => {
   audio.muted = !!m;
   if (master && AC) { master.gain.cancelScheduledValues(AC.currentTime); master.gain.setTargetAtTime(m ? 0 : 0.85, AC.currentTime, 0.05); }

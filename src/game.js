@@ -100,7 +100,15 @@ function showTitle() {
   else el("p", { cls: "small", text: "Five levels. Sixteen mini-games. Sound on helps." }, box);
   if (SITE) levelNav(box);
   setTimeout(() => first[0] && first[0].focus({ preventScroll: true }), 50);
+  // the title theme starts on the first click or key (browsers won't play sound before that)
+  themeOn = false;
+  const wake = () => { themeOn = true; themeUp(); };
+  ov.addEventListener("pointerdown", wake, { once: true });
+  ov.addEventListener("keydown", wake, { once: true });
 }
+/* title music: plays on the title once the player has clicked or pressed a key, and steps aside for jukebox previews and mini-games */
+let themeOn = false;
+function themeUp() { if (themeOn && titleEl && !titleEl.hidden && !preview) RP.audio.titleTheme.start(); }
 /* a level page you haven't finished yet: point at the full game instead of starting mid-story */
 function lockedPage(box) {
   const n = DEMO.level;
@@ -111,11 +119,11 @@ function lockedPage(box) {
   link(DEMO.full, "PLAY THE FULL GAME", row, "btn primary").style.textDecoration = "none";
   levelNav(box);
 }
-function closeTitle() { stopPreview(); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
+function closeTitle() { themeOn = false; RP.audio.titleTheme.stop(0.5); stopPreview(true); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
 function toggle(panel, fill) { stopPreview(); if (!panel.hidden && panel.dataset.k === fill.name) { panel.hidden = true; return; } panel.innerHTML = ""; panel.className = "panelbox"; panel.dataset.k = fill.name; fill(panel); panel.hidden = false; }
 /* JUKEBOX: every record in the game, with a loop in its style (RP.audio.recordLoop) */
 let preview = null, previewId = null;
-function stopPreview() { if (preview) { try { preview.stop(); } catch (e) { /* already stopped */ } } preview = null; previewId = null; }
+function stopPreview(quiet) { if (preview) { try { preview.stop(); } catch (e) { /* already stopped */ } } preview = null; previewId = null; if (!quiet) themeUp(); }
 function jukebox(p) {
   const recs = (RP.data.records || []).slice().sort((a, b) => a.artist.localeCompare(b.artist) || a.year - b.year);
   el("h3", { text: "JUKEBOX" }, p);
@@ -135,8 +143,9 @@ function jukebox(p) {
       el("small", { text: [r.label, r.year, r.genre, "~" + r.bpm + " BPM"].filter(Boolean).join(" · ") }, t);
       el("span", { cls: "rb-play", text: on ? "STOP" : "PLAY" }, b);
       b.addEventListener("click", () => {
-        const was = on; stopPreview(); note.textContent = "";
-        if (!was) { RP.audio.ctx(); try { preview = RP.audio.recordLoop(r); preview.start(); previewId = r.id; } catch (e) { /* no audio here */ } note.textContent = r.fact || ""; }
+        const was = on; stopPreview(true); note.textContent = "";
+        if (!was) { RP.audio.ctx(); try { preview = RP.audio.recordLoop(r); preview.start(); previewId = r.id; RP.audio.titleTheme.stop(0.4); } catch (e) { /* no audio here */ } note.textContent = r.fact || ""; }
+        if (was) themeUp();
         render();
       });
     });
@@ -206,9 +215,9 @@ const bestScores = () => store.get("reparte.best") || {};
 const mgName = (t, parent, cls) => el("span", { cls: "mg-name" + (cls ? " " + cls : ""), html: esc(t).replace(".", "<i>.</i>") }, parent);
 const levelsOf = m => (MG_LEVELS[m.id] || []).join(" · ");
 async function playMg(m) {
-  stopPreview(); titleEl.hidden = true;
+  titleEl.hidden = true; stopPreview(true); RP.audio.titleTheme.stop(0.3);
   const r = await RP.mg.play(m.id, { arcade: true, difficulty: 2 });
-  titleEl.hidden = false;
+  titleEl.hidden = false; themeUp();
   if (r && r.score != null) {
     const sc = Math.round(r.score), b = bestScores();
     if (!(b[m.id] >= sc)) { b[m.id] = sc; store.set("reparte.best", b); }
