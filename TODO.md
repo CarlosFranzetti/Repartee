@@ -10,3 +10,15 @@
       or mini-game, so no two edit the same file), have each run its level's walkthrough
       (`node tests/run.mjs walk actN --act N --page <scratch build>`), then integrate, run `node tests/full.mjs`,
       `node tests/perf.mjs` and `node tests/contrast.mjs`, and ship one pull request.
+
+## Later
+
+- [ ] **Desktop app (a binary).** Wrap the game's single HTML file (`dist/index.html`) in an Electron or Tauri window and
+      build it for Windows, Mac and Linux. Things to know:
+      - Vercel Web Analytics only runs on the hosted pages, so the app would not report to the dashboard. Counting app
+        players would need a different kind of tracking.
+      - Windows and Mac builds usually come from automated builds on GitHub (or from running the build on your own Mac or
+        PC). Mac apps normally need Apple's paid developer program to open without a warning; Windows has a similar
+        "unknown publisher" warning. Check Apple's and Microsoft's current requirements and costs before starting.
+      - The offline `dist/index.html` already works by double-clicking it. A wrapper mainly adds an app icon, its own
+        window and a possible store listing.
