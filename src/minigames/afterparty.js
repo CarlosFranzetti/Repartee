@@ -508,7 +508,7 @@ RP.mg.register("afterParty", {
       stRight.innerHTML = (G.battery > 0 ? "▂▄▆ " : "-- ") + "<span class='ap-bat' style='display:inline-block;vertical-align:middle;color:" + (G.battery <= 12 ? "#ff6a6a" : "#8c84b8") + "'><i style='width:" + clamp(G.battery, 0, 100) + "%'></i></span> " + Math.round(G.battery) + "%";
       const gl = G.place ? LOCS[G.place] : null, tight = gl && gl.cap < NEED;
       slotG.className = "ap-goal" + (tight ? " warn" : G.sure >= NEED ? " done" : "");
-      slotG.innerHTML = tight ? "<b>NEED " + NEED + " GUESTS</b>" + gl.short + " only fits " + gl.cap + ": that caps the night at FINE" : G.sure >= NEED ? "<b>GUEST GOAL MET</b>" + G.sure + " coming, " + NEED + " needed" : "<b>NEED " + NEED + " GUESTS</b>under " + NEED + " caps the night at FINE";
+      slotG.innerHTML = tight ? "<b>NEED " + NEED + " GUESTS</b>\u00b7 " + gl.short + " only fits " + gl.cap + ": that caps the night at FINE" : G.sure >= NEED ? "<b>GUEST GOAL MET</b>\u00b7 " + G.sure + " coming, " + NEED + " needed" : "<b>NEED " + NEED + " GUESTS</b>\u00b7 under " + NEED + " caps the night at FINE";
       slotP.className = "ap-slot" + (G.sure >= NEED ? " done" : (G.sure + G.maybe >= NEED ? " warn" : ""));
       slotP.innerHTML = "<b>PEOPLE <em style='font-style:normal'>" + (G.sure >= NEED ? "OK" : "") + "</em></b><span>" + G.sure + " coming / need " + NEED + "</span><small>" + (G.maybe ? G.maybe + " maybes (text the address)" : "confirm them once you have a place") + "</small>";
       const loc = G.place ? LOCS[G.place] : null, snd = G.sound ? SNDS[G.sound] : null;
@@ -838,9 +838,10 @@ RP.mg.register("afterParty", {
       neighbor: "The neighbor in the robe: inviting her in is +5 vibe, apologizing is -4.",
       cat: "The cat is a better DJ than you. Let it play (+10 vibe)."
     };
+    const cap1 = x => x.charAt(0).toUpperCase() + x.slice(1);
     function partyTips(f) {
       const loc = LOCS[G.place], snd = SNDS[G.sound], t = {};
-      if (f.guests < NEED) t.guests = loc.cap < NEED ? loc.short + " only fits " + loc.cap + ". Pick a place that holds " + NEED + ": the roof or Mina's loft."
+      if (f.guests < NEED) t.guests = loc.cap < NEED ? cap1(loc.short) + " only fits " + loc.cap + ". Pick a place that holds " + NEED + ": the roof or Mina's loft."
         : G.maybe > 0 ? G.maybe + " maybes never got the address and only count 40%. Use TEXT ADDRESS once you have a place."
         : G.guestDelta < 0 ? "Trouble cost you guests. Keep a favor to talk your way out of the cops."
         : "Not enough people. Work every contact (Twinkie, Marcus, the street) before you leave.";
@@ -850,7 +851,7 @@ RP.mg.register("afterParty", {
           : f.over > 0 && rec ? snd.short + " only fills ~" + f.cover + " people and " + f.guests + " came. Try " + rec.short + " (fills ~" + fill(rec.q) + ")."
           : rec ? snd.short + " tops out at " + f.cover + " / 30. " + rec.short + " scores higher." : "";
       }
-      if (f.parts.place < 20) t.place = loc.short + " only gives " + f.parts.place + " / 25. Mina's loft (25) and the roof (20, plus a sunrise bonus) score higher.";
+      if (f.parts.place < 20) t.place = cap1(loc.short) + " only gives " + f.parts.place + " / 25. Mina's loft (25) and the roof (20, plus a sunrise bonus) score higher.";
       if (f.parts.spec < 10) {
         const m = [];
         if (!G.flags.twinkie) m.push("Twinkie hosting (+6, ask her to come)");
@@ -919,7 +920,7 @@ RP.mg.register("afterParty", {
         const avail = root.clientWidth || 700, wide = !compact && avail >= 940;
         main.classList.toggle("wide", wide); main.classList.toggle("compact", compact);
         if (compact) {
-          const w = Math.max(280, Math.min(avail * 0.5, (window.innerHeight - 172) * (W / H)));
+          const w = Math.max(280, Math.min(avail * 0.5, (window.innerHeight - 190) * (W / H)));
           main.style.gridTemplateColumns = Math.round(w) + "px minmax(0, 1fr)"; scene.cv.style.width = Math.round(w) + "px"; scene.cv.style.height = Math.round(w * H / W) + "px";
           phone.style.height = Math.max(200, window.innerHeight - 22) + "px";
         } else { phone.style.height = ""; main.style.gridTemplateColumns = ""; NK.fit(scene.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 720); }

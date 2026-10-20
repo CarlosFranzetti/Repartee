@@ -171,7 +171,6 @@ const CSS = `
 .cr-hand { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; }
 .cr-hand .sk-card .jump { font-size: 15px; } .cr-hand .sk-card .jump.g { color: var(--ok); } .cr-hand .sk-card .jump.a { color: var(--amber); } .cr-hand .sk-card .jump.r { color: #ff6a6a; }
 .cr-hand .sk-card.star::after { content: "\\2605 HUNCH"; position: absolute; right: 5px; top: 3px; font-size: 13px; color: var(--amber); }
-.cr-hand .sk-card.lastone::after { content: "LAST ONE IN THE CRATE"; position: absolute; right: 5px; top: 3px; font-size: 13px; color: var(--amber); }
 .cr-act { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .cr-act .spacer { flex: 1; }
 .cr-msg { min-height: 1.2em; } .cr-say { min-height: 1.2em; }
@@ -322,7 +321,8 @@ RP.mg.register("crowdRead", {
           const b = kit.card(host, rec, { key: String(i + 1), compact: true });
           b.setAttribute("role", "option"); b.setAttribute("aria-selected", "false");
           b.addEventListener("click", () => { if (phase !== "pick" || S.used.has(rec.id)) return; if (sel === rec.id) doPlay(); else select(rec.id); });
-          hand.appendChild(b); cards.push({ rec, b, jump: el("span", { cls: "jmp" }, b.t3) });
+          const last = el("span", { cls: "sk-tag", text: "LAST ONE IN THE CRATE", hidden: "hidden" }, b.t3); last.style.setProperty("--c", "#ffc44d");
+          hand.appendChild(b); cards.push({ rec, b, last, jump: el("span", { cls: "jmp" }, b.t3) });
         });
       }
 
@@ -391,7 +391,7 @@ RP.mg.register("crowdRead", {
         });
         cards.forEach(c => c.b.classList.remove("star"));
         const nFree = freeCards().length;
-        cards.forEach(c => c.b.classList.toggle("lastone", phase === "pick" && nFree === 1 && !S.used.has(c.rec.id)));
+        cards.forEach(c => { const lastOne = phase === "pick" && nFree === 1 && !S.used.has(c.rec.id); c.b.classList.toggle("lastone", lastOne); c.last.hidden = !lastOne; });
         // difficulty 1: star the best fit
         if (R.diff <= 1 && phase === "pick" && nFree > 1) {
           let best = null; cards.forEach(c => { if (S.used.has(c.rec.id)) return; const ev = evalPick(C, { E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, rnd: null }, c.rec); if (!best || ev.fit > best.fit) best = { fit: ev.fit, c }; });
@@ -488,7 +488,7 @@ RP.mg.register("crowdRead", {
         const free = freeCards();
         if (free.length === 1) {
           sel = free[0].rec.id; free[0].b.classList.add("sel"); free[0].b.setAttribute("aria-selected", "true");
-          msg.textContent = "Round " + (S.round + 1) + ": last one in the crate (" + kit.full(free[0].rec) + "). No choice left. Play it and see where the floor lands.";
+          msg.textContent = "Round " + (S.round + 1) + ": last one in the crate: " + kit.pair(free[0].rec) + ". No choice left. Play it and see where the floor lands.";
         }
         updatePlay();
       }
