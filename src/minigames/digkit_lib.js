@@ -462,16 +462,16 @@ DK.wantText = (want, rec) => {
 };
 /* the four set roles a record can carry (rec.vibe), in plain words. Same names and colours as the tags in crowd.Read. */
 DK.ROLES = {
-  warmup: { name: "WARMUP", col: "#62e6ff", def: "an easy, low-key record that opens the night" },
-  builder: { name: "BUILDER", col: "#9be15d", def: "a steady mid-energy record that keeps the floor climbing" },
+  warmup: { name: "WARMUP", col: "#62e6ff", def: "an easy, low-key opener" },
+  builder: { name: "BUILDER", col: "#9be15d", def: "a steady record that keeps the floor climbing" },
   peak: { name: "PEAK", col: "#ffc44d", def: "a big, high-energy record for the busiest hour" },
-  closer: { name: "CLOSER", col: "#c8b0ff", def: "the big, warm, sing-along record that ends the night" }
+  closer: { name: "CLOSER", col: "#c8b0ff", def: "the big, warm, sing-along last record" }
 };
 DK.rolesOf = r => ["warmup", "builder", "peak", "closer"].filter(v => ((r && r.vibe) || []).includes(v));
 /* one plain-words line that explains the role in a want (empty when the want has no role) */
 DK.wantHelp = want => {
   const R = want && want.vibe && DK.ROLES[want.vibe];
-  return R ? "A " + R.name + " is " + R.def + ". LISTEN to a record to see its role tag." : "";
+  return R ? R.name + " = " + R.def + ". LISTEN shows a record's role tag." : "";
 };
 
 

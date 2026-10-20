@@ -74,7 +74,7 @@ const CSS = `
 .ap-opt .c .g { color: var(--ok); } .ap-opt .c .x { color: #ff8a8a; } .ap-opt .c .z { color: var(--muted); }
 .pips { display: inline-flex; gap: 2px; vertical-align: -1px; margin-right: 5px; } .pips i { display: block; width: 5px; height: 8px; background: #2a2450; } .pips i.on { background: var(--cyan); }
 .ap-goal { grid-column: 1 / -1; font-size: 17px; line-height: 1.05; color: var(--muted); padding: 0 2px; } .ap-goal b { font-weight: 400; color: var(--fg); letter-spacing: .06em; margin-right: 6px; } .ap-goal.warn, .ap-goal.warn b { color: var(--amber); } .ap-goal.done b { color: var(--ok); }
-.nk-end li.ap-tipped { flex-wrap: wrap; } .nk-end li .ap-tip { flex: 0 0 100%; font-size: 16px; line-height: 1.05; color: #cfc6f5; padding: 1px 0 3px; } .nk-end li .ap-tip::before { content: "TIP "; color: var(--cyan); letter-spacing: .08em; }
+.nk-end li.ap-tipped { flex-wrap: wrap; } .nk-end li .ap-tip { flex: 0 0 100%; font-size: 16px; line-height: 1.05; color: #cfc6f5; padding: 0 0 2px; } .nk-end li .ap-tip::before { content: "TIP "; color: var(--cyan); letter-spacing: .08em; }
 .ap-chips { display: flex; gap: 5px; flex-wrap: wrap; }
 .ap-chips span { font-size: 16px; padding: 0 6px; border-radius: 2px; border: 1px solid #3a3070; color: var(--fg); background: #130f2a; }
 .ap-chips .g { border-color: #2a6a46; color: var(--ok); } .ap-chips .x { border-color: #6a2a3a; color: #ff8a8a; }
@@ -746,7 +746,7 @@ RP.mg.register("afterParty", {
         if (snd.car && !loc.ground) warn.push("The car stereo can't get up there. It will play from the curb.");
         if (snd.heavy && loc.up) warn.push("The PA is heavy and the stairs are long. +8 min.");
         if (snd.battery && !loc.power) warn.push("No outlets. The speaker is on battery.");
-        if (fill(snd.q) < Math.min(NEED, loc.cap)) warn.push(snd.short + " only fills ~" + fill(snd.q) + " people. A bigger crowd drowns it out.");
+        if (!(snd.car && !loc.ground) && fill(snd.q) < Math.min(NEED, loc.cap)) warn.push(snd.short + " only fills ~" + fill(snd.q) + " people. A bigger crowd drowns it out.");
         if (loc.cap < NEED) warn.push(loc.short + " only fits " + loc.cap + ". Under " + NEED + " guests caps the night at FINE.");
         else if (G.sure + G.maybe * 0.4 < NEED) warn.push("You may not have enough guests yet (need " + NEED + "). Under that caps the night at FINE.");
         if (wantLoc && G.place !== wantLoc) warn.push("You wanted " + wantLoc + ".");
@@ -833,11 +833,10 @@ RP.mg.register("afterParty", {
     /* ---------------- end ---------------- */
     /* one-line, specific advice for each weak part of the night (shown under that line of the breakdown) */
     const TROUBLE = {
-      cops: "the cops cost you: keep a favor for \"talk your way out\", the only answer with no vibe loss. Hot places draw them.",
-      power: "the speaker died: pick a place with outlets or a plug-in PA, and keep $4 or 18% battery for the rescue.",
-      eddie: "Eddie's second payment: keep $6 or a favor in your pocket before you rent the PA.",
-      neighbor: "the neighbor in the robe: inviting her in is +5 vibe, apologizing is -4.",
-      cat: "the cat is a better DJ than you: let it play (+10 vibe)."
+      cops: "Cops hit the vibe. Keep a favor for \"talk your way out\", the only answer with no vibe loss.",
+      eddie: "Eddie's second payment came due. Keep $6 or a favor in your pocket before you rent his PA.",
+      neighbor: "The neighbor in the robe: inviting her in is +5 vibe, apologizing is -4.",
+      cat: "The cat is a better DJ than you. Let it play (+10 vibe)."
     };
     function partyTips(f) {
       const loc = LOCS[G.place], snd = SNDS[G.sound], t = {};
@@ -859,7 +858,10 @@ RP.mg.register("afterParty", {
         if (G.sound !== "boombox") m.push("Lou's mixtape (+5)");
         t.extras = "Bonus points you missed: " + m.slice(0, 2).join(", ") + ".";
       }
-      if (f.parts.trouble < 0 && G.bads.length) { const w = G.bads.slice().sort((a, b) => a.v - b.v)[0]; t.trouble = TROUBLE[w.id]; }
+      if (f.parts.trouble < 0 && G.bads.length) {
+        const w = G.bads.slice().sort((a, b) => a.v - b.v)[0];
+        t.trouble = w.id === "power" ? (loc.power ? "Old batteries died mid-party. Keep $4 or 18% phone battery for the rescue." : "A battery speaker in a room with no outlets dies. Pick a place with outlets or a plug-in PA.") : TROUBLE[w.id];
+      }
       return t;
     }
     /* the card is built synchronously, so the tips can be attached to its rows right after endCard() returns */
