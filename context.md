@@ -17,11 +17,13 @@ level is finished, Jukebox of all 105 records, mini-game tiles with a PLAY card)
 **Work branch:** `claude/repartee-dj-game-dev-8sfca1`. It was restarted from `main` after the merge. New since then:
 the title theme (`src/core/titletheme.js`, wired in `src/game.js`; `audio.buses()` added to `src/core/audio.js`).
 
-**Title theme (v2):** a 16-bar house loop at 124 BPM: deep filtered bass with one dark offbeat note (a flat second above the
-root), synth bleeps, and random low-mid plucks that ring out through a dotted-eighth echo. The sung "Re Party" voice from
-v1 was removed because the owner didn't like it. It starts on the first click or key on the title, steps aside for jukebox
-previews and mini-games, and stops when a game starts. Checked by recording it in headless Chromium (spectrogram and
-levels); the owner has heard v1 only, not yet v2 in the game.
+**Title theme (v3):** a 16-bar loop at 124 BPM in E minor (Em7, Em7, Am7, Bm7), in the dark Detroit-electro vein the owner
+asked for ("like Drexciya"). A loud, deep, rolling bass leads, with one darker offbeat note (a flat second above the root,
+slightly flat in tuning); a broken electro kick; quieter, lower bleeps, pad and stabs (minor third and flat second only);
+and random low-mid plucks ringing out through a darker dotted-eighth echo. The sung "Re Party" voice from v1 was removed
+at the owner's request. It starts on the first click or key on the title, steps aside for jukebox previews and
+mini-games, and stops when a game starts. Checked by recording it in headless Chromium: the bass sits about 1.6 dB
+further above the rest than in v2 (the master compressor limits how far it can go). The owner has not yet heard v3.
 
 **Open items**
 - Listen to the title theme and tune it (voice level, echo, pad, bleep density).
