@@ -1,10 +1,11 @@
-/* Title theme: a 16-bar, 124 BPM loop in E minor, in the dark Detroit-electro vein. A loud, deep, rolling bass leads, with one
+/* Title theme: a 24-bar, 124 BPM loop in E minor, in the dark Detroit-electro vein: 16 bars of groove, then an 8-bar breakdown. A loud, deep, rolling bass leads, with one
    darker offbeat note a flat second above the root; a broken electro kick; low, quiet bleeps, pad and stabs; and low-mid
-   plucks that land at random and ring out through a tempo-synced echo. Everything is synthesized with Web Audio (no audio
+   plucks that land at random and ring out through a tempo-synced echo; percussion that alternates bar to bar. The breakdown
+   strips everything but kick, clap and hats and holds two dark, Halloween-style organ chords. Everything is synthesized with Web Audio (no audio
    files). RP.audio.titleTheme.start() / .stop(fadeSec) / .running; start needs a user gesture (the title wires that up). */
 const RP = window.RP;
 const audio = RP.audio;
-const BPM = 124, STEP = 60 / BPM / 4, BARS = 16, STEPS = BARS * 16;
+const BPM = 124, STEP = 60 / BPM / 4, BARS = 24, STEPS = BARS * 16;
 const midi = n => 440 * Math.pow(2, (n - 69) / 12);
 
 // four-bar progression of minor 7th and 9th chords, the deep-house kind: bass root, then the chord notes for stabs, pad and plucks
@@ -57,6 +58,38 @@ function clap(t) {
     const g = AC.createGain(); g.gain.setValueAtTime(0.13, t + o); g.gain.exponentialRampToValueAtTime(0.001, t + o + (o > 0.02 ? 0.16 : 0.03));
     s.connect(f); f.connect(g); g.connect(N.out); s.start(t + o, Math.random() * 0.4); s.stop(t + o + 0.2);
   });
+}
+/* alternating percussion: a short rim click and a falling tom, both sent into the echo */
+function rim(t, vol) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = "square"; o.frequency.value = 1750;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+  o.connect(g); g.connect(N.out); g.connect(N.pluckSend); o.start(t); o.stop(t + 0.04);
+}
+function tom(t, f, vol) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.frequency.setValueAtTime(f * 1.6, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.08);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+  o.connect(g); g.connect(N.out); g.connect(N.pluckSend); o.start(t); o.stop(t + 0.3);
+}
+function shaker(t, vol) {
+  const s = AC.createBufferSource(); s.buffer = N.noise;
+  const f = AC.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 6200; f.Q.value = 2;
+  const g = AC.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  s.connect(f); f.connect(g); g.connect(N.out); s.start(t, Math.random() * 0.4); s.stop(t + 0.06);
+}
+/* breakdown chord: an organ (a sine and its first harmonics) with a slow tremolo, dark and a little ghostly, into the echo */
+function organ(t, notes, len) {
+  const g = AC.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.06, t + 0.5); g.gain.setValueAtTime(0.06, t + len - 0.6); g.gain.linearRampToValueAtTime(0.0001, t + len);
+  const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1300; f.Q.value = 1.5;
+  const trem = AC.createGain(); trem.gain.value = 0.8;
+  const lfo = AC.createOscillator(), lg = AC.createGain(); lfo.frequency.value = 5.2; lg.gain.value = 0.2; lfo.connect(lg); lg.connect(trem.gain);
+  f.connect(trem); trem.connect(g); g.connect(N.duck); g.connect(N.bleepSend);
+  notes.forEach(n => [[1, 1], [2, 0.5], [3, 0.22], [4, 0.1]].forEach(([h, a]) => {
+    const o = AC.createOscillator(), og = AC.createGain(); o.type = "sine"; o.frequency.value = midi(n) * h; og.gain.value = a / notes.length;
+    o.connect(og); og.connect(f); o.start(t); o.stop(t + len + 0.05);
+  }));
+  lfo.start(t); lfo.stop(t + len + 0.05);
 }
 function bass(t, note, len, dark, vol = 1) {
   // a saw through a low, closing filter for the body plus a sine for weight; the dark note closes further and sits a little flat
@@ -112,6 +145,18 @@ function schedule(step, t) {
   if (s % 4 === 2) hat(t, s % 8 === 6);
   if (bar >= 4 && (s === 4 || s === 12)) clap(t);
   if (bar >= 8 && s % 2 === 1) hat(t, false);
+  if (bar >= 16) {
+    // breakdown: only kick, clap and hats (above) plus two dark organ chords, Em then F (a flat second up: the Halloween step)
+    if (s === 0 && bar % 4 === 0) organ(t, bar === 16 ? [40, 52, 55, 59] : [41, 53, 57, 60], STEP * 64);
+    if (bar === 23 && s >= 12) clap(t); // a clap fill into the top of the loop
+    return;
+  }
+  // percussion that alternates: even bars get a rim and a shaker, odd bars a pair of low toms; every fourth bar a tom fill
+  if (bar >= 4) {
+    if (bar % 2 === 0) { if (s === 3 || s === 9 || s === 14) rim(t, 0.05); if (s % 2 === 1) shaker(t, 0.03); }
+    else { if (s === 5) tom(t, 110, 0.12); if (s === 12) tom(t, 82, 0.12); }
+    if (bar % 4 === 3 && s >= 12) tom(t, [140, 120, 100, 82][s - 12], 0.09);
+  }
   if (s === 2 || s === 6 || s === 10) bass(t, ch.r, STEP * 3);
   if (s === 4 || s === 12) bass(t, ch.r + 12, STEP * 0.8, false, 0.45); // short octave ghost notes keep it rolling
   if (s === 14) bass(t, ch.r + 1, STEP * 3.4, true); // the dark offbeat note: a flat second above the root
