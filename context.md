@@ -17,11 +17,11 @@ level is finished, Jukebox of all 105 records, mini-game tiles with a PLAY card)
 **Work branch:** `claude/repartee-dj-game-dev-8sfca1`. It was restarted from `main` after the merge. New since then:
 the title theme (`src/core/titletheme.js`, wired in `src/game.js`; `audio.buses()` added to `src/core/audio.js`).
 
-**Title theme:** a 16-bar house loop at 124 BPM with synth bleeps. A synthesized female voice (sawtooth through three
-formant filters, quantized for a digital sound) sings "Re Party ... ree, ree, Party!" at bars 9 and 13 into a dotted-eighth
-echo. It starts on the first click or key on the title, steps aside for jukebox previews and mini-games, and stops when
-a game starts. Checked by recording it in headless Chromium (spectrogram and levels); nobody has listened to it yet, so
-the mix and the voice are untested by ear.
+**Title theme (v2):** a 16-bar house loop at 124 BPM: deep filtered bass with one dark offbeat note (a flat second above the
+root), synth bleeps, and random low-mid plucks that ring out through a dotted-eighth echo. The sung "Re Party" voice from
+v1 was removed because the owner didn't like it. It starts on the first click or key on the title, steps aside for jukebox
+previews and mini-games, and stops when a game starts. Checked by recording it in headless Chromium (spectrogram and
+levels); the owner has heard v1 only, not yet v2 in the game.
 
 **Open items**
 - Listen to the title theme and tune it (voice level, echo, pad, bleep density).
