@@ -352,14 +352,8 @@ function updateActor(a, dt) {
    rendering
    ====================================================================== */
 let buf = null, bctx = null, k = 1, fade = 0, shakeT = 0, flashT = 0, flashCol = "#fff";
-const fadePats = [];
 function ensureBuf(w) {
   if (!buf || buf.width !== w) { buf = mk(w, SH); bctx = buf.getContext("2d"); }
-  if (!fadePats.length) for (let lvl = 0; lvl <= 16; lvl++) {
-    const t = mk(4, 4), tc = t.getContext("2d");
-    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (U.BAYER[y * 4 + x] < lvl) { tc.fillStyle = "#000"; tc.fillRect(x, y, 1, 1); }
-    fadePats.push(bctx.createPattern(t, "repeat"));
-  }
 }
 function drawActor(a, b, L) {
   const lt = RP.fx.actorLight(L, a.x, a.y);
@@ -395,7 +389,8 @@ function render(now) {
   try { if (cur.def.drawTop) cur.def.drawTop(b, S, t, cur); } catch (e) { console.error(e); }
   b.globalCompositeOperation = "source-over"; b.globalAlpha = 1;
   if (flashT > now) { b.save(); b.globalAlpha = clamp((flashT - now) / 300, 0, 0.8); b.fillStyle = flashCol; b.fillRect(cur.camX, 0, W, SH); b.restore(); }
-  if (fade > 0) { b.fillStyle = fadePats[clamp(Math.round(fade * 16), 0, 16)]; b.fillRect(cur.camX, 0, W, SH); }
+  // fades step to black in 16 flat levels (a dissolve through a dot pattern used to live here)
+  if (fade > 0) { b.save(); b.globalAlpha = clamp(Math.round(fade * 16), 0, 16) / 16; b.fillStyle = "#000"; b.fillRect(cur.camX, 0, W, SH); b.restore(); }
   // camera
   if (width > W) {
     const target = clamp(kid.x - W / 2, 0, width - W);
