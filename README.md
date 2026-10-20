@@ -42,6 +42,8 @@ your crate, cash and fans from level to level.
 
 **On claude.ai:** [the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N) is also published as an artifact.
 
+**Analytics:** the hosted pages load Vercel Web Analytics (see `tools/build.mjs`). Offline copies and the claude.ai artifact do not.
+
 **Offline:** open `dist/index.html` (full game) or `dist/level1.html` … `dist/level5.html` in a browser.
 Each is a single self-contained file that works from `file://` or hosted anywhere. On a phone, landscape
 gives the full screen; portrait puts the controls under the scene.

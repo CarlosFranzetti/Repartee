@@ -30,8 +30,9 @@ by recording it in headless Chromium (spectrogram shows the breakdown); the owne
 
 **Open items**
 - Listen to the title theme and tune it (voice level, echo, pad, bleep density).
-- Vercel Analytics: add the snippet to the page head in `tools/build.mjs` for `dist/` pages (not the artifact build) and
-  turn on Web Analytics in the Vercel project. Not done; waiting on the owner's go-ahead.
+- Vercel Analytics: added to the hosted pages (`dist/*.html`) via `tools/build.mjs` (the same thing `@vercel/analytics` `inject()` does,
+  without the npm package). It loads only over http(s), so offline copies and the claude.ai artifact build send nothing. Web Analytics must
+  be enabled in the Vercel project (the owner was doing that). Counts only appear for visits to the live site.
 - `TODO.md`: blind playthroughs of Levels 3 to 5, then an agent swarm to fix what they find. Not started.
 - The full-game claude.ai artifact (https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N) is older than main.
 - Level 2 money finding 2-19 (subway fare and ATM fee give no warning) is still open in `docs/PLAYTEST_LOG.md`.

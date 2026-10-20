@@ -52,6 +52,12 @@ if (broken.size) process.exitCode = 1;
 const fonts = fs.readFileSync(path.join(root, "src/fonts.css"), "utf8");
 const css = fs.readFileSync(path.join(root, "src/style.css"), "utf8");
 
+// Vercel Web Analytics for the hosted pages (dist/*.html). This is what @vercel/analytics' inject() does in production,
+// written out so the project stays dependency-free: a queue for window.va and a deferred /_vercel/insights/script.js.
+// It only loads over http(s), so offline file:// copies and the claude.ai artifact build make no request.
+const ANALYTICS = `window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+if (/^https?:$/.test(location.protocol)) { var s = document.createElement("script"); s.defer = true; s.src = "/_vercel/insights/script.js"; s.dataset.sdkn = "@vercel/analytics"; s.dataset.sdkv = "2.0.1"; document.head.appendChild(s); }`;
+
 function bundle({ level }) {
   // a level page carries the earlier acts too: later acts reuse their items, voices and places (the wallet, the phone...)
   const acts = actsUpTo(level || 9);
@@ -67,6 +73,7 @@ function bundle({ level }) {
 <title>${title}</title>
 <meta name="description" content="${DESC}">
 <style>\n${fonts}\n${css}\n</style>
+<script>${ANALYTICS}</script>
 </head>
 <body>
 <script>
