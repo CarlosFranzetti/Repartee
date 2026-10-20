@@ -2,15 +2,18 @@
 //  1. index.html               — dev page that loads every source file with <script src> (works from file://)
 //  2. dist/index.html          — the full game as one self-contained file (fonts, CSS, JS inlined)
 //  3. dist/artifact.html       — the same, content only, for the claude.ai artifact host
-//  4. dist/level1.html         — Level 1 on its own (plus the mini-game arcade); its ending links to the full game
-//  5. dist/level1.artifact.html
+//  4. dist/level1.html … dist/level5.html — each level on its own (plus the mini-game arcade), built with the
+//     acts up to that level and started at it; finishing it links to the next level's page (Level 5 ends the game)
+//  5. dist/level1.artifact.html — Level 1 for the claude.ai artifact host
 // File order: core (fixed) → data → minigames → acts (act1..act5, files sorted by name) → game.js
-// usage: node tools/build.mjs [--out file.html] [--level1] [--artifact]
+// Every page gets window.RP_SITE (level pages and the full game, with links between them): relative links
+// (level2.html, index.html) for dist/, which work from file:// and on Vercel; absolute ones for artifacts.
+// usage: node tools/build.mjs [--out file.html] [--level N] [--artifact]
 //   Every JS file is syntax-checked; a file that fails is left out of the build (with a loud warning)
 //   so one half-written file never breaks everybody else's game. Each file is also wrapped in
 //   try/catch in the bundle so a load-time exception only disables that file.
 //   --out writes ONLY the single-file bundle to the given path (use this when several people build at once);
-//   add --level1 to make that bundle the Level 1 build, --artifact to also write <out>.artifact.html.
+//   add --level N to make that bundle the Level N page, --artifact to also write <out>.artifact.html.
 import fs from "fs";
 import path from "path";
 import { execFileSync } from "child_process";
@@ -23,8 +26,15 @@ const args = process.argv.slice(2);
 const outIdx = args.indexOf("--out");
 const outFile = outIdx >= 0 ? path.resolve(args[outIdx + 1]) : null;
 
-// where the Level 1 build sends players who want the rest of the game
+// where artifact builds send players: the full game artifact, and the level pages on the Vercel site
 const FULL_GAME_URL = "https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N";
+const SITE_URL = "https://repartee-umber.vercel.app";
+const LEVELS = ["Bedroom DJ", "Underground Hustler", "Club DJ", "Touring DJ", "Superstar DJ"];
+const site = (level, artifact) => ({
+  level: level || null, names: LEVELS, newTab: !!artifact,
+  full: artifact ? FULL_GAME_URL : "index.html",
+  pages: LEVELS.map((_, i) => artifact ? SITE_URL + "/level" + (i + 1) : "level" + (i + 1) + ".html")
+});
 const DESC = "A pixel-art point-and-click DJ adventure. From broke-ass bedroom DJ to festival headliner, one bad decision at a time.";
 
 const core = ["util", "chars", "fx", "audio", "icons", "paint", "engine"].map(n => path.join(root, "src/core", n + ".js")).filter(f => fs.existsSync(f));
@@ -43,11 +53,13 @@ if (broken.size) process.exitCode = 1;
 const fonts = fs.readFileSync(path.join(root, "src/fonts.css"), "utf8");
 const css = fs.readFileSync(path.join(root, "src/style.css"), "utf8");
 
-function bundle({ level1 }) {
-  const files = [...core, ...data, ...mgs, ...actsUpTo(level1 ? 1 : 9), ...game].filter(f => !broken.has(f));
-  const title = level1 ? "re:parteé Level 1" : "re:parteé";
-  const demo = level1 ? `window.RP_DEMO = ${JSON.stringify({ level: 1, levels: 5, full: FULL_GAME_URL })};\n` : "";
-  const js = demo + files.map(f => `/* ---- ${rel(f)} ---- */\ntry {\n` + fs.readFileSync(f, "utf8").replace(/<\/script/gi, "<\\/script") + `\n} catch (e) { console.error("load error in ${rel(f)}", e); (window.__loadErrors = window.__loadErrors || []).push("${rel(f)}: " + e); }`).join("\n");
+function bundle({ level }) {
+  // a level page carries the earlier acts too: later acts reuse their items, voices and places (the wallet, the phone...)
+  const acts = actsUpTo(level || 9);
+  const files = [...core, ...data, ...mgs, ...acts, ...game].filter(f => !broken.has(f));
+  const title = level ? "re:parteé Level " + level + ": " + LEVELS[level - 1] : "re:parteé";
+  const head = artifact => `window.RP_SITE = ${JSON.stringify(site(level, artifact))};\n`;
+  const body = files.map(f => `/* ---- ${rel(f)} ---- */\ntry {\n` + fs.readFileSync(f, "utf8").replace(/<\/script/gi, "<\\/script") + `\n} catch (e) { console.error("load error in ${rel(f)}", e); (window.__loadErrors = window.__loadErrors || []).push("${rel(f)}: " + e); }`).join("\n");
   const single = `<!doctype html>
 <html lang="en">
 <head>
@@ -59,7 +71,7 @@ function bundle({ level1 }) {
 </head>
 <body>
 <script>
-${js}
+${head(false) + body}
 </script>
 </body>
 </html>
@@ -70,7 +82,7 @@ ${js}
 <meta name="description" content="${DESC}">
 <style>\n${fonts}\n${css}\n</style>
 <script>
-${js}
+${head(true) + body}
 </script>
 `;
   return { files, single, art };
@@ -85,12 +97,12 @@ const kb = s => (s.length / 1024).toFixed(0) + " KB";
 const note = broken.size ? " — " + broken.size + " BROKEN FILE(S) SKIPPED" : "";
 
 if (outFile) {
-  const b = bundle({ level1: args.includes("--level1") });
+  const li = args.indexOf("--level"), b = bundle({ level: li >= 0 ? +args[li + 1] : 0 });
   write(outFile, b.single);
   if (args.includes("--artifact")) write(outFile.replace(/\.html$/, "") + ".artifact.html", b.art);
   console.log(`built ${rel(outFile)} (${b.files.length} scripts, ${kb(b.single)})${note}`);
 } else {
-  const full = bundle({ level1: false });
+  const full = bundle({ level: 0 });
   const dev = `<!doctype html>
 <html lang="en">
 <head>
@@ -102,6 +114,7 @@ if (outFile) {
 <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
+<script>window.RP_SITE = ${JSON.stringify(site(0, false))};</script>
 ${full.files.map(f => `<script src="${rel(f)}"></script>`).join("\n")}
 </body>
 </html>
@@ -109,8 +122,11 @@ ${full.files.map(f => `<script src="${rel(f)}"></script>`).join("\n")}
   fs.writeFileSync(path.join(root, "index.html"), dev);
   write(path.join(root, "dist/index.html"), full.single);
   write(path.join(root, "dist/artifact.html"), full.art);
-  const l1 = bundle({ level1: true });
-  write(path.join(root, "dist/level1.html"), l1.single);
-  write(path.join(root, "dist/level1.artifact.html"), l1.art);
-  console.log(`built index.html + dist/index.html (${full.files.length} scripts, ${kb(full.single)}) + dist/level1.html (${l1.files.length} scripts, ${kb(l1.single)})${note}`);
+  const sizes = LEVELS.map((_, i) => {
+    const b = bundle({ level: i + 1 });
+    write(path.join(root, "dist/level" + (i + 1) + ".html"), b.single);
+    if (i === 0) write(path.join(root, "dist/level1.artifact.html"), b.art);
+    return kb(b.single);
+  });
+  console.log(`built index.html + dist/index.html (${full.files.length} scripts, ${kb(full.single)}) + dist/level1..5.html (${sizes.join(", ")})${note}`);
 }

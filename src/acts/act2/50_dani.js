@@ -142,7 +142,6 @@ async function afterShower(S, smooth) {
     "Dani. Thank you. For the shower. And the... dinner."
   ]);
   S.f.a2_daniName = true;
-  RP.unlock("a2_loc_loft");
   RP.addRecord("snap_rhythm_is_a_dancer");
   await RP.lines([
     "@a2_dani Take this. My ex left it. He left a lot of things. Mostly his dignity.",

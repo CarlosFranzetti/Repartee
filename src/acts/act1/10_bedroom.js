@@ -101,7 +101,8 @@ function paint(c, S) {
   for (let i = 0; i < 1100; i++) P(c, rnd() * W, rnd() * 162, C.wallL);
   for (let i = 0; i < 700; i++) P(c, rnd() * W, rnd() * 162, C.wallD);
   [[150, 22, 10, 5], [366, 26, 7, 5], [566, 150, 9, 4], [22, 136, 7, 5], [190, 70, 6, 4]].forEach(([x, y, rx, ry]) => { ell(c, x, y, rx, ry, C.patch); ell(c, x + 1, y + 1, rx - 2, ry - 2, C.patchI); });
-  for (let y = 0; y < 12; y++) for (let x = 0; x < W; x++) if (bayer(x, y) < (12 - y) * 1.4) P(c, x, y, C.ceil);
+  for (let y = 0; y < 12; y++) { c.globalAlpha = Math.min(1, Math.round((12 - y) * 1.4 / 16 * 8) / 8); R(c, 0, y, W, 1, C.ceil); }
+  c.globalAlpha = 1;
   [[300, 4], [301, 5], [301, 6], [302, 7], [302, 8], [303, 9], [302, 10], [303, 11], [304, 12], [304, 13]].forEach(([x, y]) => P(c, x, y, C.wallD));
   R(c, 0, 163, W, 9, C.base); R(c, 0, 163, W, 1, C.baseL);
   const ys = [172, 176, 181, 187, 194, 202, 211, 221, 232, 244, 257];
@@ -408,7 +409,7 @@ async function retrieveAcid(S) {
   if (!S.f.a1_acidUnder) return false;
   if (night(S)) { await RP.say("Not yet. It needs the whole night."); return true; }
   await RP.walkTo(110, 222, "back");
-  S.f.a1_acidUnder = false; S.f.a1_acidFlat = true; RP.give("rec_acid"); RP.addRecord(REC_ACID, true); RP.refreshInv();
+  S.f.a1_acidUnder = false; S.f.a1_acidFlat = true; delete S.f["warped_" + REC_ACID]; RP.give("rec_acid"); RP.addRecord(REC_ACID, true); RP.refreshInv();
   await RP.lines(["Flat as a subway seat.", "Okay. Temp job in Midtown, then Deep Cuts. Let's go be a professional."]);
   return true;
 }
@@ -444,7 +445,7 @@ RP.room({
       open: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "crate").pickup),
       pickup: async S => {
         if (S.f.a1_crate) return "It's empty. The records are on me.";
-        S.f.a1_crate = true;
+        S.f.a1_crate = true; delete S.f.crateHint;
         RP.give("rec_first"); RP.give("rec_acid"); RP.give("rec_mom");
         [REC_FIRST, REC_ACID, REC_MOM].forEach(id => RP.addRecord(id, true));
         S.f["warped_" + REC_ACID] = true;

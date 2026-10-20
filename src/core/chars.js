@@ -713,9 +713,9 @@ function shadeBuffer(B, lx, rim) {
         else if (a2 && B.u[o - 2 * w] !== me && part[a2] && part[a2].ao && B.c[o - 2 * w] >= 0) v -= 0.4;
       }
       // material texture
-      if (P.tex === "hair") v += ((x * 3 + y * 7) % 5 === 0) ? 0.5 : ((x * 5 + y * 3) % 7 === 0 ? -0.35 : 0);
+      if (P.tex === "hair") v += ((x * 2 + (y >> 2)) % 5 === 0) ? 0.4 : ((x * 3 + (y >> 2)) % 7 === 0 ? -0.3 : 0);   // short strands, not specks
       if (P.tex === "denim") v += ((x + y) % 4 === 0) ? -0.18 : 0;
-      // clean bands like hand-shaded VGA sprites; dither only right at band edges
+      // clean bands like hand-shaded VGA sprites (bayer() is a flat midpoint unless DITHER is on)
       const u = v + (bayer(x, y) / 16 - 0.5) * 0.22;
       const idx = u > 0.95 ? 4 : u > 0.42 ? 3 : u > -0.38 ? 2 : u > -0.92 ? 1 : 0;
       [r, g, b] = ramps[ci][idx];
@@ -730,8 +730,8 @@ function shadeBuffer(B, lx, rim) {
       const nx = x + side;
       const edge = nx < 0 || nx >= w || B.c[y * w + nx] < 0;
       const edge2 = !edge && (nx + side < 0 || nx + side >= w || B.c[y * w + nx + side] < 0);
-      if (edge || (edge2 && bayer(x, y) < 6)) {
-        const q = o * 4, t = edge ? 0.62 : 0.35;
+      if (edge || edge2) {   // a solid two-pixel rim: strong outer pixel, softer inner one
+        const q = o * 4, t = edge ? 0.62 : 0.22;
         out[q] = out[q] + (rr - out[q]) * t; out[q + 1] = out[q + 1] + (rg - out[q + 1]) * t; out[q + 2] = out[q + 2] + (rb - out[q + 2]) * t;
       }
     }
@@ -777,7 +777,7 @@ function sprite(def, pose, lx, rim) {
   return s;
 }
 
-/* projected cast shadow from the silhouette, away from the key light; pre-dithered and cached */
+/* projected cast shadow from the silhouette, away from the key light; a solid shape (drawn translucent), cached */
 function castShadow(def, pose, lx, sp) {
   const key = def.id + "|" + poseKey(pose) + "|" + qlx(lx);
   let s = shadowCache.get(key);
@@ -792,14 +792,14 @@ function castShadow(def, pose, lx, sp) {
     const sx = Math.round(pad + x + hgt * skew), sy = Math.round(baseY - hgt * len);
     if (sx < 0 || sy < 0 || sx >= cv.width || sy >= cv.height || seen[sy * cv.width + sx]) continue;
     seen[sy * cv.width + sx] = 1;
-    if ((sx + sy) & 1) c.fillRect(sx, sy, 1, 1);
+    c.fillRect(sx, sy, 1, 1);
   }
   s = { cv, ox: pad + B.ax, oy: baseY };
   if (shadowCache.size > 1500) shadowCache.clear();
   shadowCache.set(key, s);
   return s;
 }
-/* dithered contact shadow ellipse, cached by size */
+/* soft contact shadow ellipse: solid core, lighter rim, cached by size */
 const contactCache = new Map();
 function contactShadow(rx, ry, level) {
   const key = rx + "," + ry + "," + level;
@@ -807,7 +807,13 @@ function contactShadow(rx, ry, level) {
   if (cv) return cv;
   cv = mk(rx * 2 + 1, ry * 2 + 1);
   const c = cv.getContext("2d"); c.fillStyle = "#0a0410";
-  for (let x = -rx; x <= rx; x++) for (let y = -ry; y <= ry; y++) if ((x * x) / (rx * rx) + (y * y) / (ry * ry) < 1 && bayer(x + 64, y + 64) < level) c.fillRect(x + rx, y + ry, 1, 1);
+  const a = Math.min(1, level / 16 * 1.1);
+  for (let x = -rx; x <= rx; x++) for (let y = -ry; y <= ry; y++) {
+    const d = (x * x) / (rx * rx) + (y * y) / (ry * ry);
+    if (d >= 1) continue;
+    c.globalAlpha = d < 0.45 ? a : a * 0.55;
+    c.fillRect(x + rx, y + ry, 1, 1);
+  }
   contactCache.set(key, cv);
   return cv;
 }
@@ -834,7 +840,7 @@ function draw(ctx, inst, light = {}) {
     ctx.drawImage(contactShadow(rx, ryy, Math.round(9 * sh + 2)), X - rx, Y - ryy);
     if (light.cast && Math.abs(lx) > 0.2 && !inst.noCast) {
       const cs = castShadow(def, pose, lx, sp);
-      ctx.save(); ctx.globalAlpha = Math.min(1, 0.85 * sh + 0.2);
+      ctx.save(); ctx.globalAlpha = Math.min(1, 0.85 * sh + 0.2) * 0.5;   // solid shape at the old checkerboard's average darkness
       ctx.drawImage(cs.cv, Math.round(X - cs.ox * sc), Math.round(Y - cs.oy * sc), Math.round(cs.cv.width * sc), Math.round(cs.cv.height * sc));
       ctx.restore();
     }

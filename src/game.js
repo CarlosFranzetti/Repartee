@@ -2,7 +2,7 @@
 (function () {
 "use strict";
 const RP = window.RP;
-const { el, $, esc, mk, R, P, ell, bayer, mulberry, clamp, store } = RP.u;
+const { el, $, esc, mk, R, P, ell, bayer, mix, mulberry, clamp, store } = RP.u;
 
 /* the protagonist */
 RP.chars.define("kid", { name: "you", height: 96, skin: "#e0a27a", hair: { style: "messy", color: "#5a3520" },
@@ -10,11 +10,25 @@ RP.chars.define("kid", { name: "you", height: 96, skin: "#e0a27a", hair: { style
   shoes: { style: "sneakers", color: "#efeaf6" }, acc: [], voice: "#ffffff" });
 
 let titleEl = null;
-const DEMO = window.RP_DEMO || null;   // set by the Level 1 build (tools/build.mjs --level1)
+// set by tools/build.mjs: links to the level pages and the full game; on a level page, level is its number
+const SITE = window.RP_SITE || null;
+const DEMO = SITE && SITE.level ? SITE : null;
+const link = (href, text, parent, cls) => { const a = el("a", { cls, href, text }, parent); if (SITE && SITE.newTab) { a.target = "_blank"; a.rel = "noopener"; } return a; };
+/* "LEVELS 1 2 3 4 5 · FULL GAME" under the title menu (the current level is not a link) */
+function levelNav(box) {
+  const p = el("p", { cls: "small levelnav" }, box);
+  p.appendChild(document.createTextNode(DEMO ? "LEVELS " : "EACH LEVEL ON ITS OWN: "));
+  SITE.pages.forEach((href, i) => {
+    if (DEMO && DEMO.level === i + 1) el("b", { text: String(i + 1) }, p);
+    else link(href, String(i + 1), p).title = "Level " + (i + 1) + ": " + SITE.names[i];
+    p.appendChild(document.createTextNode(" "));
+  });
+  if (DEMO) { p.appendChild(document.createTextNode("\u00b7 ")); link(SITE.full, "FULL GAME", p); }
+}
 function paintTitle(c) {
   const w = 320, h = 180, rnd = mulberry(11);
   const sky = ["#0d0826", "#160c38", "#22104a", "#36155a", "#521d66", "#6e2a6e"];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const t = y / 130 + (bayer(x, y) / 16 - 0.5) * 0.12; P(c, x, y, sky[clamp(Math.floor(t * 6), 0, 5)]); }
+  for (let y = 0; y < h; y++) { const t = clamp(y / 130 * 5, 0, 5), i = Math.min(4, Math.floor(t)), f = Math.round((t - i) * 2) / 2; R(c, 0, y, w, 1, f >= 1 ? sky[i + 1] : f > 0 ? mix(sky[i], sky[i + 1], f) : sky[i]); }
   for (let i = 0; i < 60; i++) P(c, rnd() * w, rnd() * 70, rnd() > 0.6 ? "#ffffff" : "#9c8cff");
   ell(c, 262, 34, 9, 9, "#f2e7c4"); P(c, 259, 31, "#d8cca4"); P(c, 265, 37, "#d8cca4");
   let bx = 0;
@@ -32,7 +46,7 @@ function paintTitle(c) {
   [[40, 40], [140, 40]].forEach(([x, th]) => { R(c, x, 128 - th, 5, th, "#1a1030"); R(c, x - 1, 128 - th, 7, 3, "#1a1030"); });
   for (let i = 0; i <= 100; i++) { const t = i / 100; P(c, 42 + t * 100, 90 + Math.sin(t * Math.PI) * 30, "#3a2860"); }
   for (let x = 0; x < 200; x += 4) P(c, x, 127, (x / 4) % 2 ? "#ffd27a" : "#ff6cbb");
-  for (let y = 132; y < h; y++) for (let x = 0; x < w; x++) P(c, x, y, bayer(x, y) < 6 ? "#0b0720" : "#130b2e");
+  for (let y = 132; y < h; y++) R(c, 0, y, w, 1, (y - 132) % 5 === 4 ? "#0b0720" : "#130b2e");
   for (let i = 0; i < 260; i++) { const x = rnd() * w | 0, y = 134 + rnd() * 44 | 0; R(c, x, y, 2 + rnd() * 4, 1, ["#ffd27a", "#ff6cbb", "#9fe8ff"][rnd() * 3 | 0]); }
   R(c, 0, 168, w, 12, "#2a1c30"); R(c, 0, 168, w, 1, "#4a3450");
 }
@@ -62,16 +76,14 @@ function showTitle() {
   const add = (label, fn) => { const b = el("button", { type: "button", text: label }, menu); b.addEventListener("click", () => { RP.audio.ctx(); fn(); }); return b; };
   const first = [];
   if (RP.hasSave()) first.push(add("CONTINUE", async () => { closeTitle(); if (!(await RP.loadSave())) { showTitle(); } }));
-  first.push(add("NEW GAME", () => newGame(panel)));
-  if (Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
+  first.push(add(DEMO ? "PLAY LEVEL " + DEMO.level : "NEW GAME", () => newGame(panel)));
+  if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
   add("MINI-GAME ARCADE", () => arcade(panel));
   add("HOW TO PLAY", () => toggle(panel, howTo));
   add("CREDITS", () => toggle(panel, credits));
-  if (DEMO) {
-    el("p", { cls: "small", text: "Level 1 of " + DEMO.levels + ": Bedroom DJ, plus all sixteen mini-games in the arcade. Sound on helps." }, box);
-    const full = el("a", { cls: "small fullgame", href: DEMO.full, target: "_blank", rel: "noopener", text: "Play the full game (all five levels) \u2192" }, box);
-    full.style.color = "var(--cyan)";
-  } else el("p", { cls: "small", text: "Five levels. Sixteen mini-games. Sound on helps." }, box);
+  if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all sixteen mini-games in the arcade. Sound on helps." }, box);
+  else el("p", { cls: "small", text: "Five levels. Sixteen mini-games. Sound on helps." }, box);
+  if (SITE) levelNav(box);
   setTimeout(() => first[0] && first[0].focus({ preventScroll: true }), 50);
 }
 function closeTitle() { if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
@@ -106,7 +118,7 @@ async function newGame(panel) {
     closeTitle();
     RP.reset();
     RP.state.name = name;
-    await RP.startAct(1);
+    await RP.startAct(DEMO ? DEMO.level : 1);
   };
   go.addEventListener("click", start);
   inp.addEventListener("keydown", e => { if (e.key === "Enter") start(); });
@@ -141,18 +153,24 @@ function arcade(panel) {
 }
 
 RP.onQuit = () => { RP.audio.stopAll(0.3); showTitle(); };
-/* Level 1 build: finishing the level leads here instead of into Level 2 */
-async function demoEnding() {
+/* level pages: finishing a level (other than the last) leads here instead of into the next one */
+const NEXT_TEASE = ["",
+  "Plasma money, a Meserole St loft party and a dead PA.",
+  "A Thursday residency at the Halcyon Room, a record fair and a rival in gold.",
+  "A flight to Berlin and a 2 AM handover at Halle Neun.",
+  "Headlining Harbor Lights, if the main act ever gets off the stage."];
+async function levelEnding() {
+  const n = DEMO.level, next = n + 1;
   RP.audio.setMusic(null);
   const ov = RP.overlay("card");
   const box = el("div", { cls: "cardbox" }, ov);
-  el("div", { cls: "kicker", text: "END OF LEVEL 1" }, box);
+  el("div", { cls: "kicker", text: "END OF LEVEL " + n }, box);
   el("h2", { html: "TO BE <span style='color:var(--pink)'>CONTINUED</span>" }, box);
-  const S = RP.state;
-  el("p", { text: (S.name || "You") + " played Nowhere. The bartenders danced. Dante says he'll pay you next week." }, box);
-  el("p", { text: "Still to come: Underground Hustler, Club DJ, Touring DJ and Superstar DJ. Plasma money, a loft party with a dead PA, a residency, a flight to Berlin, and a festival headline set." }, box);
+  el("p", { text: "Next up, Level " + next + ": " + DEMO.names[next - 1] + ". " + NEXT_TEASE[next - 1] }, box);
+  el("p", { text: "Each level page starts you with a fresh setup. The full game carries your crate, cash and fans through all five levels." }, box);
   const row = el("div", { cls: "erow" }, box);
-  el("a", { cls: "btn primary", href: DEMO.full, target: "_blank", rel: "noopener", text: "PLAY THE FULL GAME", style: "text-decoration:none" }, row);
+  link(DEMO.pages[next - 1], "PLAY LEVEL " + next, row, "btn primary").style.textDecoration = "none";
+  link(DEMO.full, "FULL GAME", row, "btn").style.textDecoration = "none";
   const b = el("button", { cls: "btn", type: "button", text: "BACK TO TITLE" }, row);
   await new Promise(r => b.addEventListener("click", r));
   ov.remove();
@@ -160,14 +178,14 @@ async function demoEnding() {
   showTitle();
 }
 RP.ending = async function () {
-  if (DEMO) return demoEnding();
+  if (DEMO && DEMO.level < DEMO.names.length) return levelEnding();
   RP.audio.setMusic(null);
   const ov = RP.overlay("card");
   const box = el("div", { cls: "cardbox" }, ov);
   el("div", { cls: "kicker", text: "THE END" }, box);
   el("h2", { html: "re<span style='color:var(--pink)'>:</span>parte<span style='color:var(--pink)'>é</span>" }, box);
   const S = RP.state;
-  el("p", { text: (S.name || "You") + ": from four records and a crackling mixer to a festival headline." }, box);
+  el("p", { text: (S.name || "You") + ": from a milk crate of records and a crackling mixer to a festival headline." }, box);
   el("p", { text: S.records.length + " records in the crate. " + S.followers.toLocaleString("en-US") + " fans. " + RP.u.fmtMoney(S.money) + " in the bank (for now)." }, box);
   el("p", { text: "Thanks for playing. Go dig something." }, box);
   const row = el("div", { cls: "erow" }, box);

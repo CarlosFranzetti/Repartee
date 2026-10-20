@@ -44,7 +44,8 @@ function paint(c, S) {
   [[172, 130, 16, 24], [428, 78, 24, 34], [452, 104, 22, 30], [408, 118, 18, 26]].forEach(([x, y, w, h], i) => PK.poster(c, x, y, w, h, { palette: pal[i % 4], title: ["SOUL", "CLAP", "HOUSE", "AFTERS", "DISCO"][i], lines: ["THU", "SAT"], seed: 411 + i, tape: false }));
   // brandon's poster: gold, huge, very shiny
   R(c, 362, 58, 52, 74, "#17101e"); R(c, 363, 59, 50, 72, "#e0b030");
-  for (let y = 0; y < 72; y++) for (let x = 0; x < 50; x++) if (bayer(x, y) < 3 && y % 2 === 0) P(c, 363 + x, 59 + y, "#ffe880");
+  // two diagonal sheen streaks across the gold
+  for (let y = 0; y < 72; y++) [[44, 4, "#f0c848"], [45, 2, "#ffe880"], [66, 3, "#f0c848"], [67, 1, "#ffe880"]].forEach(([o, w, col]) => { const x0 = 363 + o - ((y * 0.7) | 0); if (x0 >= 363 && x0 + w <= 413) R(c, x0, 59 + y, w, 1, col); });
   ell(c, 388, 90, 9, 9, "#2a1c10"); R(c, 381, 88, 14, 3, "#0b0712"); R(c, 386, 98, 5, 2, "#e0a27a"); ell(c, 388, 85, 8, 4, "#f2e07a");
   txtC(c, "SATURDAYS", 388, 64, "#17101e", 1, 1); txtC(c, "BRANDON", 388, 110, "#17101e", 1, 1); txtC(c, "SHINE", 388, 117, "#17101e", 1, 1); txtC(c, "ALL NIGHT", 388, 124, "#7a4a10", 1, 1);
   P(c, 365, 60, "#fff6c0"); P(c, 411, 129, "#fff6c0");

@@ -17,11 +17,13 @@ K.reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").
    ====================================================================== */
 const pats = new Map();
 let patCtx = null;
-/* fill style that paints `color` on `level`/16 of the pixels (Bayer 4x4). Usable anywhere a color is. */
+/* fill style that lays `color` over `level`/16 of the area: a flat translucent colour (no dither dots) for
+   #rrggbb colours, a Bayer 4x4 pattern for anything else. Usable anywhere a color is. */
 K.dpat = function (color, level) {
   level = clamp(Math.round(level), 0, 16);
   if (level <= 0) return "rgba(0,0,0,0)";
   if (level >= 16) return color;
+  if (/^#[0-9a-f]{6}$/i.test(color)) { const [r, g, b] = U.hex(color); return "rgba(" + r + "," + g + "," + b + "," + (level / 16).toFixed(3) + ")"; }
   const key = color + "|" + level;
   let p = pats.get(key);
   if (!p) {

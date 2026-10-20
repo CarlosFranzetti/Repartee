@@ -219,7 +219,10 @@ RP.mg.register("afterParty", {
       { id: "club", label: "Can your club help?", cost: { min: 4, bat: 3 }, max: 1, run() { return { say: "Absolutely. Next week. I'll pay you for that other thing next week too.", chips: ["Nothing. Again."], bad: true }; } }
     ] });
     reg("jess", { name: "Jess", tag: "your ex", def: "jess", vis: true, greet: "...It's four AM.", opts: [
-      { id: "help", label: "Ask Jess for help", cost: { min: 3, bat: 3 }, max: 1, run() { return { say: "Do you have the USB? The one with Mr. Whiskers? ...No? Goodnight.", chips: ["She hung up"], bad: true }; } }
+      { id: "help", label: "Ask Jess for help", cost: { min: 3, bat: 3 }, max: 1, run() {
+        if (host.S && host.S.f && host.S.f.a2_usbBack) return { say: "You gave Mr. Whiskers back. Fine. My roommates are up anyway. We're coming.", chips: [addPeople(4)] };
+        return { say: "Do you have the USB? The one with Mr. Whiskers? ...No? Goodnight.", chips: ["She hung up"], bad: true };
+      } }
     ] });
     /* contacts the act wants on the phone from the start */
     const extra = Array.isArray(p.contacts) ? p.contacts : [];
@@ -472,7 +475,7 @@ RP.mg.register("afterParty", {
       NK.drawChar(c, RP.chars.get("twinkie") || "twinkie", 140, 156, { face: "left", act: "stand", scale: 0.8, expr: "happy" });
       if (G.battery > 0) NK.glow(c, 118, 106, 7, "#7ad8ff", 0.9);
       /* steam */
-      if (!reduced) for (let k = 0; k < 6; k++) { const ph = (t * 0.5 + k / 6) % 1, x = 74 + Math.sin(ph * 6 + k) * 5, y = 158 - ph * 30; if (bayer(Math.round(x), Math.round(y)) < 8 * (1 - ph)) R(c, x, y, 2, 2, "#8a84a8"); }
+      if (!reduced) for (let k = 0; k < 6; k++) { const ph = (t * 0.5 + k / 6) % 1, x = 74 + Math.sin(ph * 6 + k) * 5, y = 158 - ph * 30; c.globalAlpha = Math.round((1 - ph) * 5) / 5 * 0.8; R(c, x, y, 2, 2, "#8a84a8"); c.globalAlpha = 1; }
       else R(c, 73, 148, 3, 6, "#5a5470");
     }
 

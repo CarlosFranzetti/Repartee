@@ -32,7 +32,7 @@ RP.item("a1_package", { name: "Smitty's package", short: "Package",
 
 /* ---- Sal's slice ---- */
 RP.item("a1_slice", { name: "Sal's slice", short: "Slice", icon: c => I.slice(c),
-  look: "A pepperoni slice from Sal's on a paper plate, folded right. It's still warm. In New York a warm slice is currency.",
+  look: "A pepperoni slice from Sal's on a paper plate, folded right. In New York a slice is currency.",
   use: "Eating it would be a victory for me and a loss for the story. I'm saving it.",
   open: "It's a slice. It's open. It's been open since 1959.", push: "I fold it harder. It folds. Slices are very cooperative." });
 

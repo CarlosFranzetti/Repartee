@@ -352,14 +352,8 @@ function updateActor(a, dt) {
    rendering
    ====================================================================== */
 let buf = null, bctx = null, k = 1, fade = 0, shakeT = 0, flashT = 0, flashCol = "#fff";
-const fadePats = [];
 function ensureBuf(w) {
   if (!buf || buf.width !== w) { buf = mk(w, SH); bctx = buf.getContext("2d"); }
-  if (!fadePats.length) for (let lvl = 0; lvl <= 16; lvl++) {
-    const t = mk(4, 4), tc = t.getContext("2d");
-    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (U.BAYER[y * 4 + x] < lvl) { tc.fillStyle = "#000"; tc.fillRect(x, y, 1, 1); }
-    fadePats.push(bctx.createPattern(t, "repeat"));
-  }
 }
 function drawActor(a, b, L) {
   const lt = RP.fx.actorLight(L, a.x, a.y);
@@ -395,7 +389,8 @@ function render(now) {
   try { if (cur.def.drawTop) cur.def.drawTop(b, S, t, cur); } catch (e) { console.error(e); }
   b.globalCompositeOperation = "source-over"; b.globalAlpha = 1;
   if (flashT > now) { b.save(); b.globalAlpha = clamp((flashT - now) / 300, 0, 0.8); b.fillStyle = flashCol; b.fillRect(cur.camX, 0, W, SH); b.restore(); }
-  if (fade > 0) { b.fillStyle = fadePats[clamp(Math.round(fade * 16), 0, 16)]; b.fillRect(cur.camX, 0, W, SH); }
+  // fades step to black in 16 flat levels (a dissolve through a dot pattern used to live here)
+  if (fade > 0) { b.save(); b.globalAlpha = clamp(Math.round(fade * 16), 0, 16) / 16; b.fillStyle = "#000"; b.fillRect(cur.camX, 0, W, SH); b.restore(); }
   // camera
   if (width > W) {
     const target = clamp(kid.x - W / 2, 0, width - W);
@@ -444,10 +439,12 @@ function repositionSpeech() {
   e.style.top = clamp(ay - h, 4, SH - h - 4) + "px";
 }
 function say(text, who = "kid") {
+  const tag = /^@([\w-]+) ([\s\S]*)$/.exec(text);
+  if (tag) { who = tag[1]; text = tag[2]; }
   return new Promise(res => {
     dom.talk.innerHTML = "";
     if (fast) { RP.test.log.push((who || "kid") + ": " + text); res(); return; }
-    const e = el("div", { cls: "line" + (who === "nar" ? " nar" : "") }, dom.talk);
+    const e = el("div", { cls: "line" + (who === "nar" ? " nar" : ""), "data-who": who }, dom.talk);
     const v = VOICES[who];
     e.textContent = (v && v.prefix ? v.prefix : "") + text;
     e.style.color = speakerColor(who);
@@ -601,7 +598,7 @@ RP.crateView = function () {
     el("h2", { text: "RECORD CRATE" }, head);
     el("span", { cls: "count", text: S.records.length + (S.records.length === 1 ? " record" : " records") }, head);
     const grid = el("div", { cls: "cgrid" }, box);
-    const detail = el("div", { cls: "cdetail", text: S.records.length ? "Pick a record." : "Your crate is empty. That's a problem for a DJ." }, box);
+    const detail = el("div", { cls: "cdetail", text: S.records.length ? "Pick a record." : S.f.crateHint || "Your crate is empty. That's a problem for a DJ." }, box);
     S.records.forEach(id => {
       const r = RP.rec(id);
       const bt = el("button", { type: "button", cls: "rec" }, grid);
@@ -692,7 +689,8 @@ async function travelTo(l) {
 function paintMap(c, locs) {
   const w = 320, h = 200;
   R(c, 0, 0, w, h, "#0d1a2a");
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (bayer(x, y) < 2) P(c, x, y, "#12243a");
+  for (let y = 0; y < h; y += 8) R(c, 0, y, w, 1, "#12243a");   // faint map grid
+  for (let x = 0; x < w; x += 8) R(c, x, 0, 1, h, "#12243a");
   // Manhattan
   U.poly(c, [[118, 0], [150, 0], [168, 60], [160, 120], [140, 150], [126, 128], [118, 70]], "#2a2440");
   // Brooklyn / Queens
@@ -1014,6 +1012,9 @@ function bindInput() {
     if (MG.active) return;
     if (e.key === "Escape") { if (busy && skipFn) { skipFn(); return; } verb = null; pending = null; updateVerbs(); renderInv(); updateSentence(); }
     if ((e.key === " " || e.key === "Enter" || e.key === ".") && busy && skipFn) { e.preventDefault(); skipFn(); }
+    // never steal keys from a text box (the DJ-name field): H used to vanish from typed names
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (typing) return;
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0 && (e.key === "h" || e.key === "H" || e.key === "Tab")) { e.preventDefault(); revealHotspots(); return; }
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0) {
       const map = { l: "look", p: "pickup", u: "use", o: "open", t: "talk", s: "push", c: "close", g: "give", y: "pull" };
@@ -1060,7 +1061,8 @@ RP.revealHotspots = revealHotspots;
 /* ======================================================================
    save / load
    ====================================================================== */
-const SAVE_KEY = "reparte.save.v2";
+// level pages (tools/build.mjs) save in their own slot, so they never touch a full-game save on the same site
+const SAVE_KEY = "reparte.save.v2" + (window.RP_SITE && window.RP_SITE.level ? ".level" + window.RP_SITE.level : "");
 function save() {
   if (!cur || RP.test.noSave) return;
   S.kx = Math.round(kid.x); S.ky = Math.round(kid.y); S.face = kid.face;

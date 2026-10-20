@@ -52,7 +52,12 @@ button { font-family: var(--ui); }
 .slot canvas { width: 32px; height: 24px; image-rendering: crisp-edges; image-rendering: pixelated; }
 .slot span { font-size: 13px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding-inline: 2px; }
 .slot.empty { cursor: default; opacity: .45; }
-#choices { grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: center; gap: 0; padding-left: 6px; overflow-y: auto; }
+#choices { grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: flex-start; gap: 0; padding-left: 6px; overflow-y: auto; }
+/* auto margins centre a short list; a long one starts at the top and scrolls (justify-content: center would clip its first rows) */
+#choices > :first-child { margin-top: auto; }
+#choices > :last-child { margin-bottom: auto; }
+#panel.choosing { top: auto; bottom: 0; height: auto; min-height: 86px; max-height: 236px; }
+body.p #panel.choosing { max-height: none; }
 .choice { background: none; border: 0; text-align: left; color: var(--verb); font-size: 18px; line-height: 1; padding: 1px 4px; cursor: pointer; }
 .choice::before { content: "\25B8 "; color: #3a3070; }
 .choice:hover, .choice:focus-visible { color: var(--pink); }
@@ -187,3 +192,7 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .namebox { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .namebox input { font-family: var(--ui); font-size: 24px; background: #110d24; color: var(--fg); border: 1px solid var(--line); padding: 4px 10px; width: 220px; text-transform: uppercase; }
 @media (prefers-reduced-motion: reduce) { .toastItem { transition: none; } }
+.levelnav { font-size: 20px; letter-spacing: .08em; background: rgba(10, 6, 24, .78); padding: 4px 12px; }
+.levelnav a { color: var(--cyan); padding: 0 4px; }
+.levelnav a:hover, .levelnav a:focus-visible { color: var(--pink); }
+.levelnav b { color: var(--pink); padding: 0 4px; }

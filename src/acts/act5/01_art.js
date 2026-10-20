@@ -38,8 +38,10 @@ art.water = function (c, x, y, w, h, o) {
     for (let yy = y; yy < y + h; yy++) {
       const t = (yy - y) / h, wob = rd(sin(yy * 0.9 + L.x * 0.3) * (1 + t * 3)), sp = rd((L.w || 2) * (1 + t * 2.2));
       if ((yy * 7 + L.x) % 3 === 0 && t > 0.04) continue;
-      if (bayer(L.x + yy, yy * 3) < 15 * (L.a == null ? 1 : L.a) * (1 - t * 0.8)) R(c, L.x + wob - (sp >> 1), yy, sp, 1, L.color);
+      c.globalAlpha = Math.round(Math.min(1, (L.a == null ? 1 : L.a) * (1 - t * 0.8)) * 6) / 6;
+      R(c, L.x + wob - (sp >> 1), yy, sp, 1, L.color);
     }
+    c.globalAlpha = 1;
   });
   return o.emissive === false ? [] : [[x, y, w, h]];
 };
@@ -65,14 +67,17 @@ art.hlLogo = function (c, cx, y, s, o) {
   const tc = o.color || "#f4f0e8", kc = K(tc), red = o.stripe || "#e0368f", em = [];
   const bw = 7 * s, tw = 4 * s, th = 14 * s, lh = 4 * s;
   const bx = cx - bw / 2;
-  /* beams first (dithered wedges, behind) */
+  /* beams first (wedges fading out in flat alpha steps, behind) */
   const BL = o.beamLen || 34 * s;
+  c.fillStyle = o.beam || "#ffe9a0";
   for (let side = -1; side <= 1; side += 2) {
     for (let i = 3 * s; i < BL; i++) {
-      const half = (i - 3 * s) * 0.16 + 1;
-      for (let dy = -half; dy <= half; dy += 1) { const px = cx + side * i, py = y + 2 * s + dy; if (bayer(px, py) < 7 - (i / BL) * 7) P(c, px, rd(py), o.beam || "#ffe9a0"); }
+      const half = (i - 3 * s) * 0.16 + 1, py = rd(y + 2 * s - half);
+      c.globalAlpha = Math.round((1 - i / BL) * 6) / 6 * 0.55;
+      c.fillRect(cx + side * i, py, 1, rd(y + 2 * s + half) - py + 1);
     }
   }
+  c.globalAlpha = 1;
   poly(c, [[cx - tw / 2, y + lh], [cx + tw / 2, y + lh], [cx + bw / 2, y + lh + th], [cx - bw / 2, y + lh + th]], tc);
   for (let i = 0; i < 3; i++) {
     const t0 = (i * 2 + 1) / 7, t1 = (i * 2 + 2) / 7, y0 = y + lh + th * t0, y1 = y + lh + th * t1;

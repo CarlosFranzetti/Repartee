@@ -5,7 +5,7 @@
 ![re:parteé title screen](docs/screenshots/title.png)
 
 A point-and-click adventure in the spirit of *Maniac Mansion*, *Zak McKracken* and *The Secret of
-Monkey Island*. You're a broke bedroom DJ in New York City with four records, a crackling mixer
+Monkey Island*. You're a broke bedroom DJ in New York City with three records, a crackling mixer
 and a phone at 1%. Hustle, dig, mix and talk your way from Bushwick to a festival headline set.
 
 - **Five levels:** Bedroom DJ → Underground Hustler → Club DJ → Touring DJ → Superstar DJ
@@ -15,22 +15,35 @@ and a phone at 1%. Hustle, dig, mix and talk your way from Bushwick to a festiva
 - **Real music culture:** a catalog of real records, labels and DJ gear (Pioneer CDJs, Technics
   SL-1210s, KRK and Dynaudio monitors, the Can Electric Taula 4 MR rotary mixer), with release
   details checked against Discogs and Wikipedia.
-- **Everything is code:** all art is drawn procedurally in 1990s VGA style (hue-shifted ramps, Bayer
-  dithering, banded light maps, shaded characters with rim light and cast shadows) and all sound is
-  synthesized live with the Web Audio API. The game ships no image or audio files.
+- **Everything is code:** all art is drawn procedurally in 1990s VGA style (hue-shifted ramps, flat
+  colour steps instead of dither dots, posterized light maps with soft bloom, shaded characters with rim
+  light and cast shadows) and all sound is synthesized live with the Web Audio API. The game ships no
+  image or audio files. (The classic Bayer stipple is still in the code: set `DITHER = true` in
+  `src/core/util.js` to bring it back.)
 
 ## Play
 
-**In the browser:**
+**On the web:** [**the full game**](https://repartee-umber.vercel.app), all five levels in one save, or
+one level at a time:
 
-- [**Level 1: Bedroom DJ**](https://claude.ai/artifact/RPmqCfmHeBj3b1uwsdSdbN): Tuesday night in
-  Bushwick to your first gig at Nowhere on Saturday, plus all sixteen mini-games in the arcade. Its
-  ending links to the full game.
-- [**The full game**](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N), all five levels.
+| Level | |
+|---|---|
+| [**1: Bedroom DJ**](https://repartee-umber.vercel.app/level1) | Tuesday night in Bushwick to your first gig at Nowhere on Saturday. |
+| [**2: Underground Hustler**](https://repartee-umber.vercel.app/level2) | Plasma money, a Meserole St loft party and a dead PA. |
+| [**3: Club DJ**](https://repartee-umber.vercel.app/level3) | A Thursday residency at the Halcyon Room and a Sunday record fair. |
+| [**4: Touring DJ**](https://repartee-umber.vercel.app/level4) | A flight to Berlin and a 2 AM handover at Halle Neun. |
+| [**5: Superstar DJ**](https://repartee-umber.vercel.app/level5) | Headlining the Harbor Lights festival, then sunrise on the pier. |
 
-**Offline:** open `dist/index.html` (full game) or `dist/level1.html` (Level 1) in a browser. Each is a
-single self-contained file that works from `file://` or hosted anywhere. On a phone, landscape gives
-the full screen; portrait puts the controls under the scene.
+Each level page starts you with a sensible setup (records, cash, gear for that point in the story), has
+all sixteen mini-games in its arcade, and ends with a link to the next level. The full game carries your
+crate, cash and fans from level to level.
+
+**On claude.ai:** [Level 1](https://claude.ai/artifact/RPmqCfmHeBj3b1uwsdSdbN) and
+[the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N) are also published as artifacts.
+
+**Offline:** open `dist/index.html` (full game) or `dist/level1.html` … `dist/level5.html` in a browser.
+Each is a single self-contained file that works from `file://` or hosted anywhere. On a phone, landscape
+gives the full screen; portrait puts the controls under the scene.
 
 Controls: pick a verb, then click something. Click the floor to walk. Right-click looks.
 **H** or **Tab** labels everything clickable. **MENU** opens messages, the subway map, your
@@ -61,20 +74,23 @@ On a portrait phone the verbs and inventory drop under the scene at touch size.
 
 ```
 node tools/build.mjs                 # index.html (dev, one <script> per file), dist/index.html + dist/artifact.html (full game),
-                                     # dist/level1.html + dist/level1.artifact.html (Level 1 on its own)
+                                     # dist/level1.html … dist/level5.html (each level on its own), dist/level1.artifact.html
 node tests/full.mjs                  # plays every level's walkthrough, then the whole game in one save
 node tests/run.mjs smoke             # boots every level and lists the mini-games
 node tests/perf.mjs                  # frame cost of every room (budget 8 ms)
-node tests/run.mjs walk act2 --act 2 # one level's walkthrough
+node tests/run.mjs walk act2 --act 2 # one level's walkthrough (add --page dist/level2.html for its level page)
 node tests/run.mjs shot a2_couch out.png --act 2
 node tests/run.mjs mg crowdRead out.png
 node tools/screens.mjs               # regenerates the screenshots in docs/screenshots/
+node tools/blindplay.mjs serve --level 1 --port 7101 --out runs/level1   # play a level one command at a time
+                                     # through the real UI while recording video (commands: see the file header)
+node tools/blindplay-cut.mjs runs/level1 level1.mp4                      # cut the paused time out of that video
 ```
 
 ### Deploy to Vercel
 
 The repo includes a `vercel.json`: Vercel runs `node tools/build.mjs` (no dependencies to install) and
-serves `dist/`, so `/` is the full game and `/level1` is Level 1 on its own. Import the GitHub repo at
+serves `dist/`, so `/` is the full game and `/level1` … `/level5` are the levels on their own. Import the GitHub repo at
 vercel.com (framework preset "Other"; the settings come from `vercel.json`) or run `npx vercel` in the
 repo root. Pushes to the production branch (`main` by default) update the live site; other branches
 get preview URLs.

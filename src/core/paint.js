@@ -2,7 +2,7 @@
    re:parteé -- PAINT KIT.  window.RP.PK
    Procedural pixel-art helpers for painting 640x256 rooms.  Classic script, needs util.js.
    Rules of the house: integer fillRects only, light from the upper left, hue-shifted ramps,
-   Bayer dithering for every gradient, deterministic (opts.seed), lit "daytime-neutral" colors,
+   gradients in clean in-between colour steps (no dot dithering), deterministic (opts.seed), lit "daytime-neutral" colors,
    emissive helpers RETURN [[x,y,w,h],...] so the engine can keep those pixels bright at night.
    Full reference: docs/PAINTKIT.md
    ===================================================================================== */
@@ -88,23 +88,26 @@ function paintFn(c, x, y, w, h, fn) {
     if (rc) { c.fillStyle = rc; c.fillRect(rx, yy, x + w - rx, 1); }
   }
 }
-/* ordered-dither alpha overlay. fn(px,py)->coverage 0..1 ; returns merged runs [[x,y,w,h]] when out given */
+/* soft alpha overlay. fn(px,py)->coverage 0..1, drawn in four clean opacity steps (no dot dither);
+   returns merged runs [[x,y,w,h]] of the covered pixels when out is given */
+const SHADE_STEPS = 4;
 function dshade(c, x, y, w, h, col, fn, a, out) {
   x = round(x); y = round(y); w = round(w); h = round(h);
-  const pa = c.globalAlpha; c.globalAlpha = a == null ? 0.5 : a; c.fillStyle = col;
+  const pa = c.globalAlpha, base = a == null ? 0.5 : a; c.fillStyle = col;
   for (let yy = y; yy < y + h; yy++) {
-    let rx = -1;
+    let rx = -1, rl = 0;
     for (let xx = x; xx <= x + w; xx++) {
-      const on = xx < x + w && fn(xx, yy) > thr(xx, yy);
-      if (on) { if (rx < 0) rx = xx; }
-      else if (rx >= 0) { c.fillRect(rx, yy, xx - rx, 1); if (out) out.push([rx, yy, xx - rx, 1]); rx = -1; }
+      const lv = xx < x + w ? clamp(round(fn(xx, yy) * SHADE_STEPS), 0, SHADE_STEPS) : 0;
+      if (lv === rl) continue;
+      if (rl > 0) { c.globalAlpha = base * rl / SHADE_STEPS; c.fillRect(rx, yy, xx - rx, 1); if (out) out.push([rx, yy, xx - rx, 1]); }
+      rl = lv; rx = xx;
     }
   }
   c.globalAlpha = pa;
 }
-/* ordered-dither between two colours with constant level t (0..1 = share of B) */
+/* a constant blend between two colours (0..1 = share of B), painted as the blended colour itself */
 function dmix(c, x, y, w, h, A, B, t) {
-  paintFn(c, x, y, w, h, (px, py) => (t > thr(px, py) ? B : A));
+  R(c, round(x), round(y), round(w), round(h), HEX6.test(A) && HEX6.test(B) ? mix(A, B, clamp(t, 0, 1)) : (t >= 0.5 ? B : A));
 }
 
 /* value noise */
@@ -139,22 +142,20 @@ function gradient(c, x, y, w, h, colors, dith, vert) {
     else { while (i < n - 2 && t > pos[i + 1]) i++; f = (t - pos[i]) / (pos[i + 1] - pos[i]); }
     const fp = z <= 0 ? (f >= 0.5 ? 1 : 0) : clamp((f - 0.5) / z + 0.5, 0, 1);
     const A = cols[i], B = cols[min(i + 1, n - 1)];
-    if (i >= n - 1 || fp <= 0) { if (vert) R(c, x, y + k, w, 1, A); else R(c, x + k, y, 1, h, A); continue; }
-    if (fp >= 1) { if (vert) R(c, x, y + k, w, 1, B); else R(c, x + k, y, 1, h, B); continue; }
-    if (vert) {
-      const yy = y + k; let rc = null, rx = x;
-      for (let xx = x; xx <= x + w; xx++) {
-        const col = xx < x + w ? (fp > thr(xx, yy) ? B : A) : null;
-        if (col !== rc) { if (rc) { c.fillStyle = rc; c.fillRect(rx, yy, xx - rx, 1); } rc = col; rx = xx; }
-      }
-    } else {
-      const xx = x + k; let rc = null, ry = y;
-      for (let yy = y; yy <= y + h; yy++) {
-        const col = yy < y + h ? (fp > thr(xx, yy) ? B : A) : null;
-        if (col !== rc) { if (rc) { c.fillStyle = rc; c.fillRect(xx, ry, 1, yy - ry); } rc = col; ry = yy; }
-      }
-    }
+    // between two stops: clean in-between colour steps instead of a dithered mix
+    const col = i >= n - 1 || fp <= 0 ? A : fp >= 1 ? B : mixStep(A, B, fp);
+    if (vert) R(c, x, y + k, w, 1, col); else R(c, x + k, y, 1, h, col);
   }
+}
+const GRAD_STEPS = 4, mixCache = new Map(), HEX6 = /^#[0-9a-f]{6}$/i;
+function mixStep(A, B, t) {
+  const q = round(t * GRAD_STEPS) / GRAD_STEPS;
+  if (q <= 0) return A; if (q >= 1) return B;
+  if (!HEX6.test(A) || !HEX6.test(B)) return q >= 0.5 ? B : A;   // not plain #rrggbb: clean split
+  const key = A + B + q;
+  let v = mixCache.get(key);
+  if (!v) { v = mix(A, B, q); mixCache.set(key, v); }
+  return v;
 }
 PK.gradV = (c, x, y, w, h, colors, o) => gradient(c, x, y, w, h, colors, o && o.dither, true);
 PK.gradH = (c, x, y, w, h, colors, o) => gradient(c, x, y, w, h, colors, o && o.dither, false);

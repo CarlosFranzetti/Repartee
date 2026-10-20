@@ -10,12 +10,13 @@ const I = RP.icons;
 
 RP.defineAct({
   n: 1, id: "act1", title: "BEDROOM DJ", sub: "Tuesday night, Bushwick",
-  blurb: "Four records, a crackling mixer, a phone at 1%. Land your first gig.",
+  blurb: "Three records in a milk crate, a crackling mixer, a phone at 1%. Land your first gig.",
   start: { room: "bedroom", x: 300, y: 228, face: "front" },
   setup(S, carry) {
     S.money = 0; S.followers = 0;
     S.inv = ["phone", "usb_cat", "wallet"];
     S.records = [];
+    S.f.crateHint = "Nothing logged yet. My records are still in the milk crate by the bed.";
     S.gear = { decks: "pioneer_cdj_350", mixer: "numark_m101usb", monitors: "krk_rokit_5_g4" };
     S.f.time = "night";
     S.clock = "TUE 11:04 PM";

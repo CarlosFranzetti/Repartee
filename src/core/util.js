@@ -10,8 +10,11 @@ RP.data = RP.data || {};
 RP.W = 640; RP.SH = 256;
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-/* 4x4 ordered-dither threshold, 0..15 */
-const bayer = (x, y) => BAYER[((y & 3) << 2) | (x & 3)];
+/* 4x4 ordered-dither threshold, 0..15. Dithering is OFF: every threshold collapses to the midpoint,
+   so code written as "pixel on if bayer(x,y) < level" draws clean color steps instead of dot
+   patterns. Set DITHER = true to bring the classic VGA stipple back. */
+const DITHER = false;
+const bayer = DITHER ? (x, y) => BAYER[((y & 3) << 2) | (x & 3)] : () => 7.5;
 const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;

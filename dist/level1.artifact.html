@@ -1,4 +1,4 @@
-<title>re:parteé Level 1</title>
+<title>re:parteé Level 1: Bedroom DJ</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="A pixel-art point-and-click DJ adventure. From broke-ass bedroom DJ to festival headliner, one bad decision at a time.">
 <style>
@@ -59,7 +59,12 @@ button { font-family: var(--ui); }
 .slot canvas { width: 32px; height: 24px; image-rendering: crisp-edges; image-rendering: pixelated; }
 .slot span { font-size: 13px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding-inline: 2px; }
 .slot.empty { cursor: default; opacity: .45; }
-#choices { grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: center; gap: 0; padding-left: 6px; overflow-y: auto; }
+#choices { grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: flex-start; gap: 0; padding-left: 6px; overflow-y: auto; }
+/* auto margins centre a short list; a long one starts at the top and scrolls (justify-content: center would clip its first rows) */
+#choices > :first-child { margin-top: auto; }
+#choices > :last-child { margin-bottom: auto; }
+#panel.choosing { top: auto; bottom: 0; height: auto; min-height: 86px; max-height: 236px; }
+body.p #panel.choosing { max-height: none; }
 .choice { background: none; border: 0; text-align: left; color: var(--verb); font-size: 18px; line-height: 1; padding: 1px 4px; cursor: pointer; }
 .choice::before { content: "\25B8 "; color: #3a3070; }
 .choice:hover, .choice:focus-visible { color: var(--pink); }
@@ -194,10 +199,14 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .namebox { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .namebox input { font-family: var(--ui); font-size: 24px; background: #110d24; color: var(--fg); border: 1px solid var(--line); padding: 4px 10px; width: 220px; text-transform: uppercase; }
 @media (prefers-reduced-motion: reduce) { .toastItem { transition: none; } }
+.levelnav { font-size: 20px; letter-spacing: .08em; background: rgba(10, 6, 24, .78); padding: 4px 12px; }
+.levelnav a { color: var(--cyan); padding: 0 4px; }
+.levelnav a:hover, .levelnav a:focus-visible { color: var(--pink); }
+.levelnav b { color: var(--pink); padding: 0 4px; }
 
 </style>
 <script>
-window.RP_DEMO = {"level":1,"levels":5,"full":"https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N"};
+window.RP_SITE = {"level":1,"names":["Bedroom DJ","Underground Hustler","Club DJ","Touring DJ","Superstar DJ"],"newTab":true,"full":"https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N","pages":["https://repartee-umber.vercel.app/level1","https://repartee-umber.vercel.app/level2","https://repartee-umber.vercel.app/level3","https://repartee-umber.vercel.app/level4","https://repartee-umber.vercel.app/level5"]};
 /* ---- src/core/util.js ---- */
 try {
 /* re:parteé — shared low-level helpers.
@@ -212,8 +221,11 @@ RP.data = RP.data || {};
 RP.W = 640; RP.SH = 256;
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-/* 4x4 ordered-dither threshold, 0..15 */
-const bayer = (x, y) => BAYER[((y & 3) << 2) | (x & 3)];
+/* 4x4 ordered-dither threshold, 0..15. Dithering is OFF: every threshold collapses to the midpoint,
+   so code written as "pixel on if bayer(x,y) < level" draws clean color steps instead of dot
+   patterns. Set DITHER = true to bring the classic VGA stipple back. */
+const DITHER = false;
+const bayer = DITHER ? (x, y) => BAYER[((y & 3) << 2) | (x & 3)] : () => 7.5;
 const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -1086,9 +1098,9 @@ function shadeBuffer(B, lx, rim) {
         else if (a2 && B.u[o - 2 * w] !== me && part[a2] && part[a2].ao && B.c[o - 2 * w] >= 0) v -= 0.4;
       }
       // material texture
-      if (P.tex === "hair") v += ((x * 3 + y * 7) % 5 === 0) ? 0.5 : ((x * 5 + y * 3) % 7 === 0 ? -0.35 : 0);
+      if (P.tex === "hair") v += ((x * 2 + (y >> 2)) % 5 === 0) ? 0.4 : ((x * 3 + (y >> 2)) % 7 === 0 ? -0.3 : 0);   // short strands, not specks
       if (P.tex === "denim") v += ((x + y) % 4 === 0) ? -0.18 : 0;
-      // clean bands like hand-shaded VGA sprites; dither only right at band edges
+      // clean bands like hand-shaded VGA sprites (bayer() is a flat midpoint unless DITHER is on)
       const u = v + (bayer(x, y) / 16 - 0.5) * 0.22;
       const idx = u > 0.95 ? 4 : u > 0.42 ? 3 : u > -0.38 ? 2 : u > -0.92 ? 1 : 0;
       [r, g, b] = ramps[ci][idx];
@@ -1103,8 +1115,8 @@ function shadeBuffer(B, lx, rim) {
       const nx = x + side;
       const edge = nx < 0 || nx >= w || B.c[y * w + nx] < 0;
       const edge2 = !edge && (nx + side < 0 || nx + side >= w || B.c[y * w + nx + side] < 0);
-      if (edge || (edge2 && bayer(x, y) < 6)) {
-        const q = o * 4, t = edge ? 0.62 : 0.35;
+      if (edge || edge2) {   // a solid two-pixel rim: strong outer pixel, softer inner one
+        const q = o * 4, t = edge ? 0.62 : 0.22;
         out[q] = out[q] + (rr - out[q]) * t; out[q + 1] = out[q + 1] + (rg - out[q + 1]) * t; out[q + 2] = out[q + 2] + (rb - out[q + 2]) * t;
       }
     }
@@ -1150,7 +1162,7 @@ function sprite(def, pose, lx, rim) {
   return s;
 }
 
-/* projected cast shadow from the silhouette, away from the key light; pre-dithered and cached */
+/* projected cast shadow from the silhouette, away from the key light; a solid shape (drawn translucent), cached */
 function castShadow(def, pose, lx, sp) {
   const key = def.id + "|" + poseKey(pose) + "|" + qlx(lx);
   let s = shadowCache.get(key);
@@ -1165,14 +1177,14 @@ function castShadow(def, pose, lx, sp) {
     const sx = Math.round(pad + x + hgt * skew), sy = Math.round(baseY - hgt * len);
     if (sx < 0 || sy < 0 || sx >= cv.width || sy >= cv.height || seen[sy * cv.width + sx]) continue;
     seen[sy * cv.width + sx] = 1;
-    if ((sx + sy) & 1) c.fillRect(sx, sy, 1, 1);
+    c.fillRect(sx, sy, 1, 1);
   }
   s = { cv, ox: pad + B.ax, oy: baseY };
   if (shadowCache.size > 1500) shadowCache.clear();
   shadowCache.set(key, s);
   return s;
 }
-/* dithered contact shadow ellipse, cached by size */
+/* soft contact shadow ellipse: solid core, lighter rim, cached by size */
 const contactCache = new Map();
 function contactShadow(rx, ry, level) {
   const key = rx + "," + ry + "," + level;
@@ -1180,7 +1192,13 @@ function contactShadow(rx, ry, level) {
   if (cv) return cv;
   cv = mk(rx * 2 + 1, ry * 2 + 1);
   const c = cv.getContext("2d"); c.fillStyle = "#0a0410";
-  for (let x = -rx; x <= rx; x++) for (let y = -ry; y <= ry; y++) if ((x * x) / (rx * rx) + (y * y) / (ry * ry) < 1 && bayer(x + 64, y + 64) < level) c.fillRect(x + rx, y + ry, 1, 1);
+  const a = Math.min(1, level / 16 * 1.1);
+  for (let x = -rx; x <= rx; x++) for (let y = -ry; y <= ry; y++) {
+    const d = (x * x) / (rx * rx) + (y * y) / (ry * ry);
+    if (d >= 1) continue;
+    c.globalAlpha = d < 0.45 ? a : a * 0.55;
+    c.fillRect(x + rx, y + ry, 1, 1);
+  }
   contactCache.set(key, cv);
   return cv;
 }
@@ -1207,7 +1225,7 @@ function draw(ctx, inst, light = {}) {
     ctx.drawImage(contactShadow(rx, ryy, Math.round(9 * sh + 2)), X - rx, Y - ryy);
     if (light.cast && Math.abs(lx) > 0.2 && !inst.noCast) {
       const cs = castShadow(def, pose, lx, sp);
-      ctx.save(); ctx.globalAlpha = Math.min(1, 0.85 * sh + 0.2);
+      ctx.save(); ctx.globalAlpha = Math.min(1, 0.85 * sh + 0.2) * 0.5;   // solid shape at the old checkerboard's average darkness
       ctx.drawImage(cs.cv, Math.round(X - cs.ox * sc), Math.round(Y - cs.oy * sc), Math.round(cs.cv.width * sc), Math.round(cs.cv.height * sc));
       ctx.restore();
     }
@@ -1242,27 +1260,35 @@ RP.chars = { define, update, get, random, draw, sprite, headTop, portrait, inval
 /* ---- src/core/fx.js ---- */
 try {
 /* re:parteé — room lighting and particle effects.
-   Lighting: every room gets a multiply light map (ambient + banded, dithered light pools,
-   emissive rects kept full bright) and an additive halo layer. Characters read the same
-   light definition for their key-light direction and colored rim light.
+   Lighting: every room gets a multiply light map (ambient + soft light pools in fine color steps,
+   emissive rects kept full bright) and an additive glow layer. No ordered dithering: light falls
+   off in smooth, slightly posterized steps so it reads as pixel art without dot patterns.
+   Characters read the same light definition for their key-light direction and colored rim light.
    Effects: dust motes, rain, steam, haze, sweeping beams, strobes, confetti, blinking
    neon, passing headlights. All cheap, all pixel-snapped. */
 (function () {
 "use strict";
 const RP = window.RP;
-const { bayer, mk, clamp, hex, mulberry, R, P } = RP.u;
+const { mk, clamp, hex, mulberry, R, P } = RP.u;
+
+/* light levels: fine steps (posterized, never dithered) */
+const STEPS = 32;
+const smooth = t => t * t * (3 - 2 * t);
+/* night rooms keep their color but never sink below a readable floor */
+const LIFT = 0.1;
 
 /* ---------------- light map ---------------- */
 function buildLightmap(L, width, height) {
   const cv = mk(width, height), c = cv.getContext("2d");
   const img = c.createImageData(width, height), d = img.data;
-  const amb = hex(L.ambient || "#ffffff");
+  const a0 = hex(L.ambient || "#ffffff");
+  const lift = L.lift == null ? LIFT : L.lift;
+  const amb = a0.map(v => v + (255 - v) * lift);
   const lights = (L.lights || []).map(l => ({ x: l.x, y: l.y, r: l.r || 120, sy: l.sy || 1.2, steps: l.steps || 4,
     col: hex(l.color || "#ffffff"), power: l.power == null ? 1 : l.power, gamma: l.gamma || 1,
     box: l.box || null }));
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     let r = amb[0], g = amb[1], b = amb[2];
-    const th = bayer(x, y) / 16;
     for (let i = 0; i < lights.length; i++) {
       const l = lights[i];
       let dd;
@@ -1272,8 +1298,9 @@ function buildLightmap(L, width, height) {
       } else { const dx = x - l.x, dy = (y - l.y) * l.sy; dd = Math.sqrt(dx * dx + dy * dy); }
       let t = 1 - dd / l.r;
       if (t <= 0) continue;
+      t = smooth(t);
       if (l.gamma !== 1) t = Math.pow(t, l.gamma);
-      t = Math.floor(t * l.steps + th * 0.999) / l.steps * l.power;
+      t = Math.round(t * STEPS) / STEPS * l.power;
       if (t <= 0) continue;
       // screen blend toward the light color
       r = 255 - (255 - r) * (1 - l.col[0] / 255 * t);
@@ -1288,20 +1315,28 @@ function buildLightmap(L, width, height) {
   return cv;
 }
 
+/* additive glow around lamps, neon and screens: a bright core and a wide soft bloom, in fine steps */
 function buildHalos(L, width, height) {
   if (!L.halos || !L.halos.length) return null;
   const cv = mk(width, height), c = cv.getContext("2d");
+  const img = c.createImageData(width, height), d = img.data;
   L.halos.forEach(h => {
-    const col = hex(h.color || "#ffd27a"), r = h.r || 20, st = h.strength || 1;
-    const shades = [0.45, 0.24, 0.11].map(k => `rgb(${col[0] * k * st | 0},${col[1] * k * st | 0},${col[2] * k * st | 0})`);
-    for (let y = Math.floor(h.y - r); y <= h.y + r; y++) for (let x = Math.floor(h.x - r); x <= h.x + r; x++) {
-      const dd = Math.hypot(x - h.x, (y - h.y) * (h.sy || 1)) / r;
+    const col = hex(h.color || "#ffd27a"), r = (h.r || 20) * 1.35, st = h.strength || 1, sy = h.sy || 1;
+    const x0 = Math.max(0, Math.floor(h.x - r)), x1 = Math.min(width - 1, Math.ceil(h.x + r));
+    const y0 = Math.max(0, Math.floor(h.y - r / sy)), y1 = Math.min(height - 1, Math.ceil(h.y + r / sy));
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const dd = Math.hypot(x - h.x, (y - h.y) * sy) / r;
       if (dd >= 1) continue;
-      let i = dd < 0.35 ? 0 : dd < 0.65 ? 1 : 2;
-      if (i === 1 && bayer(x, y) > 9) i = 2; else if (i === 2 && bayer(x, y) > 4) continue;
-      c.fillStyle = shades[i]; c.fillRect(x, y, 1, 1);
+      const k = 1 - dd;
+      // core (tight, bright) + bloom (wide, faint)
+      let v = (Math.pow(k, 3) * 0.55 + k * k * 0.22) * st;
+      v = Math.round(v * 48) / 48;
+      if (v <= 0) continue;
+      const o = (y * width + x) * 4;
+      d[o] = Math.min(255, d[o] + col[0] * v); d[o + 1] = Math.min(255, d[o + 1] + col[1] * v); d[o + 2] = Math.min(255, d[o + 2] + col[2] * v); d[o + 3] = 255;
     }
   });
+  c.putImageData(img, 0, 0);
   return cv;
 }
 
@@ -1393,12 +1428,13 @@ function stepAndDraw(fx, c, dt, t, camX) {
         if (p.age > 3) p.age -= 3;
         const a = p.age / 3, rad = 2 + a * (s.size || 9);
         const cx = s.x + Math.sin(p.ph + p.age * 1.7) * 4 * a + (s.drift || 0) * a, cy = s.y - a * (s.rise || 40);
-        const lvl = Math.floor((1 - a) * 9);
-        for (let y = -rad; y <= rad; y++) for (let x = -rad; x <= rad; x++) {
-          if (x * x + y * y > rad * rad) continue;
-          const px = Math.round(cx + x), py = Math.round(cy + y);
-          if (bayer(px, py) < lvl - 3) P(c, px, py, col);
-        }
+        // a translucent puff that thins out as it rises
+        const al = Math.round((1 - a) * 6) / 6 * 0.32;
+        if (al <= 0) continue;
+        const pa = c.globalAlpha; c.globalAlpha = al; c.fillStyle = col;
+        const rr = Math.round(rad);
+        for (let y = -rr; y <= rr; y++) { const hw = Math.round(Math.sqrt(rr * rr - y * y)); c.fillRect(Math.round(cx - hw), Math.round(cy + y), hw * 2 + 1, 1); }
+        c.globalAlpha = pa;
       }
       break;
     }
@@ -1462,7 +1498,8 @@ function stepAndDraw(fx, c, dt, t, camX) {
       const x = s.dir < 0 ? w + 60 - k * (w + 120) : -60 + k * (w + 120);
       c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = 0.5;
       c.fillStyle = s.color || "#fff2c0";
-      for (let i = 0; i < 26; i++) for (let j = -3; j <= 3; j++) if (bayer(i, j + 4) < 10 - i * 0.35) c.fillRect(Math.round(x + (s.dir < 0 ? -i : i)), s.y + j, 1, 1);
+      // a beam that fades out ahead of the car, in steps
+      for (let i = 0; i < 26; i++) { c.globalAlpha = 0.5 * Math.round((1 - i / 26) * 6) / 6; const hw = 2 + Math.round(i / 9); c.fillRect(Math.round(x + (s.dir < 0 ? -i : i)), s.y - hw, 1, hw * 2 + 1); }
       c.restore();
       break;
     }
@@ -1920,7 +1957,7 @@ try {
    re:parteé -- PAINT KIT.  window.RP.PK
    Procedural pixel-art helpers for painting 640x256 rooms.  Classic script, needs util.js.
    Rules of the house: integer fillRects only, light from the upper left, hue-shifted ramps,
-   Bayer dithering for every gradient, deterministic (opts.seed), lit "daytime-neutral" colors,
+   gradients in clean in-between colour steps (no dot dithering), deterministic (opts.seed), lit "daytime-neutral" colors,
    emissive helpers RETURN [[x,y,w,h],...] so the engine can keep those pixels bright at night.
    Full reference: docs/PAINTKIT.md
    ===================================================================================== */
@@ -2006,23 +2043,26 @@ function paintFn(c, x, y, w, h, fn) {
     if (rc) { c.fillStyle = rc; c.fillRect(rx, yy, x + w - rx, 1); }
   }
 }
-/* ordered-dither alpha overlay. fn(px,py)->coverage 0..1 ; returns merged runs [[x,y,w,h]] when out given */
+/* soft alpha overlay. fn(px,py)->coverage 0..1, drawn in four clean opacity steps (no dot dither);
+   returns merged runs [[x,y,w,h]] of the covered pixels when out is given */
+const SHADE_STEPS = 4;
 function dshade(c, x, y, w, h, col, fn, a, out) {
   x = round(x); y = round(y); w = round(w); h = round(h);
-  const pa = c.globalAlpha; c.globalAlpha = a == null ? 0.5 : a; c.fillStyle = col;
+  const pa = c.globalAlpha, base = a == null ? 0.5 : a; c.fillStyle = col;
   for (let yy = y; yy < y + h; yy++) {
-    let rx = -1;
+    let rx = -1, rl = 0;
     for (let xx = x; xx <= x + w; xx++) {
-      const on = xx < x + w && fn(xx, yy) > thr(xx, yy);
-      if (on) { if (rx < 0) rx = xx; }
-      else if (rx >= 0) { c.fillRect(rx, yy, xx - rx, 1); if (out) out.push([rx, yy, xx - rx, 1]); rx = -1; }
+      const lv = xx < x + w ? clamp(round(fn(xx, yy) * SHADE_STEPS), 0, SHADE_STEPS) : 0;
+      if (lv === rl) continue;
+      if (rl > 0) { c.globalAlpha = base * rl / SHADE_STEPS; c.fillRect(rx, yy, xx - rx, 1); if (out) out.push([rx, yy, xx - rx, 1]); }
+      rl = lv; rx = xx;
     }
   }
   c.globalAlpha = pa;
 }
-/* ordered-dither between two colours with constant level t (0..1 = share of B) */
+/* a constant blend between two colours (0..1 = share of B), painted as the blended colour itself */
 function dmix(c, x, y, w, h, A, B, t) {
-  paintFn(c, x, y, w, h, (px, py) => (t > thr(px, py) ? B : A));
+  R(c, round(x), round(y), round(w), round(h), HEX6.test(A) && HEX6.test(B) ? mix(A, B, clamp(t, 0, 1)) : (t >= 0.5 ? B : A));
 }
 
 /* value noise */
@@ -2057,22 +2097,20 @@ function gradient(c, x, y, w, h, colors, dith, vert) {
     else { while (i < n - 2 && t > pos[i + 1]) i++; f = (t - pos[i]) / (pos[i + 1] - pos[i]); }
     const fp = z <= 0 ? (f >= 0.5 ? 1 : 0) : clamp((f - 0.5) / z + 0.5, 0, 1);
     const A = cols[i], B = cols[min(i + 1, n - 1)];
-    if (i >= n - 1 || fp <= 0) { if (vert) R(c, x, y + k, w, 1, A); else R(c, x + k, y, 1, h, A); continue; }
-    if (fp >= 1) { if (vert) R(c, x, y + k, w, 1, B); else R(c, x + k, y, 1, h, B); continue; }
-    if (vert) {
-      const yy = y + k; let rc = null, rx = x;
-      for (let xx = x; xx <= x + w; xx++) {
-        const col = xx < x + w ? (fp > thr(xx, yy) ? B : A) : null;
-        if (col !== rc) { if (rc) { c.fillStyle = rc; c.fillRect(rx, yy, xx - rx, 1); } rc = col; rx = xx; }
-      }
-    } else {
-      const xx = x + k; let rc = null, ry = y;
-      for (let yy = y; yy <= y + h; yy++) {
-        const col = yy < y + h ? (fp > thr(xx, yy) ? B : A) : null;
-        if (col !== rc) { if (rc) { c.fillStyle = rc; c.fillRect(xx, ry, 1, yy - ry); } rc = col; ry = yy; }
-      }
-    }
+    // between two stops: clean in-between colour steps instead of a dithered mix
+    const col = i >= n - 1 || fp <= 0 ? A : fp >= 1 ? B : mixStep(A, B, fp);
+    if (vert) R(c, x, y + k, w, 1, col); else R(c, x + k, y, 1, h, col);
   }
+}
+const GRAD_STEPS = 4, mixCache = new Map(), HEX6 = /^#[0-9a-f]{6}$/i;
+function mixStep(A, B, t) {
+  const q = round(t * GRAD_STEPS) / GRAD_STEPS;
+  if (q <= 0) return A; if (q >= 1) return B;
+  if (!HEX6.test(A) || !HEX6.test(B)) return q >= 0.5 ? B : A;   // not plain #rrggbb: clean split
+  const key = A + B + q;
+  let v = mixCache.get(key);
+  if (!v) { v = mix(A, B, q); mixCache.set(key, v); }
+  return v;
 }
 PK.gradV = (c, x, y, w, h, colors, o) => gradient(c, x, y, w, h, colors, o && o.dither, true);
 PK.gradH = (c, x, y, w, h, colors, o) => gradient(c, x, y, w, h, colors, o && o.dither, false);
@@ -5476,14 +5514,8 @@ function updateActor(a, dt) {
    rendering
    ====================================================================== */
 let buf = null, bctx = null, k = 1, fade = 0, shakeT = 0, flashT = 0, flashCol = "#fff";
-const fadePats = [];
 function ensureBuf(w) {
   if (!buf || buf.width !== w) { buf = mk(w, SH); bctx = buf.getContext("2d"); }
-  if (!fadePats.length) for (let lvl = 0; lvl <= 16; lvl++) {
-    const t = mk(4, 4), tc = t.getContext("2d");
-    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (U.BAYER[y * 4 + x] < lvl) { tc.fillStyle = "#000"; tc.fillRect(x, y, 1, 1); }
-    fadePats.push(bctx.createPattern(t, "repeat"));
-  }
 }
 function drawActor(a, b, L) {
   const lt = RP.fx.actorLight(L, a.x, a.y);
@@ -5519,7 +5551,8 @@ function render(now) {
   try { if (cur.def.drawTop) cur.def.drawTop(b, S, t, cur); } catch (e) { console.error(e); }
   b.globalCompositeOperation = "source-over"; b.globalAlpha = 1;
   if (flashT > now) { b.save(); b.globalAlpha = clamp((flashT - now) / 300, 0, 0.8); b.fillStyle = flashCol; b.fillRect(cur.camX, 0, W, SH); b.restore(); }
-  if (fade > 0) { b.fillStyle = fadePats[clamp(Math.round(fade * 16), 0, 16)]; b.fillRect(cur.camX, 0, W, SH); }
+  // fades step to black in 16 flat levels (a dissolve through a dot pattern used to live here)
+  if (fade > 0) { b.save(); b.globalAlpha = clamp(Math.round(fade * 16), 0, 16) / 16; b.fillStyle = "#000"; b.fillRect(cur.camX, 0, W, SH); b.restore(); }
   // camera
   if (width > W) {
     const target = clamp(kid.x - W / 2, 0, width - W);
@@ -5568,10 +5601,12 @@ function repositionSpeech() {
   e.style.top = clamp(ay - h, 4, SH - h - 4) + "px";
 }
 function say(text, who = "kid") {
+  const tag = /^@([\w-]+) ([\s\S]*)$/.exec(text);
+  if (tag) { who = tag[1]; text = tag[2]; }
   return new Promise(res => {
     dom.talk.innerHTML = "";
     if (fast) { RP.test.log.push((who || "kid") + ": " + text); res(); return; }
-    const e = el("div", { cls: "line" + (who === "nar" ? " nar" : "") }, dom.talk);
+    const e = el("div", { cls: "line" + (who === "nar" ? " nar" : ""), "data-who": who }, dom.talk);
     const v = VOICES[who];
     e.textContent = (v && v.prefix ? v.prefix : "") + text;
     e.style.color = speakerColor(who);
@@ -5725,7 +5760,7 @@ RP.crateView = function () {
     el("h2", { text: "RECORD CRATE" }, head);
     el("span", { cls: "count", text: S.records.length + (S.records.length === 1 ? " record" : " records") }, head);
     const grid = el("div", { cls: "cgrid" }, box);
-    const detail = el("div", { cls: "cdetail", text: S.records.length ? "Pick a record." : "Your crate is empty. That's a problem for a DJ." }, box);
+    const detail = el("div", { cls: "cdetail", text: S.records.length ? "Pick a record." : S.f.crateHint || "Your crate is empty. That's a problem for a DJ." }, box);
     S.records.forEach(id => {
       const r = RP.rec(id);
       const bt = el("button", { type: "button", cls: "rec" }, grid);
@@ -5816,7 +5851,8 @@ async function travelTo(l) {
 function paintMap(c, locs) {
   const w = 320, h = 200;
   R(c, 0, 0, w, h, "#0d1a2a");
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (bayer(x, y) < 2) P(c, x, y, "#12243a");
+  for (let y = 0; y < h; y += 8) R(c, 0, y, w, 1, "#12243a");   // faint map grid
+  for (let x = 0; x < w; x += 8) R(c, x, 0, 1, h, "#12243a");
   // Manhattan
   U.poly(c, [[118, 0], [150, 0], [168, 60], [160, 120], [140, 150], [126, 128], [118, 70]], "#2a2440");
   // Brooklyn / Queens
@@ -6138,6 +6174,9 @@ function bindInput() {
     if (MG.active) return;
     if (e.key === "Escape") { if (busy && skipFn) { skipFn(); return; } verb = null; pending = null; updateVerbs(); renderInv(); updateSentence(); }
     if ((e.key === " " || e.key === "Enter" || e.key === ".") && busy && skipFn) { e.preventDefault(); skipFn(); }
+    // never steal keys from a text box (the DJ-name field): H used to vanish from typed names
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (typing) return;
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0 && (e.key === "h" || e.key === "H" || e.key === "Tab")) { e.preventDefault(); revealHotspots(); return; }
     if (!busy && !e.ctrlKey && !e.metaKey && !e.altKey && dom.overlays.childElementCount === 0) {
       const map = { l: "look", p: "pickup", u: "use", o: "open", t: "talk", s: "push", c: "close", g: "give", y: "pull" };
@@ -6184,7 +6223,8 @@ RP.revealHotspots = revealHotspots;
 /* ======================================================================
    save / load
    ====================================================================== */
-const SAVE_KEY = "reparte.save.v2";
+// level pages (tools/build.mjs) save in their own slot, so they never touch a full-game save on the same site
+const SAVE_KEY = "reparte.save.v2" + (window.RP_SITE && window.RP_SITE.level ? ".level" + window.RP_SITE.level : "");
 function save() {
   if (!cur || RP.test.noSave) return;
   S.kx = Math.round(kid.x); S.ky = Math.round(kid.y); S.face = kid.face;
@@ -7544,7 +7584,10 @@ RP.mg.register("afterParty", {
       { id: "club", label: "Can your club help?", cost: { min: 4, bat: 3 }, max: 1, run() { return { say: "Absolutely. Next week. I'll pay you for that other thing next week too.", chips: ["Nothing. Again."], bad: true }; } }
     ] });
     reg("jess", { name: "Jess", tag: "your ex", def: "jess", vis: true, greet: "...It's four AM.", opts: [
-      { id: "help", label: "Ask Jess for help", cost: { min: 3, bat: 3 }, max: 1, run() { return { say: "Do you have the USB? The one with Mr. Whiskers? ...No? Goodnight.", chips: ["She hung up"], bad: true }; } }
+      { id: "help", label: "Ask Jess for help", cost: { min: 3, bat: 3 }, max: 1, run() {
+        if (host.S && host.S.f && host.S.f.a2_usbBack) return { say: "You gave Mr. Whiskers back. Fine. My roommates are up anyway. We're coming.", chips: [addPeople(4)] };
+        return { say: "Do you have the USB? The one with Mr. Whiskers? ...No? Goodnight.", chips: ["She hung up"], bad: true };
+      } }
     ] });
     /* contacts the act wants on the phone from the start */
     const extra = Array.isArray(p.contacts) ? p.contacts : [];
@@ -7797,7 +7840,7 @@ RP.mg.register("afterParty", {
       NK.drawChar(c, RP.chars.get("twinkie") || "twinkie", 140, 156, { face: "left", act: "stand", scale: 0.8, expr: "happy" });
       if (G.battery > 0) NK.glow(c, 118, 106, 7, "#7ad8ff", 0.9);
       /* steam */
-      if (!reduced) for (let k = 0; k < 6; k++) { const ph = (t * 0.5 + k / 6) % 1, x = 74 + Math.sin(ph * 6 + k) * 5, y = 158 - ph * 30; if (bayer(Math.round(x), Math.round(y)) < 8 * (1 - ph)) R(c, x, y, 2, 2, "#8a84a8"); }
+      if (!reduced) for (let k = 0; k < 6; k++) { const ph = (t * 0.5 + k / 6) % 1, x = 74 + Math.sin(ph * 6 + k) * 5, y = 158 - ph * 30; c.globalAlpha = Math.round((1 - ph) * 5) / 5 * 0.8; R(c, x, y, 2, 2, "#8a84a8"); c.globalAlpha = 1; }
       else R(c, 73, 148, 3, 6, "#5a5470");
     }
 
@@ -15634,7 +15677,7 @@ try {
 (function () {
 "use strict";
 const RP = window.RP;
-const { R, P, line, txt, txtC, bayer, ramp, el, clamp } = RP.u;
+const { R, P, line, txt, txtC, bayer, ramp, el, clamp, mix } = RP.u;
 const NK = RP.nightkit = {};
 
 /* ---------- environment ---------- */
@@ -15708,21 +15751,21 @@ NK.bevel = (c, x, y, w, h, base, hi) => {
   R(c, x, y, w, 1, hi ? r[4] : r[3]); R(c, x, y, 1, h, r[3]);
   R(c, x, y + h - 1, w, 1, r[0]); R(c, x + w - 1, y, 1, h, r[1]);
 };
-/* vertical dithered gradient between evenly spaced colour stops */
+/* vertical gradient between evenly spaced colour stops, in flat 1/8 steps (no dither dots) */
+const HEX6 = /^#[0-9a-f]{6}$/i;
 NK.dgrad = (c, x, y, w, h, stops, ox) => {
   const n = stops.length;
   for (let j = 0; j < h; j++) {
-    const t = n === 1 ? 0 : (j / Math.max(1, h - 1)) * (n - 1), i = Math.min(n - 2, Math.floor(t)), f = t - i;
-    for (let i2 = 0; i2 < w; i2++) {
-      const col = bayer(x + i2 + (ox || 0), y + j) / 16 >= f ? stops[i] : stops[Math.min(n - 1, i + 1)];
-      c.fillStyle = col; c.fillRect(x + i2, y + j, 1, 1);
-    }
+    const t = n === 1 ? 0 : (j / Math.max(1, h - 1)) * (n - 1), i = Math.min(n - 2, Math.floor(t)), f = Math.round((t - i) * 8) / 8;
+    const A = stops[Math.max(0, i)], B = stops[Math.min(n - 1, i + 1)];
+    c.fillStyle = f <= 0 ? A : f >= 1 ? B : HEX6.test(A) && HEX6.test(B) ? mix(A, B, f) : f < 0.5 ? A : B;
+    c.fillRect(x, y + j, w, 1);
   }
 };
-/* checker/bayer dark overlay: density 0..16 */
+/* flat translucent overlay: density 0..16 is the share of the colour laid over the area */
 NK.dither = (c, x, y, w, h, col, density, ox) => {
-  c.fillStyle = col;
-  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (bayer(x + i + (ox || 0), y + j) < density) c.fillRect(x + i, y + j, 1, 1);
+  if (density <= 0) return;
+  c.save(); c.globalAlpha = Math.min(1, density / 16); c.fillStyle = col; c.fillRect(x, y, w, h); c.restore();
 };
 NK.speckle = (c, x, y, w, h, cols, rnd, amount) => {
   const n = Math.round(w * h * amount);
@@ -15751,16 +15794,16 @@ NK.along = (pts, d) => {
   }
   return pts[pts.length - 1];
 };
-/* soft light pool: concentric alpha bands with ordered dithering between them (no speckle) */
+/* soft light pool: fine concentric alpha steps with an eased falloff (no dither dots) */
 NK.glow = (c, cx, cy, r, col, strength) => {
-  const bands = 4, st = strength == null ? 1 : strength;
+  const bands = 12, st = strength == null ? 1 : strength;
   c.save(); c.fillStyle = col;
   let lastA = -1;
   for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) {
     const d = Math.sqrt(x * x + y * y); if (d >= r) continue;
-    const lv = (1 - d / r) * bands, k0 = Math.floor(lv), k = k0 + (bayer(cx + x, cy + y) / 16 < lv - k0 ? 1 : 0);
+    const k = Math.round((1 - d / r) * bands);
     if (k <= 0) continue;
-    const a = Math.min(1, k / bands * 0.55 * st);
+    const a = Math.min(1, Math.pow(k / bands, 1.6) * 0.6 * st);
     if (a !== lastA) { c.globalAlpha = a; lastA = a; }
     c.fillRect(Math.round(cx + x), Math.round(cy + y), 1, 1);
   }
@@ -17681,11 +17724,13 @@ K.reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").
    ====================================================================== */
 const pats = new Map();
 let patCtx = null;
-/* fill style that paints `color` on `level`/16 of the pixels (Bayer 4x4). Usable anywhere a color is. */
+/* fill style that lays `color` over `level`/16 of the area: a flat translucent colour (no dither dots) for
+   #rrggbb colours, a Bayer 4x4 pattern for anything else. Usable anywhere a color is. */
 K.dpat = function (color, level) {
   level = clamp(Math.round(level), 0, 16);
   if (level <= 0) return "rgba(0,0,0,0)";
   if (level >= 16) return color;
+  if (/^#[0-9a-f]{6}$/i.test(color)) { const [r, g, b] = U.hex(color); return "rgba(" + r + "," + g + "," + b + "," + (level / 16).toFixed(3) + ")"; }
   const key = color + "|" + level;
   let p = pats.get(key);
   if (!p) {
@@ -20840,12 +20885,13 @@ const I = RP.icons;
 
 RP.defineAct({
   n: 1, id: "act1", title: "BEDROOM DJ", sub: "Tuesday night, Bushwick",
-  blurb: "Four records, a crackling mixer, a phone at 1%. Land your first gig.",
+  blurb: "Three records in a milk crate, a crackling mixer, a phone at 1%. Land your first gig.",
   start: { room: "bedroom", x: 300, y: 228, face: "front" },
   setup(S, carry) {
     S.money = 0; S.followers = 0;
     S.inv = ["phone", "usb_cat", "wallet"];
     S.records = [];
+    S.f.crateHint = "Nothing logged yet. My records are still in the milk crate by the bed.";
     S.gear = { decks: "pioneer_cdj_350", mixer: "numark_m101usb", monitors: "krk_rokit_5_g4" };
     S.f.time = "night";
     S.clock = "TUE 11:04 PM";
@@ -21080,7 +21126,7 @@ RP.item("a1_package", { name: "Smitty's package", short: "Package",
 
 /* ---- Sal's slice ---- */
 RP.item("a1_slice", { name: "Sal's slice", short: "Slice", icon: c => I.slice(c),
-  look: "A pepperoni slice from Sal's on a paper plate, folded right. It's still warm. In New York a warm slice is currency.",
+  look: "A pepperoni slice from Sal's on a paper plate, folded right. In New York a slice is currency.",
   use: "Eating it would be a victory for me and a loss for the story. I'm saving it.",
   open: "It's a slice. It's open. It's been open since 1959.", push: "I fold it harder. It folds. Slices are very cooperative." });
 
@@ -21222,7 +21268,8 @@ function paint(c, S) {
   for (let i = 0; i < 1100; i++) P(c, rnd() * W, rnd() * 162, C.wallL);
   for (let i = 0; i < 700; i++) P(c, rnd() * W, rnd() * 162, C.wallD);
   [[150, 22, 10, 5], [366, 26, 7, 5], [566, 150, 9, 4], [22, 136, 7, 5], [190, 70, 6, 4]].forEach(([x, y, rx, ry]) => { ell(c, x, y, rx, ry, C.patch); ell(c, x + 1, y + 1, rx - 2, ry - 2, C.patchI); });
-  for (let y = 0; y < 12; y++) for (let x = 0; x < W; x++) if (bayer(x, y) < (12 - y) * 1.4) P(c, x, y, C.ceil);
+  for (let y = 0; y < 12; y++) { c.globalAlpha = Math.min(1, Math.round((12 - y) * 1.4 / 16 * 8) / 8); R(c, 0, y, W, 1, C.ceil); }
+  c.globalAlpha = 1;
   [[300, 4], [301, 5], [301, 6], [302, 7], [302, 8], [303, 9], [302, 10], [303, 11], [304, 12], [304, 13]].forEach(([x, y]) => P(c, x, y, C.wallD));
   R(c, 0, 163, W, 9, C.base); R(c, 0, 163, W, 1, C.baseL);
   const ys = [172, 176, 181, 187, 194, 202, 211, 221, 232, 244, 257];
@@ -21529,7 +21576,7 @@ async function retrieveAcid(S) {
   if (!S.f.a1_acidUnder) return false;
   if (night(S)) { await RP.say("Not yet. It needs the whole night."); return true; }
   await RP.walkTo(110, 222, "back");
-  S.f.a1_acidUnder = false; S.f.a1_acidFlat = true; RP.give("rec_acid"); RP.addRecord(REC_ACID, true); RP.refreshInv();
+  S.f.a1_acidUnder = false; S.f.a1_acidFlat = true; delete S.f["warped_" + REC_ACID]; RP.give("rec_acid"); RP.addRecord(REC_ACID, true); RP.refreshInv();
   await RP.lines(["Flat as a subway seat.", "Okay. Temp job in Midtown, then Deep Cuts. Let's go be a professional."]);
   return true;
 }
@@ -21565,7 +21612,7 @@ RP.room({
       open: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "crate").pickup),
       pickup: async S => {
         if (S.f.a1_crate) return "It's empty. The records are on me.";
-        S.f.a1_crate = true;
+        S.f.a1_crate = true; delete S.f.crateHint;
         RP.give("rec_first"); RP.give("rec_acid"); RP.give("rec_mom");
         [REC_FIRST, REC_ACID, REC_MOM].forEach(id => RP.addRecord(id, true));
         S.f["warped_" + REC_ACID] = true;
@@ -22550,7 +22597,7 @@ async function depositCans(S, item) {
   RP.money(val);
   if (first) {
     S.f.a1_cansDone = true;
-    await RP.lines(["$2.40. That's forty-eight cans of other people's good time.", "Plus the five from the pizza box... that's rent money. Well. A rent-adjacent amount."]);
+    await RP.lines(["$2.40. That's forty-eight cans of other people's good time.", S.f.a1_pizza ? "Plus the five from the pizza box... that's rent money. Well. A rent-adjacent amount." : "It's not rent money. It's not even rent's lunch money."]);
     if (S.money < 11 && !S.f.a1_delivered) await RP.lines(["A subway to Midtown and back is six bucks. Then Deep Cuts. Then home. I need more than this.", "Smitty was looking for someone to drop a package at Sal's. Twenty bucks."]);
   } else await RP.say("Another $1.50. The block has an unlimited supply of cans and a limited supply of dignity.");
 }
@@ -22818,7 +22865,7 @@ async function salTalk(S) {
     { text: "Got any work?", when: S => !S.f.a1_delivered && !RP.has("a1_package"), once: true, run: () => RP.lines(["@a1_sal Work? Ask Smitty. He's got a thing. He always has a thing.", "@a1_sal Tell him Sal says it's overdue."]) },
     { text: "How's business?", once: true, run: () => RP.lines(["@a1_sal It's pizza. Business is the same as it was in 1959. Good. Slow. Salty.", "@a1_sal Someone's always hungry. That's my retirement plan."]) },
     { text: "What's the secret to the crust?", once: true, run: () => RP.lines(["@a1_sal The water. The yeast. Three days in the fridge. And not talking to it, like those new places do.", "@a1_sal Also oregano. Always oregano. Never run out of oregano."]) },
-    { text: "Do you know a guy called Tank?", when: S => S.f.a1_booked, once: true, run: () => RP.lines(["@a1_sal Tank? From Nowhere? Big guy. Shades.", "@a1_sal Comes in Saturdays at six, orders pepperoni, folds it perfect. Never says a word.", "@a1_sal I respect that. If you need him happy, you know where to find a slice."]) },
+    { text: "Do you know a guy called Tank?", when: S => S.f.a1_booked, once: true, run: () => RP.lines(["@a1_sal Tank? From Nowhere? Big guy. Shades.", "@a1_sal Grabs a pepperoni before every Saturday shift. Folds it perfect. Never says a word.", "@a1_sal I respect that. If you need him happy, you know where to find a slice."]) },
     { text: "Thanks, Sal.", end: true }
   ]);
 }
@@ -23357,7 +23404,7 @@ RP.room({
     { id: "trash", name: "trash can", r: [264, 212, 26, 34], z: 24, walk: [250, 232, "right"], look: "A trash can full of printed emails and a single, impossible sandwich. Corporate waste.", pickup: "Nope. I'm not digging through an office bin. I'd find ties.", open: "It's a bin. Open and fully informed." },
     { id: "exitsign", name: "exit sign", r: [554, 22, 28, 14], z: 14, walk: [566, 218, "back"], look: "EXIT. Green, glowing, certain. Everything I want my life to be." },
     { id: "strobe", name: "fire alarm", r: [302, 22, 22, 14], z: 20, walk: [316, 214, "back"], look: S => S.f.a1_alarm ? "The alarm strobe. It's flashing red, and so is my conscience." : "A fire alarm strobe. White. Patient. Waiting for its moment.", pull: "There's no lever on this one. The pull stations are in the stairwells, under a camera. I'm not that stupid. Or that brave.", use: "A fire alarm. The lever's elsewhere. Ideas are forming." },
-    { id: "firePlan", name: "evacuation plan", r: [286, 88, 16, 18], z: 14, walk: [300, 214, "back"], look: "A floor plan showing the exits. Stairwell A. Stairwell B. A tiny sticker says \"YOU ARE HERE.\" I am. Unfortunately." }
+    { id: "firePlan", name: "evacuation plan", r: [286, 88, 16, 18], z: 16, walk: [300, 214, "back"], look: "A floor plan showing the exits. Stairwell A. Stairwell B. A tiny sticker says \"YOU ARE HERE.\" I am. Unfortunately." }
   ],
   combos: [
     ["usb_cat", "a1_brenda", () => RP.lines(["@a1_brenda A personal storage device! Corporate policy eleven! Hand it over!", "No. That's Mr. Whiskers.", "@a1_brenda ...Who?", "My ex's cat. Four thousand photos.", "@a1_brenda ...Keep it. I won't be on the wrong side of a cat."])],
@@ -24004,7 +24051,7 @@ async function showFlyer(S) {
 async function giveSlice(S) {
   if (S.f.a1_tankSlice) { await RP.say("You gave me one already. Don't be greedy.", "a1_tank"); return; }
   RP.take("a1_slice"); S.f.a1_tankSlice = true;
-  await RP.lines(["I hold out the slice from Sal's, still warm. Pepperoni.", "@a1_tank ...Is that Sal's?", "It's Sal's.", "@a1_tank (He takes it. He folds it, perfectly. He eats it in two bites with his eyes closed.)", "@a1_tank Mm.", "@a1_tank That's the best slice in Bushwick. I haven't said that out loud in nine years."]);
+  await RP.lines(["I hold out the slice from Sal's. Pepperoni, folded right.", "@a1_tank ...Is that Sal's?", "It's Sal's.", "@a1_tank (He takes it. He folds it, perfectly. He eats it in two bites with his eyes closed.)", "@a1_tank Mm.", "@a1_tank That's the best slice in Bushwick. I haven't said that out loud in nine years."]);
   if (tankOpen(S)) await letIn(S);
   else await RP.lines(["@a1_tank That helps. But I still need a reason to let you past. A reason with a name on it."]);
 }
@@ -24217,7 +24264,7 @@ async function playSet(S) {
   await RP.fadeTo(0, 700);
   await RP.lines(["@dante Hey. HEY.", "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
   RP.sfx("success");
-  await RP.lines(["Three records, a stolen USB, a flyer with my name wrong, and a slice. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
+  await RP.lines(["A handful of records, a stolen USB, a flyer with my name wrong, and a slice for the doorman. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
   await RP.completeAct([
     [!!S.f.a1_texts, "Charged the phone and called Dante"],
     [!!S.f.a1_mixer, "Cleaned channel 2 with vodka"],
@@ -24396,7 +24443,7 @@ try {
 (function () {
 "use strict";
 const RP = window.RP;
-const { el, $, esc, mk, R, P, ell, bayer, mulberry, clamp, store } = RP.u;
+const { el, $, esc, mk, R, P, ell, bayer, mix, mulberry, clamp, store } = RP.u;
 
 /* the protagonist */
 RP.chars.define("kid", { name: "you", height: 96, skin: "#e0a27a", hair: { style: "messy", color: "#5a3520" },
@@ -24404,11 +24451,25 @@ RP.chars.define("kid", { name: "you", height: 96, skin: "#e0a27a", hair: { style
   shoes: { style: "sneakers", color: "#efeaf6" }, acc: [], voice: "#ffffff" });
 
 let titleEl = null;
-const DEMO = window.RP_DEMO || null;   // set by the Level 1 build (tools/build.mjs --level1)
+// set by tools/build.mjs: links to the level pages and the full game; on a level page, level is its number
+const SITE = window.RP_SITE || null;
+const DEMO = SITE && SITE.level ? SITE : null;
+const link = (href, text, parent, cls) => { const a = el("a", { cls, href, text }, parent); if (SITE && SITE.newTab) { a.target = "_blank"; a.rel = "noopener"; } return a; };
+/* "LEVELS 1 2 3 4 5 · FULL GAME" under the title menu (the current level is not a link) */
+function levelNav(box) {
+  const p = el("p", { cls: "small levelnav" }, box);
+  p.appendChild(document.createTextNode(DEMO ? "LEVELS " : "EACH LEVEL ON ITS OWN: "));
+  SITE.pages.forEach((href, i) => {
+    if (DEMO && DEMO.level === i + 1) el("b", { text: String(i + 1) }, p);
+    else link(href, String(i + 1), p).title = "Level " + (i + 1) + ": " + SITE.names[i];
+    p.appendChild(document.createTextNode(" "));
+  });
+  if (DEMO) { p.appendChild(document.createTextNode("\u00b7 ")); link(SITE.full, "FULL GAME", p); }
+}
 function paintTitle(c) {
   const w = 320, h = 180, rnd = mulberry(11);
   const sky = ["#0d0826", "#160c38", "#22104a", "#36155a", "#521d66", "#6e2a6e"];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const t = y / 130 + (bayer(x, y) / 16 - 0.5) * 0.12; P(c, x, y, sky[clamp(Math.floor(t * 6), 0, 5)]); }
+  for (let y = 0; y < h; y++) { const t = clamp(y / 130 * 5, 0, 5), i = Math.min(4, Math.floor(t)), f = Math.round((t - i) * 2) / 2; R(c, 0, y, w, 1, f >= 1 ? sky[i + 1] : f > 0 ? mix(sky[i], sky[i + 1], f) : sky[i]); }
   for (let i = 0; i < 60; i++) P(c, rnd() * w, rnd() * 70, rnd() > 0.6 ? "#ffffff" : "#9c8cff");
   ell(c, 262, 34, 9, 9, "#f2e7c4"); P(c, 259, 31, "#d8cca4"); P(c, 265, 37, "#d8cca4");
   let bx = 0;
@@ -24426,7 +24487,7 @@ function paintTitle(c) {
   [[40, 40], [140, 40]].forEach(([x, th]) => { R(c, x, 128 - th, 5, th, "#1a1030"); R(c, x - 1, 128 - th, 7, 3, "#1a1030"); });
   for (let i = 0; i <= 100; i++) { const t = i / 100; P(c, 42 + t * 100, 90 + Math.sin(t * Math.PI) * 30, "#3a2860"); }
   for (let x = 0; x < 200; x += 4) P(c, x, 127, (x / 4) % 2 ? "#ffd27a" : "#ff6cbb");
-  for (let y = 132; y < h; y++) for (let x = 0; x < w; x++) P(c, x, y, bayer(x, y) < 6 ? "#0b0720" : "#130b2e");
+  for (let y = 132; y < h; y++) R(c, 0, y, w, 1, (y - 132) % 5 === 4 ? "#0b0720" : "#130b2e");
   for (let i = 0; i < 260; i++) { const x = rnd() * w | 0, y = 134 + rnd() * 44 | 0; R(c, x, y, 2 + rnd() * 4, 1, ["#ffd27a", "#ff6cbb", "#9fe8ff"][rnd() * 3 | 0]); }
   R(c, 0, 168, w, 12, "#2a1c30"); R(c, 0, 168, w, 1, "#4a3450");
 }
@@ -24456,16 +24517,14 @@ function showTitle() {
   const add = (label, fn) => { const b = el("button", { type: "button", text: label }, menu); b.addEventListener("click", () => { RP.audio.ctx(); fn(); }); return b; };
   const first = [];
   if (RP.hasSave()) first.push(add("CONTINUE", async () => { closeTitle(); if (!(await RP.loadSave())) { showTitle(); } }));
-  first.push(add("NEW GAME", () => newGame(panel)));
-  if (Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
+  first.push(add(DEMO ? "PLAY LEVEL " + DEMO.level : "NEW GAME", () => newGame(panel)));
+  if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => chapters(panel));
   add("MINI-GAME ARCADE", () => arcade(panel));
   add("HOW TO PLAY", () => toggle(panel, howTo));
   add("CREDITS", () => toggle(panel, credits));
-  if (DEMO) {
-    el("p", { cls: "small", text: "Level 1 of " + DEMO.levels + ": Bedroom DJ, plus all sixteen mini-games in the arcade. Sound on helps." }, box);
-    const full = el("a", { cls: "small fullgame", href: DEMO.full, target: "_blank", rel: "noopener", text: "Play the full game (all five levels) \u2192" }, box);
-    full.style.color = "var(--cyan)";
-  } else el("p", { cls: "small", text: "Five levels. Sixteen mini-games. Sound on helps." }, box);
+  if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all sixteen mini-games in the arcade. Sound on helps." }, box);
+  else el("p", { cls: "small", text: "Five levels. Sixteen mini-games. Sound on helps." }, box);
+  if (SITE) levelNav(box);
   setTimeout(() => first[0] && first[0].focus({ preventScroll: true }), 50);
 }
 function closeTitle() { if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
@@ -24500,7 +24559,7 @@ async function newGame(panel) {
     closeTitle();
     RP.reset();
     RP.state.name = name;
-    await RP.startAct(1);
+    await RP.startAct(DEMO ? DEMO.level : 1);
   };
   go.addEventListener("click", start);
   inp.addEventListener("keydown", e => { if (e.key === "Enter") start(); });
@@ -24535,18 +24594,24 @@ function arcade(panel) {
 }
 
 RP.onQuit = () => { RP.audio.stopAll(0.3); showTitle(); };
-/* Level 1 build: finishing the level leads here instead of into Level 2 */
-async function demoEnding() {
+/* level pages: finishing a level (other than the last) leads here instead of into the next one */
+const NEXT_TEASE = ["",
+  "Plasma money, a Meserole St loft party and a dead PA.",
+  "A Thursday residency at the Halcyon Room, a record fair and a rival in gold.",
+  "A flight to Berlin and a 2 AM handover at Halle Neun.",
+  "Headlining Harbor Lights, if the main act ever gets off the stage."];
+async function levelEnding() {
+  const n = DEMO.level, next = n + 1;
   RP.audio.setMusic(null);
   const ov = RP.overlay("card");
   const box = el("div", { cls: "cardbox" }, ov);
-  el("div", { cls: "kicker", text: "END OF LEVEL 1" }, box);
+  el("div", { cls: "kicker", text: "END OF LEVEL " + n }, box);
   el("h2", { html: "TO BE <span style='color:var(--pink)'>CONTINUED</span>" }, box);
-  const S = RP.state;
-  el("p", { text: (S.name || "You") + " played Nowhere. The bartenders danced. Dante says he'll pay you next week." }, box);
-  el("p", { text: "Still to come: Underground Hustler, Club DJ, Touring DJ and Superstar DJ. Plasma money, a loft party with a dead PA, a residency, a flight to Berlin, and a festival headline set." }, box);
+  el("p", { text: "Next up, Level " + next + ": " + DEMO.names[next - 1] + ". " + NEXT_TEASE[next - 1] }, box);
+  el("p", { text: "Each level page starts you with a fresh setup. The full game carries your crate, cash and fans through all five levels." }, box);
   const row = el("div", { cls: "erow" }, box);
-  el("a", { cls: "btn primary", href: DEMO.full, target: "_blank", rel: "noopener", text: "PLAY THE FULL GAME", style: "text-decoration:none" }, row);
+  link(DEMO.pages[next - 1], "PLAY LEVEL " + next, row, "btn primary").style.textDecoration = "none";
+  link(DEMO.full, "FULL GAME", row, "btn").style.textDecoration = "none";
   const b = el("button", { cls: "btn", type: "button", text: "BACK TO TITLE" }, row);
   await new Promise(r => b.addEventListener("click", r));
   ov.remove();
@@ -24554,14 +24619,14 @@ async function demoEnding() {
   showTitle();
 }
 RP.ending = async function () {
-  if (DEMO) return demoEnding();
+  if (DEMO && DEMO.level < DEMO.names.length) return levelEnding();
   RP.audio.setMusic(null);
   const ov = RP.overlay("card");
   const box = el("div", { cls: "cardbox" }, ov);
   el("div", { cls: "kicker", text: "THE END" }, box);
   el("h2", { html: "re<span style='color:var(--pink)'>:</span>parte<span style='color:var(--pink)'>é</span>" }, box);
   const S = RP.state;
-  el("p", { text: (S.name || "You") + ": from four records and a crackling mixer to a festival headline." }, box);
+  el("p", { text: (S.name || "You") + ": from a milk crate of records and a crackling mixer to a festival headline." }, box);
   el("p", { text: S.records.length + " records in the crate. " + S.followers.toLocaleString("en-US") + " fans. " + RP.u.fmtMoney(S.money) + " in the bank (for now)." }, box);
   el("p", { text: "Thanks for playing. Go dig something." }, box);
   const row = el("div", { cls: "erow" }, box);

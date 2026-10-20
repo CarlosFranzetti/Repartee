@@ -131,7 +131,7 @@ async function showFlyer(S) {
 async function giveSlice(S) {
   if (S.f.a1_tankSlice) { await RP.say("You gave me one already. Don't be greedy.", "a1_tank"); return; }
   RP.take("a1_slice"); S.f.a1_tankSlice = true;
-  await RP.lines(["I hold out the slice from Sal's, still warm. Pepperoni.", "@a1_tank ...Is that Sal's?", "It's Sal's.", "@a1_tank (He takes it. He folds it, perfectly. He eats it in two bites with his eyes closed.)", "@a1_tank Mm.", "@a1_tank That's the best slice in Bushwick. I haven't said that out loud in nine years."]);
+  await RP.lines(["I hold out the slice from Sal's. Pepperoni, folded right.", "@a1_tank ...Is that Sal's?", "It's Sal's.", "@a1_tank (He takes it. He folds it, perfectly. He eats it in two bites with his eyes closed.)", "@a1_tank Mm.", "@a1_tank That's the best slice in Bushwick. I haven't said that out loud in nine years."]);
   if (tankOpen(S)) await letIn(S);
   else await RP.lines(["@a1_tank That helps. But I still need a reason to let you past. A reason with a name on it."]);
 }
