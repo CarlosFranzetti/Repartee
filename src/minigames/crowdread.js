@@ -4,7 +4,8 @@
      rounds: 4              records you get to play                 goal: floor-energy target (0-5; a value >5 is read as 0-100)
      difficulty: 1-5        venue: label for the sign / header      arcade: bool   seed: number
    Result: { ok, score 0-100, played: [ids], peak (0-5), final (0-5), goal, bartenders: bool, rounds }
-   ok = the floor energy at the end of the last round reached the goal (empty-bar: the bartenders are dancing). */
+   ok = the floor energy at the end of the last round reached the goal (empty-bar: the bartenders are dancing).
+   The crowd's hint line each round uses the same role words as the tags on the records: WARMUP, BUILDER, PEAK, CLOSER (and WEIRD). */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -20,27 +21,27 @@ const CROWDS = {
     taste: { house: 1, disco: .9, funk: .75, pop: .8, acid: .45, techno: .25, electro: .6, hiphop: .75, breaks: .6, ambient: .3 },
     over: { garage: .95, boogie: .9, "deep house": .85, "chicago house": .9, italo: .85, "smooth jazz": .35, minimal: .3 },
     tell: ["Three people nurse drinks. The bartenders are polishing the same glass.", "A couple at the bar nods along, politely.", "People drift toward the floor. Slowly. Cautiously.", "A real little floor now. The bar is losing customers.", "The room is moving. Even the staff are tapping a foot."],
-    ask: ["Bartender: \"Slow night. Don't scare the regulars.\"", "Bartender: \"They want warm, not weird. Not yet.\"", "Regular: \"Play something I can bob my head to.\""] },
+    ask: ["Bartender: \"Slow night. Don't scare the regulars. Start with a WARMUP, nothing loud.\"", "Bartender: \"They're loosening up. A BUILDER keeps them coming. A WEIRD one can land now they're warm.\"", "Regular: \"Nearly there. Give me a PEAK I can bob my head to.\"", "Bartender: \"Last record. This is what a CLOSER is for.\""] },
   house: { name: "THE HOUSE HEADS", e0: 2.6, goal: 4.2, step: 0.5, bpm: [118, 128], warm: 2.4, rounds: 5, theme: "house", venue: "HALCYON ROOM",
     taste: { house: 1, disco: .85, acid: .8, techno: .45, electro: .4, pop: .55, hiphop: .25, breaks: .35, funk: .4, ambient: .25 },
     over: { garage: 1, "chicago house": 1, "deep house": .95, boogie: .75, italo: .6, minimal: .45 },
     tell: ["A few early birds on the floor, arms folded.", "The regulars find their spots and start to move.", "Now it's a floor. Whistles over the break.", "Hot in here. Hands up on the drop.", "Sweat on the ceiling. They want more."],
-    ask: ["Regular: \"Keep it deep and keep it rolling.\"", "Regular: \"Vocals! Give me a vocal.\"", "Regular: \"Don't you dare drop the tempo.\""] },
+    ask: ["Regular: \"Keep it deep and keep it rolling. A WARMUP or a BUILDER.\"", "Regular: \"Vocals! Give me a vocal. BUILDER time.\"", "Regular: \"Hot in here. A PEAK, and don't you dare drop the tempo.\"", "Regular: \"Last one. Send us home with a CLOSER.\""] },
   techno: { name: "THE TECHNO FLOOR", e0: 2.6, goal: 4.3, step: 0.45, bpm: [124, 140], warm: 1.8, rounds: 5, theme: "techno", venue: "HALLE NEUN",
     taste: { techno: 1, acid: .8, electro: .75, house: .45, disco: .1, pop: .1, hiphop: .1, breaks: .3, funk: .1, ambient: .35 },
     over: { "detroit techno": 1, minimal: .9, "chicago house": .35, "deep house": .35, garage: .2, italo: .35 },
     tell: ["Black clothes, folded arms, nobody smiles. That's a good sign.", "Heads down. The floor is starting to lock in.", "A wall of bodies. Nobody talks.", "Hypnotized. Hands come up on the break.", "A single organism, 135 beats per minute."],
-    ask: ["Door guy: \"Harder. Straight. No singing.\"", "Regular: \"Hypnotic. Not pop.\"", "Regular: \"Keep it dark.\""] },
+    ask: ["Door guy: \"Harder. Straight. No singing. A WARMUP, then lock in.\"", "Regular: \"Hypnotic. Not pop. A BUILDER, keep it climbing.\"", "Regular: \"Keep it dark. Give me the PEAK.\"", "Regular: \"Last record. Make it a CLOSER and make it count.\""] },
   festival: { name: "THE FESTIVAL FIELD", e0: 3.0, goal: 4.5, step: 0.35, bpm: [120, 130], warm: 3.0, rounds: 5, theme: "festival", venue: "HARBOR LIGHTS",
     taste: { pop: 1, house: .95, disco: .8, acid: .6, techno: .55, electro: .5, hiphop: .6, breaks: .45, funk: .5, ambient: .15 },
     over: { italo: .85, garage: .7, "chicago house": .7, "deep house": .55, boogie: .6, minimal: .25 },
     tell: ["A big field, a bigger sunset. They came to party.", "Phones up. Singalong on the hook.", "Thousands of arms. The whole field is bouncing.", "Everyone is somebody's best friend right now.", "Pure noise from the waterfront. It's wonderful."],
-    ask: ["Stage manager: \"Big and bright. They know the hits.\"", "Stage manager: \"No weird stuff. It's a festival.\"", "Fan at the barrier: \"SING-ALONG!\""] },
+    ask: ["Stage manager: \"Big and bright. They know the hits. A WARMUP they can hum.\"", "Stage manager: \"Bring the hook. A BUILDER.\"", "Fan at the barrier: \"SING-ALONG! PEAK! PEAK!\"", "Stage manager: \"Last record. Close the field with a CLOSER.\""] },
   loft: { name: "THE LOFT HEADS", e0: 2.0, goal: 3.8, step: 0.5, bpm: [96, 124], warm: 1.6, rounds: 5, theme: "loft", venue: "MESEROLE",
     taste: { disco: 1, house: .85, funk: .85, breaks: .8, hiphop: .7, electro: .8, ambient: .75, acid: .75, techno: .35, pop: .4 },
     over: { boogie: 1, garage: .95, "deep house": .95, "jazz-funk": .9, italo: .8, "chicago house": .8, minimal: .55 },
     tell: ["Mismatched couches, mismatched people. Everyone is listening.", "A few people dance with their eyes closed.", "The old-timers are showing the kids a step.", "Warm, close, loud. A proper party.", "Raw and joyful. The wood floor is bouncing."],
-    ask: ["Old-timer: \"Surprise me.\"", "Old-timer: \"Play the record I can't name.\"", "Regular: \"Weird is welcome. Boring is not.\""] }
+    ask: ["Old-timer: \"Surprise me. Start with a WARMUP.\"", "Old-timer: \"Play the record I can't name. A BUILDER, or a WEIRD one.\"", "Regular: \"Weird is welcome. Boring is not. Give me a PEAK.\"", "Old-timer: \"Last one. Send us home with a CLOSER.\""] }
 };
 const FAM = ["house", "disco", "acid", "techno", "electro", "pop", "hiphop", "breaks", "funk", "ambient"];
 
@@ -170,6 +171,7 @@ const CSS = `
 .cr-hand { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; }
 .cr-hand .sk-card .jump { font-size: 15px; } .cr-hand .sk-card .jump.g { color: var(--ok); } .cr-hand .sk-card .jump.a { color: var(--amber); } .cr-hand .sk-card .jump.r { color: #ff6a6a; }
 .cr-hand .sk-card.star::after { content: "\\2605 HUNCH"; position: absolute; right: 5px; top: 3px; font-size: 13px; color: var(--amber); }
+.cr-hand .sk-card.lastone::after { content: "LAST ONE IN THE CRATE"; position: absolute; right: 5px; top: 3px; font-size: 13px; color: var(--amber); }
 .cr-act { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .cr-act .spacer { flex: 1; }
 .cr-msg { min-height: 1.2em; } .cr-say { min-height: 1.2em; }
@@ -290,6 +292,7 @@ RP.mg.register("crowdRead", {
       const barPct = e => Math.round(clamp(e / 5, 0, 1) * 1000) / 10 + "%";
 
       function setup() {
+        sel = null;
         S = { E: R.C.e0, prev: null, round: 0, steps: [], played: [], used: new Set(), rnd: mulberry(R.seed + 5), bart: false, peak: R.C.e0 };
         floor = kit.Floor({ theme: C.theme, venue: R.venue || C.venue, seed: R.seed, view: "booth" });
         floor.snap(S.E); floor.setBpm(Math.round((C.bpm[0] + C.bpm[1]) / 2));
@@ -298,13 +301,19 @@ RP.mg.register("crowdRead", {
         sound.bed({ genre: "soul", bpm: 92, energy: 1, vol: 0.2, filter: ["lowpass", 600], seed: R.seed }); // the house tape, until your first record
         buildHand();
         refresh(true);
-        say(C.ask[0]);
+        say(askLine());
         msg.textContent = "GOAL: floor energy " + R.goal.toFixed(1) + (C.theme === "empty-bar" ? " — get the bartenders dancing." : " by the last record.") + " " + R.rounds + " records. Build; don't peak early.";
         phase = "pick"; setTimer(timeLimit);
         updatePlay();
       }
 
       const say = t => { said.textContent = t; };
+      /* the crowd's hint for this moment, in the record tags' own words: cold floor -> WARMUP, climbing -> BUILDER, near the goal -> PEAK, last record -> CLOSER */
+      function askLine() {
+        const stage = S.round >= R.rounds - 1 ? 3 : S.E >= R.goal - 0.3 ? 2 : S.E < 2.4 ? 0 : 1;
+        return C.ask[stage] || C.ask[0];
+      }
+      const freeCards = () => cards.filter(c => !S.used.has(c.rec.id));
 
       function buildHand() {
         hand.innerHTML = ""; cards = [];
@@ -331,7 +340,11 @@ RP.mg.register("crowdRead", {
       }
 
       function jumpTag(rec) {
-        if (!S.prev) { const mid = (C.bpm[0] + C.bpm[1]) / 2; const dd = rec.bpm - mid; return { t: (Math.abs(rec.bpm - mid) <= (C.bpm[1] - C.bpm[0]) / 2 + 2 ? "tempo fits" : "off tempo"), c: Math.abs(dd) <= (C.bpm[1] - C.bpm[0]) / 2 + 2 ? "g" : "a" }; }
+        if (!S.prev) {
+          /* no record on yet: judge against the crowd's stated tempo window (the TEMPO chip), nothing fuzzier */
+          const out = rec.bpm < C.bpm[0] ? C.bpm[0] - rec.bpm : rec.bpm > C.bpm[1] ? rec.bpm - C.bpm[1] : 0, dir = rec.bpm > C.bpm[1] ? "fast" : "slow";
+          return out === 0 ? { t: "tempo fits", c: "g" } : out <= 4 ? { t: "a touch " + dir + " (+" + out + ")", c: "a" } : { t: "off tempo (" + out + " " + dir + ")", c: "r" };
+        }
         const dj = rec.bpm - S.prev.bpm, a = Math.abs(dj);
         return { t: (dj >= 0 ? "+" : "") + dj + " BPM vs now", c: a <= 4 ? "g" : a <= 8 ? "a" : "r" };
       }
@@ -377,8 +390,10 @@ RP.mg.register("crowdRead", {
           const j = jumpTag(c.rec); c.jump.className = "jmp jump " + j.c; c.jump.textContent = j.t;
         });
         cards.forEach(c => c.b.classList.remove("star"));
+        const nFree = freeCards().length;
+        cards.forEach(c => c.b.classList.toggle("lastone", phase === "pick" && nFree === 1 && !S.used.has(c.rec.id)));
         // difficulty 1: star the best fit
-        if (R.diff <= 1 && phase === "pick") {
+        if (R.diff <= 1 && phase === "pick" && nFree > 1) {
           let best = null; cards.forEach(c => { if (S.used.has(c.rec.id)) return; const ev = evalPick(C, { E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, rnd: null }, c.rec); if (!best || ev.fit > best.fit) best = { fit: ev.fit, c }; });
           cards.forEach(c => c.b.classList.toggle("star", !!best && best.c === c));
         }
@@ -466,9 +481,16 @@ RP.mg.register("crowdRead", {
         if (S.round >= R.rounds) { finish(); return; }
         phase = "pick"; sel = null; strikes = 0;
         cards.forEach(c => { c.b.classList.remove("sel"); c.b.disabled = S.used.has(c.rec.id); });
-        say(pick(C.ask, S.rnd));
+        say(askLine());
         msg.textContent = "Round " + (S.round + 1) + ": what does the room need now?";
-        refresh(); setTimer(timeLimit); updatePlay();
+        refresh(); setTimer(timeLimit);
+        /* one record left: there is no choice to make. Say so, and have it ready to play. */
+        const free = freeCards();
+        if (free.length === 1) {
+          sel = free[0].rec.id; free[0].b.classList.add("sel"); free[0].b.setAttribute("aria-selected", "true");
+          msg.textContent = "Round " + (S.round + 1) + ": last one in the crate (" + kit.full(free[0].rec) + "). No choice left. Play it and see where the floor lands.";
+        }
+        updatePlay();
       }
 
       async function finish() {

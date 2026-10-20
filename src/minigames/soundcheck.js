@@ -34,8 +34,8 @@ const HINTS = {
   ],
   "dead-channel": [
     "One deck lights its signal LED but nothing comes out the other side of the mixer. Check the channel meters.",
-    "That channel strip is dirty or dead. Try the cable on a free channel (match PHONO or LINE), or work the fader.",
-    "Patch the deck into a spare channel, or spray the contact cleaner and scrub the fader end to end."
+    "That channel strip is dead, not just crackly. Move the deck's cable to a channel that works, and turntables need PHONO.",
+    "Re-patch the deck's cable to a free channel, then set that strip's input switch to match the deck. Cleaning the dead strip works too, but it takes repeated spraying and scrubbing."
   ],
   "feedback": [
     "That howl is the mic and the monitor feeding each other. The analyzer shows one spike that keeps growing.",
@@ -74,8 +74,8 @@ const gearType = (id, fb) => { try { const g = RP.gearInfo(id); if (g) return g.
 const CSS = `
 .sc-clock { font-size: 24px; color: var(--amber); font-variant-numeric: tabular-nums; } .sc-clock.low { color: #ff6a6a; }
 .sc-clock small { color: var(--muted); font-size: 17px; margin-right: 6px; }
-.sc-main { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "info" "acts" "right"; gap: 8px 10px; align-items: start; }
-.sc-main.wide { grid-template-columns: 640px minmax(0, 1fr); grid-template-areas: "stage right" "info right" "acts right"; grid-template-rows: auto auto 1fr; }
+.sc-main { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "cap" "info" "acts" "right"; gap: 8px 10px; align-items: start; }
+.sc-main.wide { grid-template-columns: 640px minmax(0, 1fr); grid-template-areas: "stage right" "cap right" "info right" "acts right"; grid-template-rows: auto auto auto 1fr; }
 .sc-left, .sc-right, .sc-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .sc-left { grid-area: stage; gap: 3px; } .sc-info { grid-area: info; gap: 4px; } .sc-right { grid-area: right; } .sc-acts { grid-area: acts; }
 .sc-stage { position: relative; background: #000; border: 1px solid var(--line); line-height: 0; width: fit-content; max-width: 100%; margin-inline: auto; }
@@ -124,13 +124,20 @@ const CSS = `
 .sc-two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .sc-note { font-size: 16px !important; }
 .sc-over { position: relative; }
-.sc-main.compact { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "stage right" "info right" "acts right"; grid-template-rows: auto auto 1fr; gap: 4px 8px; }
+.sc-cap { grid-area: cap; display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 4px 8px 5px; background: #0f0b20; border: 1px solid #241d48; border-left: 3px solid var(--cyan); border-radius: 3px; }
+.sc-caphd { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0 8px; font-size: 16px; line-height: 1; letter-spacing: .08em; color: var(--cyan); }
+.sc-caphd small { font-size: 15px; letter-spacing: .04em; color: var(--muted); }
+.sc-capbody { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 1px 18px; min-height: 2.1em; }
+.sc-capbody span { min-width: 0; font-size: 19px; line-height: 1.05; color: var(--fg); overflow-wrap: anywhere; }
+.sc-capbody .c-bad { color: #ff9ab0; } .sc-capbody .c-ok { color: #8fe8a8; } .sc-capbody .c-q { color: var(--muted); }
+.sc-main.compact { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "stage right" "cap right" "info right" "acts right"; grid-template-rows: auto auto auto 1fr; gap: 4px 8px; }
 .sc-main.compact .sc-stage { margin: 0; } .sc-main.compact .sc-queue, .sc-main.compact .sc-qlabel { display: none; }
 .sc-main.compact .sc-panel { min-height: 0; overflow-y: auto; padding: 6px; gap: 5px; } .sc-main.compact .sc-panel > p, .sc-main.compact .sc-panel .sc-note { display: none; } .sc-main.compact .sc-panel h3 { font-size: 17px; }
 .sc-main.compact .sc-right { gap: 4px; } .sc-main.compact .sc-test { padding: 4px; gap: 4px; } .sc-main.compact .sc-test .kbtn { padding: 3px 2px; font-size: 16px; }
 .sc-main.compact .sc-tabs { gap: 3px; } .sc-main.compact .sc-tab { padding: 2px 1px; font-size: 15px; border-bottom-width: 2px; }
 .sc-main.compact .sc-eq input { height: 52px; } .sc-main.compact .sc-card { padding: 4px 6px; gap: 3px; } .sc-main.compact .sc-card .t { font-size: 17px; } .sc-main.compact .sc-strip { padding: 4px; gap: 3px; }
 .sc-main.compact .sc-card { flex-direction: row; flex-wrap: wrap; align-items: center; } .sc-main.compact .sc-card .t { flex: 1 1 100%; } .sc-main.compact .sc-info { gap: 2px; } .sc-main.compact .sc-clock { font-size: 18px; } .sc-main.compact .sc-acts { gap: 6px; }
+.sc-main.compact .sc-cap { padding: 2px 6px 3px; gap: 1px; } .sc-main.compact .sc-caphd { font-size: 14px; } .sc-main.compact .sc-caphd small { font-size: 14px; } .sc-main.compact .sc-capbody { min-height: 0; gap: 0 12px; } .sc-main.compact .sc-capbody span { font-size: 16px; }
 @media (max-width: 860px) { .sc-clock { font-size: 20px; } .sc-panel { min-height: 0; } .sc-info .mg-msg { font-size: 20px; } .sc-acts .btn { padding: 6px 12px; } }
 @media (max-width: 420px) { .sc-test .kbtn { font-size: 16px; } .sc-tab { font-size: 16px; } .sc-eq input { height: 74px; } }
 @media (prefers-reduced-motion: reduce) { .sc-scene { cursor: pointer; } }
@@ -267,6 +274,9 @@ RP.mg.register("soundCheck", {
     const clockEl = el("span", { cls: "sc-clock", html: "<small>DOORS IN</small>0:00" }, head);
     const main = el("div", { cls: "sc-main" }, root);
     const left = el("div", { cls: "sc-left" }, main);
+    const cap = el("div", { cls: "sc-cap", role: "group", "aria-label": "What you hear, as captions" }, main);
+    const capHd = el("div", { cls: "sc-caphd" }, cap); el("span", { text: "WHAT YOU HEAR" }, capHd); const capWhere = el("small", { text: "" }, capHd);
+    const capBody = el("div", { cls: "sc-capbody" }, cap);
     const right = el("div", { cls: "sc-right" }, main);
     const stageBox = el("div", { cls: "sc-stage" }, left);
     const scene = NK.canvas(stageBox, W, H, "sc-scene");
@@ -372,7 +382,7 @@ RP.mg.register("soundCheck", {
     const rndn = mulberry(11);
     function stepModel(dt) {
       M.t += dt;
-      const live = !S.muted && !RP.audio.muted;
+      const live = !S.muted; /* the PA's own mute. Game-wide sound-off only silences the speakers, so the meters and captions still work */
       /* decks */
       let beatSum = 0, hatSum = 0, nb = 0;
       S.deck.forEach((d, i) => {
@@ -456,6 +466,49 @@ RP.mg.register("soundCheck", {
           setP(sd.solo.gain, S.listen === "lr" || S.listen === (i === 0 ? "l" : "r") ? 1 : 0.0001, 0.04);
         });
       } catch (e) { /* ignore */ }
+    }
+
+    /* ---------------- captions: what the PA sounds like, in words ----------------
+       Built from the same state the audio graph reads (chain(), humOn(), loopGain(), cabBlown, listen), so it never claims a sound that is not there. */
+    const hz = f => f >= 1000 ? f / 1000 + " kHz" : f + " Hz";
+    function hearing() {
+      const where = S.listen === "l" ? "LEFT SPEAKER ONLY" : S.listen === "r" ? "RIGHT SPEAKER ONLY" : "BOTH SPEAKERS";
+      if (S.muted) return { where, lines: [["q", "PA muted: silence. Hit PA: MUTED to hear it."]] };
+      const sides = S.listen === "l" ? [0] : S.listen === "r" ? [1] : [0, 1];
+      const lines = [], fine = [];
+      let highs = S.pink;
+      if (M.fb > 0.05) {
+        const f = hz(BANDS[S.fbBand]);
+        lines.push(["bad", S.mic.live && loopGain() > 1 ? (M.fb > 0.5 ? "loud feedback squeal at " + f : "feedback squeal building at " + f) : "feedback squeal dying away"]);
+      }
+      if (humOn()) lines.push(["bad", "a low 60 Hz hum under everything"]);
+      S.deck.forEach((d, i) => {
+        if (!d.play) return;
+        const c = chain(i), nm = "deck " + d.id, n0 = lines.length;
+        if (c.ch.dirt >= 2) { lines.push(["bad", nm + " is silent: dead channel"]); return; }
+        if (c.ch.fader < 0.1) { lines.push(["q", nm + " is faded out: fader down"]); return; }
+        highs = true;
+        if (c.thin) lines.push(["bad", nm + " is thin and very quiet: wrong input level"]);
+        if (c.hot) lines.push(["bad", nm + " is loud and distorted: wrong input level"]);
+        if (c.ch.dirt === 1) lines.push(["bad", nm + " crackles and drops out: dirty channel"]);
+        if (lines.length === n0) fine.push(d.id);
+      });
+      if (S.pink) lines.push(["ok", "pink noise: an even, full-range rush"]);
+      const dull = sides.filter(k => S.cabBlown[S.jack[k === 0 ? "ampL" : "ampR"]]).map(k => k === 0 ? "left" : "right");
+      if (dull.length && highs) lines.push(["bad", dull.join(" and ") + " speaker is dull, no highs: blown tweeter"]);
+      if (fine.length) {
+        const clean = !lines.some(l => l[0] === "bad");
+        lines.push(["ok", clean ? "clean: kick, bass and hats balanced" + (fine.length < 2 ? " (deck " + fine[0] + ")" : "") : (fine.length > 1 ? "decks A and B" : "deck " + fine[0]) + ": kick, bass and hats balanced"]);
+      }
+      if (!lines.length) lines.push(["q", "quiet: nothing is playing. Start a deck or pink noise."]);
+      return { where, lines };
+    }
+    let capKey = "";
+    function renderCaption() {
+      const h = hearing(), key = h.where + "|" + h.lines.map(l => l[0] + l[1]).join("|");
+      if (key === capKey) return; capKey = key;
+      capWhere.textContent = h.where; capBody.textContent = "";
+      h.lines.forEach(([k, t]) => el("span", { cls: "c-" + k, text: t }, capBody));
     }
 
     /* ---------------- messages, hints ---------------- */
@@ -637,7 +690,7 @@ RP.mg.register("soundCheck", {
     function drawFrame(t, dt) {
       const c = scene.c;
       c.drawImage(bg.cv, 0, 0);
-      const live = !S.muted && !RP.audio.muted;
+      const live = !S.muted;
       const mv = reduced ? 0 : 1;
       /* ambience: string lights / lasers */
       if (stageId === "loft") {
@@ -982,6 +1035,7 @@ RP.mg.register("soundCheck", {
     function syncAll(light) {
       synced.forEach(f => { try { f(); } catch (e) { /* ignore */ } });
       panelSync.forEach(f => { try { f(); } catch (e) { /* ignore */ } });
+      try { renderCaption(); } catch (e) { /* ignore */ }
       if (light) return;
       bPA.setAttribute("aria-pressed", String(!S.muted)); bPA.textContent = S.muted ? "PA: MUTED" : "PA: LIVE";
       bA.setAttribute("aria-pressed", String(S.deck[0].play)); bB.setAttribute("aria-pressed", String(S.deck[1].play));
@@ -1087,7 +1141,7 @@ RP.mg.register("soundCheck", {
           if (tl !== lastLeft) { lastLeft = tl; clockEl.innerHTML = "<small>DOORS IN</small>" + NK.mmss(timeLeft); clockEl.classList.toggle("low", timeLeft < 30); }
         }
         stepModel(dt);
-        accSync += dt; if (accSync > 0.08) { accSync = 0; applyAudio(); panelSync.forEach(f => f()); if (rtaP) drawRTA(rtaP.c, 200, 44); }
+        accSync += dt; if (accSync > 0.08) { accSync = 0; applyAudio(); panelSync.forEach(f => f()); renderCaption(); if (rtaP) drawRTA(rtaP.c, 200, 44); }
         drawFrame(M.t, dt);
         drawQueue(1 - timeLeft / TOTAL);
       });

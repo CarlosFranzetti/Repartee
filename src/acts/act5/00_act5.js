@@ -250,7 +250,7 @@ RP.defineAct({
     S.f.a5_calledPriya = true;
     RP.money(S.f.a5_advance);
     await RP.lines([
-      "@a5_priya Here's the plan. You're not playing a festival on CDJ-900s and a mixer from a different decade.",
+      "@a5_priya Here's the plan. You're not playing a festival on " + ((S.gear && RP.gearInfo(S.gear.decks) || { model: "CDJ-900" }).model) + "s and a mixer from a different decade.",
       "@a5_priya Lacquer & Wire in Williamsburg. They stock the mixer you keep describing in your sleep. Handwired, in Barcelona.",
       "The Taula. The Can Electric Taula 4 MR. I say its name like a prayer.",
       "@a5_priya Also a proper pair of monitors, and new decks. Eddie Two-Times will be there.",

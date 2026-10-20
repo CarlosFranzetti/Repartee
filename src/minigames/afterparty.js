@@ -69,7 +69,12 @@ const CSS = `
 .ap-opt:disabled { opacity: .45; cursor: default; }
 .ap-opt .c { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; font-size: 15px; white-space: nowrap; }
 .ap-opt .c i { font-style: normal; } .c .m { color: var(--cyan); } .c .b { color: var(--amber); } .c .d { color: var(--lime); } .c .f { color: var(--pink); }
-.ap-opt .why { display: block; font-size: 15px; color: var(--amber); margin-top: 1px; }
+.ap-opt .why { display: block; font-size: 15px; color: var(--amber); margin-top: 1px; line-height: 1.05; }
+.ap-opt .sub { display: block; font-size: 15px; color: var(--muted); margin-top: 1px; line-height: 1.05; } .ap-opt .sub.rep { color: var(--pink); }
+.ap-opt .c .g { color: var(--ok); } .ap-opt .c .x { color: #ff8a8a; } .ap-opt .c .z { color: var(--muted); }
+.pips { display: inline-flex; gap: 2px; vertical-align: -1px; margin-right: 5px; } .pips i { display: block; width: 5px; height: 8px; background: #2a2450; } .pips i.on { background: var(--cyan); }
+.ap-goal { grid-column: 1 / -1; font-size: 17px; line-height: 1.05; color: var(--muted); padding: 0 2px; } .ap-goal b { font-weight: 400; color: var(--fg); letter-spacing: .06em; margin-right: 6px; } .ap-goal.warn, .ap-goal.warn b { color: var(--amber); } .ap-goal.done b { color: var(--ok); }
+.nk-end li.ap-tipped { flex-wrap: wrap; } .nk-end li .ap-tip { flex: 0 0 100%; font-size: 16px; line-height: 1.05; color: #cfc6f5; padding: 1px 0 3px; } .nk-end li .ap-tip::before { content: "TIP "; color: var(--cyan); letter-spacing: .08em; }
 .ap-chips { display: flex; gap: 5px; flex-wrap: wrap; }
 .ap-chips span { font-size: 16px; padding: 0 6px; border-radius: 2px; border: 1px solid #3a3070; color: var(--fg); background: #130f2a; }
 .ap-chips .g { border-color: #2a6a46; color: var(--ok); } .ap-chips .x { border-color: #6a2a3a; color: #ff8a8a; }
@@ -82,26 +87,29 @@ const CSS = `
 .ap-main.compact .ap-plan { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; } .ap-main.compact .ap-slot { display: block; padding: 2px 5px; } .ap-main.compact .ap-slot b { width: auto; font-size: 13px; display: flex; } .ap-main.compact .ap-slot span { font-size: 15px; line-height: 1; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ap-main.compact .ap-slot small { display: none; }
 .ap-main.compact .ap-msg { min-height: 0; font-size: 15px; line-height: 1; overflow: hidden; max-height: 2em; }
 .ap-main.compact .ap-phone { padding: 4px 6px 6px; border-radius: 14px; max-width: 440px; justify-self: start; width: 100%; gap: 3px; } .ap-main.compact .ap-phone::before { display: none; } .ap-main.compact .ap-status { font-size: 15px; }
-.ap-main.compact .ap-screen { height: auto; flex: 1 1 0; min-height: 0; max-height: none; padding: 5px; gap: 4px; } .ap-main.compact .ap-row { min-height: 32px; } .ap-main.compact .ap-bubble { font-size: 18px; padding: 4px 7px; } .ap-main.compact .ap-opt { font-size: 18px; padding: 4px 8px; } .ap-main.compact .ap-who canvas { width: 40px; height: 40px; } .ap-main.compact .ap-who { grid-template-columns: 40px minmax(0, 1fr); } .ap-main.compact .ap-legend { display: none; }
+.ap-main.compact .ap-screen { height: auto; flex: 1 1 0; min-height: 0; max-height: none; padding: 5px; gap: 4px; } .ap-main.compact .ap-row { min-height: 32px; } .ap-main.compact .ap-bubble { font-size: 18px; padding: 4px 7px; } .ap-main.compact .ap-opt { font-size: 18px; padding: 4px 8px; } .ap-main.compact .ap-who canvas { width: 40px; height: 40px; } .ap-main.compact .ap-who { grid-template-columns: 40px minmax(0, 1fr); } .ap-main.compact .ap-legend { display: none; } .ap-main.compact .ap-opt .sub, .ap-main.compact .ap-opt .why { font-size: 14px; } .ap-main.compact .ap-goal { font-size: 15px; } .nk-compact .nk-end li .ap-tip { font-size: 14px; }
 @media (max-width: 860px) { .ap-plan { grid-template-columns: 1fr; gap: 4px; } .ap-slot { flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; } .ap-slot b { flex: none; width: 70px; } .ap-slot span { flex: 1; } .ap-slot small { display: none; } .ap-screen { max-height: none; } }
 @media (prefers-reduced-motion: reduce) { .ap-scene { } }
 `;
 
 /* ------------------------------------------------------------------ data */
 const LOCS = {
-  roof: { id: "roof", name: "The roof at 214 Dekalb", short: "the roof", who: "Gus", cap: 30, vibe: 4, up: true, ground: false, power: false, cops: 0.35, blurb: "Water tower, skyline, no outlets. Fits thirty." },
+  roof: { id: "roof", name: "The roof at 214 Dekalb", short: "the roof", who: "Gus", cap: 30, vibe: 4, up: true, floors: 5, ground: false, power: false, cops: 0.35, tag: "sunrise bonus", blurb: "Water tower, skyline, no outlets. Fits thirty." },
   laundromat: { id: "laundromat", name: "SudsCity Laundromat (after close)", short: "the laundromat", who: "Luz", cap: 22, vibe: 3, up: false, ground: true, power: true, cops: 0.2, blurb: "Warm, bright, and every dryer is a drum machine. Fits twenty-two." },
-  loft: { id: "loft", name: "Mina's third-floor loft", short: "Mina's loft", who: "Mina", cap: 45, vibe: 5, up: true, ground: false, power: true, cops: 0.6, blurb: "Huge. Neighbors are not fans. No elevator worth trusting." },
+  loft: { id: "loft", name: "Mina's third-floor loft", short: "Mina's loft", who: "Mina", cap: 45, vibe: 5, up: true, floors: 3, ground: false, power: true, cops: 0.6, blurb: "Huge. Neighbors are not fans. No elevator worth trusting." },
   street: { id: "street", name: "The sidewalk outside the bodega", short: "the sidewalk", who: "", cap: 16, vibe: 1, up: false, ground: true, power: false, cops: 0.4, blurb: "Right here. Free. Very public." },
   bodega: { id: "bodega", name: "Hamid's bodega back room", short: "the bodega back room", who: "Hamid", cap: 12, vibe: 3, up: false, ground: true, power: true, cops: 0.05, blurb: "Fits twelve if nobody breathes. There is a cat." }
 };
 const SNDS = {
-  speaker: { id: "speaker", name: "Cal's party speaker", short: "the speaker", q: 2, battery: true, heavy: false, note: "small, battery-powered" },
-  boombox: { id: "boombox", name: "Lou's boombox", short: "Lou's boombox", q: 2, battery: true, heavy: false, nostalgia: true, note: "cassette, aux, 1993" },
-  car: { id: "car", name: "Rafa's hatchback stereo", short: "the car stereo", q: 4, car: true, heavy: false, note: "big bass, street level only" },
-  phone: { id: "phone", name: "A phone speaker on a stoop", short: "a phone speaker", q: 1, note: "tiny" },
-  pa: { id: "pa", name: "Eddie's PA", short: "Eddie's PA", q: 5, heavy: true, note: "loud, heavy, a two-time deal" }
+  speaker: { id: "speaker", name: "Cal's party speaker", short: "Cal's speaker", q: 2, battery: true, heavy: false, tags: ["battery only"], note: "small, battery-powered" },
+  boombox: { id: "boombox", name: "Lou's boombox", short: "Lou's boombox", q: 2, battery: true, heavy: false, nostalgia: true, tags: ["battery only", "old batteries", "+5 mixtape bonus"], note: "cassette, aux, 1993" },
+  car: { id: "car", name: "Rafa's hatchback stereo", short: "Rafa's car", q: 4, car: true, heavy: false, tags: ["street level only"], note: "big bass, street level only" },
+  phone: { id: "phone", name: "A phone speaker on a stoop", short: "a phone speaker", q: 1, tags: [], note: "tiny" },
+  pa: { id: "pa", name: "Eddie's PA", short: "Eddie's PA", q: 5, heavy: true, tags: ["heavy", "2nd payment, $6, later"], note: "loud, heavy, a two-time deal" }
 };
+const QW = ["", "tiny", "small", "okay", "big", "huge"], FLOOR = ["", "One", "Two", "Three", "Four", "Five"], ORD = ["", "first", "second", "third", "fourth", "fifth"];
+const pips = (n, what) => "<span class='pips' role='img' aria-label='" + what + " " + n + " of 5'>" + [1, 2, 3, 4, 5].map(i => "<i" + (i <= n ? " class='on'" : "") + "></i>").join("") + "</span>";
+const fill = q => q * 6;   /* guests a sound covers before the score starts to drop (see computeFinal) */
 const NAME_LOC = { gus: "roof", luz: "laundromat", mina: "loft", hamid: "bodega" };
 
 const LOOKS = {
@@ -140,7 +148,7 @@ RP.mg.register("afterParty", {
     const G = {
       mins: T0, battery: [76, 62, 50, 40, 32][diff - 1], cash: [42, 30, 24, 18, 14][diff - 1], favors: [3, 2, 2, 1, 1][diff - 1],
       sure: 0, maybe: 0, place: null, sound: null, flags: {}, used: {}, known: new Set(), actions: 0, charges: 0, walkups: 0, planEvents: 0,
-      guestDelta: 0, vibeDelta: 0, notes: [], phase: "plan", over: false, taxi: false, tips: 0
+      guestDelta: 0, vibeDelta: 0, notes: [], bads: [], phase: "plan", over: false, taxi: false, tips: 0
     };
     G.fixedBattery = G.battery;
 
@@ -150,7 +158,10 @@ RP.mg.register("afterParty", {
     ["priya", "devanya", "biscuit", "cal", "rafa", "gus", "luz", "mina", "hamid"].forEach((k, i) => { defs[k] = rndDef(k, 40 + i * 7); });
     const CAST = { twinkie: "twinkie", marcus: "marcus", lou: "lou", dante: "dante", eddie: "eddie", jess: "jess" };
     const addPeople = n => { if (G.place) G.sure += n; else G.maybe += n; return G.place ? "+" + n + " guests" : "+" + n + " maybes"; };
-    const setPlace = id => { const old = G.place; G.place = id; if (!old && G.maybe) { /* maybes stay maybes until you text the address */ } return old; };
+    /* a place or a sound can be swapped for another one; whatever came attached to the old one goes with it */
+    const setPlace = id => { const old = G.place; G.place = id; G.flags.hamidCat = id === "bodega"; return old; };
+    const setSound = id => { const old = G.sound; G.sound = id; G.flags.eddie = id === "pa"; G.flags.nostalgia = id === "boombox"; return old; };
+    const catHere = () => !!(G.flags.cat || G.flags.hamidCat);
     const C = {};
     const reg = (id, o) => { C[id] = Object.assign({ id, vis: false, opts: [] }, o); return C[id]; };
     const reveal = id => { if (C[id] && !C[id].vis) { C[id].vis = true; G.known.add(id); return true; } return false; };
@@ -189,31 +200,31 @@ RP.mg.register("afterParty", {
       { id: "come", label: "Come out. Bring friends.", cost: { min: 5, bat: 2 }, max: 1, run() { G.flags.cat = true; return { say: "Me and two friends and the cat. The cat is non-negotiable.", chips: [addPeople(3), "a cat is coming"] }; } }
     ] });
     reg("cal", { name: "Cal", tag: "host of the dying party", def: "cal", vis: true, greet: "You're leaving? The speaker is yours. Nobody's even playing anything.", opts: [
-      { id: "spk", label: "Borrow the party speaker", inPerson: true, cost: { min: 5 }, max: 1, run() { G.sound = "speaker"; return { say: "It's at 40%. It sounds like a phone call from the bottom of a well. Bring it back.", chips: ["Sound: Cal's speaker"] }; } }
+      { id: "spk", label: "Borrow the party speaker", inPerson: true, cost: { min: 5 }, slot: "sound", val: "speaker", run() { setSound("speaker"); return { say: "It's at 40%. It sounds like a phone call from the bottom of a well. Bring it back.", chips: ["Sound: Cal's speaker"] }; } }
     ] });
     reg("lou", { name: "Lou", tag: "4B, boombox since 1993", def: "lou", greet: "KID. It's four in the morning. ...What do you need.", opts: [
-      { id: "box", label: "Borrow the boombox", cost: { min: 7, bat: 3 }, max: 1, run() { G.sound = "boombox"; G.flags.nostalgia = true; return { say: "In 1993 we called that a sound system. Bring it back in one piece. Batteries are original.", chips: ["Sound: Lou's boombox"] }; } }
+      { id: "box", label: "Borrow the boombox", cost: { min: 7, bat: 3 }, slot: "sound", val: "boombox", run() { setSound("boombox"); return { say: "In 1993 we called that a sound system. Bring it back in one piece. Batteries are original.", chips: ["Sound: Lou's boombox"] }; } }
     ] });
     reg("eddie", { name: "Eddie Two-Times", tag: "gear, has a van", def: "eddie", greet: "Kid! The phone? At this hour? I love it. Is it a two-time deal?", opts: [
-      { id: "pa", label: "Rent the PA", cost: { min: 8, bat: 4, cash: 14 }, max: 1, run() { G.sound = "pa"; G.flags.eddie = true; return { say: "Fourteen bucks. And then, you know, a second payment. Two-time deal.", chips: ["Sound: Eddie's PA"] }; } },
-      { id: "pa2", label: "Haggle: favor instead of cash", cost: { min: 9, bat: 4, cash: 6, fav: 1 }, max: 1, run() { G.sound = "pa"; G.flags.eddie = true; return { say: "Six now, one favor, and a second payment later. It's a very good deal. For me.", chips: ["Sound: Eddie's PA"] }; } }
+      { id: "pa", label: "Rent the PA", cost: { min: 8, bat: 4, cash: 14 }, slot: "sound", val: "pa", run() { setSound("pa"); return { say: "Fourteen bucks. And then, you know, a second payment. Two-time deal.", chips: ["Sound: Eddie's PA"] }; } },
+      { id: "pa2", label: "Haggle: favor instead of cash", cost: { min: 9, bat: 4, cash: 6, fav: 1 }, slot: "sound", val: "pa", run() { setSound("pa"); return { say: "Six now, one favor, and a second payment later. It's a very good deal. For me.", chips: ["Sound: Eddie's PA"] }; } }
     ] });
     reg("rafa", { name: "Rafa", tag: "hatchback, serious stereo", def: "rafa", greet: "Mmh. Yeah. I'm awake. Technically.", opts: [
-      { id: "car", label: "Borrow the car stereo (gas money)", cost: { min: 10, bat: 3, cash: 5 }, max: 1, run() { G.sound = "car"; return { say: "Five bucks of gas. The bass will make your teeth rearrange. Street level only. It's a Honda.", chips: ["Sound: Rafa's car"] }; } }
+      { id: "car", label: "Borrow the car stereo (gas money)", cost: { min: 10, bat: 3, cash: 5 }, slot: "sound", val: "car", run() { setSound("car"); return { say: "Five bucks of gas. The bass will make your teeth rearrange. Street level only. It's a Honda.", chips: ["Sound: Rafa's car"] }; } }
     ] });
     reg("gus", { name: "Gus", tag: "super, 214 Dekalb", def: "gus", greet: "Who's this. It's four. Is something on fire?", opts: [
-      { id: "fav", label: "Ask nicely for the roof key", cost: { min: 12, bat: 3, fav: 1 }, max: 1, run() { setPlace("roof"); return { say: "I'm giving you the key because you were polite. Don't tell the tenants.", chips: ["Place: the roof"] }; } },
-      { id: "cash", label: "Slip him $10", cost: { min: 10, bat: 3, cash: 10 }, max: 1, run() { setPlace("roof"); return { say: "I didn't see you. The key is under the third bucket.", chips: ["Place: the roof"] }; } }
+      { id: "fav", label: "Ask nicely for the roof key", cost: { min: 12, bat: 3, fav: 1 }, slot: "place", val: "roof", run() { setPlace("roof"); return { say: "I'm giving you the key because you were polite. Don't tell the tenants.", chips: ["Place: the roof"] }; } },
+      { id: "cash", label: "Slip him $10", cost: { min: 10, bat: 3, cash: 10 }, slot: "place", val: "roof", run() { setPlace("roof"); return { say: "I didn't see you. The key is under the third bucket.", chips: ["Place: the roof"] }; } }
     ] });
     reg("luz", { name: "Luz", tag: "SudsCity Laundromat", def: "luz", greet: "We're closed. The sign says closed. ...What is it?", opts: [
-      { id: "key", label: "Open up after close ($8)", cost: { min: 8, bat: 3, cash: 8 }, max: 1, run() { setPlace("laundromat"); return { say: "Eight dollars for the lights and the mop. Nobody touches the folding table.", chips: ["Place: the laundromat"] }; } },
-      { id: "mop", label: "Mop the floor first (20 min)", cost: { min: 20, bat: 2 }, max: 1, run() { setPlace("laundromat"); G.favors += 1; return { say: "You mopped? Nobody mops. Okay. I owe you one.", chips: ["Place: the laundromat", "+1 favor"] }; } }
+      { id: "key", label: "Open up after close ($8)", cost: { min: 8, bat: 3, cash: 8 }, slot: "place", val: "laundromat", run() { setPlace("laundromat"); return { say: "Eight dollars for the lights and the mop. Nobody touches the folding table.", chips: ["Place: the laundromat"] }; } },
+      { id: "mop", label: "Mop the floor first (20 min)", cost: { min: 20, bat: 2 }, slot: "place", val: "laundromat", run() { setPlace("laundromat"); const first = !G.flags.mopped; G.flags.mopped = true; if (first) G.favors += 1; return { say: first ? "You mopped? Nobody mops. Okay. I owe you one." : "You mopped AGAIN? Fine. Same floor, same answer. Come in.", chips: first ? ["Place: the laundromat", "+1 favor"] : ["Place: the laundromat"] }; } }
     ] });
     reg("mina", { name: "Mina", tag: "has a loft", def: "mina", greet: "Do you know what time it is? ...Is there food?", opts: [
-      { id: "loft", label: "Can we use your loft?", cost: { min: 8, bat: 3, fav: 1 }, max: 1, run() { setPlace("loft"); return { say: "Fine. My neighbors hate me already, it can't get worse. Wipe your feet.", chips: ["Place: Mina's loft"] }; } }
+      { id: "loft", label: "Can we use your loft?", cost: { min: 8, bat: 3, fav: 1 }, slot: "place", val: "loft", run() { setPlace("loft"); return { say: "Fine. My neighbors hate me already, it can't get worse. Wipe your feet.", chips: ["Place: Mina's loft"] }; } }
     ] });
     reg("hamid", { name: "Hamid", tag: "bodega next door", def: "hamid", vis: true, greet: "Hey, my friend. Chips? Cigarettes? A lottery ticket? A cat?", opts: [
-      { id: "room", label: "Rent the back room ($6)", inPerson: true, cost: { min: 5, cash: 6 }, max: 1, run() { setPlace("bodega"); G.flags.cat = true; return { say: "Back room. Fits twelve if nobody breathes. Don't touch the cat's shelf.", chips: ["Place: the bodega back room"] }; } }
+      { id: "room", label: "Rent the back room ($6)", inPerson: true, cost: { min: 5, cash: 6 }, slot: "place", val: "bodega", run() { setPlace("bodega"); return { say: "Back room. Fits twelve if nobody breathes. Don't touch the cat's shelf.", chips: ["Place: the bodega back room"] }; } }
     ] });
     reg("dante", { name: "Dante", tag: "promoter, \"next week\"", def: "dante", vis: true, greet: "Heyyy. You caught me. Great timing, actually.", opts: [
       { id: "club", label: "Can your club help?", cost: { min: 4, bat: 3 }, max: 1, run() { return { say: "Absolutely. Next week. I'll pay you for that other thing next week too.", chips: ["Nothing. Again."], bad: true }; } }
@@ -248,47 +259,48 @@ RP.mg.register("afterParty", {
 
     /* ---------------- events ---------------- */
     const guestsNow = () => Math.round(G.sure + G.maybe * 0.4);
+    const copLoss = () => Math.max(2, Math.round(guestsNow() * 0.22));
     const EVENTS = {
       dante: { phase: "plan", title: "INCOMING CALL: DANTE", text: "Your phone buzzes. It's Dante. At 4 AM. You know exactly what he's going to say.", choices: [
-        { label: "Answer", run: () => { G.battery = Math.max(0, G.battery - 3); G.mins -= 3; return { text: "\"Great news, I'll have your money next week.\" You hang up. That was three percent you needed.", chips: ["-3%", "-3 min"], bad: true }; } },
+        { label: "Answer", cost: { min: 3, bat: 3 }, run: () => { G.battery = Math.max(0, G.battery - 3); G.mins -= 3; return { text: "\"Great news, I'll have your money next week.\" You hang up. That was three percent you needed.", chips: ["-3%", "-3 min"], bad: true }; } },
         { label: "Let it ring", run: () => ({ text: "It rings out. He leaves a voicemail. You don't listen to it.", chips: ["nothing lost"] }) }
       ] },
       drunk: { phase: "plan", title: "A GUY OUTSIDE THE BODEGA", text: "A stranger with a lot of friends: \"Yo, is there an after? We're looking for an after.\"", choices: [
-        { label: "Tell him the plan (-3 min)", run: () => { G.mins -= 3; return { text: "He's thrilled. He tells four friends and one bagel. They all say they're in.", chips: [addPeople(4), "-3 min"] }; } },
+        { label: "Tell him the plan", cost: { min: 3 }, fx: () => ["+4 " + (G.place ? "guests" : "maybes")], run: () => { G.mins -= 3; return { text: "He's thrilled. He tells four friends and one bagel. They all say they're in.", chips: [addPeople(4), "-3 min"] }; } },
         { label: "Say there's nothing going on", run: () => ({ text: "He shrugs and walks away. Somewhere a bagel is disappointed.", chips: ["nothing"] }) }
       ] },
       taxi: { phase: "plan", title: "A TAXI SLOWS DOWN", text: "A cab driver rolls down his window: \"You look like you're going somewhere. Six dollars flat, anywhere close.\"", choices: [
-        { label: "Book him for later ($6)", cost: { cash: 6 }, run: () => { G.taxi = true; G.cash -= 6; return { text: "He gives you his card. When it's time to go, you won't be walking.", chips: ["-$6", "saves 10 min at the end"] }; } },
+        { label: "Book him for later", cost: { cash: 6 }, fx: ["saves ~8 min"], run: () => { G.taxi = true; G.cash -= 6; return { text: "He gives you his card. When it's time to go, you won't be walking.", chips: ["-$6", "saves ~8 min on the trip"] }; } },
         { label: "No thanks", run: () => ({ text: "He shrugs and rolls the window up. New York.", chips: ["nothing"] }) }
       ] },
       cops: { phase: "party", title: "COPS ROLL BY", text: "A cruiser slows down outside. A flashlight finds the window. Everyone suddenly looks very innocent.", choices: [
-        { label: "Turn it down. Smile.", run: () => ({ text: "Volume down. Smile up. They leave. The vibe takes a small hit.", vibe: -7, chips: ["-7 vibe"], bad: true }) },
-        { label: "Talk your way out (1 favor)", cost: { fav: 1 }, run: () => { G.favors -= 1; return { text: "Somebody's cousin is on the force. Somebody's cousin is always on the force. They wave and leave.", vibe: 2, chips: ["-1 favor", "+2 vibe"] }; } },
-        { label: "Everyone out the back", run: () => { const l = Math.max(2, Math.round(guestsNow() * 0.22)); return { text: "Chaos. A quarter of the room scatters into the night and doesn't come back.", guests: -l, vibe: -3, chips: ["-" + l + " guests", "-3 vibe"], bad: true }; } }
+        { label: "Turn it down. Smile.", fx: ["-7 vibe"], run: () => ({ text: "Volume down. Smile up. They leave. The vibe takes a small hit.", vibe: -7, chips: ["-7 vibe"], bad: true }) },
+        { label: "Talk your way out", cost: { fav: 1 }, fx: ["+2 vibe"], run: () => { G.favors -= 1; return { text: "Somebody's cousin is on the force. Somebody's cousin is always on the force. They wave and leave.", vibe: 2, chips: ["-1 favor", "+2 vibe"] }; } },
+        { label: "Everyone out the back", fx: () => ["-" + copLoss() + " guests", "-3 vibe"], run: () => { const l = copLoss(); return { text: "Chaos. A quarter of the room scatters into the night and doesn't come back.", guests: -l, vibe: -3, chips: ["-" + l + " guests", "-3 vibe"], bad: true }; } }
       ] },
       elevator: { phase: "party", title: "THE ELEVATOR BREAKS", text: "There is a loud clunk and the elevator light goes dark. Everyone stands there looking at the stairs.", choices: [
-        { label: "Carry everything up the stairs (-12 min)", run: () => { G.mins -= 12; return { text: "Six floors, two trips, one very loud complaint about your back. But the gear arrives.", chips: ["-12 min"] }; } },
-        { label: "Make the stairwell part of the party", run: () => ({ text: "Someone sits on the fourth floor landing. Someone else makes it a lounge. Honestly? It works.", guests: -2, vibe: 4, chips: ["-2 guests", "+4 vibe"] }) }
+        { label: "Carry everything up the stairs", cost: { min: 12 }, run: () => { G.mins -= 12; return { text: FLOOR[LOCS[G.place].floors || 3] + " floors, two trips, one very loud complaint about your back. But the gear arrives.", chips: ["-12 min"] }; } },
+        { label: "Make the stairwell part of the party", fx: ["-2 guests", "+4 vibe"], run: () => ({ text: "Someone sits on the " + ORD[(LOCS[G.place].floors || 3) - 1] + " floor landing. Someone else makes it a lounge. Honestly? It works.", guests: -2, vibe: 4, chips: ["-2 guests", "+4 vibe"] }) }
       ] },
       cat: { phase: "party", title: "SOMEONE BROUGHT A CAT", text: "A cat strolls in like it pays rent. It stares at the speaker. It stares at you.", choices: [
-        { label: "Let the cat DJ", run: () => ({ text: "The cat sits on the equipment and everyone loses their mind. It is, easily, the best DJ here.", vibe: 10, chips: ["+10 vibe"] }) },
-        { label: "Shoo the cat", run: () => ({ text: "The cat leaves with an expression you will think about for years. One allergic guest is thrilled.", vibe: -2, chips: ["-2 vibe"], bad: true }) }
-      ], auto: () => !!G.flags.cat },
+        { label: "Let the cat DJ", fx: ["+10 vibe"], run: () => ({ text: "The cat sits on the equipment and everyone loses their mind. It is, easily, the best DJ here.", vibe: 10, chips: ["+10 vibe"] }) },
+        { label: "Shoo the cat", fx: ["-2 vibe"], run: () => ({ text: "The cat leaves with an expression you will think about for years. One allergic guest is thrilled.", vibe: -2, chips: ["-2 vibe"], bad: true }) }
+      ], auto: catHere },
       power: { phase: "party", title: "THE SPEAKER IS DYING", text: "Forty minutes in, the little battery light goes red. The room has no outlets, or the batteries are older than you.", choices: [
-        { label: "Charge it off your phone (-18%)", run: () => { if (G.battery < 18) return { text: "Your phone is too low to share. The speaker dies. The room hums softly. It's... something.", vibe: -12, chips: ["-12 vibe"], bad: true }; G.battery -= 18; return { text: "You run a cable from your phone to the speaker. The speaker lives. Your phone does not thank you.", chips: ["-18% battery"] }; } },
-        { label: "Run to the bodega for D batteries ($4, -8 min)", run: () => { if (G.cash < 4) return { text: "You can't afford batteries. You do a very sad acoustic set. Someone claps.", vibe: -10, chips: ["-10 vibe"], bad: true }; G.cash -= 4; G.mins -= 8; return { text: "Fresh batteries. Back before anyone noticed. You get a high five from a stranger.", chips: ["-$4", "-8 min"] }; } },
-        { label: "Go acoustic", run: () => ({ text: "People hum. Someone beatboxes. It's honestly kind of beautiful. Mostly it's quiet.", vibe: -12, chips: ["-12 vibe"], bad: true }) }
+        { label: "Charge it off your phone", fx: () => G.battery < 18 ? ["phone too low: -12 vibe"] : ["-18%"], run: () => { if (G.battery < 18) return { text: "Your phone is too low to share. The speaker dies. The room hums softly. It's... something.", vibe: -12, chips: ["-12 vibe"], bad: true }; G.battery -= 18; return { text: "You run a cable from your phone to the speaker. The speaker lives. Your phone does not thank you.", chips: ["-18% battery"] }; } },
+        { label: "Run to the bodega for D batteries", fx: () => G.cash < 4 ? ["can't afford: -10 vibe"] : ["-$4", "-8 min"], run: () => { if (G.cash < 4) return { text: "You can't afford batteries. You do a very sad acoustic set. Someone claps.", vibe: -10, chips: ["-10 vibe"], bad: true }; G.cash -= 4; G.mins -= 8; return { text: "Fresh batteries. Back before anyone noticed. You get a high five from a stranger.", chips: ["-$4", "-8 min"] }; } },
+        { label: "Go acoustic", fx: ["-12 vibe"], run: () => ({ text: "People hum. Someone beatboxes. It's honestly kind of beautiful. Mostly it's quiet.", vibe: -12, chips: ["-12 vibe"], bad: true }) }
       ] },
       eddie: { phase: "party", title: "EDDIE SHOWS UP", text: "\"There he is! My two-time deal. The second payment, kid. Six bucks.\" He is holding a clipboard.", choices: [
-        { label: "Pay the second payment ($6)", run: () => { if (G.cash < 6) return { text: "You don't have six dollars. Eddie takes a speaker cable as collateral. The PA sounds a little thinner.", vibe: -6, chips: ["-6 vibe"], bad: true }; G.cash -= 6; return { text: "Six dollars. He shakes your hand with both of his. It is the second handshake.", chips: ["-$6"] }; } },
-        { label: "Argue (1 favor)", cost: { fav: 1 }, run: () => { G.favors -= 1; return { text: "You invoke the original deal. Eddie squints, nods, and leaves. Somehow you won.", chips: ["-1 favor"] }; } }
+        { label: "Pay the second payment", fx: () => G.cash < 6 ? ["can't cover it: -6 vibe"] : ["-$6"], run: () => { if (G.cash < 6) return { text: "You don't have six dollars. Eddie takes a speaker cable as collateral. The PA sounds a little thinner.", vibe: -6, chips: ["-6 vibe"], bad: true }; G.cash -= 6; return { text: "Six dollars. He shakes your hand with both of his. It is the second handshake.", chips: ["-$6"] }; } },
+        { label: "Argue", cost: { fav: 1 }, run: () => { G.favors -= 1; return { text: "You invoke the original deal. Eddie squints, nods, and leaves. Somehow you won.", chips: ["-1 favor"] }; } }
       ], auto: () => !!G.flags.eddie },
       neighbor: { phase: "party", title: "A NEIGHBOR IN A ROBE", text: "A woman in a robe stands in the doorway holding a spatula. \"Is there a reason it is five in the morning?\"", choices: [
-        { label: "Invite her in", run: () => ({ text: "She stays for forty minutes and teaches the room a cha-cha. She leaves with the spatula and four phone numbers.", guests: 1, vibe: 5, chips: ["+1 guest", "+5 vibe"] }) },
-        { label: "Apologize and turn it down", run: () => ({ text: "She nods, slowly. The spatula remains pointed at you until she is out of sight.", vibe: -4, chips: ["-4 vibe"], bad: true }) }
+        { label: "Invite her in", fx: ["+1 guest", "+5 vibe"], run: () => ({ text: "She stays for forty minutes and teaches the room a cha-cha. She leaves with the spatula and four phone numbers.", guests: 1, vibe: 5, chips: ["+1 guest", "+5 vibe"] }) },
+        { label: "Apologize and turn it down", fx: ["-4 vibe"], run: () => ({ text: "She nods, slowly. The spatula remains pointed at you until she is out of sight.", vibe: -4, chips: ["-4 vibe"], bad: true }) }
       ] },
       walkin: { phase: "party", title: "A STRANGER WALKS IN", text: "\"Is this the after party?\" Yes. It is now. A few people drift in behind him.", choices: [
-        { label: "Of course it is", run: () => ({ text: "The best kind of guest: the one who found you.", guests: 3, vibe: 2, chips: ["+3 guests", "+2 vibe"] }) }
+        { label: "Of course it is", fx: ["+3 guests", "+2 vibe"], run: () => ({ text: "The best kind of guest: the one who found you.", guests: 3, vibe: 2, chips: ["+3 guests", "+2 vibe"] }) }
       ] }
     };
     const eventWeights = () => {
@@ -296,7 +308,7 @@ RP.mg.register("afterParty", {
       const add = (id, w) => { if (w > 0) out.push([id, w]); };
       add("cops", loc.cops * (snd.q >= 4 ? 1.4 : 1) * (0.6 + diff * 0.2) * 3);
       add("elevator", loc.up ? 2.2 : 0);
-      add("cat", G.flags.cat ? 8 : 0);
+      add("cat", catHere() ? 8 : 0);
       add("power", (snd.battery && !loc.power) || (G.sound === "boombox" && rnd() < 0.5) ? 5 : 0);
       add("eddie", G.flags.eddie ? 6 : 0);
       add("neighbor", (loc.id === "loft" || loc.id === "laundromat") ? 1.2 : 0.2);
@@ -315,6 +327,7 @@ RP.mg.register("afterParty", {
     const W = 320, H = 168;
     const scene = NK.canvas(stageBox, W, H, "ap-scene");
     const plan = el("div", { cls: "ap-plan" }, left);
+    const slotG = el("div", { cls: "ap-goal" }, plan);
     const slotP = el("div", { cls: "ap-slot" }, plan), slotL = el("div", { cls: "ap-slot" }, plan), slotS = el("div", { cls: "ap-slot" }, plan);
     const msg = el("div", { cls: "mg-msg ap-msg", "aria-live": "polite" }, left);
     const acts = el("div", { cls: "row ap-acts" }, left);
@@ -493,7 +506,9 @@ RP.mg.register("afterParty", {
       chFav.innerHTML = "<small>FAVORS</small>" + (G.favors > 0 ? "★".repeat(Math.min(6, G.favors)) : "-") + "";
       stTime.textContent = NK.clock(now);
       stRight.innerHTML = (G.battery > 0 ? "▂▄▆ " : "-- ") + "<span class='ap-bat' style='display:inline-block;vertical-align:middle;color:" + (G.battery <= 12 ? "#ff6a6a" : "#8c84b8") + "'><i style='width:" + clamp(G.battery, 0, 100) + "%'></i></span> " + Math.round(G.battery) + "%";
-      const tot = G.sure + G.maybe;
+      const gl = G.place ? LOCS[G.place] : null, tight = gl && gl.cap < NEED;
+      slotG.className = "ap-goal" + (tight ? " warn" : G.sure >= NEED ? " done" : "");
+      slotG.innerHTML = tight ? "<b>NEED " + NEED + " GUESTS</b>" + gl.short + " only fits " + gl.cap + ": that caps the night at FINE" : G.sure >= NEED ? "<b>GUEST GOAL MET</b>" + G.sure + " coming, " + NEED + " needed" : "<b>NEED " + NEED + " GUESTS</b>under " + NEED + " caps the night at FINE";
       slotP.className = "ap-slot" + (G.sure >= NEED ? " done" : (G.sure + G.maybe >= NEED ? " warn" : ""));
       slotP.innerHTML = "<b>PEOPLE <em style='font-style:normal'>" + (G.sure >= NEED ? "OK" : "") + "</em></b><span>" + G.sure + " coming / need " + NEED + "</span><small>" + (G.maybe ? G.maybe + " maybes (text the address)" : "confirm them once you have a place") + "</small>";
       const loc = G.place ? LOCS[G.place] : null, snd = G.sound ? SNDS[G.sound] : null;
@@ -517,8 +532,43 @@ RP.mg.register("afterParty", {
       if (c.fav) a.push("<i class='f'>★" + c.fav + "</i>");
       return a.join("");
     };
+    /* a sound or place option never runs out: if you gave it up you can borrow it again (and pay for it again) */
+    const held = o => !!o.slot && G[o.slot] === o.val;
+    const spent = (k, o) => !o.slot && (G.used[k + ":" + o.id] || 0) >= (o.max || 1);
+    /* why a sound and a place don't fit: the same three checks the SOUND slot and the GO screen use */
+    const clash = (s, l, asSnd) => {
+      const a = [], nm = asSnd ? "it" : s.short, up = asSnd ? "up to " + l.short : "up here";
+      if (s.car && !l.ground) a.push(nm + " can't get " + up + ": plays from the curb");
+      if (s.heavy && l.up) a.push((asSnd ? "heavy" : s.short + " is heavy") + ": +8 min hauling it " + up);
+      if (s.battery && !l.power) a.push("no outlets " + (asSnd ? "at " + l.short : "here") + ": " + nm + " dies mid-party");
+      return a;
+    };
+    /* what a sound/place option tells you before you pick it: quality, constraints, a mismatch with what you already have, what it replaces */
+    function slotLines(o, seen) {
+      const isS = o.slot === "sound", T = isS ? SNDS : LOCS, it = T[o.val], cur = G[o.slot] ? T[G[o.slot]] : null;
+      const loc = G.place ? LOCS[G.place] : null, snd = G.sound ? SNDS[G.sound] : null;
+      let h = "";
+      if (!seen.has(o.val)) {
+        seen.add(o.val);
+        const warn = [];
+        if (isS) {
+          const tgt = Math.min(NEED, loc ? loc.cap : NEED), cv = fill(it.q);
+          if (cv < tgt) warn.push((cv < tgt * 0.7 ? "too small for " : "a little thin for ") + tgt + " guests");
+          if (loc) warn.push.apply(warn, clash(it, loc, true));
+          h += "<span class='sub'>" + pips(it.q, "sound") + QW[it.q] + ", fills ~" + fill(it.q) + " people" + (it.tags.length ? " \u00b7 " + it.tags.join(" \u00b7 ") : "") + "</span>";
+        } else {
+          if (it.cap < NEED) warn.push("fits only " + it.cap + ", you need " + NEED);
+          if (snd) warn.push.apply(warn, clash(snd, it, false));
+          h += "<span class='sub'>" + pips(it.vibe, "vibe") + "vibe \u00b7 fits " + it.cap + " \u00b7 " + (it.power ? "outlets" : "no outlets") + " \u00b7 " + (it.up ? "upstairs" : "street level") + (it.tag ? " \u00b7 " + it.tag : "") + "</span>";
+        }
+        h += warn.map(w => "<span class='why'>" + w + "</span>").join("");
+      }
+      if (cur && cur !== it) h += "<span class='sub rep'>replaces " + cur.short + "</span>";
+      return h;
+    }
     function reason(o) {
       const c = o.cost || {};
+      if (held(o)) return "already your " + (o.slot === "sound" ? "sound system" : "place");
       if (o.why && o.why()) return o.why();
       if (c.bat && !o.inPerson && G.battery < c.bat) return G.battery <= 0 ? "phone is dead" : "not enough battery";
       if (c.cash && G.cash < c.cash) return "not enough cash";
@@ -554,8 +604,8 @@ RP.mg.register("afterParty", {
           const c = C[k], b = el("button", { cls: "ap-row", type: "button" }, list);
           const pc = portrait(k); const cv = el("canvas", { width: 28, height: 28 }, b); cv.getContext("2d").drawImage(pc.cv, 0, 0);
           el("span", { html: "<span class='n'>" + c.name + "</span><span class='t'>" + c.tag + "</span>" }, b);
-          const left2 = c.opts.filter(o => (G.used[k + ":" + o.id] || 0) < (o.max || 1) && (!o.when || o.when())).length;
-          el("span", { cls: "s", text: left2 ? "" : "done" }, b);
+          const left2 = c.opts.filter(o => !spent(k, o) && !held(o) && (!o.when || o.when())).length;
+          el("span", { cls: "s", text: left2 ? "" : c.opts.some(held) ? "in use" : "done" }, b);
           b.addEventListener("click", () => { sfx("blip"); showContact(k); });
         });
         if (!screen.querySelector(".ap-legend")) el("div", { cls: "ap-legend", html: "<i style='color:var(--cyan);font-style:normal'>m</i> minutes &nbsp; <i style='color:var(--amber);font-style:normal'>%</i> phone battery &nbsp; <i style='color:var(--lime);font-style:normal'>$</i> cash &nbsp; <i style='color:var(--pink);font-style:normal'>★</i> favor" }, screen);
@@ -572,13 +622,13 @@ RP.mg.register("afterParty", {
         el("div", { html: "<div class='n'>" + c.name + "</div><div class='t'>" + c.tag + "</div>" }, who);
         el("div", { cls: "ap-bubble", text: "\"" + c.greet + "\"" }, screen);
         const opts = c.opts.filter(o => !o.when || o.when());
-        let any = false;
+        let any = false; const seen = new Set();
         opts.forEach(o => {
-          const used = G.used[k + ":" + o.id] || 0; if (used >= (o.max || 1)) return;
+          if (spent(k, o)) return;
           any = true;
-          const why = reason(o), b = el("button", { cls: "ap-opt", type: "button" }, screen);
-          el("span", { html: o.label + (why ? "<span class='why'>" + why + "</span>" : "") }, b); el("span", { cls: "c", html: costChips(o) }, b);
-          if (why) b.disabled = true; else b.addEventListener("click", () => doOpt(k, o));
+          const on = held(o), why = on ? null : reason(o), b = el("button", { cls: "ap-opt", type: "button" }, screen);
+          el("span", { html: o.label + (why ? "<span class='why'>" + why + "</span>" : "") + (on ? "<span class='sub'>locked in as your " + (o.slot === "sound" ? "sound system" : "place") + "</span>" : "") + (!on && o.slot ? slotLines(o, seen) : "") }, b); el("span", { cls: "c", html: costChips(o) }, b);
+          if (why || on) b.disabled = true; else b.addEventListener("click", () => doOpt(k, o));
         });
         if (!any) el("div", { cls: "ap-bubble me", text: "Nothing more to ask. They're already on it." }, screen);
       });
@@ -597,7 +647,7 @@ RP.mg.register("afterParty", {
         if (who) { const wh = el("div", { cls: "ap-who" }, screen); const cv = el("canvas", { width: 56, height: 56 }, wh); const c2 = cv.getContext("2d"); c2.imageSmoothingEnabled = false; c2.drawImage(portrait(who).cv, 0, 0, 28, 28, 0, 0, 56, 56); el("div", { html: "<div class='n'>" + C[who].name + "</div><div class='t'>" + C[who].tag + "</div>" }, wh); }
         else el("h3", { html: "<span>" + (title || "") + "</span>" }, screen);
         el("div", { cls: "ap-bubble", text: text }, screen);
-        if (chips && chips.length) { const ch = el("div", { cls: "ap-chips" }, screen); chips.forEach(t => el("span", { text: t, cls: /^[-]|nothing|hung up|Nothing/.test(t) ? "x" : "g" }, ch)); }
+        if (chips && chips.length) { const ch = el("div", { cls: "ap-chips" }, screen); chips.forEach(t => el("span", { text: t, cls: /^[-]|nothing|hung up|Nothing|^dropped/.test(t) ? "x" : "g" }, ch)); }
         const b = el("button", { cls: "btn primary", type: "button", text: next ? next.label : "OK" }, screen);
         b.addEventListener("click", () => { sfx("click"); (next ? next.fn : afterAction)(); });
       });
@@ -618,10 +668,11 @@ RP.mg.register("afterParty", {
       if (why) { sfx("error"); setMsg(c.name + ": can't do that (" + why + ")."); return; }
       sfx(o.inPerson ? "door" : "ring");
       G.used[k + ":" + o.id] = (G.used[k + ":" + o.id] || 0) + 1;
-      const n = G.used[k + ":" + o.id] - 1;
+      const n = G.used[k + ":" + o.id] - 1, prev = o.slot ? G[o.slot] : null;
       spend(o.cost, o.inPerson);
       const res = o.run(n) || {};
-      if (res.chips) res.chips = res.chips.slice();
+      res.chips = (res.chips || []).slice();
+      if (prev && prev !== G[o.slot]) res.chips.push("dropped " + (o.slot === "sound" ? SNDS : LOCS)[prev].short);
       const cc = o.cost || {}; const tags = [];
       if (cc.min) tags.push("-" + cc.min + " min"); if (cc.bat && !o.inPerson) tags.push("-" + cc.bat + "%"); if (cc.cash) tags.push("-$" + cc.cash); if (cc.fav) tags.push("-" + cc.fav + " favor");
       host.timeout(() => { if (res.bad) sfx("buzz"); else sfx("ping"); }, 350);
@@ -654,6 +705,12 @@ RP.mg.register("afterParty", {
       if (G.mins <= 0 && G.phase === "plan") { endRun("sunrise"); return true; }
       return false;
     }
+    /* cost and consequence chips for an event choice: what it costs (cost) plus what it does (fx), colored like the contact options */
+    const fxChips = ch => {
+      const a = [costChips(ch)], fx = typeof ch.fx === "function" ? ch.fx() : (ch.fx || []);
+      fx.forEach(t => a.push("<i class='" + (/min$/.test(t) ? "m" : /%$/.test(t) ? "b" : /\$/.test(t) ? "d" : /^\+/.test(t) ? "g" : /-/.test(t) ? "x" : "z") + "'>" + t + "</i>"));
+      return a.join("") || "<i class='z'>no cost</i>";
+    };
     function showEvent(id, next, partyCtx) {
       const ev = EVENTS[id]; view = "event"; sfx(id === "cops" ? "siren" : "ping");
       setScreen(() => {
@@ -661,11 +718,12 @@ RP.mg.register("afterParty", {
         const b0 = el("div", { cls: "ap-bubble ev" }, screen); el("div", { html: "<b style='font-weight:400;color:var(--pink);letter-spacing:.08em'>" + ev.title + "</b>" }, b0); el("div", { text: ev.text }, b0);
         ev.choices.forEach(ch => {
           const why = ch.cost && ch.cost.fav && G.favors < ch.cost.fav ? "no favors left" : ch.cost && ch.cost.cash && G.cash < ch.cost.cash ? "not enough cash" : null;
-          const b = el("button", { cls: "ap-opt", type: "button" }, screen); el("span", { html: ch.label + (why ? "<span class='why'>" + why + "</span>" : "") }, b);
+          const b = el("button", { cls: "ap-opt", type: "button" }, screen); el("span", { html: ch.label + (why ? "<span class='why'>" + why + "</span>" : "") }, b); el("span", { cls: "c", html: fxChips(ch) }, b);
           if (why) b.disabled = true; else b.addEventListener("click", () => {
             const r = ch.run() || {};
             if (r.guests) G.guestDelta += r.guests; if (r.vibe) G.vibeDelta += r.vibe;
             G.notes.push(ev.title.toLowerCase() + ": " + ((r.bad ? "bad " : "") + (ch.label)));
+            if (r.bad && ev.phase === "party") G.bads.push({ id, v: r.vibe || 0 });
             if (r.bad) sfx("buzz"); else sfx("success");
             setMsg(ev.title + ".");
             showResult(ev.title, null, r.text, r.chips || [], { label: partyCtx ? "NEXT" : "OK", fn: () => { if (G.over) return; if (next) next(); } });
@@ -688,7 +746,9 @@ RP.mg.register("afterParty", {
         if (snd.car && !loc.ground) warn.push("The car stereo can't get up there. It will play from the curb.");
         if (snd.heavy && loc.up) warn.push("The PA is heavy and the stairs are long. +8 min.");
         if (snd.battery && !loc.power) warn.push("No outlets. The speaker is on battery.");
-        if (G.sure + G.maybe * 0.4 < NEED) warn.push("You may not have enough guests yet (need " + NEED + ").");
+        if (fill(snd.q) < Math.min(NEED, loc.cap)) warn.push(snd.short + " only fills ~" + fill(snd.q) + " people. A bigger crowd drowns it out.");
+        if (loc.cap < NEED) warn.push(loc.short + " only fits " + loc.cap + ". Under " + NEED + " guests caps the night at FINE.");
+        else if (G.sure + G.maybe * 0.4 < NEED) warn.push("You may not have enough guests yet (need " + NEED + "). Under that caps the night at FINE.");
         if (wantLoc && G.place !== wantLoc) warn.push("You wanted " + wantLoc + ".");
         warn.forEach(w => el("div", { cls: "ap-bubble me", text: w }, screen));
         el("div", { cls: "ap-bubble", text: "It takes " + cost + " minutes to get everyone there." + (G.taxi ? " The cab saves you some." : "") + " " + fmtLeft(G.mins) + " until sunrise." }, screen);
@@ -742,8 +802,8 @@ RP.mg.register("afterParty", {
       const guests = Math.max(0, Math.min(loc.cap, base + G.guestDelta));
       let q = snd.q, sndNote = snd.name;
       if (snd.car && !loc.ground) { q = 1; sndNote += " (stuck at the curb)"; }
-      const cover = q * 6, over = Math.max(0, guests - cover);
-      const sound = clamp(q * 6 - Math.min(14, over * 0.8), 0, 30);
+      const cover = fill(q), over = Math.max(0, guests - cover);
+      const sound = clamp(fill(q) - Math.min(14, over * 0.8), 0, 30);
       const place = loc.vibe * 5;
       const crowd = 20 * clamp(guests / NEED, 0, 1);
       let spec = 0; const specs = [];
@@ -755,7 +815,7 @@ RP.mg.register("afterParty", {
       spec = Math.min(25, spec);
       const trouble = G.vibeDelta;
       const vibe = clamp(Math.round(sound + place + crowd + spec + trouble), 0, 100);
-      return { guests, vibe, parts: { sound: Math.round(sound), place: Math.round(place), crowd: Math.round(crowd), spec, trouble }, specs, sndNote };
+      return { guests, vibe, parts: { sound: Math.round(sound), place: Math.round(place), crowd: Math.round(crowd), spec, trouble }, specs, sndNote, cover, over, stuck: q !== snd.q };
     }
     function finishParty() {
       const f = computeFinal(); G.final = f;
@@ -771,6 +831,41 @@ RP.mg.register("afterParty", {
     }
 
     /* ---------------- end ---------------- */
+    /* one-line, specific advice for each weak part of the night (shown under that line of the breakdown) */
+    const TROUBLE = {
+      cops: "the cops cost you: keep a favor for \"talk your way out\", the only answer with no vibe loss. Hot places draw them.",
+      power: "the speaker died: pick a place with outlets or a plug-in PA, and keep $4 or 18% battery for the rescue.",
+      eddie: "Eddie's second payment: keep $6 or a favor in your pocket before you rent the PA.",
+      neighbor: "the neighbor in the robe: inviting her in is +5 vibe, apologizing is -4.",
+      cat: "the cat is a better DJ than you: let it play (+10 vibe)."
+    };
+    function partyTips(f) {
+      const loc = LOCS[G.place], snd = SNDS[G.sound], t = {};
+      if (f.guests < NEED) t.guests = loc.cap < NEED ? loc.short + " only fits " + loc.cap + ". Pick a place that holds " + NEED + ": the roof or Mina's loft."
+        : G.maybe > 0 ? G.maybe + " maybes never got the address and only count 40%. Use TEXT ADDRESS once you have a place."
+        : G.guestDelta < 0 ? "Trouble cost you guests. Keep a favor to talk your way out of the cops."
+        : "Not enough people. Work every contact (Twinkie, Marcus, the street) before you leave.";
+      if (f.parts.sound < 21) {
+        const up = ["speaker", "boombox", "car", "pa"].map(k => SNDS[k]).filter(x => x.q > snd.q && !(x.car && !loc.ground)), rec = up.find(x => fill(x.q) >= f.guests) || up[up.length - 1];
+        t.sound = f.stuck ? snd.short + " can't get up to " + loc.short + ". Use it at a street-level place, or pick another sound."
+          : f.over > 0 && rec ? snd.short + " only fills ~" + f.cover + " people and " + f.guests + " came. Try " + rec.short + " (fills ~" + fill(rec.q) + ")."
+          : rec ? snd.short + " tops out at " + f.cover + " / 30. " + rec.short + " scores higher." : "";
+      }
+      if (f.parts.place < 20) t.place = loc.short + " only gives " + f.parts.place + " / 25. Mina's loft (25) and the roof (20, plus a sunrise bonus) score higher.";
+      if (f.parts.spec < 10) {
+        const m = [];
+        if (!G.flags.twinkie) m.push("Twinkie hosting (+6, ask her to come)");
+        if (G.place !== "roof") m.push("sunrise from the roof (+8)"); else if (G.mins < 12) m.push("sunrise from the roof (+8): arrive with 12+ min left");
+        if (G.sound !== "boombox") m.push("Lou's mixtape (+5)");
+        t.extras = "Bonus points you missed: " + m.slice(0, 2).join(", ") + ".";
+      }
+      if (f.parts.trouble < 0 && G.bads.length) { const w = G.bads.slice().sort((a, b) => a.v - b.v)[0]; t.trouble = TROUBLE[w.id]; }
+      return t;
+    }
+    /* the card is built synchronously, so the tips can be attached to its rows right after endCard() returns */
+    function addTips(host2, lines) {
+      try { [...host2.root.querySelectorAll(".nk-end li")].forEach((li, i) => { const tip = lines[i] && lines[i][3]; if (!tip) return; li.classList.add("ap-tipped"); el("div", { cls: "ap-tip", text: tip }, li); }); } catch (e) { /* ignore */ }
+    }
     let resolveFn = () => {};
     function endRun(why) {
       if (G.over) return; G.over = true;
@@ -780,26 +875,34 @@ RP.mg.register("afterParty", {
         const f = G.final || computeFinal();
         const ok = (!needLoc || !!G.place) && (!needSnd || !!G.sound) && f.guests >= NEED;
         const guestScore = clamp(f.guests / NEED, 0, 1.25) / 1.25 * 100;
-        let score = Math.round(0.55 * guestScore + 0.45 * f.vibe);
+        const raw = clamp(Math.round(0.55 * guestScore + 0.45 * f.vibe), 0, 100);
+        let score = raw;
         if (!ok) score = Math.min(score, 55);
         score = clamp(score, 0, 100);
-        lines.push(["Guests", f.guests + " (need " + NEED + ")", f.guests >= NEED ? "y" : "n"]);
-        lines.push(["Sound", f.parts.sound + " / 30 - " + f.sndNote, ""]);
-        lines.push(["Place", f.parts.place + " / 25 - " + LOCS[G.place].short, ""]);
+        const tp = partyTips(f);
+        lines.push(["Guests", f.guests + " (need " + NEED + ")", f.guests >= NEED ? "y" : "n", tp.guests]);
+        if (f.guests < NEED && raw > score) lines.push(["Capped", "FINE (" + score + "), would be " + raw, "n", "Under " + NEED + " guests the night can't score higher, however good it sounded."]);
+        lines.push(["Sound", f.parts.sound + " / 30 - " + f.sndNote, "", tp.sound]);
+        lines.push(["Place", f.parts.place + " / 25 - " + LOCS[G.place].short, "", tp.place]);
         lines.push(["Crowd", f.parts.crowd + " / 20", ""]);
-        if (f.parts.spec) lines.push(["Extras", "+" + f.parts.spec + " (" + f.specs.join(", ") + ")", "y"]);
-        if (f.parts.trouble) lines.push(["Trouble", String(f.parts.trouble), f.parts.trouble < 0 ? "n" : "y"]);
+        if (f.parts.spec) lines.push(["Extras", "+" + f.parts.spec + " (" + f.specs.join(", ") + ")", "y", tp.extras]); else if (tp.extras) lines.push(["Extras", "none", "", tp.extras]);
+        if (f.parts.trouble) lines.push(["Trouble", String(f.parts.trouble), f.parts.trouble < 0 ? "n" : "y", tp.trouble]);
         lines.push(["Vibe", f.vibe + " / 100", ""]);
         lines.push(["Before sunrise", fmtLeft(G.mins) + " to spare", "y"]);
-        result = { ok, score, guests: f.guests, lines, title: ok ? "BEST AFTER-PARTY IN YEARS" : "THE AFTER-PARTY WAS... FINE", blurb: ok ? "The sun comes up on a roomful of people who should be sleeping. Twinkie takes a photo and says she will tell everyone. She will." : "It happened. But it wasn't what you needed: too few people, or too little vibe. The sun doesn't care either way." };
+        result = { ok, score, guests: f.guests, lines, title: ok ? "BEST AFTER-PARTY IN YEARS" : "THE AFTER-PARTY WAS... FINE", blurb: ok ? "The sun comes up on a roomful of people who should be sleeping. Twinkie takes a photo and says she will tell everyone. She will." : f.guests < NEED ? "It happened. But only " + f.guests + " people came and you needed " + NEED + ". Under that, the night caps at FINE. The sun doesn't care either way." : "It happened. But it wasn't what you needed: too few people, or too little vibe. The sun doesn't care either way." };
       } else {
         const guests = G.place ? Math.min(LOCS[G.place].cap, Math.round(G.sure + G.maybe * 0.4)) : 0;
         const score = Math.round(clamp((G.place ? 10 : 0) + (G.sound ? 10 : 0) + Math.min(20, guests / NEED * 20), 0, 40));
-        lines.push(["Place", G.place ? LOCS[G.place].short : "none", G.place ? "y" : "n"]); lines.push(["Sound", G.sound ? SNDS[G.sound].short : "none", G.sound ? "y" : "n"]); lines.push(["Guests lined up", guests + " (need " + NEED + ")", guests >= NEED ? "y" : "n"]);
+        lines.push(["Place", G.place ? LOCS[G.place].short : "none", G.place ? "y" : "n", G.place ? "" : "Ask Twinkie \"I need a spot\" early: Gus, Luz and Mina each have one."]);
+        lines.push(["Sound", G.sound ? SNDS[G.sound].short : "none", G.sound ? "y" : "n", G.sound ? "" : "Cal's speaker is free next door (5 min). Eddie's PA is the one that fills a crowd of " + NEED + "."]);
+        lines.push(["Guests lined up", guests + " (need " + NEED + ")", guests >= NEED ? "y" : "n", guests >= NEED ? "" : "Text the address once you have a place (maybes count 40%). Twinkie, Marcus and the street add more."]);
+        lines.push(["Sunrise", why === "sunrise-late" ? "beat you to the spot" : "caught you planning", "n", why === "sunrise-late" ? "The trip takes " + goCost() + " min, plus whatever the party eats. Check the clock before you hit GO." : "Every call costs 4-12 min. Skip the slow ones (mopping 20, Rafa 10) and leave " + goCost() + " for the trip."]);
         result = { ok: false, score, guests: 0, lines, title: "THE SUN CAME UP", blurb: why === "sunrise-late" ? "You got there, but the sun beat the party. Everybody has to go to work. Twinkie takes your picture anyway." : "Time ran out before you were ready. The sun rises on a street with a bodega, a cat, and a person holding a dead phone." };
       }
       sfx(result.ok ? "success" : "fail");
-      NK.endCard(host, { kicker: "after.Party | sunrise", title: result.title, ok: result.ok, score: result.score, lines: result.lines, blurb: result.blurb }).then(() => resolveFn({ ok: result.ok, score: result.score, guests: result.guests }));
+      const done = NK.endCard(host, { kicker: "after.Party | sunrise", title: result.title, ok: result.ok, score: result.score, lines: result.lines, blurb: result.blurb });
+      addTips(host, result.lines);
+      done.then(() => resolveFn({ ok: result.ok, score: result.score, guests: result.guests }));
     }
     bGo.addEventListener("click", () => { if (G.over || !((G.place || !needLoc) && (G.sound || !needSnd)) || G.phase !== "plan") return; sfx("click"); showGo(); });
     bLeave.addEventListener("click", () => { if (G.over) return; G.over = true; resolveFn({ ok: false, score: 0, guests: 0 }); });
@@ -820,14 +923,14 @@ RP.mg.register("afterParty", {
         } else { phone.style.height = ""; main.style.gridTemplateColumns = ""; NK.fit(scene.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 720); }
       }
       layout(); updateHud(); showHome();
-      setMsg("It's 4:10 AM and the party is dead. You need people, a place and a sound system before sunrise. Start with Twinkie.");
+      setMsg("It's 4:10 AM and the party is dead. You need " + NEED + " people, a place and a sound system before sunrise. Start with Twinkie.");
       let last = null;
       host.raf(tm => {
         if (G.over && !host.root.isConnected) return false;
         const now = tm / 1000; last = now;
         try { if (G.partyMode) drawPartyScene(now, progress()); else drawStreet(now); } catch (e) { /* ignore */ }
       });
-      try { host.root.__ap = { G, C, EVENTS, NEED, T0, showHome, showContact, doOpt, startParty, showGo, nextPartyEvent, finishParty, endRun, goCost }; } catch (e) { /* ignore */ }
+      try { host.root.__ap = { G, C, EVENTS, NEED, T0, showEvent, showHome, showContact, doOpt, startParty, showGo, nextPartyEvent, finishParty, endRun, goCost }; } catch (e) { /* ignore */ }
     });
   }
 });

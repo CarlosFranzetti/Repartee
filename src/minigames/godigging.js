@@ -2,7 +2,10 @@
    preview a loop, haggle a little and buy within budget.
    Params (all optional):
      { store: "Deep Cuts", budget: $, bins: [{label, records:[ids], mult?}],
-       want: {vibe?, genre?, maxPrice?, id?}, difficulty: 1..5, seed? }
+       want: {vibe?, genre?, maxPrice?, id?}, difficulty: 1..5, seed?,
+       wallet?: $ (all the money you carry), budgetNote?: "why the budget is lower than the wallet" }
+   A record's role tag (WARMUP/BUILDER/PEAK/CLOSER) shows once you LISTEN. Paying for a record that may not fit
+   the want (role unknown or wrong, other genre, over the price, BEAT copy) asks "pay anyway?" first.
    Result: { ok, score (0..100), bought: [recordIds], spent: $ }
    ok = you left with something that meets the want (or, with no want, bought anything).
    If you walk out without it (or press LEAVE) nothing is bought: { ok:false, bought:[], spent:0 }.
@@ -22,6 +25,17 @@ const CSS = `
 .dg-prev { display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--cyan); }
 .dg-prev .dk-bar { flex: 1; }
 .dg-empty { font-size: 22px; color: var(--muted); padding: 12px 4px; text-align: center; }
+.dk-hud .want .dg-def { font-size: 17px; color: var(--muted); margin-left: 8px; }
+.dk-hud .dg-cap { font-size: 17px; color: var(--muted); }
+.dg-role { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; font-size: 18px; line-height: 1.05; color: #d8d0f4; }
+.dg-role .lab { color: #8c84b8; }
+.dg-role .tag { font-family: var(--logo); font-size: 11px; padding: 3px 6px 2px; color: #0c0618; }
+.dg-role .unk { color: var(--amber); }
+.dg-role .ok { color: var(--ok); } .dg-role .no { color: #ff7a7a; }
+.dg-warn { background: #25101c; border: 1px solid #ff5a5a; border-radius: 3px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.dg-warn .ttl { font-size: 22px; color: #ff9a8a; line-height: 1; }
+.dg-warn ul { margin: 0; padding-left: 18px; font-size: 18px; line-height: 1.05; color: #f4ead0; }
+.dg-warn li { margin: 2px 0; }
 `;
 let cssDone = false;
 
@@ -40,6 +54,7 @@ const RAY_QUIPS = {
   preview: ["Listening's free. The opinions are extra.", "Needle's fresh. Mostly.", "One needle drop. Make it count."],
   warp: ["Hear that wobble? That's the 'beat' in 'beat up'.", "Warped. The record's doing yoga."],
   tooMany: ["This isn't a listening bar.", "You've heard half the store. Buy something."],
+  warn: ["Hold up. That one might not be what's on your list.", "Your money, your problem. But read your list first.", "I don't do refunds. Check the list."],
   accept: ["Fine. Take it before I change my mind.", "Deal. You drive a bad bargain. I mean a good one.", "Sold. Don't tell the other kids."],
   counter: ["Tell you what.", "Closer. Not quite.", "Meet me here and we both walk away annoyed."],
   insult: ["That's an insult. I'm insulted.", "I've seen kinder offers from a parking meter.", "Is that your offer or a typo?"],
@@ -81,6 +96,7 @@ RP.mg.register("goDigging", {
     const rnd = mulberry(seed);
     const store = p.store || "Deep Cuts";
     const budget = p.budget != null ? p.budget : [14, 12, 10, 9, 8][diff - 1];
+    const wallet = p.wallet != null && isFinite(+p.wallet) ? +p.wallet : null;   // the story's whole wallet, when the budget is a cap on it
     let want;
     if (p.want === false) want = null;
     else if (p.want && typeof p.want === "object") want = p.want;
@@ -154,8 +170,9 @@ RP.mg.register("goDigging", {
 
     /* ------------------------------------------------ state */
     const S = { bin: 0, cur: 0, target: 0, mode: "flip", cash: budget, bag: [], patience: [4, 3, 3, 2, 2][diff - 1], maxPatience: [4, 3, 3, 2, 2][diff - 1],
-      asks: 0, previews: 0, hag: null, say: "", sayT: 0, fly: null, prev: null, confirmLeave: false, done: false, saved: 0, lastIdle: 0, flips: 0 };
+      asks: 0, previews: 0, hag: null, warn: null, hintCopy: null, say: "", sayT: 0, fly: null, prev: null, confirmLeave: false, done: false, saved: 0, lastIdle: 0, flips: 0 };
     const idx = bins.map(() => 0);
+    const heard = new Set();   // record ids you have LISTENed to: only then do you know their role tag
     const cur = () => { const b = bins[S.bin]; return b.items[clamp(idx[S.bin], 0, b.items.length - 1)] || null; };
     const binItems = () => bins[S.bin].items;
 
@@ -163,8 +180,12 @@ RP.mg.register("goDigging", {
     const root = host.root; root.classList.add("dk");
     host.header("go.Digging", store.toUpperCase() + " · bins");
     const hud = el("div", { cls: "dk-hud" }, root);
-    const wantEl = el("div", { cls: "want", text: want ? DK.wantText(want) : "No list today. Just dig." }, hud);
+    const wantEl = el("div", { cls: "want" }, hud);
+    el("span", { text: want ? DK.wantText(want) : "No list today. Just dig." }, wantEl);
+    const helpTxt = want ? DK.wantHelp(want) : "";
+    if (helpTxt) el("span", { cls: "dg-def", text: helpTxt }, wantEl);   // what the role in the list means, in plain words
     const cashEl = el("span", { html: "CASH <b></b>" }, hud), bagEl = el("span", { html: "BAG <b></b>" }, hud);
+    if (wallet != null && wallet > budget + 0.004) el("span", { cls: "dg-cap", text: "BUDGET " + money(budget) + " of your " + money(wallet) + " (" + (p.budgetNote || "the rest stays in your wallet") + ")" }, hud);
     const cols = el("div", { cls: "dk-cols" }, root);
     const left = el("div", { cls: "dk-info" }, cols), right = el("div", { cls: "dk-info" }, cols);
     const stage = el("div", {}, left);
@@ -179,6 +200,7 @@ RP.mg.register("goDigging", {
     const info = el("div", { cls: "dk-info mg-panel" }, right);
     const iTitle = el("div", { cls: "dk-title" }, info);
     const iMeta = el("div", { cls: "dk-meta" }, info);
+    const iRole = el("div", { cls: "dg-role" }, info);
     const iGrade = el("div", { cls: "dk-note" }, info);
     const buyRow = el("div", { cls: "dk-buyrow" }, info);
     const iPrice = el("div", { cls: "dk-price" }, buyRow);
@@ -194,14 +216,21 @@ RP.mg.register("goDigging", {
     const hagRow = el("div", { cls: "dk-actions" }, hag);
     const hGo = el("button", { cls: "btn sm primary", type: "button", text: "MAKE OFFER" }, hagRow), hTake = el("button", { cls: "btn sm", type: "button", text: "TAKE IT" }, hagRow), hBack = el("button", { cls: "btn sm", type: "button", text: "NEVER MIND" }, hagRow);
     const hPat = el("div", { cls: "dk-meta" }, hag);
-    const keys = el("div", { cls: "dk-keys", style: "margin-top:2px", html: "<kbd>←</kbd><kbd>→</kbd> flip · <kbd>↑</kbd><kbd>↓</kbd> bins · <kbd>Enter</kbd> pull out / buy · <kbd>P</kbd> listen · <kbd>H</kbd> haggle · <kbd>?</kbd> ask Ray" }, right);
+    /* "are you sure?" panel, shown in place of the buy row when the record may not fit the list */
+    const warnBox = el("div", { cls: "dg-warn", role: "alert" }, info);
+    el("div", { cls: "ttl", text: "HOLD ON. THIS ONE MAY NOT COUNT." }, warnBox);
+    const warnList = el("ul", {}, warnBox);
+    const warnRow = el("div", { cls: "dk-actions" }, warnBox);
+    const wListen = el("button", { cls: "btn sm", type: "button", text: "▶ LISTEN FIRST" }, warnRow), wPay = el("button", { cls: "btn sm", type: "button", text: "PAY ANYWAY" }, warnRow), wBack = el("button", { cls: "btn sm primary", type: "button", text: "GO BACK" }, warnRow);
+    el("div", { cls: "dk-meta", text: "Esc or Enter: go back · Y: pay anyway · P: listen" }, warnBox);
+    const keys = el("div", { cls: "dk-keys", style: "margin-top:2px", html: "<kbd>←</kbd><kbd>→</kbd> flip · <kbd>↑</kbd><kbd>↓</kbd> bins · <kbd>Enter</kbd> pull out / buy · <kbd>P</kbd> listen (shows its role) · <kbd>H</kbd> haggle · <kbd>?</kbd> ask Ray" }, right);
     const msg = el("div", { cls: "mg-msg", "aria-live": "polite" }, root);
     const foot = el("div", { cls: "row" }, root);
     const bLeave = el("button", { cls: "btn", type: "button", text: "LEAVE" }, foot); el("div", { cls: "spacer" }, foot);
     const bAsk = el("button", { cls: "btn", type: "button", text: "ASK " + clerkName }, foot);
     const bDone = el("button", { cls: "btn primary", type: "button", text: "PAY & GO" }, foot);
     const blurOnMouse = b => b.addEventListener("click", e => { if (e.detail) b.blur(); });
-    [bPrev, bInspect, bNext, bListen, bHag, bBuy, hMinus, hPlus, hGo, hTake, hBack, bLeave, bAsk, bDone].forEach(blurOnMouse);
+    [bPrev, bInspect, bNext, bListen, bHag, bBuy, hMinus, hPlus, hGo, hTake, hBack, wListen, wPay, wBack, bLeave, bAsk, bDone].forEach(blurOnMouse);
 
     /* ------------------------------------------------ layers */
     let L = null, bgCv = null, fgCv = null, coneCv = null, binCv = {}, bagCv = null;
@@ -273,6 +302,8 @@ RP.mg.register("goDigging", {
     const sctx = () => cv.getContext("2d");
 
     /* ------------------------------------------------ say / ray */
+    const baseMsg = want ? (want.id ? "Find the one record you came for. Mind the condition." : want.vibe ? "Check a record's role tag (LISTEN) before you pay. Mind the condition and the price." : "Find a record that fits the list. Mind the condition and the price.") : "Dig around. Buy what sounds good.";
+    const resetMsg = () => { if (!S.done) msg.textContent = baseMsg; };
     let cancelType = null;
     const say = (text, o) => {
       if (cancelType) cancelType(); S.say = text; S.sayT = performance.now();
@@ -294,19 +325,23 @@ RP.mg.register("goDigging", {
     function startPreview() {
       const c = cur(); if (!c) return;
       if (S.prev && S.prev.copy === c) { stopPreview(); render(); return; }
-      stopPreview(0.1); S.previews++;
+      stopPreview(0.1); S.previews++; heard.add(c.rec.id);
       RP.sfx("needle");
       let loop = null;
       try { loop = RP.audio.recordLoop(c.rec); loop.start(); if (c.cond.id === "beat") loop.setFilter("lowpass", 1500); else if (c.cond.id === "vg") loop.setFilter("highpass", 90); } catch (e) { loop = { stop() {}, setBpm() {}, getBpm: () => 120 }; }
       S.prev = { loop, copy: c, t0: performance.now(), lastCrack: performance.now(), len: 9 };
       if (S.mode === "flip") setMode("inspect");
       if (S.previews > 5 && S.previews % 3 === 0) quip("tooMany"); else if (c.warped) quip("warp"); else quip("preview");
+      if (want && want.vibe) {
+        const rn = DK.rolesOf(c.rec).map(r => DK.ROLES[r].name), fits = (c.rec.vibe || []).includes(want.vibe), W = String(want.vibe).toUpperCase();
+        msg.textContent = "You hear it: " + (rn.join(" / ") || "no clear role") + ". " + (fits ? "That's the " + W + " on your list." : "Not the " + W + " on your list.");
+      }
       render();
     }
 
     /* ------------------------------------------------ modes + render DOM */
     function setMode(m) {
-      S.mode = m; if (m !== "inspect") { S.hag = null; }
+      S.mode = m; S.warn = null; if (m !== "inspect") { S.hag = null; }
       render();
     }
     const shortOf = b => b.short || ({ "DOLLAR BIN": "DOLLAR", "NEW ARRIVALS": "NEW", "BEHIND THE GLASS": "GLASS" }[b.label] || String(b.label).split(/\s+/)[0].slice(0, 9));
@@ -329,6 +364,16 @@ RP.mg.register("goDigging", {
         iMeta.innerHTML = "";
         const gr = el("span", { cls: "dk-grade", text: c.cond.name }, iMeta); gr.style.background = c.cond.col;
         iMeta.appendChild(document.createTextNode(c.rec.genre + " · ~" + c.rec.bpm + " BPM · " + "▮".repeat(c.rec.energy || 1)));
+        /* role tag: a mystery until you LISTEN */
+        iRole.innerHTML = ""; el("span", { cls: "lab", text: "ROLE" }, iRole);
+        if (!heard.has(c.rec.id)) el("span", { cls: "unk", text: "? press LISTEN to find out" }, iRole);
+        else {
+          const rs = DK.rolesOf(c.rec);
+          rs.forEach(r => { const tg = el("span", { cls: "tag", text: DK.ROLES[r].name }, iRole); tg.style.background = DK.ROLES[r].col; });
+          if (!rs.length) el("span", { text: "no set role" }, iRole);
+          const more = (c.rec.vibe || []).filter(v => !DK.ROLES[v]); if (more.length) el("span", { cls: "lab", text: more.join(" · ") }, iRole);
+          if (want && want.vibe) { const okv = (c.rec.vibe || []).includes(want.vibe); el("span", { cls: okv ? "ok" : "no", text: okv ? "FITS THE LIST" : "NOT A " + String(want.vibe).toUpperCase() }, iRole); }
+        }
         iGrade.innerHTML = "<b style='color:#8c84b8;font-weight:400'>SLEEVE</b> " + DK.ascii(c.sleeveNote) + "<br><b style='color:#8c84b8;font-weight:400'>VINYL</b> " + DK.ascii(c.vinylNote);
         const pr = priceOf(c);
         iPrice.innerHTML = (c.deal != null && c.deal < c.base ? "<s>" + money(c.base) + "</s>" : "") + money(pr) + (c.deal != null ? " <small style='font-size:17px;color:#9be15d'>HAGGLED</small>" : "");
@@ -336,7 +381,7 @@ RP.mg.register("goDigging", {
         iFact.style.display = insp && !S.hag ? "" : "none";
         iFact.textContent = insp ? (c.rec.fact || "") : "";
         if (insp) {
-          const extra = [(c.rec.vibe || []).join(", "), c.rec.rarity ? c.rec.rarity.toUpperCase() : "", "guide ~" + money(c.rec.price)].filter(Boolean).join(" · ");
+          const extra = [c.rec.rarity ? c.rec.rarity.toUpperCase() : "", "guide ~" + money(c.rec.price)].filter(Boolean).join(" · ");
           iFact.innerHTML = ""; iFact.appendChild(document.createTextNode((c.rec.fact ? c.rec.fact + " " : "")));
           el("div", { text: extra, cls: "dk-meta" }, iFact);
         }
@@ -357,7 +402,9 @@ RP.mg.register("goDigging", {
         if (!h.shown) { h.shown = true; host.timeout(() => { try { hag.scrollIntoView({ block: "nearest" }); } catch (e) { /* ignore */ } }, 30); }
         hPat.innerHTML = clerkName + "'S PATIENCE <span class='dk-pips'>" + Array.from({ length: S.maxPatience }, (_, i) => "<i class='" + (i < S.patience ? "" : "off") + "'></i>").join("") + "</span>";
       }
-      buyRow.style.display = inHag ? "none" : "";
+      const inWarn = !!S.warn && hasItem && S.warn.copy === c;
+      warnBox.style.display = inWarn ? "" : "none";
+      buyRow.style.display = inHag || inWarn ? "none" : "";
       const asks = 3 - S.asks; bAsk.textContent = "ASK " + clerkName + (asks > 0 ? "" : " (…)");
       const total = bins.reduce((a, x) => a + x.items.length, 0);
       bDone.textContent = "PAY & GO"; bDone.disabled = !S.bag.length;
@@ -367,10 +414,11 @@ RP.mg.register("goDigging", {
     /* ------------------------------------------------ flipping */
     function flip(d) {
       if (S.hag) return;
+      S.warn = null;
       if (S.mode === "inspect") { stopPreview(0.1); S.mode = "flip"; }
       const n = binItems().length; if (!n) return;
       const ni = clamp(idx[S.bin] + d, 0, n - 1); if (ni === idx[S.bin]) { RP.sfx("blip"); render(); return; }
-      idx[S.bin] = ni; S.target = ni; S.flips++;
+      idx[S.bin] = ni; S.target = ni; S.flips++; resetMsg();
       if (S.prev && S.prev.copy !== cur()) stopPreview(0.1);
       RP.sfx("click");
       if (RM) S.cur = S.target;
@@ -378,10 +426,10 @@ RP.mg.register("goDigging", {
       if (c && Math.random() < 0.2) { const gq = genreQuip(c.rec); if (c.cond.id === "beat" && Math.random() < 0.5) quip("beat"); else if (gq) quip(gq); }
       render();
     }
-    function jump(i) { const n = binItems().length; idx[S.bin] = clamp(i, 0, Math.max(0, n - 1)); S.target = idx[S.bin]; if (RM) S.cur = S.target; stopPreview(0.1); RP.sfx("click"); render(); }
+    function jump(i) { S.warn = null; resetMsg(); const n = binItems().length; idx[S.bin] = clamp(i, 0, Math.max(0, n - 1)); S.target = idx[S.bin]; if (RM) S.cur = S.target; stopPreview(0.1); RP.sfx("click"); render(); }
     function gotoBin(i) {
       i = (i + bins.length) % bins.length; if (i === S.bin && S.mode === "flip") return;
-      stopPreview(0.1); S.bin = i; S.mode = "flip"; S.hag = null; S.cur = S.target = idx[i]; RP.sfx("whoosh"); render();
+      stopPreview(0.1); S.bin = i; S.mode = "flip"; S.hag = null; S.warn = null; resetMsg(); S.cur = S.target = idx[i]; RP.sfx("whoosh"); render();
       if (isRay && bins.length === 3) say(i === 0 ? "Dollar bin. Mind the guy in the corner. He's been there since Tuesday." : i === 1 ? "New arrivals. Meaning somebody's kids cleared out the crates." : "Behind the glass. Look, don't breathe.");
       else say(bins[i].label + ". Take your time.");
     }
@@ -396,6 +444,7 @@ RP.mg.register("goDigging", {
       if (c.base < 2) { RP.sfx("error"); quip("tiny"); return; }
       if (S.patience <= 0) { RP.sfx("error"); quip("noPatience"); return; }
       if (c.haggled || c.deal != null) { RP.sfx("error"); say("We already shook on it."); return; }
+      S.warn = null;
       if (S.mode === "flip") setMode("inspect");
       const step = stepOf(c.base);
       S.hag = { offer: Math.max(step, Math.round(c.base * 0.7 / step) * step), step, counter: null, msg: "Name your price. Sticker says " + money(c.base) + "." };
@@ -416,10 +465,37 @@ RP.mg.register("goDigging", {
     function takeCounter() { const h = S.hag, c = cur(); if (!h || !c || h.counter == null) return; c.deal = h.counter; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); }
 
     /* ------------------------------------------------ buy */
-    function buy() {
+    /* why this copy might not count for the list. Genre, price and condition are visible; the role is only known after LISTEN. */
+    function fitIssues(c, pr) {
+      if (!want) return [];
+      const rec = c.rec, out = [];
+      if (want.id && rec.id !== want.id) out.push({ k: "id", t: "You came for " + DK.wantText({ id: want.id }, recOf(want.id)) + ". This isn't it." });
+      if (want.genre && !DK.matchWant(rec, { genre: want.genre }, null)) out.push({ k: "genre", t: "It's " + rec.genre + ". You want " + want.genre + "." });
+      if (want.maxPrice != null && pr > want.maxPrice + 1e-9) out.push({ k: "price", t: "It costs " + money(pr) + ". The list says under " + money(want.maxPrice) + "." });
+      if (c.cond.id === "beat") out.push({ k: "cond", t: "It's BEAT. A trashed copy doesn't count for the list." });
+      if (want.vibe) {
+        const W = String(want.vibe).toUpperCase();
+        if (!heard.has(rec.id)) out.push({ k: "unheard", t: "You haven't listened to it, so you can't know it's a " + W + ". LISTEN shows its role tag." });
+        else if (!(rec.vibe || []).includes(want.vibe)) out.push({ k: "role", t: "You heard it: " + (DK.rolesOf(rec).map(r => DK.ROLES[r].name).join(" / ") || "no clear role") + ", not a " + W + "." });
+      }
+      return out;
+    }
+    function openWarn(c, pr, iss) {
+      S.warn = { copy: c, pr, iss };
+      warnList.innerHTML = ""; iss.forEach(i => el("li", { text: i.t }, warnList));
+      wListen.style.display = iss.some(i => i.k === "unheard") ? "" : "none";
+      wPay.textContent = "PAY ANYWAY " + money(pr);
+      RP.sfx("error"); quip("warn");
+      render();
+      host.timeout(() => { try { warnBox.scrollIntoView({ block: "nearest" }); wBack.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }, 30);
+    }
+    function closeWarn() { if (!S.warn) return; S.warn = null; render(); }
+    function buy(force) {
       const c = cur(); if (!c || S.done) return;
       const pr = priceOf(c);
       if (S.cash < pr - 1e-9) { RP.sfx("error"); say("You're " + money(pr - S.cash) + " short. " + DK.pick(RAY_QUIPS.short)); return; }
+      if (force !== true) { const iss = fitIssues(c, pr); if (iss.length) { openWarn(c, pr, iss); return; } }
+      S.warn = null; resetMsg();
       S.cash = Math.round((S.cash - pr) * 100) / 100; stopPreview(0.1);
       const flyCv = DK.sleeveCanvas(c.rec, c, L.S);
       const saved = Math.max(0, c.base - pr); S.saved += saved;
@@ -434,19 +510,27 @@ RP.mg.register("goDigging", {
     }
 
     /* ------------------------------------------------ hints */
+    function locate(c) { for (let bi = 0; bi < bins.length; bi++) { const ci = bins[bi].items.indexOf(c); if (ci >= 0) return { bi, ci }; } return null; }
     function askRay() {
       if (S.asks >= 3) { RP.sfx("error"); say("Three questions. That's my limit. Use your ears."); return; }
       S.asks++; RP.sfx("blip");
-      const cands = [];
-      bins.forEach((b, bi) => b.items.forEach((c, ci) => { if (want && DK.matchWant(c.rec, want, c.base) && c.cond.id !== "beat") cands.push({ bi, ci, c }); }));
       if (!want) { say("Dig for the weird stuff. If it's cheap and heavy, check the guide price."); render(); return; }
-      if (!cands.length) { say("Honestly? I don't have what you want. I don't have anything anyone wants."); render(); return; }
-      const best = cands.sort((a, b) => a.c.base - b.c.base)[0];
-      const gen = best.c.rec.genre;
-      if (S.asks === 1) say(want.vibe ? "A " + want.vibe + "? Try the " + bins[best.bi].label.toLowerCase() + ". Don't say I never gave you anything." : "Try the " + bins[best.bi].label.toLowerCase() + ", genius.");
-      else if (S.asks === 2) say("It's filed under " + gen + ". Flip to it. Your fingers can read, can't they?");
-      else { say("Slot " + (best.ci + 1) + " in the " + bins[best.bi].label.toLowerCase() + ". That's the last freebie."); }
-      if (S.asks >= 2 && S.bin !== best.bi) gotoBin(best.bi);
+      /* all three answers point at the SAME copy: the cheapest one that really fits the list (role, genre, price, not trashed),
+         preferring what you can afford. Hint 1 = which bin, 2 = what to look for in it, 3 = which slot. */
+      let t = S.hintCopy && locate(S.hintCopy) ? S.hintCopy : null;
+      if (!t) {
+        const fits = [];
+        bins.forEach(b => b.items.forEach(c => { if (DK.matchWant(c.rec, want, c.base) && c.cond.id !== "beat") fits.push(c); }));
+        const afford = fits.filter(c => c.base <= S.cash + 1e-9);
+        t = (afford.length ? afford : fits).sort((a, b) => a.base - b.base)[0] || null;
+        S.hintCopy = t;
+      }
+      if (!t) { say("Honestly? I don't have what you want. I don't have anything anyone wants."); render(); return; }
+      const at = locate(t), bin = bins[at.bi], bl = "the " + String(bin.label).toLowerCase(), n = bin.items.length;
+      if (S.asks >= 2 && S.bin !== at.bi) gotoBin(at.bi);
+      if (S.asks === 1) say((want.vibe ? "A " + want.vibe + "? Start in " + bl + "." : "Start in " + bl + ", genius.") + " Don't say I never gave you anything.");
+      else if (S.asks === 2) say("Same bin: " + bl + ". It's a " + t.rec.genre + " record, about " + t.rec.bpm + " BPM. The tabs in a bin are genres.");
+      else say("Slot " + (at.ci + 1) + " of " + n + " in " + bl + ". That's the last freebie.");
       render();
     }
 
@@ -505,7 +589,8 @@ RP.mg.register("goDigging", {
       if (!S.bag.length) { quit(); return; }
       if (!ok && !S.confirmLeave) {
         S.confirmLeave = true; RP.sfx("error");
-        const missing = want ? "You haven't got " + (want.id ? "the record you came for" : "a " + (want.vibe || want.genre || "record") + " yet") + ". Press again to leave anyway; it all goes back." : "";
+        const inBag = S.bag.map(b => b.rec.title + (b.copy.cond.id === "beat" ? " (BEAT)" : heard.has(b.rec.id) && DK.rolesOf(b.rec).length ? " (" + DK.rolesOf(b.rec).map(r => DK.ROLES[r].name).join("/") + ")" : "")).join(", ");
+        const missing = want ? "Nothing in the bag fits the list (" + DK.wantText(want).replace(/^WANT: /, "") + "). You have: " + inBag + ". Press again to leave anyway; it all goes back." : "";
         msg.textContent = missing; say("Sure you're done? Not what you came for."); bDone.textContent = "LEAVE ANYWAY"; return;
       }
       if (!ok) { quit(); return; }
@@ -527,7 +612,8 @@ RP.mg.register("goDigging", {
 
     /* ------------------------------------------------ buttons + keys + pointer */
     bPrev.addEventListener("click", () => flip(-1)); bNext.addEventListener("click", () => flip(1)); bInspect.addEventListener("click", inspectToggle);
-    bListen.addEventListener("click", startPreview); bHag.addEventListener("click", startHaggle); bBuy.addEventListener("click", buy);
+    bListen.addEventListener("click", startPreview); bHag.addEventListener("click", startHaggle); bBuy.addEventListener("click", () => buy());
+    wListen.addEventListener("click", () => { closeWarn(); startPreview(); }); wPay.addEventListener("click", () => buy(true)); wBack.addEventListener("click", closeWarn);
     hMinus.addEventListener("click", () => adjustOffer(-1)); hPlus.addEventListener("click", () => adjustOffer(1));
     hGo.addEventListener("click", makeOffer); hTake.addEventListener("click", takeCounter); hBack.addEventListener("click", () => { S.hag = null; render(); });
     cv.addEventListener("pointerdown", e => {
@@ -545,6 +631,11 @@ RP.mg.register("goDigging", {
         if (k === "Enter" && !onBtn) { e.preventDefault(); S.hag.counter != null ? takeCounter() : makeOffer(); return; }
         if (k === "Escape") { e.preventDefault(); S.hag = null; render(); return; }
         return;
+      }
+      if (S.warn) {
+        if (k === "Escape" || (k === "Enter" && !onBtn)) { e.preventDefault(); closeWarn(); return; }
+        if (k === "y" || k === "Y") { e.preventDefault(); buy(true); return; }
+        if (k === "p" || k === "P" || (k === " " && !onBtn)) { e.preventDefault(); closeWarn(); startPreview(); return; }
       }
       if (k === "ArrowLeft") { e.preventDefault(); flip(-1); }
       else if (k === "ArrowRight") { e.preventDefault(); flip(1); }
@@ -655,7 +746,7 @@ RP.mg.register("goDigging", {
     window.addEventListener("resize", onResize); host.cleanup(() => window.removeEventListener("resize", onResize));
     render();
     say(isRay ? DK.pick(RAY_QUIPS.intro) : "Take your time. Bins are alphabetical, ish.");
-    msg.textContent = want ? (want.id ? "Find the one record you came for. Mind the condition." : "Find a record that fits the list. Mind the condition and the price.") : "Dig around. Buy what sounds good.";
+    msg.textContent = baseMsg;
     if (p.debug) window.__dg = { S, bins, want, budget, cur: () => cur() };
 
     return new Promise(resolve => {

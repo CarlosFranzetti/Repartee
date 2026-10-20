@@ -11,6 +11,7 @@
        scams: n                  how many listings are lemons (default by difficulty, always leaves >= 1 good unit)
        flaws: [...]              scripted scenario: one flaw key per listing ("ok" | "cosmetic" | a lemon flaw). Prices are then
                                  fixed (not rolled), so the story can quote the tag: AT-LP120-USB asks $215.
+       asks: { gearId: $ }       scripted scenario only: pin a listing's tag; its haggle floor scales with it (Act 3: CDJ-900 asks $280).
        difficulty: 1..5, seed, arcade }
    Tags are ASKING prices before haggling. Turntables, decks and monitors are sold as a PAIR; the UI says so.
    Result: { ok, score (0..100), bought: gearId|null, paid: $ }
@@ -168,6 +169,8 @@ function buildScenario(p) {
       L.ask = boutique ? g.price : r5(fair * (1.16 + roll(rnd(), 0.9) * 0.1));
       L.floor = boutique ? g.price : r5(fair * floorK);
     }
+    const pin = forced && p.asks ? Math.round(+p.asks[g.id]) : 0;
+    if (pin > 0) { L.floor = r5(L.floor * pin / L.ask); L.ask = pin; }
     L.askNow = L.ask; L.floor0 = L.floor; L.ask0 = L.ask;
     L.patience = [5, 4, 4, 3, 3][diff - 1];
     L.status = "open"; L.agreed = null; L.lastOffer = null; L.probes = {}; L.notes = {}; L.seen = false; L.called = false; L.powered = false; L.cosLev = false;
