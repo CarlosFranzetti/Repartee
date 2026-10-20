@@ -40,10 +40,6 @@ level page starts you with a sensible setup (records, cash, gear for that point 
 sixteen mini-games, and ends with a link to the next level if you've unlocked it. The full game carries
 your crate, cash and fans from level to level.
 
-**On claude.ai:** [the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N) is also published as an artifact.
-
-**Analytics:** the hosted pages load Vercel Web Analytics (see `tools/build.mjs`). Offline copies and the claude.ai artifact do not.
-
 **Offline:** open `dist/index.html` (full game) or `dist/level1.html` … `dist/level5.html` in a browser.
 Each is a single self-contained file that works from `file://` or hosted anywhere. On a phone, landscape
 gives the full screen; portrait puts the controls under the scene.
@@ -76,37 +72,9 @@ Mini-games:
 
 On a portrait phone the verbs and inventory drop under the scene at touch size.
 
-## Develop
-
-```
-node tools/build.mjs                 # index.html (dev, one <script> per file), dist/index.html + dist/artifact.html (full game),
-                                     # dist/level1.html … dist/level5.html (each level on its own)
-node tests/full.mjs                  # plays every level's walkthrough, then the whole game in one save
-node tests/run.mjs smoke             # boots every level and lists the mini-games
-node tests/perf.mjs                  # frame cost of every room (budget 8 ms)
-node tests/run.mjs walk act2 --act 2 # one level's walkthrough (add --page dist/level2.html for its level page)
-node tests/run.mjs shot a2_couch out.png --act 2
-node tests/run.mjs mg crowdRead out.png
-node tools/screens.mjs               # regenerates the screenshots in docs/screenshots/
-node tools/blindplay.mjs serve --level 1 --port 7101 --out runs/level1   # play a level one command at a time
-                                     # through the real UI while recording video (commands: see the file header)
-node tools/blindplay-cut.mjs runs/level1 level1.mp4                      # cut the paused time out of that video
-```
-
-### Deploy to Vercel
-
-The repo includes a `vercel.json`: Vercel runs `node tools/build.mjs` (no dependencies to install) and
-serves `dist/`, so `/` is the full game and `/level1` … `/level5` are the levels on their own. Import the GitHub repo at
-vercel.com (framework preset "Other"; the settings come from `vercel.json`) or run `npx vercel` in the
-repo root. Pushes to the production branch (`main` by default) update the live site; other branches
-get preview URLs.
-
 Docs for contributors: [`docs/ENGINE_API.md`](docs/ENGINE_API.md), [`docs/STORY.md`](docs/STORY.md),
 [`docs/STYLE.md`](docs/STYLE.md), [`docs/MINIGAMES.md`](docs/MINIGAMES.md), [`docs/PAINTKIT.md`](docs/PAINTKIT.md),
 research notes in [`docs/research/`](docs/research/).
-
-Layout: `src/core` (engine, characters, lighting/FX, audio, paint kit), `src/data` (records, gear,
-lore, recurring cast), `src/minigames`, `src/acts/act1..act5`, `src/game.js` (title, menus, credits).
 
 ## A note on real people and places
 
