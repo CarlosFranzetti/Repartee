@@ -22594,7 +22594,7 @@ async function depositCans(S, item) {
   RP.money(val);
   if (first) {
     S.f.a1_cansDone = true;
-    await RP.lines(["$2.40. That's forty-eight cans of other people's good time.", "Plus the five from the pizza box... that's rent money. Well. A rent-adjacent amount."]);
+    await RP.lines(["$2.40. That's forty-eight cans of other people's good time.", S.f.a1_pizza ? "Plus the five from the pizza box... that's rent money. Well. A rent-adjacent amount." : "It's not rent money. It's not even rent's lunch money."]);
     if (S.money < 11 && !S.f.a1_delivered) await RP.lines(["A subway to Midtown and back is six bucks. Then Deep Cuts. Then home. I need more than this.", "Smitty was looking for someone to drop a package at Sal's. Twenty bucks."]);
   } else await RP.say("Another $1.50. The block has an unlimited supply of cans and a limited supply of dignity.");
 }
