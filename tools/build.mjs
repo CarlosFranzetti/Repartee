@@ -29,10 +29,14 @@ const outFile = outIdx >= 0 ? path.resolve(args[outIdx + 1]) : null;
 const FULL_GAME_URL = "https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N";
 const SITE_URL = "https://repartee-umber.vercel.app";
 const LEVELS = ["Bedroom DJ", "Underground Hustler", "Club DJ", "Touring DJ", "Superstar DJ"];
+// levels that have their own claude.ai artifact; artifact builds link there, and to the Vercel page for the rest
+const LEVEL_ARTIFACTS = { 1: "https://claude.ai/artifact/4m4u3sHMgVhkqURBBfiFtY", 2: "https://claude.ai/artifact/QMwvpWyeeqKM3HgfgP4EhF" };
+// artifact: true marks a claude.ai build. Each artifact keeps its own browser storage, so progress from another page
+// can't be seen there and its level pages are never locked.
 const site = (level, artifact) => ({
-  level: level || null, names: LEVELS, newTab: !!artifact,
+  level: level || null, names: LEVELS, newTab: !!artifact, artifact: !!artifact,
   full: artifact ? FULL_GAME_URL : "index.html",
-  pages: LEVELS.map((_, i) => artifact ? SITE_URL + "/level" + (i + 1) : "level" + (i + 1) + ".html")
+  pages: LEVELS.map((_, i) => artifact ? LEVEL_ARTIFACTS[i + 1] || SITE_URL + "/level" + (i + 1) : "level" + (i + 1) + ".html")
 });
 const DESC = "A pixel-art point-and-click DJ adventure. From broke-ass bedroom DJ to festival headliner, one bad decision at a time.";
 

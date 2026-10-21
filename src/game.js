@@ -18,7 +18,7 @@ const link = (href, text, parent, cls) => { const a = el("a", { cls, href, text 
    pages only replay levels you've finished; Level 1's page is always open, since it is the start of the game */
 const finishedLevels = () => (store.get("reparte.unlocked") || []).map(n => n - 1).filter(n => n >= 1);
 const isFinished = n => finishedLevels().includes(n);
-const pageOpen = n => n === 1 || isFinished(n);
+const pageOpen = n => n === 1 || !!(SITE && SITE.artifact) || isFinished(n); // claude.ai artifacts can't see progress made elsewhere, so they never lock
 /* "LEVELS 1 2 3 4 5 · FULL GAME" under the title menu (the current level and locked levels are not links) */
 function levelNav(box) {
   const p = el("p", { cls: "small levelnav" }, box);
