@@ -46,7 +46,7 @@ const platform = [
   ["answers", [2]], ["use", "hot:a4_tmachine"], ["expect", "RP.has('a4_ticket')", "ticket, zones ABC"],
   ["use", "hot:a4_train"], ["expect", "!S.f.a4_trainDone", "not validated"],
   ["use", "hot:a4_validator"], ["expect", "S.f.a4_validated", "validated"],
-  ["mg", { ok: true, score: 82, minutesLate: 0 }], ["use", "hot:a4_train"],
+  ["answers", [0]], ["use", "hot:a4_train"],
   ["expect", "S.room === 'a4_berlin_street' && S.f.a4_trainDone && !S.f.a4_trainFailed", "made the last train"]
 ];
 const street = [
@@ -84,7 +84,7 @@ const hotel = [
 
 RP.walkthroughs.act4 = [].concat(A4.wtStudio || [], jfk, baggage, security, plane, platform, street, door, halle, hotel);
 
-/* unhappy paths: failing mini-games never dead-end; the taxi is the fallback; wrong answers just repeat */
+/* unhappy paths: failing mini-games never dead-end, the bad train choice ends in the taxi; the taxi is the fallback; wrong answers just repeat */
 RP.walkthroughs.act4fail = [
   ["use", "hot:a4_laptop"],
   ["pickup", "hot:a4_plant"], ["pickup", "hot:a4_rbox"],
@@ -94,7 +94,7 @@ RP.walkthroughs.act4fail = [
   ["mg", { ok: false, score: 10 }], ["mg", { ok: false, score: 12 }], ["mg", { ok: false, score: 20 }],     // three failures: forced through, never stuck
   ["use", "hot:a4_sampler"], ["expect", "S.f.a4_track", "forced through after three failed tries"],
   ["answers", [0]], ["use", "hot:a4_hole", "phone"], ["run", async (S, RP) => { RP.test.answers.length = 0; }],
-  ["answers", [1]], ["mg", { ok: false, score: 5 }], ["mg", { ok: false, score: 5 }],                          // followers fails twice -> fallback
+  ["answers", [1, 0]],                                                                                          // title, then the dullest release week
   ["mg", { ok: false, score: 20 }], ["mg", { ok: false, score: 20 }], ["mg", { ok: false, score: 20 }],
   ["use", "hot:a4_laptop"], ["expect", "S.f.a4_deal && S.f.a4_fee >= 350", "weak deal, but a deal"],
   ["pickup", "hot:a4_bag"],
@@ -103,7 +103,7 @@ RP.walkthroughs.act4fail = [
   ["run", async (S, RP) => { S.f.a4_bagBack = true; S.f.a4_trainDone = false; }],
   ["goto", "a4_ber_platform", 52, 232],
   ["answers", [2]], ["use", "hot:a4_tmachine"], ["use", "hot:a4_validator"],
-  ["mg", { ok: false, score: 10, minutesLate: 60 }], ["use", "hot:a4_train"],
+  ["answers", [1]], ["use", "hot:a4_train"],
   ["expect", "S.room === 'a4_berlin_street' && S.f.a4_trainFailed && S.f.a4_late > 0", "missed the train: taxi, late, still in Berlin"],
   ["use", "hot:a4_to_halle"],
   ["answers", [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2, 2]], ["talk", "hot:a4_sven"], ["expect", "S.f.a4_quizDone", "Sven let me in after wrong answers"],

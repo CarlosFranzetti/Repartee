@@ -1,6 +1,6 @@
 /* Act 4 — a4_studio: apartment 4C, upgraded. Technics MK7s, BM5 monitors, a sampler, Lou on the couch.
    Threads: email (laptop) -> Ray's box + passport (Gerald) -> Lou (pipe hole) -> sample (white label on the deck)
-   -> mak.Tracks (sampler) -> emotional play -> cover photo (phone + hole) -> release (laptop) -> get.Followers
+   -> mak.Tracks (sampler) -> emotional play -> cover photo (phone + hole) -> release (laptop) -> release week
    -> promoter.Talk (Ingrid on video) -> pack the bag -> leave for JFK.
    Flags: a4_email a4_rayBox a4_passport a4_louCalled a4_louIn a4_louTold a4_louOK a4_sampled a4_track a4_trackScore
           a4_photo a4_released a4_viral a4_deal a4_dealScore a4_fee a4_packed a4_dim */
@@ -297,14 +297,17 @@ async function release(S) {
   S.f.a4_released = true; RP.relight(); RP.setClock("FRI 9:12 AM");
   RP.sfx("success");
   await RP.lines(["Upload. Publish. Done.", "My first release. On my own label. In my own apartment. Next to a pizza box. (Someone else's pizza box.)"]);
-  // get.Followers: the week after
+  // the release week
+  const wk = await RP.choose(["Email every blog, radio show and group chat I know", "Post a clip a day, each dumber than the last", "Hand the socials to Marcus, plus three"]);
   await RP.fadeTo(1, 500);
   await RP.say("One week of promotion later.", "nar");
+  await RP.card({ kicker: "RELEASE WEEK", title: "PHR-001", sub: "Pipe Hole Records, day 1 to day 7", body: [
+    ["Mon: 41 emails sent, 3 answered. One says \"cute.\" It's from Mom.", "Mon: a clip of me nodding at the decks. 212 views. 200 are me.", "Mon: Marcus makes a list. It has a section called \"cat.\""][wk],
+    ["Wed: a blog in Leipzig posts it with the caption \"fine.\" It's the nicest thing a Leipzig blog has said all year.", "Wed: a clip of me explaining the pipe hole. 3,000 views. Comments: \"is this a bit.\"", "Wed: Marcus posts it as \"the song that Aunt Denise cried to.\" Aunt Denise has not heard it."][wk],
+    ["Sun: the group chats do the rest. Slowly. Politely. Mostly in German.", "Sun: a clip of me falling off a stool in time with the beat. It gets out of hand.", "Sun: Marcus tags everyone he has ever met. Everyone he has ever met tags someone back."][wk]
+  ], button: "CLOSE" });
   await RP.fadeTo(0, 500);
-  const before = S.followers;
-  const res = await A4.tryMg("getFollowers", { days: 7, start: before, goal: before + 800, difficulty: 2 }, S, { max: 2, fallbackScore: 70, onFail: () => RP.say("Slow week. The algorithm woke up on the wrong side of the bed. Let's go again.") });
-  const gained = res.gained != null ? Math.max(0, res.gained) : (800 + Math.round((res.score || 50) * 38));
-  RP.followers(gained);
+  RP.followers([2400, 3400, 4400][wk]);
   S.f.a4_viral = true;
   await RP.lines(["It's... working?", "A clip of a cat falling off a couch, set to my remix. 4 million views.", "I don't even own a cat."]);
   await RP.phone([
@@ -501,7 +504,7 @@ A4.wtStudio = [
   ["mg", { ok: true, score: 82, track: { name: "NYC 93 (Pipe Hole Remix)", bpm: 122 } }],
   ["use", "hot:a4_sampler"], ["expect", "S.f.a4_track", "track made"],
   ["answers", [0]], ["use", "hot:a4_hole", "phone"], ["run", async (S, RP) => { RP.test.answers.length = 0; }], ["expect", "RP.has('a4_photo')", "cover photo"],
-  ["mg", { ok: true, score: 80, gained: 6200 }], ["mg", { ok: true, score: 74, deal: { fee: 1800 } }],
+  ["mg", { ok: true, score: 74, deal: { fee: 1800 } }],
   ["use", "hot:a4_laptop"], ["expect", "S.f.a4_released && S.f.a4_viral && S.f.a4_deal", "released, spread, booked"],
   ["use", "hot:a4_door"], ["expect", "S.room === 'a4_studio'", "not leaving without the bag"],
   ["pickup", "hot:a4_bag"], ["expect", "RP.has('a4_bag')", "bag packed"],

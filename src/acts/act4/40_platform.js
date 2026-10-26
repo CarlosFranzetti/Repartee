@@ -1,5 +1,5 @@
 /* Act 4 — a4_ber_platform: Berlin airport station, 11:57 PM. The last express leaves at 12:07.
-   Buy a ticket (zones ABC), validate it (a ticket that isn't stamped is just paper), board -> last.Train (airport mode).
+   Buy a ticket (zones ABC), validate it (a ticket that isn't stamped is just paper), board -> choose the route.
    Flags: a4_ticket a4_validated a4_trainDone a4_trainFailed a4_late a4_platIntro */
 (function () {
 "use strict";
@@ -103,18 +103,18 @@ async function boardTrain(S) {
   await RP.walkTo(240, 224, "back");
   RP.setClock("SUN 12:07 AM");
   await RP.lines(["The doors close. The train hums. It's 12:07 exactly. The Germans are a precise people.", "@a4_pa FEX nach Berlin Hauptbahnhof. Nächster Halt: Ostkreuz. Next stop: Ostkreuz. Please mind the gap and your record bag."]);
-  const res = await RP.mg.play("lastTrain", { from: "BER Airport", to: "Halle Neun, Berlin", fromStation: "Airport Rail", start: 7, lineNames: { rex: "FEX" }, carryName: "a bag of records", intro: "The FEX is pulling out. Pick your line.", battery: 18, money: Math.round(S.money), carrying: "records", mode: "airport", difficulty: 2 });
-  const r = res || { ok: false };
-  const ok = !!r.ok && !(r.minutesLate > 25);
-  S.f.a4_trainDone = true; S.f.a4_late = Math.max(0, Math.round(r.minutesLate || (ok ? 0 : 40)));
+  await RP.lines(["Phone: 18%. Bag: heavy. Halle Neun: somewhere east, across a city I have never seen.", "The FEX map says change at Ostkreuz for the last S-Bahn east, 12:31. The phone says a night bus beats it by six minutes. The phone is at 18%."]);
+  const i = await RP.choose(["Change at Ostkreuz, like the map says", "Trust the phone and the night bus", "Stay on to the Hauptbahnhof and find a taxi"]);
+  const ok = i === 0;
+  S.f.a4_trainDone = true; S.f.a4_late = ok ? 0 : 40;
   if (ok) {
-    await RP.lines(["Door-to-door in an hour. A train, a tram, a night bus and a sprint. The city blurs past, a smear of neon and cranes.", "It's 12:58 AM. I'm in Berlin, I'm breathing, and my bag is still with me. Nothing has been lost."]);
+    await RP.lines(["Ostkreuz, 12:29. I run the stairs with a bag of records and the grace of a dropped piano. The S-Bahn closes its doors behind me, politely.", "It's 12:58 AM. I'm in Berlin, I'm breathing, and my bag is still with me. Nothing has been lost."]);
     RP.setClock("SUN 12:58 AM");
     await RP.goto("a4_berlin_street", 40, 236, "right");
     return;
   }
   S.f.a4_trainFailed = true;
-  await RP.lines(["The doors close on the wrong train. It's the one that goes to the right place at the wrong time.", "I end up at a dead-end station at one in the morning. An old man points. \"Taxi.\" He holds up two fingers. Sixty-five dollars.",
+  await RP.lines([i === 1 ? "The night bus comes at 12:44, which is thirteen minutes after the S-Bahn left. The phone dies at 12:46, mid-sentence." : "The Hauptbahnhof at half past midnight is huge, bright and closed to anyone with a plan.", "I end up at a dead-end stop at one in the morning. An old man points. \"Taxi.\" He holds up two fingers. Sixty-five dollars.",
     "Taxi it is. It's late. It's expensive. It's Berlin. I'll get there. Late."]);
   if (S.money >= 65) { RP.money(-65); await RP.say("Sixty-five dollars. The meter runs like it's competing in a race. I pay in a state of shock."); }
   else await RP.say("The driver looks at my wallet. He looks at my record bag. \"Okay. For the bag.\" He drives. Germans are weird about records.");
