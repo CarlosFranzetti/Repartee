@@ -10,8 +10,8 @@
      theme: "house"|"techno"|"festival"|"loft"|"empty-bar" (the room)   seed   arcade: bool
    Result: { ok, score 0-100, scenario, floor (0-100 at the end), avgFloor, mixes: {clean, smooth, sloppy, wreck},
              deadAir (game minutes), events: n handled, meter (second gauge 0-100), reason }
-   ok = score >= 58, at least one record played, the final floor >= 70% of the goal, and the set wasn't cut short.
-   reason: "" | "score" | "floor" | "no-records" | the cut-short line. A failed set's score is capped below 58. */
+   ok = score >= 58, at least one record played, no early fade-out, the final floor >= 70% of the goal, and the set wasn't cut short.
+   reason: "" | "score" | "floor" | "early" (faded out with a fifth of the slot left) | "no-records" | the cut-short line. A failed set's score is capped below 58. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -740,8 +740,9 @@ RP.mg.register("setTime", {
         const pm = clamp(G.pat / 100, 0, 1), pw = R.key === "follow-legend" ? clamp(G.pat / 60, 0, 1) : pm;
         let score = Math.round(100 * (0.35 * fs + 0.2 * ms + 0.2 * es + 0.15 * ts + 0.1 * pw));
         /* a set that fails can't show a passing number: cap it, and say why on the card */
-        const why = G.failed ? "fail" : none ? "no-records" : floorLow ? "floor" : "";
-        score = clamp(Math.min(score, { fail: 45, "no-records": 15, floor: 55 }[why] || 100), 0, 100);
+        const bailed = kind === "early" && G.fade.rem > Math.max(5, R.M * 0.2);
+        const why = G.failed ? "fail" : none ? "no-records" : bailed ? "early" : floorLow ? "floor" : "";
+        score = clamp(Math.min(score, { fail: 45, "no-records": 15, early: 50, floor: 55 }[why] || 100), 0, 100);
         const ok = !why && score >= 58;
         const count = lbl => G.mixes.filter(m => m.label === lbl).length;
         const res = { ok, score, scenario: R.key, floor: Math.round(finalF), avgFloor: Math.round(avgF), mixes: { clean: count("clean"), smooth: count("smooth"), sloppy: count("sloppy"), wreck: count("wreck") }, deadAir: Math.round(G.deadMin * 10) / 10, events: G.evLog.length, meter: Math.round(G.pat), reason: G.failed || why || (ok ? "" : "score"), minutes: R.M };
@@ -758,6 +759,7 @@ RP.mg.register("setTime", {
         const lines = [], dim = [];
         if (G.failed) lines.push(G.failed);
         else if (p.why === "no-records") lines.push({ opener: "You never played a record. The house tape did the whole hour, and nobody's paying the tape.", "follow-legend": "You never played a record. " + R.legendShort + "'s last one ran out on its own.", overrun: "You never got a record on. " + R.legendShort + " finally stepped back, and the decks just sat there.", closing: "You never played a record." }[R.key]);
+        else if (p.why === "early") lines.push("You faded out with " + Math.round(G.fade.rem) + " minutes still on the clock. The slot doesn't end just because you did.");
         else if (p.why === "floor") lines.push("The floor finished at " + res.floor + "%. You needed at least " + Math.ceil(D.goal.final * 0.7) + "% still dancing at the end, and the last record is what they remember.");
         else lines.push(ok ? ({ opener: "You handed over a warm floor: " + res.floor + "% full as the next DJ stepped up.", "follow-legend": "You followed " + R.legendShort + " and held the floor at " + res.floor + "%. They were chanting your name. Well. A name.", overrun: R.head ? "You got " + R.legendShort + " off and held the field until the changeover. " + R.manager.charAt(0).toUpperCase() + R.manager.slice(1) + " nearly smiled." : "You got on, you played tight, and you handed over on time. The promoter nearly smiled.", closing: "The lights came up on a happy floor and a perfect last record." }[R.key]) : "The set limped home: floor " + res.floor + "%, " + res.mixes.wreck + " train wreck(s), " + res.deadAir + " min of dead air.");
         const worst = G.evLog.filter(e => !e.late).sort((a, b) => a.r - b.r)[0], late = G.evLog.filter(e => e.late).length;
@@ -767,7 +769,7 @@ RP.mg.register("setTime", {
         if (res.mixes.wreck) dim.push(res.mixes.wreck + " train wreck(s). Watch the BPM gap and the green window.");
         dim.push("Played: " + (G.played.map(id => RP.rec(id).title).join("  ›  ") || "nothing"));
         host.sfx(ok ? "success" : "fail");
-        const choice = await kit.endCard(host, endBox, { ok, score: res.score, kicker: (R.venue || D.venue) + " · " + D.title, title: ok ? ({ opener: "A WARM HANDOVER", "follow-legend": "YOU HELD THE FLOOR", overrun: R.head ? "THE STAGE IS YOURS" : "OUT ON TIME", closing: "LIGHTS ON, HEARTS FULL" }[R.key]) : (G.failed ? "SET CUT SHORT" : { "no-records": "NOTHING PLAYED", floor: "THE FLOOR WALKED" }[p.why] || "A ROUGH SET"), parts, lines, dim, canAgain: !ok, againLabel: "TRY AGAIN" });
+        const choice = await kit.endCard(host, endBox, { ok, score: res.score, kicker: (R.venue || D.venue) + " · " + D.title, title: ok ? ({ opener: "A WARM HANDOVER", "follow-legend": "YOU HELD THE FLOOR", overrun: R.head ? "THE STAGE IS YOURS" : "OUT ON TIME", closing: "LIGHTS ON, HEARTS FULL" }[R.key]) : (G.failed ? "SET CUT SHORT" : { "no-records": "NOTHING PLAYED", early: "LEFT EARLY", floor: "THE FLOOR WALKED" }[p.why] || "A ROUGH SET"), parts, lines, dim, canAgain: !ok, againLabel: "TRY AGAIN" });
         if (finished) return;
         if (choice === "again") { endBox.innerHTML = ""; stage.hidden = false; floorReset(); return; }
         done(res);
