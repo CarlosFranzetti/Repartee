@@ -239,7 +239,7 @@ RP.room({
       look: "Empty beer bottles on the curb. Six of them, in different postures. In Berlin they're worth 8 cents each.", pickup: S => pickBottles(S), use: S => pickBottles(S) },
     { id: "a4_ubahn", name: "U-Bahn stairs", r: [10, 76, 100, 106], z: 20, walk: [80, 208, "back"], look: "Stairs down to the U-Bahn, with a bright blue U on a pole. It's closed for the night, which is the most polite thing I've seen it do.", use: "I came from underground. I'm not going back. The Berlin underground is for later.", pickup: "It's a staircase. I'd need a bigger bag." },
     { id: "a4_column", name: "poster column", r: [424, 104, 40, 100], z: 45, walk: [452, 214, "back"],
-      look: S => "A poster column covered in layers of gig flyers. One says HALLE NEUN, SA, TECHNO and below it, small: \"special guest: DJ " + A4.misspell(A4.dj(S)) + " (USA).\" My name, with Berlin's spelling. I'm framing it.",
+      look: S => "A poster column covered in layers of gig flyers. One says HALLE NEUN, SA, TECHNO and below it, small: \"special guest: " + A4.billed(S) + " (USA).\" My name, with Berlin's spelling. I'm framing it.",
       pickup: "It's got six layers of paste on it. It's now part of the city.", push: "I'm a human against a column. The column's winning." },
     { id: "a4_gate", name: "courtyard gate", r: [374, 118, 56, 60], z: 20, walk: [400, 206, "back"], look: "A courtyard gate, covered in stickers and a scrawl that says \"BITTE LEISE.\" Please, quiet. Nobody has ever been quiet here.", open: "Locked. Berlin gates are polite but firm.", use: "It's locked. Everything in Berlin is open at night except what I need." },
     { id: "a4_hotel", name: "Hotel Zum Pfau", r: [540, 112, 112, 74], z: 25, walk: [588, 206, "back"],

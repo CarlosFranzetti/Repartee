@@ -95,19 +95,25 @@ const QUIZ = [
   { flag: "a4_q3", q: id => "Ben Klock. \"" + rec(id).title + ".\" 2009. Which label?", rec: "ben_klock_one", opts: ["Playhouse", "Mille Plateaux", "Ostgut Ton"], ok: 2,
     right: "@a4_sven Ostgut Ton. A double LP. Hm. You read.", wrong: "@a4_sven Nein. Ostgut Ton. Is it so hard? Read your sleeves." }
 ];
+const CHECK = "Let me check my crate.";
+/* returns true when all three are answered; false if I step away to read (answered ones stay answered) */
 async function runQuiz(S) {
   for (const Q of QUIZ) {
-    if (S[Q.flag] || S.f[Q.flag]) continue;
+    if (S.f[Q.flag]) continue;
     for (;;) {
-      const text = Q.q(Q.rec);
-      await RP.say(text, "a4_sven");
-      const i = await RP.choose(Q.opts);
+      await RP.say(Q.q(Q.rec), "a4_sven");
+      const i = await RP.choose(Q.opts.concat([CHECK]));
+      if (i === Q.opts.length) {
+        await RP.lines([CHECK, "@a4_sven Check. The question waits. I am a door. Doors wait.", "(MENU, then my crate. Every record has a fact. Then back to Sven.)"]);
+        return false;
+      }
       if (i === Q.ok) { S.f[Q.flag] = true; await RP.lines([Q.opts[i] + ".", Q.right]); break; }
       await RP.lines([Q.opts[i] + "?", Q.wrong]);
       S.f.a4_wrongs = (S.f.a4_wrongs || 0) + 1;
-      if (S.f.a4_wrongs >= 3 && S.f.a4_wrongs % 3 === 0) await RP.say("(The crate in my phone has a fact for every record. I should read the sleeve.)");
+      if (S.f.a4_wrongs >= 3 && S.f.a4_wrongs % 3 === 0) await RP.say("(I'm guessing. I could step back, open my crate in the MENU and read the facts on the sleeves.)");
     }
   }
+  return true;
 }
 async function svenTalk(S) {
   if (S.f.a4_quizDone) { await RP.lines(["@a4_sven (a single nod toward the door) Go.", "@a4_sven And you: don't smile. It scares the regulars."]); return; }
@@ -120,9 +126,9 @@ async function svenTalk(S) {
     await RP.lines(["@a4_sven Bag. Open. ...Records. Real ones.", "@a4_sven Fine. I'll ask three questions. If you know the records, you go in. If you don't, you stand here and think about it.", "@a4_sven Sticker on the phone."]);
     await RP.say("(He puts a sticker over my camera lens with the surgical calm of a man who's done it ten thousand times.)");
   } else {
-    await RP.lines(["@a4_sven (he doesn't blink) Again?", "I'd like to try again."]);
+    await RP.lines(["@a4_sven (he doesn't blink) Again?", "I'd like to try again."].concat(S.f.a4_q1 ? ["@a4_sven We continue where you stopped. I'm a door, not a monster."] : []));
   }
-  await runQuiz(S);
+  if (!await runQuiz(S)) return;
   if (S.f.a4_q1 && S.f.a4_q2 && S.f.a4_q3) {
     S.f.a4_quizDone = true; RP.give("a4_band"); RP.sfx("success");
     await RP.lines(["@a4_sven ...Fine. You know records.", "@a4_sven Wristband. Left wrist. Not the right. The right is for people who ask for the bathroom.",

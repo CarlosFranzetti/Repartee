@@ -39,14 +39,19 @@ A4.TECHNO = [
 ];
 
 /* ------------------------------------------------------------------ name jokes */
+/* misspells the last word (any "DJ " prefix is kept as is). Always differs from the real name. */
 A4.misspell = name => {
   const n = String(name || "DJ NOBODY").trim() || "DJ NOBODY";
   const w = n.split(/\s+/), last = w[w.length - 1];
-  w[w.length - 1] = last.length > 3 ? last.slice(0, 2) + last[3] + last[2] + last.slice(4) : last + last[last.length - 1];
+  let out = last.length > 3 ? last.slice(0, 2) + last[3] + last[2] + last.slice(4) : last + last[last.length - 1];
+  if (out === last) out = last + last[last.length - 1];
+  w[w.length - 1] = out;
   return w.join(" ");
 };
 A4.kosmoWrongName = () => "Brenton";
-A4.dj = S => S.name || "DJ NOBODY";
+A4.dj = S => String(S.name || "").trim() || "DJ NOBODY";
+/* the misspelled name as a billing: exactly one "DJ" in front */
+A4.billed = S => { const n = A4.dj(S); return (/^DJ(\s|$)/i.test(n) ? "" : "DJ ") + A4.misspell(n); };
 
 /* ------------------------------------------------------------------ cast */
 /* recurring characters (lou, kosmo, axl, marcus, dante) come from src/data/cast.js */
