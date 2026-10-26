@@ -3,6 +3,13 @@
 Newest entry first. Each entry is a hand-written summary of the working session so a fresh context can pick up where
 this one left off. It is not a verbatim copy of the conversation.
 
+## 2026-10-26
+
+See `memory.md` for the current full state. Since the entry below: PR #7 (title theme) and PR #8 (jukebox fade,
+Vercel Web Analytics) are merged and live; Level 1 and 2 claude.ai artifacts were published; Levels 3-5 got blind
+playtests, a story audit and room and mini-game sweeps, and the audit and sweep findings were fixed on the work branch
+(not merged). The Level 3-5 blind-take findings are open in `docs/PLAYTEST_LOG.md`.
+
 ## 2026-10-20 17:44 UTC
 
 **Project:** re:parteé, a pixel-art DJ adventure. Plain JavaScript on `window.RP`, HTML canvas and Web Audio (all sound is

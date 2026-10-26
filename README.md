@@ -40,7 +40,9 @@ level page starts you with a sensible setup (records, cash, gear for that point 
 sixteen mini-games, and ends with a link to the next level if you've unlocked it. The full game carries
 your crate, cash and fans from level to level.
 
-**On claude.ai:** [the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N) is also published as an artifact.
+**On claude.ai:** [the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N), [Level 1](https://claude.ai/artifact/4m4u3sHMgVhkqURBBfiFtY) and
+[Level 2](https://claude.ai/artifact/QMwvpWyeeqKM3HgfgP4EhF) are also published as artifacts (private until shared). Each artifact keeps
+its own browser storage, so artifact level pages are never locked.
 
 **Analytics:** the hosted pages load Vercel Web Analytics (see `tools/build.mjs`). Offline copies and the claude.ai artifact do not.
 
@@ -90,6 +92,7 @@ node tests/run.mjs mg crowdRead out.png
 node tools/screens.mjs               # regenerates the screenshots in docs/screenshots/
 node tools/blindplay.mjs serve --level 1 --port 7101 --out runs/level1   # play a level one command at a time
                                      # through the real UI while recording video (commands: see the file header)
+                                     # add --unlock for Levels 2-5 (their pages stay locked until finished)
 node tools/blindplay-cut.mjs runs/level1 level1.mp4                      # cut the paused time out of that video
 ```
 

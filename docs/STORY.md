@@ -158,7 +158,8 @@ Threads (suggested):
 - Gear: CDJ-900s (first paycheck from Eddie), Dynaudio BM5 mkIII monitors, Technics 1210MK2s.
 - Cameo option: a real DJ (cameoOk) digging at the record fair or playing a guest set at the club —
   you open for them. Respectful, brief.
-Ends with the Saturday slot and an email from a booking agent in Europe. → act 4.
+Ends with the anniversary night and a first email from Ingrid Falk (Nachtwerk Booking), who books Halle Neun in
+Berlin and will be in touch. → act 4 (six months later, her follow-up offer).
 
 ## Level 4 — TOURING DJ (act4)
 
@@ -181,8 +182,9 @@ Ends with a festival offer: headline the Harbor Lights Festival back in NYC. →
 
 Goal: **headline Harbor Lights Festival** (fictional, on the waterfront).
 - Buy the endgame setup: the **Can Electric Taula 4 MR** rotary mixer (hand-wired in Barcelona),
-  Technics SL-1210MK7s, Dynaudio Core 47s — via **buy.Gear** at the end-game level.
-- Manage your career: manager calls, interviews, guest list chaos (Marcus "plus thirty").
+  Pioneer CDJ-3000s and Dynaudio Core 47s — via **buy.Gear** at the end-game level. The Technics
+  SL-1210MK7s are already yours (bought with Halcyon money in Level 4).
+- Manage your career: manager Margo Quist (since Berlin) calls, interviews, guest list chaos (Marcus "plus thirty").
 - **club.Drama**: Axl Vanta tries to bump your slot.
 - **sound.Check** on the main stage.
 - **set.Time**: Axl runs over his set time; handle it.
@@ -190,6 +192,13 @@ Goal: **headline Harbor Lights Festival** (fictional, on the waterfront).
   for "NYC 93"; Kosmo finally says your name right; Dante pays you (in drink tickets).
 - Real DJ cameos (cameoOk) on the festival bill and backstage nods.
 - Ends with `RP.completeAct` (no act 6) → credits (`RP.ending`).
+
+## Names in use (keep them unique)
+
+Each name belongs to one character. Level 3: Priya (rival digger), Bernard (the estate's parakeet). Level 1-2: Biscuit
+(the lost cat). Level 4: Officer Delgado, Bernadette (JFK baggage services), Nugget (the K9 beagle), Ingrid Falk
+(Halle Neun booker). Level 5: Margo Quist (manager), Roz Kessler (stage manager), Preston "Whit" Whitlock (promoter),
+Mercè (the Barcelona mixer maker's shop). Grep `src/` before introducing a new name.
 
 ## Tone samples (keep this voice)
 
