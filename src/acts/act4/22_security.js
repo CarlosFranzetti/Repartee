@@ -1,4 +1,4 @@
-/* Act 4 — a4_security: the checkpoint. Officer Delgado signs Form 7B; Biscuit the K9 sits on your record bag
+/* Act 4 — a4_security: the checkpoint. Officer Delgado signs Form 7B; Nugget the K9 sits on your record bag
    until she's offered a treat from a trusted source (a stranger with jerky).
    Flags: a4_formSigned a4_dogFed a4_bagBack a4_secIntro a4_boarded */
 (function () {
@@ -21,7 +21,7 @@ const sprRecordBagOnTable = A4.spr(40, 30, c => {
   ell(c, 12, 17, 3, 3, "#ff3fa4"); R(c, 19, 13, 10, 5, "#39d0ff"); R(c, 19, 13, 10, 1, "#9fe8ff"); R(c, 16, 21, 8, 3, "#ffd23f"); P(c, 30, 24, "#9be15d");
   R(c, 4, 20, 32, 1, "#2a2838");
 });
-const sprBiscuit = A4.spr(46, 32, c => {          /* a beagle, sitting like a sentence */
+const sprNugget = A4.spr(46, 32, c => {          /* a beagle, sitting like a sentence */
   R(c, 6, 18, 28, 12, "#a8743e"); R(c, 6, 18, 28, 2, "#c8925a"); R(c, 10, 18, 14, 6, "#2a1c18"); R(c, 6, 28, 28, 2, "#7a4a2a");
   R(c, 28, 18, 10, 12, "#efe6d0"); R(c, 28, 18, 10, 1, "#ffffff");
   R(c, 30, 4, 14, 14, "#a8743e"); R(c, 30, 4, 14, 2, "#c8925a"); R(c, 36, 12, 8, 6, "#efe6d0"); R(c, 42, 11, 3, 3, "#17131f"); R(c, 38, 8, 2, 2, "#17131f"); P(c, 38, 8, "#ffffff");
@@ -30,7 +30,7 @@ const sprBiscuit = A4.spr(46, 32, c => {          /* a beagle, sitting like a se
   R(c, 18, 28, 5, 4, "#efe6d0"); R(c, 30, 28, 5, 4, "#efe6d0");
   R(c, 28, 17, 10, 2, "#c0302c"); R(c, 31, 19, 4, 3, "#e8c020");      /* K9 vest tag */
 });
-const sprBiscuitFed = A4.spr(46, 26, c => {       /* on the floor, busy with jerky */
+const sprNuggetFed = A4.spr(46, 26, c => {       /* on the floor, busy with jerky */
   R(c, 4, 10, 30, 12, "#a8743e"); R(c, 4, 10, 30, 2, "#c8925a"); R(c, 8, 10, 14, 6, "#2a1c18"); R(c, 4, 20, 30, 2, "#7a4a2a");
   R(c, 28, 8, 12, 14, "#efe6d0"); R(c, 28, 8, 12, 1, "#ffffff");
   R(c, 36, 12, 8, 10, "#a8743e"); R(c, 42, 17, 3, 3, "#17131f"); R(c, 38, 15, 2, 2, "#17131f"); R(c, 36, 20, 8, 2, "#7a3a1a"); R(c, 41, 21, 6, 2, "#7a3a1a");
@@ -114,48 +114,48 @@ function light(S) {
   };
 }
 
-/* ------------------------------------------------------------------ Delgado & Biscuit */
+/* ------------------------------------------------------------------ Delgado & Nugget */
 async function delgadoTalk(S) {
   if (!RP.has("a4_boarding") && !S.f.a4_bagBack) { await RP.say("Boarding pass, sir.", "a4_delgado"); return; }
   if (S.f.a4_bagBack) { await RP.lines(["@a4_delgado Got your bag? Good. Hold it like you love it.", "@a4_delgado Next time, buy a smaller dog. I mean bag."]); return; }
-  if (S.f.a4_dogFed) { await RP.lines(["@a4_delgado Biscuit's on break. Take your bag. And if anyone asks, I didn't see a stranger give a federal employee beef jerky.", "That is a very specific denial."]); return; }
+  if (S.f.a4_dogFed) { await RP.lines(["@a4_delgado Nugget's on break. Take your bag. And if anyone asks, I didn't see a stranger give a federal employee beef jerky.", "That is a very specific denial."]); return; }
   if (S.f.a4_formSigned) { await RP.lines(["@a4_delgado Form's signed. Bag's on the table. The dog isn't moving. She's a professional.", "@a4_delgado I can't make her move. I can't give her treats on shift. But a stranger might, uh, accidentally have one."]); return; }
   if (S.f.a4_formStamped) { await RP.lines(["@a4_delgado You have a Form 7B? Let's see it.", "I have it right here. Stamped."]); return; }
   await RP.lines(["@a4_delgado Boarding pass. Fine.", "My bag's in Inspection, Officer. K9 flagged it. It's records.", "@a4_delgado I know which bag. It's got a hold on it. I can't release it without a Form 7B, stamped by Baggage Services, signed by me.",
-    "Baggage Services says you have to sign first.", "@a4_delgado They say that to everybody. Go get the stamp. Priya'll do it eventually. She's on break."]);
+    "Baggage Services says you have to sign first.", "@a4_delgado They say that to everybody. Go get the stamp. Bernadette'll do it eventually. She's on break."]);
 }
 async function giveToDelgado(S, item) {
   if (item === "a4_form") {
     if (S.f.a4_formSigned) return "He's already signed it. A signature from a man with a mustache like that is binding.";
-    if (!S.f.a4_formStamped) { await RP.lines(["@a4_delgado No stamp. Baggage Services. They have to stamp it first.", "They told me you have to sign first.", "@a4_delgado Of course they did. Go back and get the stamp. Priya does it eventually."]); return; }
+    if (!S.f.a4_formStamped) { await RP.lines(["@a4_delgado No stamp. Baggage Services. They have to stamp it first.", "They told me you have to sign first.", "@a4_delgado Of course they did. Go back and get the stamp. Bernadette does it eventually."]); return; }
     S.f.a4_formSigned = true; RP.take("a4_form");
-    await RP.lines(["@a4_delgado Stamped. By Priya? She NEVER stamps. Did she put a smiley on it?", "...She did.", "@a4_delgado Huh. Then it's real.", "(He signs it with a pen the size of a baton.)",
-      "@a4_delgado Bag's on the inspection table. But Biscuit's on the bag. She's a professional. She won't leave for me. I'm not allowed to give her treats on shift.",
+    await RP.lines(["@a4_delgado Stamped. By Bernadette? She NEVER stamps. Did she put a smiley on it?", "...She did.", "@a4_delgado Huh. Then it's real.", "(He signs it with a pen the size of a baton.)",
+      "@a4_delgado Bag's on the inspection table. But Nugget's on the bag. She's a professional. She won't leave for me. I'm not allowed to give her treats on shift.",
       "@a4_delgado A stranger, though... A stranger might accidentally have a treat. I'm going to look at that wall for a minute."]);
     RP.actor("a4_delgado").face = "right";
     return;
   }
   if (item === "a4_boarding") return "He glances at it. \"Seat 23A. Hope you like clouds.\" He hands it back with the tenderness of a man who's seen too many.";
   if (item === "a4_jerky") return "Giving jerky to the officer is bribery. And I'd have to bribe a dog next. Also bribery.";
-  return "He doesn't want that. He wants a signed form and a peaceful lunch.";
+  return "He doesn't want that. He wants a signed form and a peaceful breakfast.";
 }
-async function biscuitFeed(S) {
+async function nuggetFeed(S) {
   if (S.f.a4_dogFed) return "She's eating. She's the happiest federal employee in the building.";
   if (!S.f.a4_formSigned) { await RP.lines(["@a4_delgado Sir! Don't feed the K9.", "(Bribery's a crime. Also, I need the form signed first. I'm learning a lot about bureaucracy.)"]); return; }
   RP.take("a4_jerky");
-  await RP.lines(["I offer Biscuit the jerky. She looks at it. She looks at me. She looks at Delgado.", "@a4_delgado (staring very hard at the wall)"]);
+  await RP.lines(["I offer Nugget the jerky. She looks at it. She looks at me. She looks at Delgado.", "@a4_delgado (staring very hard at the wall)"]);
   RP.sfx("pickup"); await RP.wait(500);
   S.f.a4_dogFed = true;
-  await RP.lines(["*CHOMP.* Biscuit hops off the bag and carries her prize under the table. 22% real jerky and 100% real happiness.", "The bag's free. The bag is... right there."]);
+  await RP.lines(["*CHOMP.* Nugget hops off the bag and carries her prize under the table. 22% real jerky and 100% real happiness.", "The bag's free. The bag is... right there."]);
 }
 async function takeBag(S) {
   if (S.f.a4_bagBack) return "I've got the bag. I'm never putting it down again.";
   if (!S.f.a4_formSigned) { await RP.say("Hands off, sir. That's evidence.", "a4_delgado"); return; }
-  if (!S.f.a4_dogFed) { await RP.lines(["I reach for the bag. Biscuit growls. It's a very small, very professional growl.", "I'll need to get her off it first. She's a beagle. Beagles like one thing."]); return; }
+  if (!S.f.a4_dogFed) { await RP.lines(["I reach for the bag. Nugget growls. It's a very small, very professional growl.", "I'll need to get her off it first. She's a beagle. Beagles like one thing."]); return; }
   S.f.a4_bagBack = true; RP.give("a4_bag");
   RP.sfx("pickup");
   await RP.lines(["Thirty-eight kilos of records, back in my arms. It's never been so heavy. Or so beautiful.", "Okay. Gates. Plane. Berlin. Nothing else goes wrong."]);
-  RP.setClock("FRI 4:36 PM");
+  RP.setClock("SAT 8:41 AM");
 }
 async function boardTheGate(S) {
   if (!S.f.a4_bagBack) { await RP.say("I can't board without my bag. Without records I'm just a guy with feelings and a window seat."); return; }
@@ -181,8 +181,8 @@ RP.room({
   sprites: [
     { y: 202, draw: c => sprInspectTable(c, 470, 142) },
     { y: 190, vis: S => !S.f.a4_bagBack, draw: c => sprRecordBagOnTable(c, 502, 134) },
-    { y: 198, vis: S => !S.f.a4_dogFed && !S.f.a4_bagBack, draw: c => sprBiscuit(c, 508, 112) },
-    { y: 236, vis: S => !!S.f.a4_dogFed, draw: c => sprBiscuitFed(c, 500, 214) },
+    { y: 198, vis: S => !S.f.a4_dogFed && !S.f.a4_bagBack, draw: c => sprNugget(c, 508, 112) },
+    { y: 236, vis: S => !!S.f.a4_dogFed, draw: c => sprNuggetFed(c, 500, 214) },
     { y: 150, draw: c => sprBins(c, 116, 106) }
   ],
   self: { look: "Tour bomber, headphones, a belt buckle with ambition. I'm about to beep.", talk: "I'm talking to myself in a security line. It's the only conversation nobody will ask me to take outside." },
@@ -190,16 +190,16 @@ RP.room({
     { id: "a4_delgado", name: "Officer Delgado", look: "Officer Delgado: big, mustached, with a lanyard and the stillness of a man who's heard every excuse. He's holding a pen the size of a baton.",
       talk: S => delgadoTalk(S), give: (S, item) => giveToDelgado(S, item),
       pickup: "I'd like to keep my freedom. And my arms.", push: "I'd like to keep both arms, thanks." },
-    { id: "a4_biscuit", name: "Biscuit", r: [504, 112, 46, 36], z: 70, vis: S => !S.f.a4_dogFed && !S.f.a4_bagBack, walk: [490, 226, "right"],
-      look: "Biscuit, a beagle in a K9 vest, sitting on my record bag like it's her egg. She's looking at me like she's looked into my soul and found vinyl.",
+    { id: "a4_nugget", name: "Nugget", r: [504, 112, 46, 36], z: 70, vis: S => !S.f.a4_dogFed && !S.f.a4_bagBack, walk: [490, 226, "right"],
+      look: "Nugget, a beagle in a K9 vest, sitting on my record bag like it's her egg. She's looking at me like she's looked into my soul and found vinyl.",
       talk: "\"Who's a good girl?\" She doesn't blink. She's a professional.", pickup: "I'd like to keep both my hands. And my record bag, which she's sitting on.", push: "She's a federal employee. I'd rather not.",
-      give: (S, item) => item === "a4_jerky" ? biscuitFeed(S) : "Biscuit's not interested. She wants something chewy and cured." },
-    { id: "a4_biscuitfed", name: "Biscuit", r: [500, 214, 48, 28], z: 70, vis: S => !!S.f.a4_dogFed, walk: [480, 234, "right"], look: "Biscuit, under the table, chewing jerky with the quiet joy of a dog on her break.", talk: "She doesn't answer. She's busy.", pickup: "I wouldn't dare.", give: "She's got her jerky. She's good." },
+      give: (S, item) => item === "a4_jerky" ? nuggetFeed(S) : "Nugget's not interested. She wants something chewy and cured." },
+    { id: "a4_nuggetfed", name: "Nugget", r: [500, 214, 48, 28], z: 70, vis: S => !!S.f.a4_dogFed, walk: [480, 234, "right"], look: "Nugget, under the table, chewing jerky with the quiet joy of a dog on her break.", talk: "She doesn't answer. She's busy.", pickup: "I wouldn't dare.", give: "She's got her jerky. She's good." },
     { id: "a4_inspect", name: "inspection table", r: [470, 142, 120, 66], z: 40, walk: [500, 224, "back"],
       look: S => S.f.a4_bagBack ? "The inspection table, now with no record bag. Just a faint smell of nostalgia." : "A steel inspection table. On it: my record bag, and on the bag: a beagle.",
       pickup: S => takeBag(S), use: S => takeBag(S), open: S => takeBag(S) },
     { id: "a4_bag_on_table", name: "my record bag", r: [500, 134, 44, 30], z: 66, vis: S => !S.f.a4_bagBack, walk: [500, 224, "back"],
-      look: "My record bag, under a K9. It's got my whole career in it. Mostly Detroit and Berlin. Biscuit seems to approve.", pickup: S => takeBag(S), use: S => takeBag(S), open: S => takeBag(S) },
+      look: "My record bag, under a K9. It's got my whole career in it. Mostly Detroit and Berlin. Nugget seems to approve.", pickup: S => takeBag(S), use: S => takeBag(S), open: S => takeBag(S) },
     { id: "a4_xray", name: "X-ray machine", r: [168, 80, 96, 66], z: 30, walk: [210, 218, "back"], look: "An X-ray machine for bags. The screen says CLEAR in bright green: it's one of the few honest things here.", use: "I'm not putting myself in it. I'd come out as a skeleton in a bomber.", push: "It's not that kind of machine." },
     { id: "a4_xrayscreen", name: "X-ray monitor", r: [264, 100, 68, 32], z: 40, walk: [296, 218, "back"], look: "An X-ray of somebody's bag: a tiny keyboard, forty pairs of socks, and a smiling something. All records, no weapons." },
     { id: "a4_arch", name: "metal detector", r: [376, 44, 80, 108], z: 25, walk: [414, 224, "back"],
@@ -216,19 +216,19 @@ RP.room({
   ],
   combos: [
     ["a4_form", "a4_delgado", S => giveToDelgado(RP.state, "a4_form")],
-    ["a4_jerky", "a4_biscuit", S => biscuitFeed(RP.state)],
-    ["a4_jerky", "a4_inspect", S => biscuitFeed(RP.state)],
+    ["a4_jerky", "a4_nugget", S => nuggetFeed(RP.state)],
+    ["a4_jerky", "a4_inspect", S => nuggetFeed(RP.state)],
     ["a4_jerky", "a4_delgado", "Giving jerky to the officer is bribery. And I'd have to bribe a dog next. Also bribery."],
     ["a4_boarding", "a4_delgado", S => giveToDelgado(RP.state, "a4_boarding")],
     ["a4_claim", "a4_delgado", "He glances at the tag. \"That's Baggage Services' problem. I handle the detained part.\""],
-    ["a4_form", "a4_biscuit", "She's a beagle. She can't sign. She also can't read. She CAN smell, though, and she smells the stamp."],
+    ["a4_form", "a4_nugget", "She's a beagle. She can't sign. She also can't read. She CAN smell, though, and she smells the stamp."],
     ["a4_passport", "a4_delgado", "He doesn't need to see it. He needs to see a stamped form. He's quite particular."],
-    ["a4_white", "a4_biscuit", "She sniffs the white label. She sneezes. A first review."]
+    ["a4_white", "a4_nugget", "She sniffs the white label. She sneezes. A first review."]
   ],
   enter: async (S, from) => {
     if (!S.f.a4_secIntro) {
-      S.f.a4_secIntro = true; RP.setClock("FRI 4:22 PM");
-      await RP.lines(["Security. Trays, belts, a queue shaped like a lie. And over by the inspection table, a beagle in a vest, sitting on my record bag.", "Biscuit, a K9, is currently the most powerful being in the airport. Officer Delgado is next to her, signing nothing."]);
+      S.f.a4_secIntro = true; RP.setClock("SAT 8:15 AM");
+      await RP.lines(["Security. Trays, belts, a queue shaped like a lie. And over by the inspection table, a beagle in a vest, sitting on my record bag.", "Nugget, a K9, is currently the most powerful being in the airport. Officer Delgado is next to her, signing nothing."]);
     }
   }
 });

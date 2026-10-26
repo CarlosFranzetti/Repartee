@@ -137,17 +137,17 @@ function light(S) {
 }
 
 /* ------------------------------------------------------------------ scenes */
-const REPLY = S => ["Hi " + A4.dj(S) + ",", "A friend sent me a clip of your Thursday at the Halcyon Room. I stopped what I was doing, which is rare.",
-  "I book Halle Neun, a warehouse club in Berlin. Techno floor, Saturday, two a.m. I would like you to open the second room.",
-  "One problem: nobody books a DJ who has nothing out. Do you have a release?", "P.S. Bring your passport. You would be amazed how many don't.", "Ingrid Falk, Nachtwerk Booking"];
+const REPLY = S => ["Hi " + A4.dj(S) + ",", "Ingrid Falk again, Halle Neun. In the spring I said I would be in touch. This is me, in touch. In Berlin, six months is prompt.",
+  "The offer: Saturday, two a.m., the main room, after our headliner. I won't say who. You would only get nervous.",
+  "One problem: nobody books a DJ who has nothing out. Do you have a release?", "P.S. Bring your passport. You would be amazed how many don't.", "Grüße, Ingrid Falk, Nachtwerk Booking"];
 
 async function readEmail(S) {
-  await RP.card({ kicker: "EMAIL", title: "Halle Neun. Saturday.", sub: "From: Ingrid Falk, Nachtwerk Booking (Berlin)", body: REPLY(S), button: "CLOSE" });
+  await RP.card({ kicker: "EMAIL", title: "Re: Halle Neun", sub: "From: Ingrid Falk, Nachtwerk Booking (Berlin)", body: REPLY(S), button: "CLOSE" });
   if (S.f.a4_email) return;
   S.f.a4_email = true;
   RP.text("INGRID FALK", "Got no reply? Fine. I'll wait. I'm German; waiting is a hobby.", true);
   await RP.lines([
-    "Berlin. A real booking agent. Writing to ME.",
+    "Berlin. She said she'd be in touch, and then she was. Nobody in this business does that.",
     "She wants a release. I have a stack of other people's records and a drawer full of half-finished loops.",
     "...And a white label that sounds like 1993. Lou. I need to ask Lou."
   ]);
@@ -312,7 +312,7 @@ async function ingridCall(S) {
   await A4.ingLines([
     "Hello, " + A4.dj(S) + ". Ingrid Falk. We should be glad the cat has so many followers.",
     "@kid That's my song.",
-    "It is a very good cat song. Halle Neun, Saturday, two a.m., second room.",
+    "It is a very good cat song. Halle Neun, Saturday, two a.m., main room.",
     "We can offer exposure."
   ]);
   await RP.lines(["Exposure.", "You'd be playing to eight hundred of Berlin's most discerning, mostly sober people."]);
@@ -332,7 +332,7 @@ async function ingridCall(S) {
   await A4.ingLines([res.forced ? "Fine. A fee of $" + fee + ". Flights. A hotel that is also a hotel." : "Fine. A fee of $" + fee + (terms.flights ? ", flights (" + String(terms.flights).toLowerCase() + ")" : ", flights") + ", the hotel and a rider.",
     "The rider: water, towels, and a vegetable that is not a pickle.",
     "@kid And no exposure?", "No exposure. We have an exposure budget. I'm saving it for the tourists."]);
-  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 4:55 PM, Terminal 4. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Passport!!", false);
+  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 8:55 AM, Terminal 4. Lands 10:55 PM Berlin time. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Passport!!", false);
   A4.callOff(S);
   RP.setClock("FRI 11:58 AM");
   RP.unlock("a4_loc_jfk");
@@ -386,7 +386,7 @@ RP.room({
       give: (S, item) => item === "a4_white" ? "He gave it to me for a reason." : "Lou doesn't want anything through the hole. Except noise complaints." },
     { id: "a4_radiator", name: "radiator", r: [216, 132, 84, 36], z: 15, walk: [266, 214, "back"], look: "It still clanks all winter. In October it only clanks to remind me it exists.", use: "It's on. Warmth is a social construct.", push: "It's bolted to the building. The building wins." },
     { id: "a4_laptop", name: "laptop", r: [210, 118, 32, 26], z: 50, walk: [232, 214, "back"],
-      look: S => S.f.a4_email ? "Email from a booking agent in Berlin, open on the screen. I haven't been this nervous since I opened a Dante text." : "My laptop. One new email. The sender's name has an umlaut. I've read it nine times.",
+      look: S => S.f.a4_email ? "Email from a booking agent in Berlin, open on the screen. I haven't been this nervous since I opened a Dante text." : "My laptop. One new email from Ingrid Falk, Berlin. It signs off with an umlaut. I've read it nine times.",
       use: S => !S.f.a4_email ? readEmail(S) : S.f.a4_released ? "TrackShack says 4,000,000 plays. Most of them are cats." : release(S), open: S => S.f.a4_released ? "It's open. It's always open. It's the cat video that's always playing." : (S.f.a4_email ? release(S) : readEmail(S)),
       pickup: "I'm not carrying a laptop to Berlin. They have laptops there." },
     { id: "a4_sampler", name: "sampler", r: [248, 122, 50, 22], z: 50, walk: [272, 214, "back"],
@@ -405,7 +405,7 @@ RP.room({
     { id: "a4_shelf", name: "record shelf", r: [12, 16, 136, 82], z: 20, walk: [80, 218, "back"],
       look: "Every record that didn't fit in the crate. Alphabetized by how much I love them.", use: S => RP.crateView ? RP.crateView() : "A lot of vinyl.", open: S => RP.crateView ? RP.crateView() : "A lot of vinyl." },
     { id: "a4_couch", name: "couch", r: [10, 108, 142, 62], z: 25, walk: [90, 226, "back"], look: "My couch. It's also my guest room, my Sunday and Lou's seat for the remix.", use: "I sit. I stand. Sitting is a lot.", push: "Couches don't move. They arrive and they stay.", pull: "I've tried pulling out the couch bed. It pulls out like a ghost." },
-    { id: "a4_poster", name: "Halcyon poster", r: [156, 22, 44, 60], z: 22, walk: [180, 218, "back"], look: "HALCYON ROOM, THURSDAYS. Dante's flyer person misspelled my name on the first printing. This is the corrected one. It's also wrong." },
+    { id: "a4_poster", name: "Halcyon poster", r: [156, 22, 44, 60], z: 22, walk: [180, 218, "back"], look: "HALCYON ROOM, THURSDAYS. Odessa's flyer guy misspelled my name on the first printing. This is the corrected one. It's also wrong." },
     { id: "a4_iou", name: "framed IOU", r: [150, 86, 50, 36], z: 24, walk: [180, 218, "back"], look: "A framed IOU from Dante: \"Next week.\" It's the oldest document in the apartment. It's a better investment than most stocks.", pickup: "If I take it down, the wall will hold a grudge." },
     { id: "a4_plant", name: "Gerald", r: [152, 150, 52, 50], z: 52, walk: [186, 222, "right"],
       look: S => S.f.a4_passport ? "Gerald, the plant. He's been through a lot, including my passport. He's fine." : "Gerald, the plant. Something blue is poking out of the soil. Gerald's never been a sharer.",
@@ -464,7 +464,7 @@ async function packBag(S) {
   await RP.lines(["Records in. Zipper up. It weighs about as much as a medium dog.", "Every record I own that matters is in here. If it gets lost, I'm done."]);
 }
 function leaveCheck(S) {
-  if (!S.f.a4_deal) return S.f.a4_email ? "Ingrid hasn't confirmed anything yet. First the record, then the money, then the airport." : "I'm not going anywhere before I read that email. It's got an umlaut. It could be important.";
+  if (!S.f.a4_deal) return S.f.a4_email ? "Ingrid hasn't confirmed anything yet. First the record, then the money, then the airport." : "I'm not going anywhere before I read that email. It's from Berlin. It has an umlaut. It could be important.";
   if (!S.f.a4_passport) return "Passport. I can't go anywhere without it. Last seen: here. Somewhere.";
   if (!S.f.a4_packed) return !S.f.a4_rayBox ? "The box from Ray, by the door. It's got my Berlin records in it." : "The record bag. By the couch. Don't leave without the bag.";
   S.f.a4_leaving = true;

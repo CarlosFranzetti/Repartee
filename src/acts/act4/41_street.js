@@ -187,8 +187,8 @@ async function kemalTalk(S) {
         "(Note to self: the crate in the phone menu has a fact for every record. Read the facts.)"]);
     } },
     { text: "I have some empties for the Pfand.", when: S => RP.has("a4_bottles") && !S.f.a4_pfand, run: async () => {
-      S.f.a4_pfand = true; RP.take("a4_bottles"); RP.money(1.5);
-      await RP.lines(["@a4_kemal Pfand! Quarter each. Six bottles. A dollar fifty.", "@a4_kemal You are a professional. You are going to do very well in Berlin."]);
+      S.f.a4_pfand = true; RP.take("a4_bottles"); RP.money(0.48);
+      await RP.lines(["@a4_kemal Pfand! Eight cents a bottle. Six bottles. Forty-eight cents. Don't spend it all at once.", "@a4_kemal You are a professional. You are going to do very well in Berlin."]);
     } },
     { text: "I'll take a mate drink. ($2)", when: S => !S.f.a4_mate, run: async () => {
       if (!RP.canAfford(2)) { await RP.say("I can't afford it. I'm about to play for money and I can't buy a drink. Typical."); return; }
@@ -201,11 +201,11 @@ async function kemalTalk(S) {
 async function pickBottles(S) {
   if (S.f.a4_bottlesTaken) return "I've got them all. There's a bag of six empties on me. The rest of the city can wait.";
   S.f.a4_bottlesTaken = true; RP.give("a4_bottles");
-  await RP.lines(["Six empty bottles on the curb. A nice gesture, in Berlin, to take them.", "Pfand: the Späti pays 25 cents each. Capitalism, but green."]);
+  await RP.lines(["Six empty bottles on the curb. A nice gesture, in Berlin, to take them.", "Pfand: the Späti pays 8 cents a bottle. Capitalism, but green. And small."]);
 }
 RP.item("a4_bottles", { name: "empty bottles", short: "Bottles",
   icon: c => { for (let i = 0; i < 4; i++) { R(c, 6 + i * 6, 8, 4, 12, "#3a7a3a"); R(c, 7 + i * 6, 4, 2, 5, "#3a7a3a"); R(c, 7 + i * 6, 3, 2, 1, "#c8c4d8"); R(c, 6 + i * 6, 9, 1, 10, "#8aca8a"); } },
-  look: "Six empty bottles. Twenty-five cents each at the Späti. In Berlin, trash is currency.", use: "I'll hand them to the Späti guy. Nobody drinks from a stranger's bottle." });
+  look: "Six empty beer bottles. Eight cents each at the Späti. In Berlin, trash is currency. Loose change, but currency.", use: "I'll hand them to the Späti guy. Nobody drinks from a stranger's bottle." });
 
 /* ------------------------------------------------------------------ the room */
 RP.room({
@@ -227,7 +227,7 @@ RP.room({
     { y: 202, draw: c => sprTrash(c, 662, 174) },
     { y: 200, draw: c => sprLampPost(c, 480, 86) }
   ],
-  self: { look: "Tour bomber, headphones, a record bag, and the tangle of someone who has been awake for 22 hours. In the rain. In Berlin. Dramatic.", talk: "\"Guten Abend.\" ...I've exhausted my German. I'm now a mime with luggage." },
+  self: { look: "Tour bomber, headphones, a record bag, and the tangle of someone whose body thinks it's dinnertime in Brooklyn. In the rain. In Berlin. Dramatic.", talk: "\"Guten Abend.\" ...I've exhausted my German. I'm now a mime with luggage." },
   hotspots: [
     { id: "a4_kemal", name: "Kemal", look: "Kemal, the Späti guy: apron, mustache, steam-rising mug. He's been awake as long as the neon has.",
       talk: S => kemalTalk(S), give: (S, item) => item === "a4_bottles" ? kemalTalk(S) : "He's a Späti guy. He sells things. He doesn't take anything but money and bottles.", pickup: "He'd sell me back to myself at a markup.", push: "He's behind the counter. I'm on the street. We have an understanding." },
@@ -236,7 +236,7 @@ RP.room({
     { id: "a4_crates", name: "bottle crates", r: [134, 150, 50, 28], z: 50, walk: [160, 210, "back"], look: "Crates of bottles outside the Späti. In Berlin, the street is a storage room.", pickup: "That's their inventory, not mine. I'm not getting anyone shot over beer.", push: "They're heavy. And someone's counting." },
     { id: "a4_bench", name: "bench", r: [186, 168, 62, 30], z: 40, walk: [216, 208, "back"], look: "A wooden bench with two beer bottles on it, a view of the rain and nobody's regrets.", use: "If I sit, I'll miss my slot. And the bench has seen things.", pickup: "It's bolted to the sidewalk. And apparently to the culture." },
     { id: "a4_bottles", name: "empty bottles", rects: [[98, 206, 12, 16], [256, 210, 12, 16], [370, 208, 12, 16], [450, 212, 12, 16], [586, 210, 12, 16], [630, 206, 12, 16]], z: 60, vis: S => !S.f.a4_bottlesTaken, walk: [300, 222, "back"],
-      look: "Empty beer bottles on the curb. Six of them, in different postures. In Berlin they're worth 25 cents each.", pickup: S => pickBottles(S), use: S => pickBottles(S) },
+      look: "Empty beer bottles on the curb. Six of them, in different postures. In Berlin they're worth 8 cents each.", pickup: S => pickBottles(S), use: S => pickBottles(S) },
     { id: "a4_ubahn", name: "U-Bahn stairs", r: [10, 76, 100, 106], z: 20, walk: [80, 208, "back"], look: "Stairs down to the U-Bahn, with a bright blue U on a pole. It's closed for the night, which is the most polite thing I've seen it do.", use: "I came from underground. I'm not going back. The Berlin underground is for later.", pickup: "It's a staircase. I'd need a bigger bag." },
     { id: "a4_column", name: "poster column", r: [424, 104, 40, 100], z: 45, walk: [452, 214, "back"],
       look: S => "A poster column covered in layers of gig flyers. One says HALLE NEUN, SA, TECHNO and below it, small: \"special guest: DJ " + A4.misspell(A4.dj(S)) + " (USA).\" My name, with Berlin's spelling. I'm framing it.",

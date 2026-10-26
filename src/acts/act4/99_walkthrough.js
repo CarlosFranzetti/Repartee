@@ -21,17 +21,17 @@ const jfk = [
 ];
 const baggage = [
   ["look", "hot:a4_screen"], ["look", "hot:a4_carousel"], ["look", "hot:a4_bagpink"],
-  ["give", "hot:a4_priya", "a4_form"],                                                             // before she knows about the bag
-  ["answers", [0, 0, 0, 0]], ["talk", "hot:a4_priya"],
-  ["expect", "S.f.a4_priyaTold && S.f.a4_priyaCat && S.f.a4_priyaProve && S.f.a4_formStamped", "Priya stamped Form 7B (the cat video)"],
+  ["give", "hot:a4_bernadette", "a4_form"],                                                             // before she knows about the bag
+  ["answers", [0, 0, 0, 0]], ["talk", "hot:a4_bernadette"],
+  ["expect", "S.f.a4_bernadetteTold && S.f.a4_bernadetteCat && S.f.a4_bernadetteProve && S.f.a4_formStamped", "Bernadette stamped Form 7B (the cat video)"],
   ["use", "hot:a4_door_out"], ["expect", "S.room === 'a4_jfk'", "back in the terminal"],
   ["use", "hot:a4_gates"], ["expect", "S.room === 'a4_security'", "security"]
 ];
 const security = [
-  ["look", "hot:a4_biscuit"], ["pickup", "hot:a4_inspect"], ["expect", "!RP.has('a4_bag')", "the dog is on my bag"],
-  ["give", "hot:a4_biscuit", "a4_jerky"], ["expect", "!S.f.a4_dogFed", "form first"],
+  ["look", "hot:a4_nugget"], ["pickup", "hot:a4_inspect"], ["expect", "!RP.has('a4_bag')", "the dog is on my bag"],
+  ["give", "hot:a4_nugget", "a4_jerky"], ["expect", "!S.f.a4_dogFed", "form first"],
   ["give", "hot:a4_delgado", "a4_form"], ["expect", "S.f.a4_formSigned", "Delgado signed"],
-  ["give", "hot:a4_biscuit", "a4_jerky"], ["expect", "S.f.a4_dogFed", "Biscuit got the jerky"],
+  ["give", "hot:a4_nugget", "a4_jerky"], ["expect", "S.f.a4_dogFed", "Nugget got the jerky"],
   ["pickup", "hot:a4_inspect"], ["expect", "RP.has('a4_bag') && S.f.a4_bagBack", "bag recovered"],
   ["use", "hot:a4_gates"], ["expect", "S.room === 'a4_plane'", "on the plane"]
 ];

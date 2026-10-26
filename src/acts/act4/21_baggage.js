@@ -1,6 +1,6 @@
-/* Act 4 — a4_baggage: Baggage Services (Priya), carousel 7, shelves of unclaimed bags.
-   Priya will stamp Form 7B only when she's off her "break" — which lasts as long as the cat video.
-   Flags: a4_priyaTold a4_priyaCat a4_priyaProve a4_formStamped */
+/* Act 4 — a4_baggage: Baggage Services (Bernadette), carousel 7, shelves of unclaimed bags.
+   Bernadette will stamp Form 7B only when she's off her "break" — which lasts as long as the cat video.
+   Flags: a4_bernadetteTold a4_bernadetteCat a4_bernadetteProve a4_formStamped */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -93,7 +93,7 @@ function paint(c, S) {
 function draw(c, S, t) {
   // moving bags on the carousel: draw back-to-front by x
   BAGS.forEach((b, i) => { const x = beltPos(i, t); if (x < 340 || x > 640) return; sprBag[b.id](c, x, 128 - b.h - 2 + (b.id === "cello" ? 4 : 0)); });
-  // priya's monitor: a cat falls off a couch, forever
+  // bernadette's monitor: a cat falls off a couch, forever
   const cx = 106, cy = 118;
   R(c, cx + 14, cy + 28, 8, 4, "#3a3c50"); R(c, cx + 10, cy + 30, 16, 2, "#5a5c70");
   R(c, cx - 3, cy - 3, 42, 30, "#14121c"); R(c, cx - 3, cy - 3, 42, 1, "#5a5c70"); R(c, cx, cy, 36, 20, "#0a0818"); R(c, cx + 1, cy + 1, 34, 18, "#2a3a5a");
@@ -118,55 +118,55 @@ function light(S) {
   };
 }
 
-/* ------------------------------------------------------------------ Priya */
+/* ------------------------------------------------------------------ Bernadette */
 const tagName = S => A4.misspell(A4.dj(S));
-async function priyaTalk(S) {
-  if (!S.f.a4_priyaTold && !S.f.a4_priyaOpen) {
-    S.f.a4_priyaOpen = true;
+async function bernadetteTalk(S) {
+  if (!S.f.a4_bernadetteTold && !S.f.a4_bernadetteOpen) {
+    S.f.a4_bernadetteOpen = true;
     await RP.say("Hi, I think my bag's lost?");
-    await RP.lines(["@a4_priya (doesn't look up) Take a number.", "There's nobody else here.", "@a4_priya I know. I love it. Take a number.", "The dispenser gave me a 5. The display says 4. This is not going to be quick."]);
+    await RP.lines(["@a4_bernadette (doesn't look up) Take a number.", "There's nobody else here.", "@a4_bernadette I know. I love it. Take a number.", "The dispenser gave me a 5. The display says 4. This is not going to be quick."]);
   }
   await RP.convo([
-    { text: "I'm here about a detained bag.", when: S => !S.f.a4_priyaTold, run: async () => {
-      if (!RP.has("a4_claim")) { await RP.say("Claim tag, hon. No tag, no bag. That's the law.", "a4_priya"); return; }
-      S.f.a4_priyaTold = true;
-      await RP.lines(["@a4_priya (types) BER-4471. \"" + tagName(S) + ".\" ...Oh. Security's got it. K9 flagged it. Smelled \"suspicious nostalgia.\"",
-        "It's records!", "@a4_priya I can release it with a Form 7B. Stamped by us, signed by them.", "Where's the form?", "@a4_priya The rack in the main hall. We're out. The rack's got some.",
-        "@a4_priya I'll stamp it. But I'm on my break.", "You're on break? You're at a desk!", "@a4_priya My break is when the video ends. It's very long. It loops."]);
+    { text: "I'm here about a detained bag.", when: S => !S.f.a4_bernadetteTold, run: async () => {
+      if (!RP.has("a4_claim")) { await RP.say("Claim tag, hon. No tag, no bag. That's the law.", "a4_bernadette"); return; }
+      S.f.a4_bernadetteTold = true;
+      await RP.lines(["@a4_bernadette (types) BER-4471. \"" + tagName(S) + ".\" ...Oh. Security's got it. K9 flagged it. Smelled \"suspicious nostalgia.\"",
+        "It's records!", "@a4_bernadette I can release it with a Form 7B. Stamped by us, signed by them.", "Where's the form?", "@a4_bernadette The rack in the main hall. We're out. The rack's got some.",
+        "@a4_bernadette I'll stamp it. But I'm on my break.", "You're on break? You're at a desk!", "@a4_bernadette My break is when the video ends. It's very long. It loops."]);
     } },
-    { text: "What are you watching?", when: S => S.f.a4_priyaTold && !S.f.a4_priyaCat, run: async () => {
-      S.f.a4_priyaCat = true;
-      await RP.lines(["@a4_priya The cat video! The cat falls off the couch. Every time. I can't stop.", "@a4_priya It's got that song. That bouncy one. \"NYC 93.\"", "That's... that's my song.", "@a4_priya It's the cat song, hon."]);
+    { text: "What are you watching?", when: S => S.f.a4_bernadetteTold && !S.f.a4_bernadetteCat, run: async () => {
+      S.f.a4_bernadetteCat = true;
+      await RP.lines(["@a4_bernadette The cat video! The cat falls off the couch. Every time. I can't stop.", "@a4_bernadette It's got that song. That bouncy one. \"NYC 93.\"", "That's... that's my song.", "@a4_bernadette It's the cat song, hon."]);
     } },
-    { text: "That's my remix. I made it.", when: S => S.f.a4_priyaCat && !S.f.a4_priyaProve, run: async () => {
-      S.f.a4_priyaProve = true;
-      await RP.lines(["@a4_priya Sure you did. And I'm the Queen of Queens.", "I did! Pipe Hole Records! It's on my label!", "@a4_priya ...Prove it."]);
+    { text: "That's my remix. I made it.", when: S => S.f.a4_bernadetteCat && !S.f.a4_bernadetteProve, run: async () => {
+      S.f.a4_bernadetteProve = true;
+      await RP.lines(["@a4_bernadette Sure you did. And I'm the Queen of Queens.", "I did! Pipe Hole Records! It's on my label!", "@a4_bernadette ...Prove it."]);
     } },
-    { text: "(Show her the Pipe Hole Records page on my phone.)", when: S => S.f.a4_priyaProve && !S.f.a4_formStamped, run: async () => {
+    { text: "(Show her the Pipe Hole Records page on my phone.)", when: S => S.f.a4_bernadetteProve && !S.f.a4_formStamped, run: async () => {
       await stampScene(S);
     } },
     { text: "Never mind.", end: true }
   ]);
 }
 async function stampScene(S) {
-  if (!RP.has("a4_form")) { await RP.lines(["@a4_priya (stares at the phone, then at the cover photo: a hole in a wall)", "@a4_priya ...THE HOLE. It's the HOLE. Oh my God.", "@a4_priya Okay. I'm going to stamp something. Do you have something to stamp?", "I should get a Form 7B. From the rack in the hall."]); return; }
-  await RP.lines(["@a4_priya (stares at the phone, then at the cover photo: a hole in a wall)", "@a4_priya ...THE HOLE. It's the HOLE. Oh my GOD.", "@a4_priya My kid has this on repeat. Her name's Maddie. Say hi to Maddie!",
-    "Hi, Maddie. (She films me for six seconds.)", "@a4_priya She's screaming. Give me that form. Break's over."]);
+  if (!RP.has("a4_form")) { await RP.lines(["@a4_bernadette (stares at the phone, then at the cover photo: a hole in a wall)", "@a4_bernadette ...THE HOLE. It's the HOLE. Oh my God.", "@a4_bernadette Okay. I'm going to stamp something. Do you have something to stamp?", "I should get a Form 7B. From the rack in the hall."]); return; }
+  await RP.lines(["@a4_bernadette (stares at the phone, then at the cover photo: a hole in a wall)", "@a4_bernadette ...THE HOLE. It's the HOLE. Oh my GOD.", "@a4_bernadette My kid has this on repeat. Her name's Maddie. Say hi to Maddie!",
+    "Hi, Maddie. (She films me for six seconds.)", "@a4_bernadette She's screaming. Give me that form. Break's over."]);
   RP.sfx("click"); await RP.wait(300); RP.sfx("thump");
   S.f.a4_formStamped = true; RP.refreshInv();
-  await RP.lines(["*STAMP.* \"RECEIVED.\" She adds a smiley, which I'm fairly sure is a violation.", "@a4_priya Now Security. They'll sign it. Ask for Delgado. Tell him Priya says hi.", "@a4_priya And tell your friend the cat's doing great."]);
+  await RP.lines(["*STAMP.* \"RECEIVED.\" She adds a smiley, which I'm fairly sure is a violation.", "@a4_bernadette Now Security. They'll sign it. Ask for Delgado. Tell him Bernadette says hi.", "@a4_bernadette And tell your friend the cat's doing great."]);
   await RP.say("The form says what it's always wanted to say. All it needs is a signature.");
 }
-async function giveToPriya(S, item) {
-  if (item === "a4_claim") { if (S.f.a4_priyaTold) return "She's read it. She's got its number. She keeps looking at me, then at the claim, then at me."; return priyaTalk(S); }
+async function giveToBernadette(S, item) {
+  if (item === "a4_claim") { if (S.f.a4_bernadetteTold) return "She's read it. She's got its number. She keeps looking at me, then at the claim, then at me."; return bernadetteTalk(S); }
   if (item === "a4_form") {
     if (S.f.a4_formStamped) return "It's already stamped. \"RECEIVED.\" With a smiley.";
-    if (!S.f.a4_priyaTold) { await RP.say("Form 7B. For what, hon? Tell me about the bag first.", "a4_priya"); return; }
-    if (S.f.a4_priyaProve) { await stampScene(S); return; }
-    await RP.lines(["@a4_priya I'm on my break.", "You're at your desk!", "@a4_priya It's a working break. I'm watching a cat fall off a couch. It's the best thing on the internet."]);
+    if (!S.f.a4_bernadetteTold) { await RP.say("Form 7B. For what, hon? Tell me about the bag first.", "a4_bernadette"); return; }
+    if (S.f.a4_bernadetteProve) { await stampScene(S); return; }
+    await RP.lines(["@a4_bernadette I'm on my break.", "You're at your desk!", "@a4_bernadette It's a working break. I'm watching a cat fall off a couch. It's the best thing on the internet."]);
     return;
   }
-  if (item === "phone") { if (S.f.a4_priyaProve) { await stampScene(S); return; } await RP.say("She looks at my phone. \"Hon, that's a phone. I have one.\"", "a4_priya"); return; }
+  if (item === "phone") { if (S.f.a4_bernadetteProve) { await stampScene(S); return; } await RP.say("She looks at my phone. \"Hon, that's a phone. I have one.\"", "a4_bernadette"); return; }
   return "She's not interested. She's busy, in a working-break kind of way.";
 }
 
@@ -178,7 +178,7 @@ RP.room({
   walk: [[8, 206], [200, 204], [570, 204], [630, 250], [8, 250]],
   start: { x: 560, y: 230, face: "left" },
   actors: [
-    { id: "a4_priya", char: "a4_priya", x: 160, y: 168, face: "front", act: "stand", name: "Priya", noTurn: true },
+    { id: "a4_bernadette", char: "a4_bernadette", x: 160, y: 168, face: "front", act: "stand", name: "Bernadette", noTurn: true },
     { id: "a4_pax4", char: "a4_pax4", x: 562, y: 206, face: "back", act: "stand", clickable: false }
   ],
   sprites: [
@@ -187,18 +187,18 @@ RP.room({
   ],
   self: { look: "Tour bomber, headphones, and the posture of someone about to be told to \"take a number.\"", talk: "I'd say \"hi,\" but I'm saving my energy for a form." },
   hotspots: [
-    { id: "a4_priya", name: "Priya", look: "Priya, Baggage Services. Cardigan, glasses, lanyard. She isn't looking at me. She's looking at a cat.",
-      talk: S => priyaTalk(S), give: (S, item) => giveToPriya(S, item),
-      pickup: "I'm not picking up Priya. She'd report me to herself.", push: "I'd say pushing a clerk is rude. And also a form 7C." },
+    { id: "a4_bernadette", name: "Bernadette", look: "Bernadette, Baggage Services. Cardigan, glasses, lanyard. She isn't looking at me. She's looking at a cat.",
+      talk: S => bernadetteTalk(S), give: (S, item) => giveToBernadette(S, item),
+      pickup: "I'm not picking up Bernadette. She'd report me to herself.", push: "I'd say pushing a clerk is rude. And also a form 7C." },
     { id: "a4_desk", name: "service desk", r: [24, 144, 300, 56], z: 30, walk: [200, 218, "back"], look: "A counter with a glass partition and a sliding window that doesn't slide. Behind it, shelves of other people's trips." },
     { id: "a4_stamp", name: "stamp and pad", r: [222, 144, 34, 18], z: 60, walk: [236, 214, "back"],
-      look: "A rubber stamp that says RECEIVED, next to a red pad. Priya guards it like a dragon with a very small hoard.",
-      pickup: "Priya's got eyes on it. \"Hands off,\" she says. She hasn't looked up.", use: "I can't stamp my own form. I'm not an authority. I'm a DJ." },
+      look: "A rubber stamp that says RECEIVED, next to a red pad. Bernadette guards it like a dragon with a very small hoard.",
+      pickup: "Bernadette's got eyes on it. \"Hands off,\" she says. She hasn't looked up.", use: "I can't stamp my own form. I'm not an authority. I'm a DJ." },
     { id: "a4_numbers", name: "take-a-number", r: [316, 156, 26, 52], z: 50, walk: [330, 218, "back"], look: "TAKE A NUMBER. The display says NOW SERVING 4. My ticket says 5. There's only me here. Math, as practiced by an airline.", pickup: "Already took one. It says 5. I'm keeping it.", use: "I already have a number. It's 5. It's the loneliest number." },
-    { id: "a4_screen", name: "Priya's monitor", r: [102, 114, 46, 40], z: 70, walk: [140, 214, "back"],
-      look: "A video loops on Priya's screen: a cat falls off a couch, over and over, to a bouncy track. I know that bounce. I MADE that bounce. It's on loop. In an airport.",
-      use: "It's her screen. She'd notice.", pickup: "It's a monitor. And it's Priya's. And I have a sense of self-preservation." },
-    { id: "a4_shelves", name: "unclaimed bags", r: [30, 48, 270, 92], z: 15, walk: [180, 218, "back"], look: "Hundreds of bags, tagged and shelved. A suitcase that's been waiting since the last century. Mine joined its ranks this afternoon. Possibly." },
+    { id: "a4_screen", name: "Bernadette's monitor", r: [102, 114, 46, 40], z: 70, walk: [140, 214, "back"],
+      look: "A video loops on Bernadette's screen: a cat falls off a couch, over and over, to a bouncy track. I know that bounce. I MADE that bounce. It's on loop. In an airport.",
+      use: "It's her screen. She'd notice.", pickup: "It's a monitor. And it's Bernadette's. And I have a sense of self-preservation." },
+    { id: "a4_shelves", name: "unclaimed bags", r: [30, 48, 270, 92], z: 15, walk: [180, 218, "back"], look: "Hundreds of bags, tagged and shelved. A suitcase that's been waiting since the last century. Mine joined its ranks this morning. Possibly." },
     { id: "a4_clock", name: "clock", r: [320, 54, 26, 36], z: 20, walk: [330, 216, "back"], look: "Stuck at 4:20. \"TIME IS A SUGGESTION,\" says a sign. It's the most honest sign in the airport." },
     { id: "a4_posters", name: "posters", rects: [[458, 58, 40, 54], [500, 66, 50, 38]], z: 20, walk: [490, 216, "back"], look: "\"HAVE YOU LOST: HOPE? DIGNITY?\" And a sign: NO FOOD, NO DRINK, NO HOPE (SORRY). I appreciate the apology." },
     { id: "a4_rate", name: "feedback terminal", r: [560, 78, 32, 40], z: 25, walk: [570, 218, "back"], look: "\"RATE US.\" Four buttons from green smiley to red angry. The red one is worn smooth and the counter says 4,372.", use: "I press red. For everyone who came before.", push: "I press red. A tradition." },
@@ -211,22 +211,22 @@ RP.room({
     { id: "a4_floor", name: "floor", r: [8, 204, 620, 46], z: 5, floor: true, look: "Gray tile, scuffed by ten thousand rolling suitcases and one hopeful DJ." }
   ],
   combos: [
-    ["a4_claim", "a4_priya", S => giveToPriya(RP.state, "a4_claim")],
-    ["a4_claim", "a4_desk", S => priyaTalk(RP.state)],
-    ["a4_form", "a4_priya", S => giveToPriya(RP.state, "a4_form")],
-    ["a4_form", "a4_desk", S => giveToPriya(RP.state, "a4_form")],
+    ["a4_claim", "a4_bernadette", S => giveToBernadette(RP.state, "a4_claim")],
+    ["a4_claim", "a4_desk", S => bernadetteTalk(RP.state)],
+    ["a4_form", "a4_bernadette", S => giveToBernadette(RP.state, "a4_form")],
+    ["a4_form", "a4_desk", S => giveToBernadette(RP.state, "a4_form")],
     ["a4_form", "a4_stamp", "I'm not stamping it myself. I'd be \"unauthorized.\" That's a form of its own."],
     ["a4_form", "a4_screen", "I can't stamp a cat video. It's already approved."],
-    ["phone", "a4_priya", S => giveToPriya(RP.state, "phone")],
+    ["phone", "a4_bernadette", S => giveToBernadette(RP.state, "phone")],
     ["phone", "a4_screen", "I could just show her. I could ask her to look at me and not the cat. Ambitious."],
-    ["a4_white", "a4_priya", "A white label. She'd think it's a Frisbee. It's got a hole in it, so it kind of qualifies."],
-    ["a4_jerky", "a4_priya", "She's already eating. A smaller, daintier thing. I'm not offering jerky."],
-    ["a4_boarding", "a4_priya", "She's not gate agent. She's baggage. Different kind of problem."]
+    ["a4_white", "a4_bernadette", "A white label. She'd think it's a Frisbee. It's got a hole in it, so it kind of qualifies."],
+    ["a4_jerky", "a4_bernadette", "She's already eating. A smaller, daintier thing. I'm not offering jerky."],
+    ["a4_boarding", "a4_bernadette", "She's not gate agent. She's baggage. Different kind of problem."]
   ],
   enter: async (S, from) => {
     if (!S.f.a4_firstBag) {
-      S.f.a4_firstBag = true; RP.setClock("FRI 4:12 PM");
-      await RP.lines(["Baggage Services. Gray tile, gray walls, gray souls. The carousel is the only thing moving.", "And there: Priya. She's watching her monitor. Her monitor is playing... a very familiar bounce."]);
+      S.f.a4_firstBag = true; RP.setClock("SAT 8:04 AM");
+      await RP.lines(["Baggage Services. Gray tile, gray walls, gray souls. The carousel is the only thing moving.", "And there: Bernadette. She's watching her monitor. Her monitor is playing... a very familiar bounce."]);
     }
   }
 });

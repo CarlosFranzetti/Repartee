@@ -210,13 +210,13 @@ async function goUp(S) {
   await RP.walkTo(560, 228, "back");
   await RP.fadeTo(1, 800);
   await RP.say("Room 12 is small, clean and smells like fresh towels and ambition. I sleep for eleven hours with my record bag in my arms.", "nar");
-  RP.setClock("SUN 3:30 PM");
+  RP.setClock("SUN 3:40 PM");
   RP.place("kid", 560, 232, "front");
   await RP.fadeTo(0, 800);
   await finale(S);
 }
 async function finale(S) {
-  await RP.lines(["I wake up in a lobby chair, which is a mood. The phone is buzzing like a trapped bee."]);
+  await RP.lines(["I wake up in Room 12, still hugging the bag. The Wi-Fi only works in the lobby, so: the lobby.", "The phone is buzzing like a trapped bee."]);
   await RP.phone([
     { from: "MARCUS", text: "BRO. i saw the clip. berlin. plus three for the next one?? i am NOT asking. i'm just saying", hot: true },
     { from: "DANTE", text: "heard about berlin!! proud. gonna pay u next week", hot: false },

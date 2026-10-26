@@ -56,7 +56,7 @@ def("a4_ingrid", { name: "Ingrid Falk", height: 98, build: "thin", skin: "#f1c7a
 def("a4_dolores", { name: "Dolores", height: 90, build: "stocky", figure: "curvy", skin: "#8d5a3b", hair: { style: "bun", color: "#1c1418" },
   top: { style: "vest", color: "#2a4a8a", color2: "#efeaf6" }, bottom: { style: "pants", color: "#1c2a4a" }, shoes: { style: "shoes", color: "#17131f" },
   acc: ["lanyard"], voice: "#ffb0a0" });
-def("a4_priya", { name: "Priya", height: 90, figure: "curvy", skin: "#b07650", hair: { style: "long", color: "#1c1418" },
+def("a4_bernadette", { name: "Bernadette", height: 90, figure: "curvy", skin: "#d8a07a", hair: { style: "curly", color: "#5a3424" },
   top: { style: "cardigan", color: "#c0502c", color2: "#efeaf6" }, bottom: { style: "pants", color: "#2a2836" }, shoes: { style: "shoes", color: "#5a3424" },
   acc: ["glasses", "lanyard"], voice: "#ffcf7a" });
 def("a4_delgado", { name: "Officer Delgado", height: 102, build: "big", skin: "#c98a62", hair: { style: "buzz", color: "#1c1418" }, facial: "mustache", facialColor: "#1c1418",
@@ -184,6 +184,7 @@ RP.defineAct({
     } else {
       if (!S.records) S.records = [];
       if (!S.records.includes("white_nyc93")) S.records.push("white_nyc93");
+      S.followers = Math.max(S.followers || 0, 2500);
       S.gear = Object.assign({ decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk2", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" }, S.gear);
     }
     if (!S.money || S.money < 200) S.money = Math.max(S.money || 0, 600);
@@ -195,13 +196,13 @@ RP.defineAct({
   async intro(S) {
     RP.actor("kid").face = "front";
     await RP.lines([
-      "Six months on. Saturday residency, a closet of Technics, and four rent checks that all cleared.",
+      "Six months on. Thursday residency, a closet of Technics, and four rent checks that all cleared.",
       "Dante still owes me from Nowhere. He says it's in the mail. He's never owned a mailbox."
     ]);
     RP.setGear("turntables", "technics_sl_1210mk7");
     await RP.lines([
       "My own pair of Technics SL-1210MK7s, bought with Halcyon money. I pet them when nobody's looking.",
-      "And an email I've read nine times. It's from Berlin. It's on the laptop."
+      "And an email I've read nine times. Ingrid Falk, Berlin, again. It's on the laptop."
     ]);
   },
   doneTitle: "FIRST TOUR",

@@ -38,7 +38,7 @@ function paint(c, S) {
   E(PK.departuresBoard(c, 214, 14, 216, 44, { title: "ABFAHRT / DEPARTURES", seed: 31, rows: 2 }));
   const bx = 214, by = 14, bw = 216, ry = by + 10 + 10;
   const cols = [0.0, 0.17, 0.52, 0.68, 0.78].map(f => bx + 5 + Math.round(f * (bw - 10)));
-  R(c, bx + 3, ry - 1, bw - 6, 8, "#14306a"); txt(c, "00:07", cols[0], ry, "#ffd23f"); txt(c, "ALEXANDERPLATZ", cols[1], ry, "#ffffff"); txt(c, "FEX", cols[2], ry, "#ffffff"); txt(c, "GL.1", cols[3], ry, "#ffd23f"); txt(c, "PUNKTLICH", cols[4], ry, "#5cff9a");
+  R(c, bx + 3, ry - 1, bw - 6, 8, "#14306a"); txt(c, "00:07", cols[0], ry, "#ffd23f"); txt(c, "HAUPTBAHNHOF", cols[1], ry, "#ffffff"); txt(c, "FEX", cols[2], ry, "#ffffff"); txt(c, "GL.1", cols[3], ry, "#ffd23f"); txt(c, "PUNKTLICH", cols[4], ry, "#5cff9a");
   // poster: Halle Neun, kein small talk
   PK.poster(c, 40, 34, 56, 76, { title: "HALLE NEUN", titleLines: ["HALLE", "NEUN"], lines: ["SA - TECHNO", "KEIN SMALL TALK"], palette: "mono", seed: 61 });
   // network map
@@ -102,7 +102,7 @@ async function boardTrain(S) {
   if (!S.f.a4_validated) { await RP.lines(["The train's doors are open. The ticket's not stamped. Inspectors in Germany are rumored to smell a fraud from the platform.", "The red box over there. The stamp."]); return; }
   await RP.walkTo(240, 224, "back");
   RP.setClock("SUN 12:07 AM");
-  await RP.lines(["The doors close. The train hums. It's 12:07 exactly. The Germans are a precise people.", "@a4_pa Nächster Halt: Berlin Hauptbahnhof. Next stop: central station. Please mind the gap and your record bag."]);
+  await RP.lines(["The doors close. The train hums. It's 12:07 exactly. The Germans are a precise people.", "@a4_pa FEX nach Berlin Hauptbahnhof. Nächster Halt: Ostkreuz. Next stop: Ostkreuz. Please mind the gap and your record bag."]);
   const res = await RP.mg.play("lastTrain", { from: "BER Airport", to: "Halle Neun, Berlin", battery: 18, money: Math.round(S.money), carrying: "records", mode: "airport", difficulty: 2 });
   const r = res || { ok: false };
   const ok = !!r.ok && !(r.minutesLate > 25);
@@ -142,7 +142,7 @@ RP.room({
   hotspots: [
     { id: "a4_stag1", name: "stag party guy", look: "A guy in a hi-vis vest with a plastic crown. He's dancing like the ground is on fire, and he's happy about it.", talk: async () => { await RP.lines(["@a4_stag1 HALLO! AMERIKA! You want beer?", "I want a train.", "@a4_stag1 Same! Ha! We're ALSO trying to get to a club!", "@a4_stag1 It's called Halle Neun! We won't get in! Sven doesn't like our vests!"]); }, pickup: "He's dancing. I'd get a vest in the face.", push: "He's already doing a great job of that himself." },
     { id: "a4_stag3", name: "stag party guy", look: "Another vest. Another crown. He's singing something in German that sounds both beautiful and unforgivable.", talk: "He sings LA LA LAAA at me, in a key I don't recognize. No further information.", pickup: "He's mid-dance. I'm not getting involved." },
-    { id: "a4_stag2", name: "stag party guy", look: "The third stag, in the vest of someone who lost the vote. He's watching his phone like it owes him money.", talk: async () => { await RP.lines(["@a4_stag2 Don't talk to Jürgen. He's engaged to a ghost.", "I wasn't going to.", "@a4_stag2 Smart. Take the S-Bahn if you can. The last one is the fast one."]); }, pickup: "He'd smile at me. I don't know if I'm ready for that." },
+    { id: "a4_stag2", name: "stag party guy", look: "The third stag, in the vest of someone who lost the vote. He's watching his phone like it owes him money.", talk: async () => { await RP.lines(["@a4_stag2 Don't talk to Jürgen. He's engaged to a ghost.", "I wasn't going to.", "@a4_stag2 Smart. Take the FEX. The express. The last one is the fast one."]); }, pickup: "He'd smile at me. I don't know if I'm ready for that." },
     { id: "a4_tmachine", name: "ticket machine", r: [30, 132, 56, 82], z: 50, walk: [72, 222, "back"],
       look: "A yellow ticket machine with a touchscreen, a coin slot and a note: \"FLUGHAFEN: TARIF ABC.\" German efficiency has a color and it's yellow.", use: S => buyTicket(S), push: "It's got a very firm resolve. And no kicking.", pickup: "It's bolted to the platform. And probably the Bundesrepublik." },
     { id: "a4_validator", name: "ticket validator", r: [116, 136, 22, 40], z: 55, walk: [130, 222, "back"],
@@ -150,7 +150,7 @@ RP.room({
     { id: "a4_train", name: "airport express", r: [150, 64, 344, 106], z: 20, walk: [300, 226, "back"],
       look: "The last airport express. Red stripe, lit windows, doors open. Its sign says BERLIN HBF and, I'm told, it doesn't wait.", use: S => boardTrain(S), open: S => boardTrain(S), walkTo: S => boardTrain(S), push: "It weighs about 200 tons. It'd leave anyway.", pickup: "It's a train, not a carry-on." },
     { id: "a4_board", name: "departures board", r: [214, 14, 216, 44], z: 25, walk: [320, 220, "back"],
-      look: "00:07, Alexanderplatz, FEX, platform 1, PÜNKTLICH. Everything else is also punctual. It's hard to hate them.", use: "The board doesn't take requests. It just takes the time.", pickup: "It's bolted to the wall. And to the Prussian worldview." },
+      look: "00:07, FEX to Hauptbahnhof via Ostkreuz, platform 1, PÜNKTLICH. Everything else is also punctual. It's hard to hate them.", use: "The board doesn't take requests. It just takes the time.", pickup: "It's bolted to the wall. And to the Prussian worldview." },
     { id: "a4_map", name: "network map", r: [480, 52, 52, 58], z: 25, walk: [500, 220, "back"],
       look: "A map of colored lines, a bulb of overlapping zones. YOU ARE HERE (C). I suppose that's the first thing it got right.", use: "I'd study it, but the lines look like a bowl of spaghetti with ambitions." },
     { id: "a4_poster", name: "Halle Neun poster", r: [40, 34, 58, 78], z: 20, walk: [70, 220, "back"],

@@ -40,7 +40,7 @@ function paint(c, S) {
   for (let x = 0; x < W; x += 70) { R(c, x, 0, 3, 20, "#2a283a"); R(c, x + 1, 0, 1, 20, "#5a587a"); }
   [100, 240, 380, 520].forEach(x => E(PK.fluorescent(c, x, 12, 76, { on: true })));
   // glass wall with the apron, a parked plane and a baggage tractor
-  PK.sky(c, 330, 22, 310, 128, { time: "dusk", seed: 5, clouds: 3, sun: { x: 590, y: 126, r: 7 } });
+  PK.sky(c, 330, 22, 310, 128, { time: "dawn", seed: 5, clouds: 3, sun: { x: 590, y: 126, r: 7 } });
   R(c, 330, 118, 310, 32, "#3a3648"); PK.gradV(c, 330, 118, 310, 32, ["#4a4660", "#2e2a3c"], { dither: 1 }); R(c, 330, 118, 310, 1, "#6a6688");
   for (let x = 340; x < 640; x += 34) R(c, x, 134, 18, 1, "#e8c020"); for (let x = 332; x < 640; x += 42) R(c, x, 144, 2, 4, "#ffcf7a");
   planeTail(c, 548, 112);
@@ -70,7 +70,7 @@ function paint(c, S) {
   const bx = 292, by = 14, bw = 240, ry = by + 10 + 10 + 7;   // row 1
   const cols = [0.0, 0.17, 0.52, 0.68, 0.78].map(f => bx + 5 + Math.round(f * (bw - 10)));
   R(c, bx + 3, ry - 1, bw - 6, 8, "#14306a");
-  txt(c, "16:55", cols[0], ry, "#ffd23f"); txt(c, "BERLIN", cols[1], ry, "#ffffff"); txt(c, "TA718", cols[2], ry, "#ffffff"); txt(c, "B22", cols[3], ry, "#ffd23f"); txt(c, "BOARDING", cols[4], ry, "#5cff9a");
+  txt(c, "08:55", cols[0], ry, "#ffd23f"); txt(c, "BERLIN", cols[1], ry, "#ffffff"); txt(c, "TA718", cols[2], ry, "#ffffff"); txt(c, "B22", cols[3], ry, "#ffd23f"); txt(c, "ON TIME", cols[4], ry, "#5cff9a");
   R(c, 296, 6, 1, 8, "#2a2838"); R(c, 527, 6, 1, 8, "#2a2838");
   // pillar ad
   R(c, 290, 96, 36, 52, "#2a2c40"); R(c, 292, 98, 32, 40, "#c8325a"); txt(c, "NEW", 300, 102, "#ffffff"); txt(c, "YORK", 298, 110, "#ffd23f"); txt(c, "NOW", 300, 120, "#ffffff"); txt(c, "LEAVE", 296, 128, "#ffffff");
@@ -139,13 +139,13 @@ async function checkInBag(S) {
   if (S.f.a4_bagChecked) return "She's already got the bag. I could feel it go. Somewhere a conveyor is doing the thing it does.";
   await RP.lines(["@a4_dolores Up on the scale. ...Thirty-eight kilos.", "It's records.", "@a4_dolores It's thirty-eight kilos of records. Limit's twenty-three. Seventy-five dollars."]);
   if (S.money >= 75) { RP.money(-75); await RP.say("Seventy-five dollars. For the privilege of being separated from my career."); }
-  else await RP.say("I... can't. I have a record. She sighs and waves me through. \"Because it's a Friday.\"", "a4_dolores");
+  else await RP.say("I... can't. I have a record. She sighs and waves me through. \"Because it's seven a.m. on a Saturday.\"", "a4_dolores");
   await RP.lines(["@a4_dolores Berlin. BER. Sticker on, tag on. Claim tag's yours. Don't lose it.", "@a4_dolores Name on the tag: \"" + tagName(S) + ".\" It's how it's always been."]);
   RP.take("a4_bag"); RP.give("a4_claim");
   S.f.a4_bagChecked = true; S.f.noTravel = true; S.f.a4_beltT = performance.now(); S.f.a4_beltDone = false;
   RP.sfx("zip");
   await RP.wait(1900);
-  RP.setClock("FRI 3:48 PM");
+  RP.setClock("SAT 7:48 AM");
   await RP.lines(["The bag rides the belt and vanishes behind rubber flaps.", "I feel like I just dropped a kid at a daycare run by strangers."]);
   await RP.say("Will passenger " + tagName(S) + " please report to Baggage Services, Level 1. Passenger " + tagName(S) + ".", "a4_pa");
   RP.text("TRANSATLANTIS", "Bag BER-4471 requires your attention. See Baggage Services, Level 1. Reply STOP to stop. You can't stop.", false);
@@ -209,7 +209,7 @@ RP.room({
       give: async (S, item) => item === "a4_passport" ? checkInPassport(S) : item === "a4_bag" ? checkInBag(S) : "Hand it to Dolores. The counter doesn't have hands." },
     { id: "a4_belt", name: "bag drop belt", r: [52, 108, 52, 44], z: 35, walk: [120, 220, "back"], look: "The bag drop. A black conveyor into a hole lined with rubber flaps. It leads to the airport's inner life. None of it good.", use: "Don't ride it. I saw a guy try once. He works in Baggage Services now.", push: "Pushing it wouldn't make anything faster. That's the whole point of a belt.", pickup: "You can't pick up a conveyor. I've tried with the one at the grocery store." },
     { id: "a4_board", name: "departures board", r: [292, 14, 240, 72], z: 25, walk: [410, 214, "back"],
-      look: "BERLIN, TA 718, gate B22, 4:55 PM: BOARDING. Everything else is DELAYED. The board is very honest about its feelings.", use: "It's an electronic board. It doesn't take requests.", pickup: "It's bolted to the ceiling. The ceiling would have things to say." },
+      look: "BERLIN, TA 718, gate B22, 8:55 AM: ON TIME. Everything else is DELAYED. The board is very honest about its feelings.", use: "It's an electronic board. It doesn't take requests.", pickup: "It's bolted to the ceiling. The ceiling would have things to say." },
     { id: "a4_sign_bag", name: "Baggage Services sign", r: [4, 54, 82, 16], z: 40, walk: [34, 222, "back"], look: "BAGGAGE SERVICES, with an arrow pointing at the door next to it. Subtle." },
     { id: "a4_door_bag", name: "Baggage Services", r: [2, 76, 48, 76], z: 36, walk: [34, 222, "back"],
       look: "Frosted-glass door to Baggage Services. Where bags go to be reunited, or bureaucratized.",
@@ -253,8 +253,8 @@ RP.room({
   ],
   enter: async (S, from) => {
     if (!S.f.a4_firstJfk) {
-      S.f.a4_firstJfk = true; RP.setClock("FRI 3:05 PM");
-      await RP.lines(["JFK, Terminal 4. It smells like stress, floor wax and cinnamon.", "Check-in's on the left. Dolores is waiting. Bag, passport. The plan is simple. That's how you know it won't go to plan."]);
+      S.f.a4_firstJfk = true; RP.setClock("SAT 7:05 AM");
+      await RP.lines(["JFK, Terminal 4, seven a.m. Saturday. It smells like stress, floor wax and cinnamon.", "Check-in's on the left. Dolores is waiting. Bag, passport. The plan is simple. That's how you know it won't go to plan."]);
     }
   }
 });
