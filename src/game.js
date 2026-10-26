@@ -96,8 +96,8 @@ function showTitle() {
   add("JUKEBOX", () => toggle(panel, jukebox));
   add("MINI-GAMES", () => toggle(panel, arcade));
   add("CREDITS", () => toggle(panel, credits));
-  if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all sixteen mini-games in the arcade. Sound on helps." }, box);
-  else el("p", { cls: "small", text: "Five levels. Sixteen mini-games. Sound on helps." }, box);
+  if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all eight mini-games in the arcade. Sound on helps." }, box);
+  else el("p", { cls: "small", text: "Five levels. Eight mini-games. Sound on helps." }, box);
   if (SITE) levelNav(box);
   setTimeout(() => first[0] && first[0].focus({ preventScroll: true }), 50);
   // the title theme starts on the first click or key (browsers won't play sound before that)
@@ -217,8 +217,7 @@ function chapters(panel) {
 }
 /* MINI-GAMES: a grid of cabinet tiles; picking one opens its card (what it is, where it's from, your best score)
    and PLAY starts it. Best scores are kept per mini-game */
-const MG_LEVELS = { beatMatch: [1, 4, 5], crowdRead: [1, 4, 5], goDigging: [1, 3], guestList: [2, 5], soundCheck: [2, 5], afterParty: [2], buyGear: [2, 3, 5], promoterTalk: [2, 4],
-  setTime: [3, 5], playlistOrder: [3, 5], crateDigging: [3], recordHunt: [3], clubDrama: [3, 5], getFollowers: [3, 4], lastTrain: [3, 4], makTracks: [4] };
+const MG_LEVELS = { beatMatch: [1, 4, 5], crowdRead: [1, 3, 4, 5], goDigging: [1, 3], soundCheck: [2, 5], afterParty: [2], buyGear: [2, 3, 5], promoterTalk: [2, 4], makTracks: [4] };
 const MG_TINT = ["#ff3fa4", "#39d0ff", "#ffd23f", "#7ef0a0", "#b18cff", "#ff9a5a"];
 const bestScores = () => store.get("reparte.best") || {};
 const mgName = (t, parent, cls) => el("span", { cls: "mg-name" + (cls ? " " + cls : ""), html: esc(t).replace(".", "<i>.</i>") }, parent);
@@ -239,7 +238,7 @@ function arcade(p, at) {
   p.innerHTML = ""; p.classList.add("arc");
   el("h3", { text: "MINI-GAMES" }, p);
   if (at == null) {
-    el("p", { text: "All sixteen from the story. Pick one to see what it is, then play it on its own." }, p);
+    el("p", { text: "All eight from the story. Pick one to see what it is, then play it on its own." }, p);
     const grid = el("div", { cls: "arc-grid" }, p);
     games.forEach((m, i) => {
       const b = el("button", { type: "button", cls: "arc-tile", style: "--tint:" + MG_TINT[i % MG_TINT.length] }, grid);
