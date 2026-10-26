@@ -147,7 +147,7 @@ async function anniversarySet(S) {
   RP.followers(80);
   RP.setClock("FRI 1:55 AM");
   const hasGrail = RP.hasRecord(GRAIL);
-  const ids = (res.order || []).filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist;
+  const ids = (res.order || []).filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");
   const wi = ids.indexOf("white_nyc93"), gi = ids.indexOf(GRAIL);
   const setLines = ["The first record drops" + (ids[0] ? ": " + nm(ids[0]) : "") + ". The room settles like a sigh."];
   if (ids.length >= 3) setLines.push("Then " + nm(ids[1]) + ", then " + nm(ids[2]) + ". Build, don't jump. For once, I don't jump.");
