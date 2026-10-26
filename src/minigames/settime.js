@@ -4,10 +4,14 @@
      records: [recordIds]      what you can play (each once; more than you need = decoys)
      followName: "Kosmo Delacroix"   who you follow (follow-legend) / who runs over (overrun)
      minutes: slot length in game minutes (60; closing 40)   difficulty: 1-5   venue: sign label
+     start: slot start on the clock, "23:52" or minutes after midnight (scenario default)
+     overrun: minutes the other act eats out of the slot (overrun; default 20 per 60, capped at half the slot)
+     headline: true (overrun) = it's your headline slot; the set runs to the changeover   manager / managerId: who runs the stage
      theme: "house"|"techno"|"festival"|"loft"|"empty-bar" (the room)   seed   arcade: bool
    Result: { ok, score 0-100, scenario, floor (0-100 at the end), avgFloor, mixes: {clean, smooth, sloppy, wreck},
              deadAir (game minutes), events: n handled, meter (second gauge 0-100), reason }
-   ok = score >= 58 and the set wasn't cut short by the promoter / the floor emptying. */
+   ok = score >= 58, at least one record played, the final floor >= 70% of the goal, and the set wasn't cut short.
+   reason: "" | "score" | "floor" | "no-records" | the cut-short line. A failed set's score is capped below 58. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -304,11 +308,12 @@ const CSS = `
   .st-main { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
   .st-left, .st-right { display: contents; }
   .st-sceneBox { order: 1; } .st-clock { order: 2; } .st-slotBox { order: 3; } .st-g1 { order: 4; } .st-g2 { order: 5; } .st-chiprow { order: 6; } .st-tr { order: 7; } .st-ctl { order: 8; } .st-msg { order: 9; } .st-say { order: 10; } .st-crate { order: 11; }
-  .st-ctl.sticky { position: sticky; bottom: 0; z-index: 5; background: rgba(10, 8, 22, .97); padding: 6px; border-color: var(--pink); }
+  .st-ctl.sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; max-width: 980px; margin: 0 auto; box-sizing: border-box; background: rgba(10, 8, 22, .97); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); border-color: var(--pink); }
+  .overlay.mg-setTime { bottom: var(--st-dock, 0px); } /* the control dock sits below the scroll area, never on top of it */
   .st-time { font-size: 38px; }
 }
 @media (max-height: 460px) {
-  .overlay.mg-setTime { padding: 4px 8px; }
+  .overlay.mg-setTime { padding: 4px 8px; bottom: 0; }
   .mg-setTime .mg-wrap { gap: 4px; }
   .mg-setTime .mg-head { flex-wrap: nowrap; align-items: baseline; }
   .mg-setTime .mg-logo { font-size: 13px; } .mg-setTime .mg-sub { font-size: 15px; }
@@ -386,6 +391,10 @@ RP.mg.register("setTime", {
       const fadeBtn = el("button", { cls: "btn", type: "button", html: "FADE OUT <small>X</small>" }, ctl);
       el("div", { cls: "spacer" }, ctl);
       const giveUp = el("button", { cls: "btn", type: "button", text: "GIVE UP" }, ctl);
+      const ovl = root.closest(".overlay");
+      const dock = () => { if (ovl) ovl.style.setProperty("--st-dock", getComputedStyle(ctl).position === "fixed" ? ctl.offsetHeight + "px" : "0px"); };
+      try { const ro = new ResizeObserver(dock); ro.observe(ctl); host.cleanup(() => ro.disconnect()); } catch (e) { /* the resize listener covers it */ }
+      window.addEventListener("resize", dock); host.cleanup(() => window.removeEventListener("resize", dock));
       const msg = el("div", { cls: "mg-msg st-msg", "aria-live": "polite" }, left);
       const say = el("div", { cls: "mg-say st-say" }, left);
       const evBox = el("div", { cls: "mg-panel st-ev st-evbox idle" }, sceneBox);
@@ -458,7 +467,7 @@ RP.mg.register("setTime", {
         briefBox.hidden = false; briefBox.innerHTML = "";
         const bx = el("div", { cls: "st-brief" }, briefBox);
         el("h3", { text: R.D.title }, bx);
-        el("div", { cls: "mg-sub", text: fmtClock(R.start) + " – " + fmtClock(R.start + R.M) + " · " + R.M + " game minutes" + (R.overrun ? " (" + R.legendShort + " has the first " + R.overrun + ")" : "") }, bx);
+        el("div", { cls: "mg-sub", text: fmtClock(R.start) + " – " + fmtClock(R.start + R.M) + " · " + R.M + " game minutes" + (R.overrun ? " (" + R.legendShort + " eats the first " + R.overrun + ")" : "") }, bx);
         el("p", { text: rep(B.story) }, bx);
         if (R.key === "follow-legend") el("p", { html: "<b style='color:#c8b0ff;font-weight:400'>" + U.esc(R.legendShort) + ":</b> \"Good luck, uh... " + U.esc(R.wrongName) + ". Don't wreck the vibe.\"" }, bx);
         el("div", { cls: "goal", text: "GOAL: " + rep(B.goal) }, bx);
