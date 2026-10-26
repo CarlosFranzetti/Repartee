@@ -27,6 +27,12 @@ After a PR merges, restart the branch from `origin/main`. The remote copy of the
   `docs/PLAYTEST_LOG.md`, "Levels 3-5 ... fixed on 2026-10-26"). Every walkthrough, the full Level 1-5 run in one save
   and the contrast check passed on a scratch build after these.
 
+**Mini-games trimmed (2026-10-26, owner's call).** The story keeps eight: beat.Match, crowd.Read, go.Digging,
+after.Party, buy.Gear, promoter.Talk, mak.Tracks, sound.Check. The other eight (guest.List, set.Time, playlist.Order,
+club.Drama, get.Followers, last.Train, crate.Digging, record.Hunt) were replaced by short scenes and moved to
+`src/minigames/retired/`, which the build skips (code kept, out of the game and the arcade). Level 3's club nights use
+crowd.Read instead of set.Time. Build went from about 3.0 MB to 2.6 MB.
+
 **Open work (next).** All Level 3-5 findings from the blind takes, the story audit and the sweeps are fixed on the
 work branch (see `docs/PLAYTEST_LOG.md`); two small items remain open there. Every walkthrough, the full Level 1-5 run,
 smoke, perf (0 of 49 rooms over budget) and contrast pass on the rebuilt `dist/`. Next: open a PR, merge, deploy and

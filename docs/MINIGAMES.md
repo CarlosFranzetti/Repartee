@@ -1,6 +1,8 @@
 # re:parteé — Mini-games
 
-Sixteen mini-games, each a module in `src/minigames/<id>.js`. Acts call them with
+Eight mini-games in the story, each a module in `src/minigames/<id>.js`. Eight more are retired: their code is in
+`src/minigames/retired/` (left out of the build) and their rows below are marked *retired*; the story replaces them with
+short scenes. Acts call them with
 `const res = await RP.mg.play(id, params)`. The Mini-Game Arcade (title screen) calls them with
 `{ arcade: true, difficulty: 2 }`, so **every param is optional** and each game must invent
 sensible defaults (usually real records picked from `RP.data.records`).
@@ -49,26 +51,26 @@ Put game-specific CSS in a `<style>` you inject once (see beatmatch.js).
 - Never throw. Don't touch the DOM outside `host.root` (except a one-time `<style>` and transient
   `.blend` flashes on `document.body`).
 
-## The sixteen (ids, params, results)
+## The mini-games (ids, params, results)
 
 | id | title | used in | params (all optional) | result |
 |---|---|---|---|---|
 | `beatMatch` | beat.Match | 1, 4, 5 | `a, b` record ids; `caller` (phone framing); `difficulty`; `tolerance`; `offset` (BPM that deck B starts off deck A; default: B starts at its own record's BPM when the pitch fader can reach it) | `{ok, score, time}` |
-| `crowdRead` | crowd.Read | 1, 4, 5 | `records: [ids]` (the set you can play); `crowd: "empty-bar"|"house"|"techno"|"festival"|"loft"`; `rounds` (4); `goal` (energy target); `difficulty`; `venue` label | `{ok, score, played: [ids], peak}` |
-| `setTime` | set.Time | 3, 5 | `scenario: "opener"|"follow-legend"|"overrun"|"closing"`; `records`; `followName` ("Kosmo Delacroix"); `minutes`; `start` (clock, e.g. "23:52"); `overrun` (minutes the act before you runs over, capped at half the slot); `headline`; `manager`/`managerId`; `promoter` (name, default "Dante"), `promoterId` (character to draw), `promoterPronoun` ("he"/"she"/"they"); `difficulty` | `{ok, score, reason}` (`reason`: `floor`, `no-records`, `early` or `score`) |
-| `playlistOrder` | playlist.Order | 3, 5 | `records: [ids]` (pool); `slots` (6–10); `arc: "warmup"|"peak"|"journey"|"closer"`; `difficulty` | `{ok, score, order: [ids]}` |
+| `crowdRead` | crowd.Read | 1, 3, 4, 5 | `records: [ids]` (the set you can play); `crowd: "empty-bar"|"house"|"techno"|"festival"|"loft"`; `rounds` (4); `goal` (energy target); `difficulty`; `venue` label | `{ok, score, played: [ids], peak}` |
+| `setTime` | set.Time | *retired* | `scenario: "opener"|"follow-legend"|"overrun"|"closing"`; `records`; `followName` ("Kosmo Delacroix"); `minutes`; `start` (clock, e.g. "23:52"); `overrun` (minutes the act before you runs over, capped at half the slot); `headline`; `manager`/`managerId`; `promoter` (name, default "Dante"), `promoterId` (character to draw), `promoterPronoun` ("he"/"she"/"they"); `difficulty` | `{ok, score, reason}` (`reason`: `floor`, `no-records`, `early` or `score`) |
+| `playlistOrder` | playlist.Order | *retired* | `records: [ids]` (pool); `slots` (6–10); `arc: "warmup"|"peak"|"journey"|"closer"`; `difficulty` | `{ok, score, order: [ids]}` |
 | `goDigging` | go.Digging | 1, 3 | `store` ("Deep Cuts"); `budget` ($); `bins: [{label, records:[ids]}]`; `want: {vibe?, genre?, maxPrice?, id?}`; `wallet` (total cash, shown beside the budget); `budgetNote` (what the rest is for); `difficulty` | `{ok, score, bought: [ids], spent}` |
-| `crateDigging` | crate.Digging | 3 | `records: [ids]` (the collection; junk + gems); `budget`; `time`; `owner`, `seller`, `place` (story text; arcade default is a generic Queens estate sale); `difficulty` | `{ok, score, keep: [ids], sold: [ids], profit}` |
-| `recordHunt` | record.Hunt | 3 | `target` record id; `clues: [strings]` (with two or more, the right spot needs two different ones); `places: [{id,label,hint,found?,where?}]` (`where` = the reveal line, "On the left platter, under the dust sheet"); `difficulty` | `{ok, score, found: bool}` |
+| `crateDigging` | crate.Digging | *retired* | `records: [ids]` (the collection; junk + gems); `budget`; `time`; `owner`, `seller`, `place` (story text; arcade default is a generic Queens estate sale); `difficulty` | `{ok, score, keep: [ids], sold: [ids], profit}` |
+| `recordHunt` | record.Hunt | *retired* | `target` record id; `clues: [strings]` (with two or more, the right spot needs two different ones); `places: [{id,label,hint,found?,where?}]` (`where` = the reveal line, "On the left platter, under the dust sheet"); `difficulty` | `{ok, score, found: bool}` |
 | `buyGear` | buy.Gear | 2, 3, 5 | `slot` ("turntables"…); `options: [gearIds]`; `seller` ("Eddie Two-Times"); `budget`; `scams` (# of broken listings); `asks: {gearId: $}` (fixed asking prices); `flaws: [per listing: "ok", "cosmetic" or a fault]` (scripted listings); `difficulty` | `{ok, score, bought: gearId|null, paid}` |
 | `makTracks` | mak.Tracks | 4 | `sample` (record id to sample, e.g. "white_nyc93"); `bpm`; `genre`; `difficulty`; `collab` ("Lou") | `{ok, score, title, track: {name, title, bpm, pattern}}` (`title` = the name the player typed) |
-| `getFollowers` | get.Followers | 3, 4 | `days` (time budget); `start` followers; `goal`; `difficulty` | `{ok, score, gained}` |
+| `getFollowers` | get.Followers | *retired* | `days` (time budget); `start` followers; `goal`; `difficulty` | `{ok, score, gained}` |
 | `promoterTalk` | promoter.Talk | 2, 4 | `promoter` (name), `promoterPronoun` ("they" by default, "he" for Vic), `charId` (character id to draw), `ask` ("a monthly", "your fee"), `patience`, `difficulty` | `{ok, score, deal: {...}}` |
-| `guestList` | guest.List | 2, 5 | `capacity`, `requests` (count), `vip` names, `venue` (title; default "THE LOFT"), `difficulty`. Turning away a legit guest when there is no room is a correct call; a line shows free spots and spots held for VIPs still due | `{ok, score, admitted, angry}` |
+| `guestList` | guest.List | *retired* | `capacity`, `requests` (count), `vip` names, `venue` (title; default "THE LOFT"), `difficulty`. Turning away a legit guest when there is no room is a correct call; a line shows free spots and spots held for VIPs still due | `{ok, score, admitted, angry}` |
 | `soundCheck` | sound.Check | 2, 5 | `faults: ["ground-hum","dead-channel","feedback","blown-tweeter","wrong-input"]`; `time`; `stage` ("loft"/"festival"); `tech` (the crew member who talks to you, "Mo (FOH)"); `difficulty` | `{ok, score, fixed: n}` |
 | `afterParty` | after.Party | 2 | `needs: {people, location, sound}`; `contacts` (names); `time`; `difficulty` | `{ok, score, guests}` |
-| `clubDrama` | club.Drama | 3, 5 | `scenario: "rival"|"promoter"|"friend"|"backstage"|"ego"`; `rival` (name); `venue` ("Halcyon Room"); `boss` (rival: who runs the room); `slot` (ego: your set, "11:45 PM"), `rivalSlot` (ego: his), `manager` (ego: his manager, unnamed if absent), `nameDrop` (ego: who signed the running order); `difficulty` | `{ok, score, outcome}` |
-| `lastTrain` | last.Train | 3, 4 | `from`, `to` (labels); `battery` (%); `money`; `carrying: "records"|"turntables"|"suitcase"`; `mode: "subway"|"airport"`; `start` (minutes after midnight; last trains move with it); `fromStation`/`toStation` (the map station a label stands for, e.g. "Halsey St" for "Bushwick (Apt 4C)"); `lineNames` (`{amber: "J"}`); `carryName` ("a bag of records"); `intro` (first line of the opening card); `difficulty` | `{ok, score, minutesLate}` |
+| `clubDrama` | club.Drama | *retired* | `scenario: "rival"|"promoter"|"friend"|"backstage"|"ego"`; `rival` (name); `venue` ("Halcyon Room"); `boss` (rival: who runs the room); `slot` (ego: your set, "11:45 PM"), `rivalSlot` (ego: his), `manager` (ego: his manager, unnamed if absent), `nameDrop` (ego: who signed the running order); `difficulty` | `{ok, score, outcome}` |
+| `lastTrain` | last.Train | *retired* | `from`, `to` (labels); `battery` (%); `money`; `carrying: "records"|"turntables"|"suitcase"`; `mode: "subway"|"airport"`; `start` (minutes after midnight; last trains move with it); `fromStation`/`toStation` (the map station a label stands for, e.g. "Halsey St" for "Bushwick (Apt 4C)"); `lineNames` (`{amber: "J"}`); `carryName` ("a bag of records"); `intro` (first line of the opening card); `difficulty` | `{ok, score, minutesLate}` |
 
 ### Design notes per game
 

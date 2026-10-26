@@ -193,6 +193,13 @@ Goal: **headline Harbor Lights Festival** (fictional, on the waterfront).
 - Real DJ cameos (cameoOk) on the festival bill and backstage nods.
 - Ends with `RP.completeAct` (no act 6) → credits (`RP.ending`).
 
+## Mini-games in the story
+
+Eight: beat.Match, crowd.Read, go.Digging, after.Party, buy.Gear, promoter.Talk, mak.Tracks, sound.Check. The level
+threads above still mention set.Time, playlist.Order, club.Drama, record.Hunt, crate.Digging, get.Followers,
+last.Train and guest.List from the original design; those are now short scenes (choices, cards, dialogue), and the
+games are kept in `src/minigames/retired/`.
+
 ## Names in use (keep them unique)
 
 Each name belongs to one character. Level 3: Priya (rival digger), Bernard (the estate's parakeet). Level 1-2: Biscuit

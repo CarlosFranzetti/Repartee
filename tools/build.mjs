@@ -42,7 +42,8 @@ const DESC = "A pixel-art point-and-click DJ adventure. From broke-ass bedroom D
 
 const core = ["util", "chars", "fx", "audio", "titletheme", "icons", "paint", "engine"].map(n => path.join(root, "src/core", n + ".js")).filter(f => fs.existsSync(f));
 const data = sortJs(walk(path.join(root, "src/data")));
-const mgs = sortJs(walk(path.join(root, "src/minigames")));
+// src/minigames/retired/ holds mini-games the story no longer uses; they stay in the repo but out of the build
+const mgs = sortJs(walk(path.join(root, "src/minigames")).filter(f => !f.split(path.sep).includes("retired")));
 const actsUpTo = max => { const a = []; for (let i = 1; i <= max; i++) a.push(...sortJs(walk(path.join(root, "src/acts/act" + i)))); return a; };
 const game = [path.join(root, "src/game.js")].filter(f => fs.existsSync(f));
 

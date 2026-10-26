@@ -9,9 +9,8 @@ Monkey Island*. You're a broke bedroom DJ in New York City with three records, a
 and a phone at 1%. Hustle, dig, mix and talk your way from Bushwick to a festival headline set.
 
 - **Five levels:** Bedroom DJ → Underground Hustler → Club DJ → Touring DJ → Superstar DJ
-- **Sixteen mini-games:** beat.Match, crowd.Read, set.Time, playlist.Order, go.Digging, crate.Digging,
-  record.Hunt, buy.Gear, mak.Tracks, get.Followers, promoter.Talk, guest.List, sound.Check,
-  after.Party, club.Drama, last.Train
+- **Eight mini-games:** beat.Match, crowd.Read, go.Digging, after.Party, buy.Gear, promoter.Talk, mak.Tracks,
+  sound.Check. (Eight more are retired from the story but kept in `src/minigames/retired/`.)
 - **Real music culture:** a catalog of real records, labels and DJ gear (Pioneer CDJs, Technics
   SL-1210s, KRK and Dynaudio monitors, the Can Electric Taula 4 MR rotary mixer), with release
   details checked against Discogs and Wikipedia.
@@ -37,7 +36,7 @@ one level at a time:
 Level 1 is open to everyone. Each later level page opens once you've finished that level in the full game
 (progress is kept in your browser); until then it shows a locked card that links to the full game. An open
 level page starts you with a sensible setup (records, cash, gear for that point in the story), has all
-sixteen mini-games, and ends with a link to the next level if you've unlocked it. The full game carries
+eight mini-games, and ends with a link to the next level if you've unlocked it. The full game carries
 your crate, cash and fans from level to level.
 
 **On claude.ai:** [the full game](https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N), [Level 1](https://claude.ai/artifact/4m4u3sHMgVhkqURBBfiFtY) and
