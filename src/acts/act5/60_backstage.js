@@ -132,7 +132,7 @@ async function rozTalk(S) {
         "@a5_roz I said it's not my call. Whit said \"synergy.\" That's the entire conversation we've had in the last hour.",
         "@a5_roz He's in the gold trailer. Don't go in empty-handed. He doesn't open the door without a green smoothie. It's in catering."
       ]);
-      RP.text("PRIYA (MGR)", "Axl wants to swap slots. DON'T agree. Go see him. Bring his smoothie (catering). Be kind, be firm, be fast.", false);
+      RP.text("MARGO (MGR)", "Axl wants to swap slots. DON'T agree. Go see him. Bring his smoothie (catering). Be kind, be firm, be fast.", false);
       return;
     }
     await RP.lines(["@a5_roz Gold trailer. Smoothie from catering. The door doesn't open without it. And it doesn't open twice."]); return;
@@ -155,11 +155,11 @@ async function axlDoor(S) {
   if (!S.f.a5_axlAsked) { await RP.lines(["A gold door with a plaque that says AXL VANTA — DO NOT KNOCK.", "(I should talk to Roz first. And bring something.)"]); return; }
   if (!RP.has("a5_smoothie")) {
     RP.sfx("knock");
-    await RP.lines(["I knock.", "@axl IS THAT MY SMOOTHIE?", "Not yet.", "@axl THEN WHY ARE YOU KNOCKING?", "(Fair. I need the smoothie. Catering.)"]);
+    await RP.lines(["I knock.", "@a5_axlDoor IS THAT MY SMOOTHIE?", "Not yet.", "@a5_axlDoor THEN WHY ARE YOU KNOCKING?", "(Fair. I need the smoothie. Catering.)"]);
     return;
   }
   RP.sfx("knock");
-  await RP.lines(["I knock, with the smoothie in view of the peephole.", "@axl ...Smoothie?", "Green. No ice, no seeds.", "@axl Enter. Don't make eye contact."]);
+  await RP.lines(["I knock, with the smoothie in view of the peephole.", "@a5_axlDoor ...Smoothie?", "Green. No ice, no seeds.", "@a5_axlDoor Enter. Don't make eye contact."]);
   await RP.goto("a5_axl", 120, 232, "right");
 }
 async function ownTrailer(S) {
@@ -183,13 +183,13 @@ async function louArrives(S) {
     "@a5_lou I said I'd consider. I considered. Here I am. Don't make it a thing.",
     "@a5_lou ...The cardigan's navy. Do you like it?",
     "It's perfect.",
-    "@a5_lou Where do I sit? I don't stand. I'm seventy... some.",
+    "@a5_lou Where do I sit? I don't stand. I'm sixty... some.",
     "@marcus Lou's with me. We got the best chair in the VIP lounge. It has a cushion. He asked for a cushion.",
     "@a5_roz Lou, you can watch from the wings. Stage left. There's a stool. It's the best seat in the house.",
     "@a5_lou In the wings. With a stool. All right.",
     "@marcus I counted: twelve people came in. TWELVE. Plus thirty is just a state of mind."
   ]);
-  RP.text("PRIYA (MGR)", "Lou's in. Marcus is a hero. Axl's still on stage. Roz will cue you in the wings. Breathe.", false);
+  RP.text("MARGO (MGR)", "Lou's in. Marcus is a hero. Axl's still on stage. Roz will cue you in the wings. Breathe.", false);
 }
 
 /* ---------------------------------------------------------------------------------------- room */
@@ -232,7 +232,7 @@ RP.room({
     { id: "a5_bpalm", name: "potted palms", rects: [[388, 150, 56, 70], [518, 150, 56, 70]], z: 25, walk: [455, 236, "back"], look: "Two enormous potted palms flank the red carpet. They're in black plastic pots with GOLD spray paint. Even Axl's plants have an entourage.", pickup: "The palms weigh more than my gear. Don't ask.", use: "I can't use plants. I can only compliment them. Nice palm." },
     { id: "a5_bprod", name: "production office", r: [586, 120, 112, 86], z: 18, walk: [642, 232, "back"], look: "PRODUCTION. A trailer full of radios, laptops and a person with a headset yelling \"copy.\" The beating heart of a festival.", open: "Locked. Roz has the key. Roz has all the keys.", use: "Roz's domain. I'm a visitor.", pickup: "No." },
     { id: "a5_bboard", name: "running order", r: [614, 130, 80, 74], z: 40, walk: [654, 234, "back"], look: S => ["MAIN STAGE running order, in marker: 6:00 DOORS. 7:00 THE BILL (see poster). 10:15 AXL VANTA. 11:45 ... and then my name.", RP.has("a5_pass") && !S.f.a5_passFixed ? "It's the typo'd version. Brian strikes again." : "It's right. Someone fixed it. Roz, I bet."], pickup: "The whiteboard stays. The running order stays. The kid is just passing through.", pull: "It's on an easel. Easels fall. Not today." },
-    { id: "a5_roz", name: "Roz", talk: S => rozTalk(S), look: "Roz Delgado, stage manager. Headset, hi-vis vest, a ponytail that says \"I've had no time to sit down since February.\" She looks like she's holding up the festival by herself. Probably true.", give: (S, item) => "Roz: \"Not now. Hands full. Brain full. Headset full.\"", pickup: "No. I like having ankles.", push: "I'm not pushing Roz. Roz would push BACK, and she has a walkie-talkie." },
+    { id: "a5_roz", name: "Roz", talk: S => rozTalk(S), look: "Roz Kessler, stage manager. Headset, hi-vis vest, a ponytail that says \"I've had no time to sit down since February.\" She looks like she's holding up the festival by herself. Probably true.", give: (S, item) => "Roz: \"Not now. Hands full. Brain full. Headset full.\"", pickup: "No. I like having ankles.", push: "I'm not pushing Roz. Roz would push BACK, and she has a walkie-talkie." },
     { id: "a5_blounge", name: "artist lounge", r: [704, 126, 122, 94], z: 15, walk: [770, 236, "back"], look: "The artist lounge: a white tent, a couch, a coffee table with cups, a string of lights. The most civilized place I've ever been backstage.", use: "Sit on the couch? Not before my set. If I sit down, I'll be there till Tuesday.", pickup: "No." },
     { id: "a5_bcouch", name: "lounge couch", r: [710, 160, 110, 64], z: 29, walk: [770, 236, "back"], look: "A purple couch with two throw pillows, neon pink and cyan. It looks like it's seen things. Mostly sound check tantrums.", use: "I'd sit, but I'm afraid I'd never get up. And I need my dignity.", pickup: "I can't lift a couch. I'd throw out my back before the set." },
     { id: "a5_dj_louie_vega", name: "Louie Vega", talk: S => cameo(S, "vega"), look: "Louie Vega. Co-founded Masters At Work with Kenny \"Dope\" Gonzalez. Standing by the lounge, calm as a house record. He gives me a nod.", give: "I won't. That'd be weird.", pickup: "No. Absolutely not. He's a person.", use: "I'd like to use the opportunity to say hi.", push: "I'm not touching a legend." },

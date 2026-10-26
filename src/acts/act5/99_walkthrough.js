@@ -8,7 +8,7 @@ const TAULA = "can_electric_taula_4_mr";
 const q = (id, res) => ["run", (S, R) => { if (R.mg.reg[id]) R.test.mgQ.push(res); }];
 
 const thursday = [
-  ["expect", "S.act === 5 && S.room === 'a5_studio' && S.f.a5_calledPriya", "act 5 starts in the studio; Priya called"],
+  ["expect", "S.act === 5 && S.room === 'a5_studio' && S.f.a5_calledMargo", "act 5 starts in the studio; Margo called"],
   ["expect", "S.money >= 10000", "advance landed"],
   ["look", "hot:a5_poster"], ["look", "hot:a5_neon"], ["look", "hot:a5_gerald"], ["look", "hot:a5_mixer"],
   ["use", "hot:a5_bed"], ["expect", "S.f.a5_day === 1", "can't sleep before the rig is bought"],
@@ -17,7 +17,7 @@ const thursday = [
   ["look", "hot:a5_taula"], ["pickup", "hot:a5_taula"],
   ["answers", ["Tell me about", "Why is Eddie", "I want the Taula", "What about decks", "Take the whole", "Thanks"]],
   q("buyGear", { ok: true, score: 90, bought: TAULA, paid: 1650, place: 1 }),
-  ["talk", "hot:a5_ines"],
+  ["talk", "hot:a5_merce"],
   ["expect", "S.gear.mixer === 'can_electric_taula_4_mr' && S.f.a5_gearDecks && S.gear.decks === 'pioneer_cdj_3000'", "Taula + CDJ-3000s + MK7s"],
   ["answers", ["Core 47", "Later"]],
   q("buyGear", { ok: true, score: 85, bought: "dynaudio_core_47", paid: 3200 }),
@@ -48,8 +48,8 @@ const friday = [
 ];
 
 const saturday = [
-  ["walk", "hot:a5_door"], ["expect", "S.room === 'a5_gate' && S.f.a5_metPriya && S.f.noTravel", "Saturday at the gate; Priya; no travel"],
-  ["talk", "hot:a5_priya"], ["talk", "hot:a5_whit"],
+  ["walk", "hot:a5_door"], ["expect", "S.room === 'a5_gate' && S.f.a5_metMargo && S.f.noTravel", "Saturday at the gate; Margo; no travel"],
+  ["talk", "hot:a5_margo"], ["talk", "hot:a5_whit"],
   ["walk", "hot:a5_gexit"], ["expect", "S.room === 'a5_grounds'", "the grounds"],
   ["answers", ["Sharpie", "advice", "crate", "See you"]], ["talk", "hot:ray"], ["expect", "RP.has('a5_marker')", "Ray's Sharpie"],
   ["answers", ["Axl Vanta", "after-party", "Any news", "Later"]], ["talk", "hot:twinkie"], ["expect", "S.f.a5_axlIntel", "Twinkie's Axl intel"],
@@ -99,7 +99,7 @@ const pier = [
   ["look", "hot:a5_psun"], ["look", "hot:a5_pring"], ["look", "hot:a5_psign"],
   ["use", "hot:a5_psun"], ["expect", "!S.done.includes(5)", "not yet: talk to Lou and Dante first"],
   ["talk", "hot:lou"], ["talk", "hot:dante"], ["expect", "RP.has('a5_tickets')", "Dante paid in drink tickets"],
-  ["talk", "hot:marcus"], ["talk", "hot:ray"], ["talk", "hot:twinkie"], ["talk", "hot:eddie"], ["talk", "hot:jess"], ["talk", "hot:a5_priya"], ["talk", "hot:kosmo"],
+  ["talk", "hot:marcus"], ["talk", "hot:ray"], ["talk", "hot:twinkie"], ["talk", "hot:eddie"], ["talk", "hot:jess"], ["talk", "hot:a5_margo"], ["talk", "hot:kosmo"],
   ["use", "hot:a5_psun"],
   ["expect", "S.done.includes(5)", "act 5 complete"]
 ];

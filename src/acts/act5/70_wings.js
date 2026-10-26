@@ -96,13 +96,13 @@ async function overrun(S) {
     await RP.lines([
       "@a5_roz Cue lights. Fade him down. Slow, slow... Now.",
       "(The music behind the curtain dissolves into a pulsing hum. A thousand people shout. Then they clap.)",
-      "@axl (over the PA) THANK YOU, HARBOR LIGHTS! I LOVE YOU! I'M JUST A VESSEL!"
+      "@a5_axlPA THANK YOU, HARBOR LIGHTS! I LOVE YOU! I'M JUST A VESSEL!"
     ]);
   } else {
     await RP.lines([
       "@a5_roz Okay. Plan B. I'm pulling his monitor mix. Without his own sound, he's a guy waving at a crowd.",
       "(The music on stage dips. Axl stops mid-wave. Then he turns, hurt.)",
-      "@axl (over the PA) THAT'S... IT. THAT'S MY SET! IT'S A GIFT! GOOD NIGHT!"
+      "@a5_axlPA THAT'S... IT. THAT'S MY SET! IT'S A GIFT! GOOD NIGHT!"
     ]);
   }
   const ax = RP.actor("axl"); ax.vis = () => false;
@@ -113,7 +113,7 @@ async function overrun(S) {
     "@a5_roz And headliner? ...Don't peak early."
   ]);
   S.f.a5_phase = 3; RP.setClock("SAT 11:57 PM");
-  RP.text("PRIYA (MGR)", "Axl's off. You're on. Whatever happens, I'm proud, and I've invoiced.", true);
+  RP.text("MARGO (MGR)", "Axl's off. You're on. Whatever happens, I'm proud, and I've invoiced.", true);
 }
 
 async function rozWings(S) {
@@ -160,7 +160,7 @@ RP.room({
   ],
   combos: [
     ["a5_pass", "a5_roz", "Roz: \"I know who you are. I do not need your pass. I need your face on that stage.\""],
-    ["phone", "a5_wdesk", "Roz: \"No calls. No texts. No Priya, unless it's life or death.\""]
+    ["phone", "a5_wdesk", "Roz: \"No calls. No texts. No Margo, unless it's life or death.\""]
   ],
   enter: async (S, from) => {
     if (ph(S) === 2 && !S.f.a5_overrunDone && S.f.a5_louArrived) { await overrun(S); return; }

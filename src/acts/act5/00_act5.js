@@ -1,7 +1,7 @@
 /* Act 5 — SUPERSTAR DJ. Headline Harbor Lights Festival (fictional).
    Act definition, characters, voices, items, locations and shared helpers (window.RP.a5).
 
-   Flags (S.f.a5_*):  day (1 Thu, 2 Fri, 3 Sat) · tod ("day"|"night") · calledPriya · gearMixer / gearMonitors / gearDecks / gearDone
+   Flags (S.f.a5_*):  day (1 Thu, 2 Fri, 3 Sat) · tod ("day"|"night") · calledMargo · gearMixer / gearMonitors / gearDecks / gearDone
    · boutiqueMet · interviewDone · interviewScore · danteOnAir · gateMet · guestDone · louPass (have it) · louPassGiven · louComing
    · slept2 / slept3 · phase (Saturday: 0 arrive, 1 soundcheck done, 2 axl handled, 3 overrun handled, 4 on stage, 5 set done)
    · rayMet · sharpie · passFixed · gloriaOK · twinkieIntel · axlIntel · jessMet · smoothie · axlDone · louArrived · soundDone ·
@@ -18,15 +18,15 @@ const A5 = RP.a5 = RP.a5 || {};
    --------------------------------------------------------------------------------------------------- */
 const def = (id, d) => RP.chars.define(id, d);
 
-// Priya Nair: the manager. Phone permanently attached. Sees disasters coming and invoices them.
-def("a5_priya", { name: "Priya", height: 94, figure: "curvy", skin: "#a8693f", hair: { style: "bun", color: "#1c1418" },
+// Margo Quist: the manager. Phone permanently attached. Sees disasters coming and invoices them.
+def("a5_margo", { name: "Margo", height: 94, figure: "curvy", skin: "#a8693f", hair: { style: "bun", color: "#1c1418" },
   top: { style: "suit", color: "#243b66", color2: "#efeaf6" }, bottom: { style: "pants", color: "#243b66" }, shoes: { style: "shoes", color: "#17131f" },
   acc: ["glasses", "clipboard"], glassesColor: "#c8a060", voice: "#6fd6ff" });
-// Roz Delgado: stage manager. Headset, hi-vis vest, zero patience, secret softie.
+// Roz Kessler: stage manager. Headset, hi-vis vest, zero patience, secret softie.
 def("a5_roz", { name: "Roz", height: 92, skin: "#c98a62", hair: { style: "ponytail", color: "#2e1d16" },
   top: { style: "vest", color: "#d8e83a", color2: "#17131f" }, bottom: { style: "cargo", color: "#1c1a24" }, shoes: { style: "boots", color: "#17131f" },
   acc: ["headphones", "lanyard", "clipboard"], headphonesOn: true, voice: "#ff7f66" });
-// Whit (Bernard Whitlock): festival promoter. Linen suit, shades on his head, says "synergy" unironically.
+// Whit (Preston Whitlock): festival promoter. Linen suit, shades on his head, says "synergy" unironically.
 def("a5_whit", { name: "Whit", height: 98, build: "stocky", skin: "#f1c7a5", hair: { style: "slick", color: "#d8d0c0" },
   top: { style: "suit", color: "#d8c8a8", color2: "#f4f0e8" }, bottom: { style: "pants", color: "#d8c8a8" }, shoes: { style: "shoes", color: "#8a5a3a" },
   acc: ["lanyard", "clipboard", "watch"], voice: "#d9d27a" });
@@ -38,8 +38,8 @@ def("a5_dana", { name: "Dana", height: 92, figure: "curvy", skin: "#57331f", hai
 def("a5_mo", { name: "Mo", height: 92, build: "thin", skin: "#e8b48f", hair: { style: "short", color: "#1c1418" },
   top: { style: "hoodie", color: "#3a3f58" }, bottom: { style: "cargo", color: "#2a2836" }, shoes: { style: "sneakers", color: "#efeaf6" },
   acc: ["beanie", "headphones", "lanyard"], hatColor: "#c0302c", headphonesOn: false, voice: "#8fb0ff" });
-// Ines Ferrer: runs Lacquer & Wire, Brooklyn hi-fi boutique. Sells things you cannot afford with great love.
-def("a5_ines", { name: "Ines", height: 90, figure: "curvy", skin: "#e0a27a", hair: { style: "bob", color: "#2e1d16" },
+// Mercè Ferrer: runs Lacquer & Wire, Brooklyn hi-fi boutique. Sells things you cannot afford with great love.
+def("a5_merce", { name: "Mercè", height: 90, figure: "curvy", skin: "#e0a27a", hair: { style: "bob", color: "#2e1d16" },
   top: { style: "apron", color: "#2a1c22", color2: "#efe6d0" }, bottom: { style: "pants", color: "#2a2836" }, shoes: { style: "shoes", color: "#5a3424" },
   acc: ["glasses"], glassesColor: "#b04a3a", voice: "#f2b8d8" });
 // Gloria "Big G": security. Has seen every fake pass ever made. Is not impressed by yours.
@@ -71,8 +71,8 @@ A5.outfits = {
    voices: speakers that are not on screen
    --------------------------------------------------------------------------------------------------- */
 const kidTop = () => { const k = RP.actor("kid"); return [k ? k.x : 320, 40]; };
-RP.voice("a5_priya", { color: "#6fd6ff", prefix: "PRIYA (PHONE): ", anchor: kidTop });
-RP.voice("a5_priyaT", { color: "#6fd6ff", prefix: "PRIYA: ", anchor: kidTop });
+RP.voice("a5_margo", { color: "#6fd6ff", prefix: "MARGO (PHONE): ", anchor: kidTop });
+RP.voice("a5_margoT", { color: "#6fd6ff", prefix: "MARGO: ", anchor: kidTop });
 RP.voice("a5_foh", { color: "#8fb0ff", prefix: "MO (TALKBACK): ", anchor: S => [RP.curRoom() ? RP.curRoom().camX + 320 : 320, 236] });
 RP.voice("a5_pa", { color: "#ffd23f", prefix: "PA: ", anchor: S => [RP.curRoom() ? RP.curRoom().camX + 320 : 320, 30] });
 RP.voice("a5_airRay", { color: "#ffd27a", prefix: "RAY (CALLER): ", anchor: kidTop });
@@ -80,6 +80,8 @@ RP.voice("a5_airMarcus", { color: "#ffd23f", prefix: "MARCUS (CALLER): ", anchor
 RP.voice("a5_airDante", { color: "#ff8fcf", prefix: "DANTE (CALLER): ", anchor: kidTop });
 RP.voice("a5_airEddie", { color: "#ff9a5a", prefix: "EDDIE (CALLER): ", anchor: kidTop });
 RP.voice("a5_lou", { color: "#9be15d", anchor: S => { const a = RP.curRoom() && RP.curRoom().def.id === "a5_studio" ? [346, 128] : kidTop(); return a; } });
+RP.voice("a5_axlDoor", { color: "#ffd23f", prefix: "AXL (THROUGH THE DOOR): ", anchor: [460, 120] });
+RP.voice("a5_axlPA", { color: "#ffd23f", prefix: "AXL (OVER THE PA): ", anchor: S => [RP.curRoom() ? RP.curRoom().camX + 320 : 320, 30] });
 RP.voice("a5_crowd", { color: "#ffffff", prefix: "CROWD: ", anchor: S => [RP.curRoom() ? RP.curRoom().camX + 320 : 320, 220] });
 
 /* ---------------------------------------------------------------------------------------------------
@@ -220,7 +222,7 @@ RP.defineAct({
       if (!S.name) S.name = "DJ KID";
     } else {
       S.gear = Object.assign({ decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk7", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" }, S.gear);
-      S.gear.turntables = S.gear.turntables === "technics_sl_1210mk7" ? S.gear.turntables : (S.gear.turntables || "technics_sl_1210mk7");
+      S.gear.turntables = "technics_sl_1210mk7"; /* bought with Halcyon money in Act 4 */
       S.money = Math.max(S.money || 0, 1500);
       S.followers = Math.max(S.followers || 0, 2000);
     }
@@ -242,22 +244,23 @@ RP.defineAct({
     ]);
     RP.sfx("ring"); await RP.wait(500);
     await RP.lines([
-      "@a5_priya Good morning, headliner. It's Priya. Your manager. I'm calling at ten because I'm a person who calls at ten.",
-      "Priya, I haven't seen you since the Berlin invoice.",
-      "@a5_priya And you won't see this one either. Harbor Lights wired your advance. " + RP.u.fmtMoney(S.f.a5_advance) + ", in your account.",
+      "@a5_margo Good morning, headliner. It's Margo. Your manager. I'm calling at ten because I'm a person who calls at ten.",
+      "Margo Quist. My manager since Berlin. She heard Halle Neun paid me in cash, from an envelope, and called to say \"never again.\"",
+      "She meant the envelope. Margo only calls at ten with news.",
+      "@a5_margo Harbor Lights wired your advance. " + RP.u.fmtMoney(S.f.a5_advance) + ", in your account. A wire. No envelope. Like a professional.",
       "I've never had that much at once. I have to sit down. I'm sitting down."
     ]);
-    S.f.a5_calledPriya = true;
+    S.f.a5_calledMargo = true;
     RP.money(S.f.a5_advance);
     await RP.lines([
-      "@a5_priya Here's the plan. You're not playing a festival on " + ((S.gear && RP.gearInfo(S.gear.decks) || { model: "CDJ-900" }).model) + "s and a mixer from a different decade.",
-      "@a5_priya Lacquer & Wire in Williamsburg. They stock the mixer you keep describing in your sleep. Handwired, in Barcelona.",
+      "@a5_margo Here's the plan. You're not playing a festival on " + ((S.gear && RP.gearInfo(S.gear.decks) || { model: "CDJ-900" }).model) + "s and a mixer from a different decade.",
+      "@a5_margo Lacquer & Wire in Williamsburg. They stock the mixer you keep describing in your sleep. Handwired, in Barcelona.",
       "The Taula. The Can Electric Taula 4 MR. I say its name like a prayer.",
-      "@a5_priya Also a proper pair of monitors, and new decks. Eddie Two-Times will be there.",
-      "@a5_priya I'm so sorry. It was the only way to get the mixer. Text me when it's done. Don't buy anything with a deal attached.",
-      "Priya. It's Eddie. Every deal has a deal attached."
+      "@a5_margo Also a proper pair of monitors, and new decks. Eddie Two-Times will be there.",
+      "@a5_margo I'm so sorry. It was the only way to get the mixer. Text me when it's done. Don't buy anything with a deal attached.",
+      "Margo. It's Eddie. Every deal has a deal attached."
     ]);
-    RP.text("PRIYA (MGR)", "THU: gear at Lacquer & Wire (Williamsburg). FRI 10 AM: Radio Harbor interview. FRI 7 PM: wristbands + guest list at the gate. SAT: soundcheck 4 PM. Do NOT say anything about Axl.", true);
+    RP.text("MARGO (MGR)", "THU: gear at Lacquer & Wire (Williamsburg). FRI 10 AM: Radio Harbor interview. FRI 7 PM: wristbands + guest list at the gate. SAT: soundcheck 4 PM. Do NOT say anything about Axl.", true);
     RP.text("HARBOR LIGHTS", "Congratulations, " + A5.pName(S) + "! You are confirmed as Saturday night headliner, main stage, 11:45 PM. Please see attached rider. Please do not attach a rider.", true);
     await RP.lines([
       "Okay. Subway map, shop, spend a stranger's money on a mixer. My phone has the map. I should also check the messages.",

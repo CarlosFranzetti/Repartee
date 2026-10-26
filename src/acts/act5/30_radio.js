@@ -126,7 +126,7 @@ async function interview(S) {
   score += await ask(S, "Word is Axl Vanta's camp wants your slot. Comment?", [
     ["No comment. But I'd like it noted: I have a Taula.", "Noted. In bold. With a smiley face.", 2],
     ["I respect everyone on the bill.", "Corporate. Fine. We'll allow it.", 1],
-    ["Axl who?", "OH. That'll be a clip by lunch. Priya is going to scream.", 0, S2 => { S2.f.a5_axlAngry = true; }]
+    ["Axl who?", "OH. That'll be a clip by lunch. Margo is going to scream.", 0, S2 => { S2.f.a5_axlAngry = true; }]
   ]);
   /* call-ins */
   await RP.lines(["@a5_dana We've got lines lighting up. Line two, you're on Radio Harbor."]);
@@ -178,7 +178,7 @@ async function interview(S) {
     "@a5_dana And we're clear. Wow. " + (score >= 6 ? "That was great radio. I'm going to cry in the booth." : score >= 3 ? "That was solid. Hair and everything." : "Well. That was... a radio segment."),
     "@a5_dana Harbor Lights, Saturday. Don't be late. I'll be in the front."
   ]);
-  RP.text("PRIYA (MGR)", "That was " + (score >= 6 ? "perfect" : score >= 3 ? "good" : "an experience") + ". Gate at 7 PM: wristbands + guest list. Whit wants the list by 8.", false);
+  RP.text("MARGO (MGR)", "That was " + (score >= 6 ? "perfect" : score >= 3 ? "good" : "an experience") + ". Gate at 7 PM: wristbands + guest list. Whit wants the list by 8.", false);
   RP.unlock("a5_loc_gate");
   await RP.lines(["Gate at seven. Time for lunch. Or the subway, which is lunch for people with no time."]);
 }

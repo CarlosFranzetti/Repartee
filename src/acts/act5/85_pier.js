@@ -100,7 +100,7 @@ async function simpleTalk(S, who) {
     twinkie: ["@twinkie Honey. You played it all. I remember everything, and I'm still going to remember that.", "@twinkie Sit. Watch the sun. It's the best part of the night. The rest is just the buildup."],
     eddie: ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie It's an invoice for introductions. Two-time. Don't worry about it. I'll take it in spirit."],
     jess: ["@jess Mr. Whiskers slept through the whole set. That's the highest compliment he gives.", S.f.a5_whiskersShout ? "@jess And you said his name. He heard. He blinked at me. Slowly." : "@jess He'd have loved a shout-out. Next time.", "@jess Thanks for letting me see this. You really did it."],
-    priya: ["@a5_priyaT The headline slot got four hundred thousand views before sunrise. I invoiced the sunrise.", "@a5_priyaT I'm proud of you. I'm going to say it once. Then back to being a manager.", "Priya, you sound like a person."],
+    margo: ["@a5_margoT The headline slot got four hundred thousand views before sunrise. I invoiced the sunrise.", "@a5_margoT I'm proud of you. I'm going to say it once. Then back to being a manager.", "Margo, you sound like a person."],
     kosmo: ["@kosmo " + nm(S) + ". I said it right. I'll say it right again. It's a good name. It's earned.", "Thanks, Kosmo.", "@kosmo Don't thank me. Thank the record you kept."]
   }[who];
   await RP.lines(L);
@@ -120,7 +120,7 @@ async function finale(S) {
     "@lou ...Kid. Sit. You're blocking the sunrise."
   ]);
   const checks = [
-    [!!S.f.a5_gearDone, "Bought the rig: Taula 4 MR, Core 47s, CDJ-3000s, Technics MK7s"],
+    [!!S.f.a5_gearDone, "Bought the rig: Taula 4 MR, Core 47s, CDJ-3000s"],
     [!!S.f.a5_interviewDone, "Radio Harbor interview (Dante: \"next week\", live)"],
     [!!S.f.a5_guestDone, "Marcus's \"plus thirty\" handled (twelve got in)"],
     [!!S.f.a5_soundDone, "Soundcheck on the main stage"],
@@ -149,7 +149,7 @@ RP.room({
     { id: "jess", char: "jess", x: 196, y: 238, face: "right", act: "stand", name: "Jess" },
     { id: "eddie", char: "eddie", x: 400, y: 246, face: "left", act: "stand", name: "Eddie Two-Times" },
     { id: "dante", char: "dante", x: 540, y: 240, face: "left", act: "stand", name: "Dante" },
-    { id: "a5_priya", char: "a5_priya", x: 140, y: 250, face: "right", act: "phone", name: "Priya" },
+    { id: "a5_margo", char: "a5_margo", x: 140, y: 250, face: "right", act: "phone", name: "Margo" },
     { id: "kosmo", char: "kosmo", x: 250, y: 200, face: "right", act: "stand", name: "Kosmo Delacroix" }
   ],
   sprites: [
@@ -173,7 +173,7 @@ RP.room({
     { id: "twinkie", name: "Twinkie", talk: S => simpleTalk(S, "twinkie"), look: "Twinkie. Still awake. Of course. She's watching the sun come up like she was told it would and is relieved it did.", give: "No.", pickup: "No." },
     { id: "eddie", name: "Eddie Two-Times", talk: S => simpleTalk(S, "eddie"), look: "Eddie Two-Times, with a receipt book in one hand and a hot dog in the other. It's a two-time hot dog.", give: "No.", pickup: "No." },
     { id: "jess", name: "Jess", talk: S => simpleTalk(S, "jess"), look: "Jess, with the bubble backpack, and a very sleepy orange cat in it. Mr. Whiskers has his shades on. The sun's up. He does not care.", give: "No.", pickup: "No." },
-    { id: "a5_priya", name: "Priya", talk: S => simpleTalk(S, "priya"), look: "Priya, on the phone, pacing in short lines like a metronome. She looks tired and happy. She's invoicing the sun.", give: "No.", pickup: "No." },
+    { id: "a5_margo", name: "Margo", talk: S => simpleTalk(S, "margo"), look: "Margo, on the phone, pacing in short lines like a metronome. She looks tired and happy. She's invoicing the sun.", give: "No.", pickup: "No." },
     { id: "kosmo", name: "Kosmo Delacroix", talk: S => simpleTalk(S, "kosmo"), look: "Kosmo Delacroix, at the end of the pier, in a long coat and shades, staring at the water. He said my name right. I'll never stop hearing it.", give: "No.", pickup: "No." }
   ],
   combos: [

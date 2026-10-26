@@ -78,7 +78,7 @@ function paint(c, S) {
   ell(c, 219, 65, 10, 10, "#b8901c"); ell(c, 219, 65, 9, 9, "#e8c040"); ell(c, 219, 65, 3, 3, "#17131f"); P(c, 214, 60, "#fff6b0"); P(c, 215, 59, "#fff6b0");
   R(c, 207, 80, 24, 3, "#17131f"); R(c, 209, 81, 20, 1, "#e8c040");
   /* sticky notes */
-  [[196, 92, "#ffe66a", ["CALL", "PRIYA"]], [214, 97, "#ff9ad5", ["NO", "AXL"]], [200, 107, "#9be15d", ["EAT", "FOOD"]]].forEach(([nx, ny, nc, tl], i) => {
+  [[196, 92, "#ffe66a", ["CALL", "MARGO"]], [214, 97, "#ff9ad5", ["NO", "AXL"]], [200, 107, "#9be15d", ["EAT", "FOOD"]]].forEach(([nx, ny, nc, tl], i) => {
     R(c, nx, ny, 17, 13, nc); HL(c, nx, ny, 17, "#ffffff55"); HL(c, nx, ny + 12, 17, mix(nc, "#140c24", 0.35)); R(c, nx + 5, ny - 1, 7, 2, "#d8cfa0" + "");
     txtC(c, tl[0], nx + 8, ny + 2, "#2a1c22", 1, 1); txtC(c, tl[1], nx + 8, ny + 8, "#2a1c22", 1, 1);
   });
@@ -129,7 +129,7 @@ function drawBoxes(c, S) {
   R(c, x, y - 28, 40, 28, "#c8925a"); R(c, x, y - 28, 40, 3, "#e0b078"); R(c, x, y - 2, 40, 2, "#8a5a30"); R(c, x + 17, y - 28, 6, 28, "#a8743e");
   txt(c, "PIONEER DJ", x + 4, y - 21, "#17131f"); txt(c, "CDJ-3000", x + 4, y - 14, "#c0302c"); R(c, x + 4, y - 9, 10, 4, "#f4f0e8");
   R(c, x + 30, y - 52, 38, 24, "#b07f4a"); R(c, x + 30, y - 52, 38, 3, "#d8a468"); R(c, x + 47, y - 52, 5, 24, "#8a5a30"); txt(c, "DYNAUDIO", x + 33, y - 44, "#17131f");
-  R(c, x + 40, y - 28, 30, 28, "#c8925a"); R(c, x + 40, y - 28, 30, 3, "#e0b078"); txt(c, "TECHNICS", x + 43, y - 20, "#17131f"); R(c, x + 40, y - 2, 30, 2, "#8a5a30");
+  R(c, x + 40, y - 28, 30, 28, "#c8925a"); R(c, x + 40, y - 28, 30, 3, "#e0b078"); txt(c, "LACQUER", x + 44, y - 20, "#7a5a14"); R(c, x + 40, y - 2, 30, 2, "#8a5a30");
   if (hasTaula(S)) art.roadCase(c, x - 36, y - 24, 32, 24, { label: "CAN ELECTRIC", labelBg: "#e8e0cc", wheels: true });
 }
 function drawFloorLamp(c, S) {
@@ -163,7 +163,7 @@ const REMAIN = S => {
 async function sleepNow(S) {
   const day = A5.day(S);
   const rem = REMAIN(S);
-  if (day === 1 && !S.f.a5_calledPriya) { await RP.say("It's ten in the morning. I just got up. ...Fine, I'm a person who naps. But no."); return; }
+  if (day === 1 && !S.f.a5_calledMargo) { await RP.say("It's ten in the morning. I just got up. ...Fine, I'm a person who naps. But no."); return; }
   if (rem.length) { await RP.say("Not yet. Still on the list: " + rem.join("; ") + "."); return; }
   if (day >= 3) { await RP.say("No sleeping. Tonight I sleep when it's over. Or never. Probably never."); return; }
   await RP.walkTo(150, 224, "back");
@@ -176,12 +176,12 @@ async function sleepNow(S) {
     await RP.fadeTo(0, 900);
     await RP.lines([
       "My phone is going off like a smoke alarm.",
-      "@a5_priya Radio Harbor wants you at ten. Midtown. Dana Okafor. She asks questions, she doesn't take answers.",
-      "@a5_priya Seven tonight: wristbands and the guest list, at the gate. Whit needs the list by eight.",
-      "@a5_priya Whatever you do, do not say the name Axl Vanta on the radio. His people listen.",
+      "@a5_margo Radio Harbor wants you at ten. Midtown. Dana Okafor. She asks questions, she doesn't take answers.",
+      "@a5_margo Seven tonight: wristbands and the guest list, at the gate. Whit needs the list by eight.",
+      "@a5_margo Whatever you do, do not say the name Axl Vanta on the radio. His people listen.",
       "I'll be charming and unquotable. It's my best look."
     ]);
-    RP.text("PRIYA (MGR)", "FRI: 10 AM Radio Harbor 88.1, Midtown. Be funny, not weird. After: gate at 7 for wristbands and the guest list.", false);
+    RP.text("MARGO (MGR)", "FRI: 10 AM Radio Harbor 88.1, Midtown. Be funny, not weird. After: gate at 7 for wristbands and the guest list.", false);
     RP.text("JESS", "heard ur headlining 😱 mr whiskers wants a shoutout. he has opinions. he's... a lot right now", false);
     return;
   }
@@ -192,11 +192,11 @@ async function sleepNow(S) {
   const k = RP.actor("kid"); k.x = 150; k.y = 226; k.face = "front";
   await RP.fadeTo(0, 1000);
   await RP.lines([
-    "@a5_priya Car's downstairs. It has water and a snack. Eat the snack.",
+    "@a5_margo Car's downstairs. It has water and a snack. Eat the snack.",
     "I can't eat. My stomach has become a subwoofer.",
-    "@a5_priya Then take the water. Go. And remember: you're not on until 11:45. Don't peak at lunch."
+    "@a5_margo Then take the water. Go. And remember: you're not on until 11:45. Don't peak at lunch."
   ]);
-  RP.text("PRIYA (MGR)", "SAT: you're at the gate. Pass in your pocket. Soundcheck 4 PM main stage. Find Roz (stage manager). Do NOT find Axl.", false);
+  RP.text("MARGO (MGR)", "SAT: you're at the gate. Pass in your pocket. Soundcheck 4 PM main stage. Find Roz (stage manager). Do NOT find Axl.", false);
 }
 
 async function wardrobe(S) {
@@ -285,13 +285,13 @@ RP.room({
   ],
   hotspots: [
     { id: "a5_door", name: "door", r: [598, 34, 42, 134], z: 20, walk: [612, 218, "right"], look: "The hallway, four flights of stairs, a stoop, the L train, and then the rest of New York.",
-      exit: S => A5.day(S) === 3 ? { room: "a5_gate", x: 70, y: 232, face: "right", say: "Priya's car. It has a water and a snack and an opinion." } : (!S.f.a5_calledPriya ? "Priya hung up mid-sentence. I should check my phone first." : "travel") },
+      exit: S => A5.day(S) === 3 ? { room: "a5_gate", x: 70, y: 232, face: "right", say: "Margo's car. It has a water and a snack and an opinion." } : (!S.f.a5_calledMargo ? "Margo hung up mid-sentence. I should check my phone first." : "travel") },
     { id: "a5_bed", name: "bed", r: [74, 118, 172, 92], z: 30, walk: [150, 222, "back"], look: S => A5.day(S) >= 3 ? "My bed. Saturday: I'm not allowed to use it until the set is over." : "My bed. It's also my couch, my desk-for-the-laptop and my cry-room.",
       use: S => sleepNow(S), open: "There's nothing to open. It's a bed.", pickup: "I tried that once. I got a hernia and a different bed.", push: "It's against the wall. I'm not that kind of DJ.", talk: "Not now. I'm saving my voice. And my emotions." },
     { id: "a5_rail", name: "clothes rail", r: [4, 116, 66, 100], z: 31, walk: [40, 222, "back"], look: "A rail of stage clothes. Black coat, hot-pink lining. Orange stripes. The old smiley tee. Wardrobe: one rack, three attitudes.",
       use: S => wardrobe(S), open: S => wardrobe(S), pickup: "I'd need a bigger bag. And a bigger personality.", pull: S => wardrobe(S) },
     { id: "a5_poster", name: "Harbor Lights poster", r: [110, 26, 80, 102], z: 20, walk: [150, 222, "back"],
-      look: S => ["HARBOR LIGHTS FESTIVAL. A lighthouse, a bill, and my name in pink. " + A5.pName(S) + ". Spelled right.", "Louie Vega. Danny Tenaglia. Francois K. DJ Spinna. Carl Craig. I'm on the same poster. In the biggest letters."],
+      look: S => ["HARBOR LIGHTS FESTIVAL. A lighthouse, a bill, and my name in pink. " + A5.pName(S) + ". Spelled right.", "Louie Vega. Danny Tenaglia. Francois K. DJ Spinna. Carl Craig. I'm on the same poster. In the second-biggest letters. Axl got the biggest. Axl always gets the biggest."],
       pickup: "It took four tape rolls to get it up. It's staying up.", talk: "\"You look nice, poster.\" It does look nice. It's lit better than me." },
     { id: "a5_record", name: "gold record", r: [202, 44, 34, 44], z: 20, walk: [220, 222, "back"], look: "A \"gold record\" from Pipe Hole Records. It's spray-painted. The plaque says: AWARDED FOR SELLING ELEVEN COPIES. Eleven. I know all their names.", pickup: "It's glued on. Pipe Hole Records doesn't have a budget for nails." },
     { id: "a5_neon", name: "neon sign", r: [424, 38, 90, 40], z: 25, walk: [470, 214, "back"], look: "PIPE HOLE RECORDS. My label. Two releases, eleven fans, one neighbor who's technically the A&R.", use: "It has one switch. It's always on. Like me.", pull: "I'm not touching the neon. Last time it bit." },
@@ -303,14 +303,14 @@ RP.room({
       look: S => S.f.a5_louComing ? "Faint sound of ironing. And humming. Lou is humming. In public. Well, through a hole." : "The pipe hole to 4B. Lou's intercom. Complaints in, miracles out.",
       talk: S => loTalk(S), use: "It's a hole. It's for talking to Lou and for nothing else.",
       give: async (S, item) => { if (item === "a5_loupass") return giveLouPass(S); return "Lou doesn't want that."; } },
-    { id: "a5_gerald", name: "Gerald", r: [306, 158, 62, 58], z: 33, walk: [298, 220, "right"], look: S => hasTaula(S) ? "Gerald. He's two feet taller than in Act One. He gets the best light. He is the only one of us who has his life together." : "That's Gerald. He grew over the winter. I don't know what he's been through, but he's thriving.",
+    { id: "a5_gerald", name: "Gerald", r: [306, 158, 62, 58], z: 33, walk: [298, 220, "right"], look: S => hasTaula(S) ? "Gerald. He's two feet taller than in Act One. He gets the best light. He is the only one of us who has his life together." : "That's Gerald. He grew all summer. I don't know what he's been through, but he's thriving.",
       talk: "Hang in there, Gerald. Wait. You're hanging in there better than I am.", use: "I water him when I remember. He forgives me. That's his superpower.", pickup: "Gerald stays where the light is. It's his whole thing." },
     { id: "a5_crate", name: "record crate", r: [260, 202, 40, 40], z: 28, walk: [280, 244, "back"], look: S => "My crate. " + S.records.length + " records. Every one is a decision. Some of them were very good decisions.", use: S => RP.crateView(), open: S => RP.crateView(), pickup: "It's got twenty-five records in it. I'm not carrying that to the subway. The festival has roadies. I have roadies now. Wow." },
     { id: "a5_bedlap", name: "laptop", r: [184, 138, 38, 28], z: 40, walk: [196, 220, "back"], look: "My laptop. Held together with gaffer tape and ambition. A spreadsheet of tonight's tracks: HARBOR_SET_v14_FINAL_FINAL.xlsx.",
-      use: S => ["The set notes, v14. They say: START LOW. CLIMB. DON'T PEAK BEFORE MIDNIGHT. SAVE THE WHITE LABEL.", "Priya's note in red: \"Don't be a hero. Be a headliner.\""], pickup: "It's safer on the bed. Everything is safer on the bed." },
+      use: S => ["The set notes, v14. They say: START LOW. CLIMB. DON'T PEAK BEFORE MIDNIGHT. SAVE THE WHITE LABEL.", "Margo's note in red: \"Don't be a hero. Be a headliner.\""], pickup: "It's safer on the bed. Everything is safer on the bed." },
     { id: "a5_turn", name: "Technics SL-1210MK7s", z: 36, walk: [450, 216, "back"],
       rects: () => { const mw = hasTaula(RP.state) ? 66 : 40, total = 70 * 2 + mw + 8, gx = 477 - Math.round(total / 2); return [[gx, 112, 74, 40], [gx + 74 + mw + 4, 112, 74, 40]]; },
-      look: "A pair of Technics SL-1210MK7. The first Technics deck aimed at DJs in nine years, announced at CES 2019. They've done thirty-seven airports with me. They're fine. I'm the one who's bent.",
+      look: "A pair of Technics SL-1210MK7. The first Technics deck aimed at DJs in nine years, announced at CES 2019. My own pair, bought with Halcyon money. They've done every Halcyon Thursday: down four flights on a hand truck, back up at five AM. They're fine. I'm the one who's bent.",
       use: "Not now. If I start spinning, I'll never stop. And Lou has a program.", pickup: "Nine kilos each. I like my back." },
     { id: "a5_mixer", name: "mixer", r: () => { const mw = hasTaula(RP.state) ? 66 : 40, total = 70 * 2 + mw + 8, gx = 477 - Math.round(total / 2); return [gx + 74, 114, mw, 36]; }, z: 38, walk: [478, 216, "back"],
       look: S => hasTaula(S) ? "Can Electric Taula 4 MR. Handwired in Barcelona, four channels, all analogue, all knobs. I'm scared to touch it. I touched it twice." : "A Pioneer DJM-350. A great little mixer that carried me through a lot of bad rooms. This week it retires. With honors.",
@@ -320,7 +320,7 @@ RP.room({
       use: "I'll turn them up Saturday. Tonight, Lou's program.", pickup: "On a wall shelf, held by prayers and two screws." },
     { id: "a5_foam", name: "acoustic foam", r: [362, 24, 240, 40], z: 14, walk: [470, 214, "back"], look: "Acoustic foam. Lou says it makes my room sound \"like a dentist's office.\" It has a certain... clean silence." },
     { id: "a5_boxes", name: "delivery boxes", r: [510, 168, 78, 62], z: 41, vis: S => !!S.f.a5_gearDone, walk: [530, 236, "back"],
-      look: "The rig, delivered: CDJ-3000s, Dynaudio, new Technics. Ines's boxes say LACQUER & WIRE in gold. Eddie's box says FRAGILE ARTIST. I'm hoping that's a joke.",
+      look: "The rig, delivered: CDJ-3000s, Dynaudio, the Taula. Mercè's boxes say LACQUER & WIRE in gold. Eddie's box says FRAGILE ARTIST. I'm hoping that's a joke.",
       open: "It's all unpacked. I stacked the boxes because I'm that kind of person.", pickup: "Too heavy. Also: I like a view." },
     { id: "a5_shelf", name: "record shelf", r: [6, 38, 96, 66], z: 14, walk: [60, 216, "back"], look: "The overflow shelf. Records that didn't make the crate, and one that made it and came back. I don't talk about that one.", pickup: "If I pull one, the whole shelf has a conversation with the floor." },
     { id: "a5_rug", name: "rug", r: [352, 220, 236, 26], z: 8, floor: true, look: "A purple rug. It ties the room together. Nothing else does." },

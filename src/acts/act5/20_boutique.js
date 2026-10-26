@@ -1,6 +1,6 @@
 /* Act 5 — a5_boutique: Lacquer & Wire (Williamsburg hi-fi boutique). Thursday.
    The Can Electric Taula 4 MR on its velvet plinth, Dynaudio Core 47s, CDJ-3000s, Mercè behind the counter, Eddie Two-Times leaning on it.
-   Mini-games: buyGear (mixer via Eddie's two-time deal or direct from Mercè; monitors from Mercè). Decks + turntables are a counter package. */
+   Mini-games: buyGear (mixer via Eddie's two-time deal or direct from Mercè; monitors from Mercè). CDJ-3000s are a counter sale (you already own the MK7s from Act 4). */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -8,7 +8,7 @@ const U = RP.u, PK = RP.PK, A5 = RP.a5, art = A5.art, I = RP.icons;
 const { R, P, ell, line, poly, bayer, mulberry, mix, txt, txtC, txtW, clamp } = U;
 const K = U.ramp;
 const HL = (c, x, y, w, col) => R(c, x, y, w, 1, col), VL = (c, x, y, h, col) => R(c, x, y, 1, h, col);
-const TAULA = "can_electric_taula_4_mr", CORE = "dynaudio_core_47", CDJ3 = "pioneer_cdj_3000", MK7 = "technics_sl_1210mk7";
+const TAULA = "can_electric_taula_4_mr", CORE = "dynaudio_core_47", CDJ3 = "pioneer_cdj_3000";
 
 /* ---------------------------------------------------------------------------------------- art */
 /* the Taula 4 MR: four-channel analogue rotary mixer, walnut cheeks, brass knobs. Scales from ~66 to ~130 px wide. */
@@ -189,13 +189,13 @@ async function afterPurchase(S) {
   if (!checkDone(S)) return;
   await RP.wait(300);
   await RP.lines([
-    "@a5_ines It all ships tonight to Bushwick. By courier. Not by Eddie.",
+    "@a5_merce It all ships tonight to Bushwick. By courier. Not by Eddie.",
     "@eddie I'm a courier! I've got a van!",
-    "@a5_ines You have a van with a mattress in it.",
+    "@a5_merce You have a van with a mattress in it.",
     "That's everything. A hand-wired mixer from Barcelona, monitors that never lie, decks that don't take CDs.",
     "My studio is going to look like somebody else's studio."
   ]);
-  RP.text("PRIYA (MGR)", "Gear done?! I'm told Eddie was involved. Please check your account balance and your dignity. Sleep. Tomorrow: radio.", false);
+  RP.text("MARGO (MGR)", "Gear done?! I'm told Eddie was involved. Please check your account balance and your dignity. Sleep. Tomorrow: radio.", false);
 }
 
 /* the Taula: buy.Gear in boutique mode (Mercè's waiting list: ear test, why a rotary, the price that does not move) */
@@ -203,25 +203,25 @@ async function buyMixer(S) {
   if (S.f.a5_gearMixer) { await RP.say("The Taula's mine. It ships tonight. I keep saying it out loud to see if it sounds real."); return; }
   const fails = S.f.a5_mixerFails || 0;
   if (fails >= 2) {
-    await RP.lines(["@a5_ines ...Wait. A cancellation. A man in Lisbon changed his mind about the color of the knobs.", "@a5_ines The unit is yours. Today. At the price on the card. Do not make me regret my generosity."]);
+    await RP.lines(["@a5_merce ...Wait. A cancellation. A man in Lisbon changed his mind about the color of the knobs.", "@a5_merce The unit is yours. Today. At the price on the card. Do not make me regret my generosity."]);
     const paid = await payFor(S, TAULA, null, "mixer", 1);
     S.f.a5_gearMixer = true; RP.sfx("success");
-    await RP.lines(["@a5_ines " + money(paid) + ". A Can Electric Taula 4 MR. Handwired in Barcelona.", "I own a TAULA."]);
+    await RP.lines(["@a5_merce " + money(paid) + ". A Can Electric Taula 4 MR. Handwired in Barcelona.", "I own a TAULA."]);
     await afterPurchase(S);
     return;
   }
   await RP.lines([
     "Mercè. I'd like the Taula.",
-    "@a5_ines The Taula has a list. You are not on it. ...But you are on a poster, so I will listen to you.",
-    "@a5_ines Three questions. Do not lie to me. I will know. It is a gift."
+    "@a5_merce The Taula has a list. You are not on it. ...But you are on a poster, so I will listen to you.",
+    "@a5_merce Three questions. Do not lie to me. I will know. It is a gift."
   ]);
   const res = await RP.mg.play("buyGear", { slot: "mixer", options: [TAULA], seller: "boutique", difficulty: 2, budget: Math.floor(S.money) });
   if (res && res.ok && (res.bought === TAULA || res.missing)) {
     const paid = await payFor(S, TAULA, res, "mixer", 1);
     S.f.a5_gearMixer = true; RP.sfx("success");
     await RP.lines([
-      "@a5_ines " + money(paid) + ". For a Taula 4 MR. Four channels, all analogue, handwired in Barcelona.",
-      "@a5_ines The first Taula was built for a record store, Discos Paradiso. Now one is going to a headliner. I approve.",
+      "@a5_merce " + money(paid) + ". For a Taula 4 MR. Four channels, all analogue, handwired in Barcelona.",
+      "@a5_merce The first Taula was built for a record store, Discos Paradiso. Now one is going to a headliner. I approve.",
       "@eddie I did the intro. I'm taking a percentage of the feelings.",
       "I own a TAULA."
     ]);
@@ -229,7 +229,7 @@ async function buyMixer(S) {
     return;
   }
   S.f.a5_mixerFails = fails + 1;
-  await RP.lines(["@a5_ines You are number " + ((res && res.place) || 6) + " on the list. Come back when the list has moved.", "@eddie I could move it. For a small two-time fee.", "@a5_ines Eddie. NO."]);
+  await RP.lines(["@a5_merce You are number " + ((res && res.place) || 6) + " on the list. Come back when the list has moved.", "@eddie I could move it. For a small two-time fee.", "@a5_merce Eddie. NO."]);
 }
 /* the monitors: Eddie's van, parked outside (buy.Gear, van mode, one listing is a lemon) */
 async function buyMonitors(S) {
@@ -239,13 +239,13 @@ async function buyMonitors(S) {
     await RP.lines(["@eddie Okay. Okay! Forget the van tricks. I got a sealed pair of Core 47s in the back. Real ones. Sticker price. No two-time. It hurts me to say that.", "That's the nicest thing you've ever said to me."]);
     const paid = await payFor(S, CORE, null, "monitors", 1);
     S.f.a5_gearMonitors = true; RP.sfx("success");
-    await RP.lines(["@a5_ines " + money(paid) + ". Do not put them near a wall that lies."]);
+    await RP.lines(["@a5_merce " + money(paid) + ". Do not put them near a wall that lies."]);
     await afterPurchase(S);
     return;
   }
   await RP.lines([
-    "@a5_ines The Core 47s on the stands are the demo pair. They're not for sale.",
-    "@a5_ines Sealed ones came in. They are in Eddie's van. Double-parked. I do not like it. I do not like it at all.",
+    "@a5_merce The Core 47s on the stands are the demo pair. They're not for sale.",
+    "@a5_merce Sealed ones came in. They are in Eddie's van. Double-parked. I do not like it. I do not like it at all.",
     "@eddie Three listings in the van! One's a Core 47, one's a mystery, one's... also a mystery! Come see!",
     "Eddie's van. Right. I'll look with my eyes, not my heart."
   ]);
@@ -270,21 +270,23 @@ async function buyMonitors(S) {
   } else await RP.lines(["I walk away. The van waves at me in a sad way.", "@eddie I'll hold them! Not for long! Two-time rule!"]);
 }
 async function buyDecks(S) {
-  if (S.f.a5_gearDecks) { await RP.say("Decks and turntables are done. I'm slightly ashamed of how good that sounded."); return; }
-  const cdj = RP.gearInfo(CDJ3) || { price: 3200 }, mk7 = RP.gearInfo(MK7) || { price: 1100 };
+  if (S.f.a5_gearDecks) { await RP.say("The CDJ-3000s are mine. I'm slightly ashamed of how good that sounded."); return; }
+  const cdj = RP.gearInfo(CDJ3) || { price: 3200 };
   await RP.lines([
-    "@a5_ines The festival has a backline, but you want your own. The CDJ-3000. Nine-inch touchscreen. No disc drive.",
+    "@a5_merce The festival has a backline, but you want your own. The CDJ-3000. Nine-inch touchscreen. No disc drive.",
     "It's the first CDJ built around an MPU instead of the DSP. It also doesn't play CDs, which is a shame, I started on CD-Rs.",
-    "@a5_ines And the turntables: a boxed pair of Technics SL-1210MK7s for the stage. Your tour pair has had a hard life.",
-    "@eddie A hard life! I sold them to him! Two-time deal!"
+    "@a5_merce And turntables? I have a boxed pair of MK7s.",
+    "I have MK7s. I bought them myself, with Halcyon money. They've been down more stairs than a postman.",
+    "@eddie I could sell them to you again! Two-time deal!",
+    "@a5_merce Eddie. No. ...Then just the CDJs."
   ]);
-  const total = cdj.price + mk7.price;
-  const i = await RP.choose(["Take the whole package (" + money(total) + ", Mercè knocks something off)", "I'll think about it"]);
-  if (i !== 0) { await RP.say("Let me think. A pair of CDJ-3000s. A pair of Technics. That's the price of a used car. A very, very musical car."); return; }
+  const total = cdj.price;
+  const i = await RP.choose(["Take the whole pair (" + money(total) + ", Mercè knocks something off)", "I'll think about it"]);
+  if (i !== 0) { await RP.say("Let me think. A pair of CDJ-3000s. That's the price of a used car. A very, very musical car."); return; }
   const paid = Math.min(Math.max(0, Math.floor(S.money)), Math.round(total * 0.93));
-  RP.money(-paid); RP.setGear("decks", CDJ3); RP.setGear("turntables", MK7);
+  RP.money(-paid); RP.setGear("decks", CDJ3);
   S.f.a5_gearDecks = true; RP.sfx("success");
-  await RP.lines(["@a5_ines " + money(paid) + " for the lot. Boxed, matched, serial numbers in a row.", "@eddie A matched set! Like twins! Evil twins! Beautiful, rich twins!"]);
+  await RP.lines(["@a5_merce " + money(paid) + " for the pair. Boxed, matched, serial numbers in a row.", "@eddie A matched set! Like twins! Evil twins! Beautiful, rich twins!"]);
   await afterPurchase(S);
 }
 
@@ -292,38 +294,38 @@ async function meetShop(S) {
   S.f.a5_boutiqueMet = true;
   RP.sfx("door");
   await RP.lines([
-    "@a5_ines Welcome to Lacquer & Wire. If you are looking for headphones, the answer is no.",
+    "@a5_merce Welcome to Lacquer & Wire. If you are looking for headphones, the answer is no.",
     "@eddie THERE he is! The headliner! Eddie Two-Times. Remember me? I sold you a deal.",
     "Eddie? What are you doing in a hi-fi boutique?",
     "@eddie Networking. I'm the, uh, the independent facilitator. In this establishment. For gentlemen of music.",
-    "@a5_ines He has been here since nine. He's rearranged my window. I am going to call someone.",
+    "@a5_merce He has been here since nine. He's rearranged my window. I am going to call someone.",
     "I'm told you have a Taula 4 MR.",
-    "@a5_ines ...",
-    "@a5_ines Yes. In the center. On the velvet. Please do not point at it. It gets shy."
+    "@a5_merce ...",
+    "@a5_merce Yes. In the center. On the velvet. Please do not point at it. It gets shy."
   ]);
 }
 
-async function inesTalk(S) {
+async function merceTalk(S) {
   if (!S.f.a5_boutiqueMet) { await meetShop(S); return; }
   await RP.say("Mercè? Got a minute?");
-  await RP.say(S.f.a5_gearDone ? "For a headliner? I have all the minutes." : "I have all the time. It's a boutique. The only thing in a rush is the dust.", "a5_ines");
+  await RP.say(S.f.a5_gearDone ? "For a headliner? I have all the minutes." : "I have all the time. It's a boutique. The only thing in a rush is the dust.", "a5_merce");
   await RP.convo([
     { text: "Tell me about the Taula.", once: true, run: async () => {
       await RP.lines([
-        "@a5_ines Can Electric Audio. Barcelona. The Taula 4 MR is four channels, one hundred percent analogue, a rotary mixer. Handwired.",
-        "@a5_ines The company began because a record store needed a custom mixer. Discos Paradiso. Then others asked.",
-        "@a5_ines There is also a two-channel, the Taula 2 MR. But for a festival, you need the four.",
+        "@a5_merce Can Electric Audio. Barcelona. The Taula 4 MR is four channels, one hundred percent analogue, a rotary mixer. Handwired.",
+        "@a5_merce The company began because a record store needed a custom mixer. Discos Paradiso. Then others asked.",
+        "@a5_merce There is also a two-channel, the Taula 2 MR. But for a festival, you need the four.",
         "A knob mixer. No screens, no sync button, no safety net.",
-        "@a5_ines Exactly. Your ears do the work. The mixer just gets out of the way."
+        "@a5_merce Exactly. Your ears do the work. The mixer just gets out of the way."
       ]);
     } },
     { text: "I want the Taula.", when: S2 => !S2.f.a5_gearMixer, run: async () => { await buyMixer(S); } },
     { text: "The Core 47 monitors?", when: S2 => !S2.f.a5_gearMonitors, run: async () => { await buyMonitors(S); } },
-    { text: "What about decks and turntables?", when: S2 => !S2.f.a5_gearDecks, run: async () => { await buyDecks(S); } },
+    { text: "What about decks?", when: S2 => !S2.f.a5_gearDecks, run: async () => { await buyDecks(S); } },
     { text: "Why is Eddie in your shop?", once: true, run: async () => {
-      await RP.lines(["@a5_ines He came in with a coupon for a store I do not own.", "@a5_ines I let him stay. It is easier. He is... like weather. You cannot argue with weather."]);
+      await RP.lines(["@a5_merce He came in with a coupon for a store I do not own.", "@a5_merce I let him stay. It is easier. He is... like weather. You cannot argue with weather."]);
     } },
-    { text: "Thanks, Mercè.", end: true, run: async () => { await RP.say("Anytime. Mind the velvet.", "a5_ines"); } }
+    { text: "Thanks, Mercè.", end: true, run: async () => { await RP.say("Anytime. Mind the velvet.", "a5_merce"); } }
   ]);
 }
 async function eddieTalk(S) {
@@ -350,7 +352,7 @@ RP.room({
   start: { x: 70, y: 226, face: "right" },
   fx: [{ type: "dust", rect: [320, 56, 100, 100], count: 28, color: "#fff4d6" }, { type: "dust", rect: [12, 30, 138, 120], count: 14, color: "#fff4d6" }],
   actors: [
-    { id: "a5_ines", char: "a5_ines", x: 578, y: 194, face: "left", act: "stand", name: "Mercè" },
+    { id: "a5_merce", char: "a5_merce", x: 578, y: 194, face: "left", act: "stand", name: "Mercè" },
     { id: "eddie", char: "eddie", x: 438, y: 232, face: "right", act: "stand", name: "Eddie Two-Times" }
   ],
   sprites: [
@@ -381,7 +383,7 @@ RP.room({
     { id: "a5_bart", name: "framed print", r: [456, 26, 38, 50], z: 20, walk: [470, 222, "back"], look: "A framed print of a sun over a hill. BCN in tiny letters. Barcelona, I assume. I've never been. I've been to Berlin, where the sun is a rumor." },
     { id: "a5_bcard", name: "postcard", r: [504, 28, 36, 24], z: 22, walk: [520, 222, "back"], look: "A postcard from Barcelona. HOLA, it says. That's the first word I've seen in this shop that isn't about money." },
     { id: "a5_brug", name: "rug", r: [150, 214, 340, 40], z: 8, floor: true, look: "A red runner with gold trim. It leads you gently from the door to the part where you spend money." },
-    { id: "a5_ines", name: "Mercè", talk: S => inesTalk(S), look: "Mercè Ferrer. Runs Lacquer & Wire. Apron, red glasses, the expression of someone who's heard every joke about the word \"wire.\"", give: (S, item) => "Mercè doesn't take presents. Mercè takes payment.", pickup: "I'm not picking up Mercè.", use: "I'd rather talk to her.", push: "I'm not pushing Mercè." },
+    { id: "a5_merce", name: "Mercè", talk: S => merceTalk(S), look: "Mercè Ferrer. Runs Lacquer & Wire. Apron, red glasses, the expression of someone who's heard every joke about the word \"wire.\"", give: (S, item) => "Mercè doesn't take presents. Mercè takes payment.", pickup: "I'm not picking up Mercè.", use: "I'd rather talk to her.", push: "I'm not pushing Mercè." },
     { id: "eddie", name: "Eddie Two-Times", talk: S => eddieTalk(S), look: "Eddie Two-Times, in a shiny jacket with a sticker that says AUTHORIZED RESELLER, in Sharpie, in his own handwriting.", give: (S, item) => "\"Two-time deal!\" Eddie says. I think he'd take it in cash, in spirit, and in a favor.", pickup: "Eddie has weight and a lot of paperwork. No.", use: "Eddie is not a thing. Eddie is a situation." }
   ],
   combos: [
@@ -392,6 +394,6 @@ RP.room({
   enter: async (S, from) => {
     if (!S.f.a5_boutiqueMet) await meetShop(S);
   },
-  self: { look: "A headliner with $13,000 and zero impulse control. Priya is watching my balance.", talk: "I'd say something clever, but I'm in front of a Taula." }
+  self: { look: S => "A headliner with " + money(Math.floor(S.money)) + " and zero impulse control. Margo is watching my balance.", talk: "I'd say something clever, but I'm in front of a Taula." }
 });
 })();

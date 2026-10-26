@@ -139,7 +139,7 @@ async function soundcheck(S) {
   else await RP.lines(["@a5_foh It's... fine. There's a little hum on channel four. I'll hide it. Tonight we ride the faders.", "@a5_foh You're good enough. Go eat something. Doors at six."]);
   RP.relight();
   await RP.say("Doors at six. Axl at ten-fifteen. Me at eleven forty-five. Plenty of time to be quietly terrified.");
-  RP.text("PRIYA (MGR)", "Soundcheck: " + (good ? "great" : "ok") + ". Now: Axl wants your slot. Roz has the details. Backstage. Go.", true);
+  RP.text("MARGO (MGR)", "Soundcheck: " + (good ? "great" : "ok") + ". Now: Axl wants your slot. Roz has the details. Backstage. Go.", true);
 }
 
 async function boothUse(S) {
@@ -289,7 +289,7 @@ RP.room({
   combos: [
     ["a5_pass", "a5_mbooth", "My pass is for people who can't get in. I'm in."],
     ["a5_marker", "a5_mbooth", "I could write something on the scrim. Whit would call it \"a brand moment.\" I leave it clean."],
-    ["phone", "a5_mbooth", "No phone while I'm playing. Priya would murder me and then invoice the murder."]
+    ["phone", "a5_mbooth", "No phone while I'm playing. Margo would murder me and then invoice the murder."]
   ],
   enter: async (S, from) => {
     if (show(S)) {

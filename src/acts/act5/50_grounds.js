@@ -202,7 +202,7 @@ async function jessTalk(S) {
   }
   await RP.convo([
     { text: "How's Mr. Whiskers?", once: true, run: async () => {
-      await RP.lines(["@jess He's a star. Seriously. He's got three hundred thousand followers.", "I have forty thousand and a Taula.", "@jess Mr. Whiskers has his own line of pâté. His face is on a can. It's called \"Whiskers: Fit For A Headliner.\"", "That's... that's my slogan."]);
+      await RP.lines(["@jess He's a star. Seriously. He's got three hundred thousand followers.", "I have " + S.followers.toLocaleString("en-US") + " and a Taula.", "@jess Mr. Whiskers has his own line of pâté. His face is on a can. It's called \"Whiskers: Fit For A Headliner.\"", "That's... that's my slogan."]);
     } },
     { text: "Did you bring him?", once: true, run: async () => {
       await RP.lines(["@jess Of course.", "(She tips the carrier. Mr. Whiskers has a festival wristband and tiny cat shades.)", "@jess He asked for a shoutout. In his way.", "In his way, meaning he sleeps through the whole thing.", "@jess That's the highest compliment he gives."]);
@@ -212,7 +212,7 @@ async function jessTalk(S) {
   ]);
 }
 async function eddieTalk(S) {
-  await RP.lines(["@eddie WATER! Nine dollars! A two-time deal: you pay nine now, nine in spirit.", "Eddie, I've got a thousand-dollar mixer and I can't afford a water."]);
+  await RP.lines(["@eddie WATER! Nine dollars! A two-time deal: you pay nine now, nine in spirit.", "Eddie, I've got a sixteen-hundred-dollar mixer and I can't afford a water."]);
   const i = await RP.choose(["Buy a water ($9)", "No thanks"]);
   if (i === 0) {
     if (!RP.canAfford(9)) { await RP.say("I'm broke. Even now."); return; }
@@ -290,7 +290,7 @@ RP.room({
     { id: "a5_wtruck2", name: "dumpling truck", r: [156, 118, 128, 100], z: 15, walk: [218, 238, "back"], look: "DUMPLINGS. Steam, a cheerful guy in an apron, and a queue that smells like heaven. I'd murder for a pork bun. I'm saving it for after the set.", use: "After the set. I need to be able to feel my hands.", talk: "The dumpling guy waves and gives me a thumbs-up. That's more affection than I've had in 24 hours.", pickup: "Absolutely not. Absolutely yes. After the set." },
     { id: "a5_wmerch", name: "merch tent", r: [298, 124, 116, 94], z: 15, walk: [356, 238, "back"], look: "HARBOR LIGHTS MERCH. Tees, hats, tote bags. There's a shirt with my face on it. I stand next to it. It's weirdly flattering. And a little bit horrifying.", use: "The shirt costs $45. I'm the headliner. I'm told it's retail.", pickup: "I'd need to pay for it. I'm still not used to being on both ends of the price tag.", talk: "The merch person says \"yes?\" I say \"nothing.\" We're both in agreement." },
     { id: "ray", name: "Ray", talk: S => rayTalk(S), look: "Ray, of Deep Cuts. Same beard, same glasses, same expression of pity for everything you've ever bought.", give: (S, item) => "Ray: \"I don't want it. I have everything I want. It's a curse.\"", pickup: "Ray's bigger than he looks. He's all opinions.", use: "I can't use Ray. Nobody's ever managed it." },
-    { id: "a5_wray", name: "Deep Cuts pop-up", r: [428, 120, 136, 98], z: 15, walk: [496, 236, "back"], look: "Deep Cuts, pop-up edition: bins of records, price cards in Ray's handwriting, and a neon sign Ray says he \"didn't buy, it just arrived.\"", pickup: "Ray's watching. Ray's always watching. And he'll charge me for the look.", use: "I have a crate. I have a lot of records. I'm not allowed to buy any more. Priya has views.", open: "The bins are open. They've been open since 1993. I'll look through them after the set." },
+    { id: "a5_wray", name: "Deep Cuts pop-up", r: [428, 120, 136, 98], z: 15, walk: [496, 236, "back"], look: "Deep Cuts, pop-up edition: bins of records, price cards in Ray's handwriting, and a neon sign Ray says he \"didn't buy, it just arrived.\"", pickup: "Ray's watching. Ray's always watching. And he'll charge me for the look.", use: "I have a crate. I have a lot of records. I'm not allowed to buy any more. Margo has views.", open: "The bins are open. They've been open since 1993. I'll look through them after the set." },
     { id: "a5_wbar", name: "Harbor Bar", r: [580, 116, 124, 102], z: 15, walk: [650, 236, "back"], look: "HARBOR BAR: 1 TICKET. A shelf of bottles, a stack of tickets, a tower of cups, and a woman in mesh who knows everything.", use: "I'm not drinking before my set. I'm a professional. I'm a very nervous professional.", pickup: "The tickets are guarded by a woman who remembers everything. Hands off." },
     { id: "twinkie", name: "Twinkie", talk: S => twinkieTalk(S), look: "Twinkie. Mesh top, pink skirt, shades at night. The only person I know who's been at every after-party and still looks awake.", give: (S, item) => "Twinkie: \"I'll remember that you tried.\"", pickup: "Twinkie remembers. Twinkie will remember this too.", use: "I can't use Twinkie. I can only be used BY Twinkie." },
     { id: "jess", name: "Jess", talk: S => jessTalk(S), look: "Jess. Purple hoodie, ponytail, and a bubble backpack carrier at her feet. She looks great. Lucky for her, she's not looking at me.", give: (S, item) => "Jess: \"No, thanks. Mr. Whiskers has everything.\"", pickup: "No.", use: "Jess has opinions about being used." },

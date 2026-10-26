@@ -112,7 +112,7 @@ async function axlScene(S) {
   opts.push("Back out of the trailer slowly");
   const i = await RP.choose(opts);
   let diff = S.f.a5_axlAngry ? 4 : 3, bonus = "";
-  if (i === 0) await RP.lines(["@axl A contract. I have lawyers that eat contracts for lunch.", "I have Priya. Priya eats lawyers."]);
+  if (i === 0) await RP.lines(["@axl A contract. I have lawyers that eat contracts for lunch.", "I have Margo. Margo eats lawyers."]);
   else if (i === 1) { await RP.lines(["@axl Of course I'm the reason. Everyone says that. It gets old. It doesn't. Say it again.", "You... shaped a generation."]); diff = Math.max(2, diff - 1); }
   else if (S.f.a5_axlIntel && i === 2) {
     await RP.lines(["@axl ...What did you say?", "Alex. Your mother has a banner. It says \"MY ALEX.\"", "@axl ...Who told you about the banner?", "A woman who remembers everything.", "@axl Twinkie. Of course. Okay. Okay okay okay. Listen. That's between us."]);
