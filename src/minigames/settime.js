@@ -53,7 +53,7 @@ const SC = {
     goal: { final: 66, avg: 52 },
     brief: { story: "Your slot starts at {START}. {L} is still on the decks and nobody told him. The promoter is sweating, the next act's crew is circling, and the crowd is getting restless.", goal: "Get on, play a tight set, and be out by {END}.",
       tips: ["{L} runs {O} minutes over. You can't MIX IN until he's done (or you pull his plug, which has a price).", "Handle the promoter: his patience is the clock you can't see.", "Every minute he takes comes out of yours. Pick your best records and hand over on time."] },
-    head: { title: "THE OVERRUN", story: "{START}. Your headline slot has already started. {L} is on the fourth encore of a set with no encores, and every clock backstage is his.", goal: "Get {L} off, get on, and hold the field on his decks until your rig goes in at {END}.",
+    head: { story: "{START}. Your headline slot has already started. {L} is on the fourth encore of a set with no encores, and every clock backstage is his.", goal: "Get {L} off, get on, and hold the field on his decks until your rig goes in at {END}.",
       tips: ["{L} has {O} more minutes in him. You can't MIX IN until he's done (or you pull his plug, which has a price).", "Keep {M} on side: that patience is the clock you can't see.", "Every minute he takes comes out of yours. Cue your opener now, and mix out clean before the changeover."] }
   },
   closing: {
