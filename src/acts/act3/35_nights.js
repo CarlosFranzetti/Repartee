@@ -127,8 +127,8 @@ A3.usbIn = async function (S) {
 async function kosmoOverrun(S) {
   RP.setClock("FRI 12:04 AM");
   await lines(["Midnight. Kosmo's still playing.", "@a3_kosmo Wendell! One more. One more. The room is alive!", "Kosmo, it's twelve-oh-four.", "@a3_kosmo Time is a flat circle, Wendell."]);
-  await lines(["He finally lets go of the headphones at 12:21, like a man handing back a borrowed child.", "The room is warm, which is Kosmo's gift, and wobbling, which is his other one. Don't let it cool, don't spike it. Read it."]);
-  const res = await A3.mg("crowdRead", { records: A3.hand(S, 10, ["hardrive_deep_inside", "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "masters_at_work_blood_vibes_the_ha_dance", "loleatta_holloway_love_sensation", "double_exposure_ten_percent", "everything_but_the_girl_missing", "class_action_weekend", "cece_peniston_finally", "white_nyc93"]), crowd: "house", rounds: 5, difficulty: 2, venue: "Halcyon Room" }, {
+  await lines(["Kosmo finally wraps at 12:21, lifting the last record off like a man returning a borrowed child.", "The room is warm, which is Kosmo's gift, and wobbling, which is his other one. Don't let it cool, don't spike it. Read it."]);
+  const res = await A3.mg("crowdRead", { records: A3.hand(S, 10, ["hardrive_deep_inside", "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "masters_at_work_blood_vibes_the_ha_dance", "loleatta_holloway_love_sensation", "double_exposure_ten_percent", "everything_but_the_girl_missing", "class_action_weekend", "cece_peniston_finally", "white_nyc93"]), crowd: "house", rounds: 5, goal: 4.5, difficulty: 2, venue: "Halcyon Room" }, {
     giveUp: "A minute", onFail: async () => { await lines(["The floor drifts. Half of it is on its phones, the other half is asking Odessa for something she doesn't have.", "Right: breathe, watch the floor, pick the right record."]); },
     assist: async () => { await say("Odessa steps up with a sheet of paper that says 'FIVE MORE MINUTES' in lipstick. The room reads it. The room forgives me."); } });
   if (res.giveUp) return;
@@ -137,20 +137,29 @@ async function kosmoOverrun(S) {
   RP.followers(25);
   await lines(["He hands me the headphones like a sacred object and walks off the stage.", "Kosmo Delacroix just told me 'not bad.' In the right light, that's practically a knighthood."]);
   RP.setClock("FRI 12:30 AM");
-  await say("Now the room's mine. Time to play the set. Plan it first.");
+  await say("Now the room's mine. Time to play the set. First record, last record. The rest follows.");
 }
 
+const nameOf = id => { const r = RP.rec(id); return r.artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "") + ": " + r.title.replace(/ \(.*\)/, ""); };
 async function anniversarySet(S) {
-  const pool = A3.pool(S, 10);
-  const res = await A3.mg("playlistOrder", { records: pool, slots: Math.min(8, pool.length), arc: "journey", difficulty: 2 }, {
-    giveUp: "A minute", onFail: async () => { await lines(["It doesn't flow. The crowd's with me for four records, then it stumbles.", "Rule of thumb: build, don't jump."]); },
-    assist: async () => { await say("Gus, from the desk, mouths 'snack?' and gives me a thumbs-up. It's the most support I've had from him."); } });
-  if (res.giveUp) return;
+  const pool = A3.pool(S, 10).filter(id => id !== GRAIL && id !== "white_nyc93" && RP.rec(id) && RP.rec(id).energy);
+  const vibe = (id, ...v) => (RP.rec(id).vibe || []).some(x => v.includes(x)) && !(RP.rec(id).vibe || []).includes("weird");
+  const take = (a, n) => a.slice(0, n);
+  let opens = take(pool.filter(id => vibe(id, "warmup", "builder")), 4), shuts = take(pool.filter(id => vibe(id, "closer", "peak") && !opens.includes(id)), 4);
+  if (opens.length < 2) opens = opens.concat(take(pool.filter(id => !opens.includes(id) && !shuts.includes(id)), 2 - opens.length));
+  if (shuts.length < 2) shuts = shuts.concat(take(pool.filter(id => !shuts.includes(id) && !opens.includes(id)), 2 - shuts.length));
+  await lines(["Everything I own is in the bag. The set only needs two decisions made properly: how it starts, and how it ends. The middle takes care of itself if the first record is honest.", "The first record."]);
+  const op = opens[await RP.choose(opens.map(nameOf))];
+  await lines(["Good. A room handed back by a legend wants a hand on the shoulder, not a shove.", "And the last one, for whoever's still standing at ten to one."]);
+  const cl = shuts[await RP.choose(shuts.map(nameOf))];
+  const spread = (a, n) => a.length <= n ? a : Array.from({ length: n }, (_, i) => a[Math.round(i * (a.length - 1) / (n - 1))]);
+  const mid = spread(pool.filter(id => id !== op && id !== cl).sort((a, b) => RP.rec(a).energy - RP.rec(b).energy || RP.rec(a).bpm - RP.rec(b).bpm), 4);
+  const order = [op].concat(mid.slice(0, 3), RP.hasRecord("white_nyc93") ? ["white_nyc93"] : [], mid.slice(3), RP.hasRecord(GRAIL) ? [GRAIL] : [], [cl]);
   S.f.a3_setDone = true;
   RP.followers(80);
   RP.setClock("FRI 1:15 AM");
   const hasGrail = RP.hasRecord(GRAIL);
-  const ids = (res.order || []).filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");
+  const ids = order.filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");
   const wi = ids.indexOf("white_nyc93"), gi = ids.indexOf(GRAIL);
   const setLines = ["The first record drops" + (ids[0] ? ": " + nm(ids[0]) : "") + ". The room settles like a sigh."];
   if (ids.length >= 3) setLines.push("Then " + nm(ids[1]) + ", then " + nm(ids[2]) + ". Build, don't jump. For once, I don't jump.");
@@ -160,6 +169,7 @@ async function anniversarySet(S) {
   await lines(setLines);
   if (hasGrail) await lines([(gi >= 0 && gi < ids.length - 1 ? "When its turn comes, I pull out" : "For the last record I pull out") + " the one sleeve in the bag that says 'FOR COMPANY.' Loose Joints. 'Is It All Over My Face?' Larry Levan's remix, the one everyone knows. On the Technics' cousin in the booth.",
     "Somebody screams. Somebody cries. Somebody films it, which is the same thing."]);
+  await lines(["I send them home on " + nm(cl) + ", just as planned. The lights come up slowly. Nobody leaves."]);
   RP.sfx("cheer");
   S.f.a3_vegaHere = true;
   await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend."]);
@@ -273,11 +283,13 @@ A3.confrontBrandon = async function (S, withOdessa) {
   }
   await lines(["@a3_odessa ...Explain the yawn. I want to hear him explain the yawn.", "@a3_brandon That's not me. It's a lookalike. It's a very handsome lookalike. It's a plot to frame me!"]);
   AC("a3_brandon").expr = "angry";
-  const res = await A3.mg("clubDrama", { scenario: "rival", rival: "DJ Brandon Shine", venue: "Halcyon Room", boss: "Odessa", difficulty: 2 }, {
-    giveUp: "Back off", tries: 2,
-    onFail: async () => { await lines(["@a3_brandon You can't prove I meant it! It's entrapment! It's a hug!", "Try again. Stay calm. Let him dig."]); },
-    assist: async () => { await say("Odessa pulls the plug on the argument: 'Brandon, the clip's got your face, your vest, and a very bad yawn.'", "kid"); } });
-  if (res.giveUp) { await say("I'll come back with the clip. Nobody leaves the building. Odessa makes sure of it."); return; }
+  for (let tries = 0; ; tries++) {
+    const i = await RP.choose(["Raise my voice. Call him a thief in front of the whole bar.", "Say nothing. Let the clip run again, with the sound up, and let him keep explaining.", "Offer a deal: the USB back, and I forget the whole thing."]);
+    if (i === 1) { await lines(["I fold my arms. The clip plays: the hug, the pat, the swap, the yawn. Brandon starts to explain it, and it gets worse every sentence.", "@a3_brandon ...and the vest isn't even MINE, it's a, it's a, a *loaner*, I-"]); break; }
+    await lines(i === 0 ? ["@a3_brandon Thief? THIEF? Odessa, he's shouting at a man in front of customers! You can't prove I meant it! It's entrapment! It's a hug!", "The bar has gone quiet and I'm the one who's shouting. Stay calm. Let him dig."]
+      : ["@a3_brandon A deal? There's no deal. I did nothing. A deal is for people who did something.", "@a3_odessa No deals under my roof. Not on a Thursday.", "Let him dig. He's very good at it."]);
+    if (tries >= 1) { await say("Odessa pulls the plug on the argument: 'Brandon, the clip's got your face, your vest, and a very bad yawn.'", "kid"); break; }
+  }
   S.f.a3_brandonDone = true; S.f.a3_usbBack = true; RP.relight();
   if (RP.has("a3_footage")) RP.take("a3_footage");
   RP.followers(15);

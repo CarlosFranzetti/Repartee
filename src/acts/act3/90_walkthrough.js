@@ -45,7 +45,7 @@ RP.walkthroughs.act3 = [
   ["give", "hot:a3_gus", "a3_chips"],
   ["expect", "S.f.a3_soundcheck", "Gus woke the monitors"],
   ["use", "hot:a3_h_stage"],
-  mg({ ok: true, score: 80 }), ["use", "hot:a3_b_cdjs"],
+  mg({ ok: true, score: 80, played: [] }), ["use", "hot:a3_b_cdjs"],       // crowd.Read: the empty bar
   ["expect", "S.f.a3_opener && S.f.a3_week && RP.has('a3_list') && S.money >= 300", "night 1 done: paid, napkin, week begins"],
   ["expect", "S.room === 'a3_apartment' && S.unlocked.includes('a3_loc_deepcuts')", "home, Deep Cuts unlocked"],
   ["look", "inv:a3_list"],
@@ -77,17 +77,16 @@ RP.walkthroughs.act3 = [
   ["look", "hot:a3_f_cork"],
   ["talk", "hot:a3_pta"],
   ["expect", "RP.has('a3_coffee') && S.f.a3_clue3", "coffee bought, flyer found"],
-  mg({ ok: true, score: 80, found: true }), ["give", "hot:a3_mort", "a3_coffee"],
-  ["expect", "S.f.a3_clue2 && S.f.a3_hunt && S.unlocked.includes('a3_loc_estate')", "record.Hunt solved: the Pruitt house"],
-  ["run", (S, R) => { R.test.mgQ.length = 0; }],
+  ["give", "hot:a3_mort", "a3_coffee"],
+  ["expect", "S.f.a3_clue2 && S.f.a3_hunt && S.unlocked.includes('a3_loc_estate')", "the three clues add up: the Pruitt house"],
   /* ---------------- the Queens estate ---------------- */
   ["travel", "a3_loc_estate"],
   ["expect", "S.room === 'a3_estate' && S.f.a3_priyaAtEstate", "estate: Priya is arguing"],
   ["talk", "hot:a3_e_bird"], ["look", "hot:a3_e_tt"], ["look", "hot:a3_e_shelves"], ["pickup", "hot:a3_e_tt"],
   ans([2]), ["talk", "hot:a3_tanya"],                               // look around first
   ["expect", "!S.f.a3_estatePaid", "not bought yet"],
-  ans([0]), mg({ ok: true, score: 85, keep: GEMS, sold: ["snap_rhythm_is_a_dancer", "cc_music_factory_gonna_make_you_sweat", "black_box_ride_on_time", "reel_2_real_i_like_to_move_it"], profit: 20, cash: 110 }), ["talk", "hot:a3_tanya"],
-  ["expect", "S.f.a3_estatePaid && S.f.a3_dug && RP.hasRecord('gwen_guthrie_padlock')", "bought and sorted the collection"],
+  ans([0, 0]), ["talk", "hot:a3_tanya"],                            // pay $90, keep the eight stars, sell the rest
+  ["expect", "S.f.a3_estatePaid && S.f.a3_dug && " + JSON.stringify(GEMS) + ".every(id => RP.hasRecord(id))", "bought and sorted the collection"],
   ["pickup", "hot:a3_e_platter"], ["pickup", "hot:a3_e_tt"],
   ["expect", "S.f.a3_grail && S.f.a3_tt && S.f.a3_estateDone && S.gear.turntables === 'technics_sl_1210mk2' && RP.hasRecord('loose_joints_is_it_all_over_my_face')", "grail and Technics in the crate"],
   /* ---------------- the week: promo, then sleep until Thursday ---------------- */
@@ -95,8 +94,7 @@ RP.walkthroughs.act3 = [
   ["expect", "S.room === 'a3_apartment'", "home"],
   ["use", "hot:a3_bed"],                                            // promo still missing
   ["expect", "!S.f.a3_thu3", "bed refuses: promo missing"],
-  mg({ ok: true, score: 80, gained: 220 }), ["use", "hot:a3_laptop"],
-  ["run", (S, R) => { R.test.mgQ.length = 0; }],
+  ans([1]), ["use", "hot:a3_laptop"],                                // the posting week: a clip a day
   ["expect", "S.f.a3_promo && S.followers >= 600", "promo week done"],
   ["use", "hot:a3_bed"],
   ["expect", "S.f.a3_thu3 && S.msgs.length >= 4", "Thursday again: anniversary night"],
@@ -132,15 +130,13 @@ RP.walkthroughs.act3 = [
   ["expect", "S.f.a3_footageGot && RP.has('a3_footage') && !RP.has('a3_key_nico')", "bar-cam clip: Brandon caught"],
   ["use", "hot:a3_o_door"],
   ["expect", "S.room === 'a3_halcyon'", "back on the floor"],
-  mg({ ok: true, score: 80, outcome: "win" }), ["give", "hot:a3_odessa", "a3_footage"],
-  ["run", (S, R) => { R.test.mgQ.length = 0; }],
+  ans([0, 1]), ["give", "hot:a3_odessa", "a3_footage"],             // first shout (he wriggles), then say nothing and let the clip run
   ["expect", "S.f.a3_brandonDone && S.f.a3_usbBack", "Brandon confronted"],
   /* ---------------- Night 3: Kosmo overruns, then the anniversary set ---------------- */
   ["use", "hot:a3_h_stage"],
-  mg({ ok: true, score: 80 }), ["use", "hot:a3_b_cdjs"],
+  mg({ ok: true, score: 80, played: [] }), ["use", "hot:a3_b_cdjs"],       // crowd.Read: the room Kosmo warmed up
   ["expect", "S.f.a3_kosmoDone", "followed Kosmo Delacroix"],
-  ["run", (S, R) => { R.test.mgQ.length = 0; R.test.mgQ.push({ ok: true, score: 85, order: [] }); }],
-  ["use", "hot:a3_b_cdjs"],                                         // set -> Saturday -> platform -> train -> home -> ending
+  ans([0, 0, 0, 2]), ["use", "hot:a3_b_cdjs"],                      // opener, closer -> set -> Saturday -> platform (hop the turnstile, then the man with the oranges) -> home -> ending
   ["expect", "S.f.a3_setDone && S.f.a3_saturday && S.gear.monitors === 'dynaudio_bm5_mkiii'", "anniversary set, Saturday, Dynaudios"],
   ["expect", "S.f.a3_train && S.f.a3_email", "home on the last train, the email arrived"],
   ["expect", "S.done.includes(3)", "act 3 complete"]

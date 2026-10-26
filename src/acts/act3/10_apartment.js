@@ -209,11 +209,16 @@ RP.room({
         if (!S.f.a3_opener) return "No time to edit. Records in the bag, USB in my pocket. That's the whole plan.";
         if (S.f.a3_promo) return "I've posted enough this week. The algorithm needs a break from me.";
         await RP.say("Time to be a person on the internet. A week of posting, practicing and digging. How do I split it?");
-        const res = await A3.mg("getFollowers", { days: 7, start: S.followers, goal: S.followers + 450, difficulty: 2 }, {
-          giveUp: "Not now", onFail: async () => { await RP.lines(["The algorithm ate my week.", "Marcus 'plus-three'd' a few friends into following. It's something."]); },
-          assist: async () => { await RP.say("Fine. I'll take the pity follows."); } });
-        if (res.giveUp) return;
-        const gained = Math.max(60, Math.round(res.gained != null ? res.gained : (res.score || 60) * 5));
+        const wk = await RP.choose(["One proper mix, posted properly, and answer every comment", "Ten-second clips from the booth, one a day, no talking", "Tag every bar and promoter on the Lower East Side"]);
+        await RP.fadeTo(1, 500);
+        await RP.say("One week of posting later.", "nar");
+        await RP.card({ kicker: "POSTING WEEK", title: "Halcyon Thursdays", sub: "Day 1 to day 7", body: [
+          ["Mon: a forty-minute mix, tracklist in the caption. 31 plays. Eleven are Marcus.", "Mon: ten seconds of the Halcyon floor, shot from the booth. 640 views. Both bartenders are in it, not dancing, but close.", "Mon: sixty-one venues tagged. Four replied. One says \"wrong city.\""][wk],
+          ["Wed: a stranger in Leeds asks what the third record was. I answer for an hour. He tells two friends.", "Wed: the floor going up on the drop gets 9,000 views. Comments: \"where is this\" and \"who is the DJ.\"", "Wed: a promoter in Newark likes it. A DJ called DJ ULTRA blocks me."][wk],
+          ["Sun: the slow ones stay. Nobody screams. Everybody comes back Thursday.", "Sun: Tiny at the door gets asked if this is \"the place from the video.\" He says no. It is.", "Sun: most of the sixty-one are bots. Some of the bots turn out to be fans."][wk]
+        ], button: "CLOSE" });
+        await RP.fadeTo(0, 500);
+        const gained = [240, 320, 180][wk];
         S.f.a3_promo = true; A3.clockTo(S, "WED 11:30 PM");
         RP.followers(gained);
         await RP.lines(["Week's up. The numbers say " + S.followers.toLocaleString("en-US") + " fans.", "Odessa will like that number. She likes numbers. She calls them 'bodies.'"]);

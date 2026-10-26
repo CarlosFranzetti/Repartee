@@ -1,5 +1,5 @@
 /* Act 3 — Sunday Record Fair in a Brooklyn school gym (fictional fair). Clues for the grail:
-   Ray (Deep Cuts) -> Mort (needs a coffee) -> the Pruitt flyer on the corkboard -> record.Hunt.
+   Ray (Deep Cuts) -> Mort (needs a coffee) -> the Pruitt flyer on the corkboard -> the three add up (checkHunt).
    Cameo: Danny Krivit, flipping through a bin. Flags: a3_fairSeen, a3_clue2 (Mort), a3_clue3 (flyer), a3_hunt, a3_dannyMet, a3_priyaMet. */
 (function () {
 "use strict";
@@ -74,12 +74,8 @@ async function checkHunt(S) {
   if (S.f.a3_hunt || !S.f.a3_clue1 || !S.f.a3_clue2 || !S.f.a3_clue3) return;
   await RP.lines(["Okay. A tip from Ray. A name from Mort. A flyer off the corkboard.", "I spread them over a folding table. This is how detectives do it. On TV, there's string."]);
   A3.clockTo(S, "SUN 10:00 AM");
-  const res = await A3.mg("recordHunt", {
-    target: "loose_joints_is_it_all_over_my_face",
-    clues: ["Ray: a clean copy of 'Is It All Over My Face?' has sat in a Queens collection for thirty years.", "Mort: the collector was Hal Pruitt. He passed in March. The family is emptying the house this week.", "A flyer: 'ESTATE SALE. WOODSIDE. EVERYTHING MUST GO.'"],
-    places: [{ id: "deepcuts", label: "Deep Cuts, East Village", hint: "Ray remembers the pressing, not the buyer." }, { id: "fair", label: "Sunday Record Fair, Williamsburg", hint: "Mort knows every collector." }, { id: "estate", label: "The Pruitt house, Woodside, Queens", hint: "An estate sale this week.", found: true, where: "On the turntable in the living room, still on the platter." }, { id: "flea", label: "Weekend flea market", hint: "Mostly lamps." }],
-    difficulty: 2 }, { giveUp: "Not now", onFail: async () => { await RP.lines(["I lost the thread. Try again, deep breath, Ray's tip first."]); }, assist: async () => { await RP.say("It clicks, finally. It's in Queens. It's a house. It's Woodside."); } });
-  if (res.giveUp) return;
+  await RP.lines(["Ray: a clean copy, thirty years in a Queens collection. Mort: Hal Pruitt, gone in March, the family emptying his house this week. The flyer: Woodside.",
+    "So not Deep Cuts and not the fair. A house, a sale this week, and a man who kept a clean copy 'for company.' The flyer had the address the whole time."]);
   S.f.a3_hunt = true;
   RP.unlock("a3_loc_estate");
   A3.clockTo(S, "SUN 6:15 PM");

@@ -1,5 +1,5 @@
 /* Act 3 — Delancey St platform, half past one. The way home after the anniversary night: a bag of records, rent money only,
-   a phone at 3%. last.Train mini-game, then the last train pulls in. Flags: a3_trainTry, a3_train. */
+   a phone at 3%. A stranger with oranges, then the last train pulls in. Flag: a3_train. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -61,16 +61,21 @@ function update(dt, S, t) {
 }
 
 async function runTrain(S) {
-  const res = await A3.mg("lastTrain", { from: "Delancey St (Lower East Side)", to: "Bushwick (Apt 4C)", fromStation: "Delancey St", toStation: "Halsey St", start: 95, lineNames: { amber: "J" }, carryName: "a bag of records", intro: "1:35 AM. The MetroCard machine is out of service and the turnstile takes no cash.", battery: 3, money: 0, carrying: "records", mode: "subway", difficulty: 2 }, {
-    giveUp: "Wait on the bench", onFail: async () => { await RP.lines(["I missed it by four seconds. Four seconds, and the train takes my dignity with it.", "The next one's in eleven minutes."]); },
-    assist: async () => { await RP.lines(["A stranger with oranges swipes me through at the turnstile. 'Pay it forward,' he says. 'In oranges.'"]); } });
-  if (res.giveUp) { await RP.say("I'm not ready. Let me sit with it. Everything hurts."); return false; }
+  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard."]);
+  for (let tries = 0; ; tries++) {
+    const i = await RP.choose(["Jump the turnstile with a bag of records on my shoulder", "Order a car on my phone", "Ask the man with the oranges for a swipe"]);
+    if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, no cash and three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); break; }
+    await RP.lines(i === 0 ? ["I get one leg over. The bag, forty pounds of vinyl, does not. A transit cop at the far end of the platform lifts one eyebrow, and I put the leg back.", "The cop is still looking. I stand very still, like a man waiting for a train."]
+      : ["The app takes forty seconds to open. It quotes $61 for Bushwick at this hour. At the word 'confirm,' the phone gives up and goes black.", "Three percent was optimistic."]);
+    if (tries >= 1) { await RP.lines(["@nar The man with the oranges has watched all of it. He walks over, swipes me through, and says nothing. Then, 'In oranges.'", "I take the orange."]); break; }
+  }
   S.f.a3_train = true;
-  await RP.lines(["However I got through the turnstile, I got through. The rent money never left my pocket.", "Down the platform, the headlights come round the curve like a promise."]);
+  await RP.lines(["I'm through the turnstile. The rent money never left my pocket.", "Down the platform, the headlights come round the curve like a promise."]);
   trainState = 1; trainT = 0; doorsOpen = false;
   await RP.wait(3800);
   await RP.walkTo(330, 214, "back");
-  await RP.lines(["I get on. The car's empty, except for a man asleep with a bag of oranges and a woman reading a paperback about a vampire.", "Phone: running on fumes. Bag: all records. Rent money: untouched. I made it.", "@nar The last train, Friday morning, over the Williamsburg Bridge. The river's black, and the bass is still going."]);
+  await RP.lines(["I get on. The car's empty, except for the man with the oranges, asleep now with the bag in his lap, and a woman reading a paperback about a vampire.", "Phone: running on fumes. Bag: all records. Rent money: untouched. I made it.", "@nar The last train, Friday morning, over the Williamsburg Bridge. The river's black, and the bass is still going."]);
+  A3.clockTo(S, "FRI 2:20 AM");
   await RP.fadeTo(1, 1200);
   trainState = 0; doorsOpen = false;
   await RP.goto("a3_apartment", 560, 232, "left");

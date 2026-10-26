@@ -119,12 +119,12 @@ async function sortCollection(S, pay) {
   A3.clockTo(S, "MON 1:20 PM");
   await RP.say("Hours later. Dust in my teeth, a crate in every direction, a pile of 'maybe' that's bigger than most people's collection.", "nar");
   await RP.fadeTo(0, 700);
-  const res = await A3.mg("crateDigging", { records: COLLECTION, budget: pay, keepSlots: 8, difficulty: 2, owner: "Hal", seller: "Tanya", place: "Woodside, Queens" }, { giveUp: "Later", tries: 1,
-    onFail: async () => { await RP.lines(["I leave a lot of it in the crates. Some of it's good. I'll know later."]); } });
-  const keep = (res.keep && res.keep.length ? res.keep : (res.missing || res.assisted || res.ok ? GEMS : [])).filter(id => RP.rec(id));
-  const sold = (res.sold || []).filter(id => RP.rec(id));
-  // crateDigging reports profit = cash from the dealer minus the lot price, so the dealer's cash is profit + what I paid
-  const cash = Math.max(0, Math.round(res.cash != null ? res.cash : (res.profit != null ? res.profit + pay : (res.missing || res.assisted ? pay + 45 : 0))));
+  const intro = ["Hal's system is penciled on the sleeves. A star means it made him cry. Eight of them, a shelf of their own: Gwen Guthrie, Double Exposure, Dinosaur L, Peech Boys, Taana Gardner, Loleatta, Class Action, Strafe.",
+    "The rest: dollar-bin hits, a Winelight that's mostly dust, and one Masters At Work 12\" that's worth real money. A dealer is parking his van outside."];
+  await RP.lines(intro);
+  const heavy = await RP.choose(["Keep the eight stars. Sell everything else to the dealer.", "Keep the four that look expensive. Sell the rest by the box."]) === 1;
+  const keep = heavy ? ["gwen_guthrie_padlock", "double_exposure_ten_percent", "dinosaur_l_go_bang", "masters_at_work_blood_vibes_the_ha_dance"] : GEMS;
+  const cash = pay + (heavy ? 55 : 30);   // the dealer's cash: the lot price back, plus a small profit (more if I keep less)
   keep.forEach(id => RP.addRecord(id));
   await RP.lines(["I keep " + keep.length + " records. The rest I stack in a box that says 'FOR THE NEXT SUCKER.'"]);
   if (S.f.a3_priyaAtEstate) {
