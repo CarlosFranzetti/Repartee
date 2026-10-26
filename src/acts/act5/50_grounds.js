@@ -216,7 +216,8 @@ async function eddieTalk(S) {
   const i = await RP.choose(["Buy a water ($9)", "No thanks"]);
   if (i === 0) {
     if (!RP.canAfford(9)) { await RP.say("I'm broke. Even now."); return; }
-    RP.money(-9); await RP.lines(["@eddie A pleasure! Kid, I put a little spirit in it. The spirit is of water.", "It's... just water. It's cold, at least."]);
+    RP.money(-9); if (!RP.has("a5_water")) RP.give("a5_water");
+    await RP.lines(["@eddie A pleasure! Kid, I put a little spirit in it. The spirit is of water.", "It's... just water. It's cold, at least."]);
   } else await RP.say("@eddie Your loss! It was working this morning!", "eddie");
 }
 async function gloriaTalk(S) {

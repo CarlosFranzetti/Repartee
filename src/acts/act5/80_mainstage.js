@@ -128,7 +128,7 @@ async function soundcheck(S) {
   RP.place("kid", 478, 166, "front");
   await RP.lines([
     "@a5_foh Okay, I'm Mo. Front of house. I'm three hundred feet behind you. Don't wave. I can see you.",
-    "@a5_foh Four decks of faults on the sheet. Ground hum, a dead channel, feedback, and somebody patched a deck into the wrong input.",
+    "@a5_foh Four faults on the sheet. Ground hum, a dead channel, feedback, and somebody patched a deck into the wrong input.",
     "@a5_foh Fix them. You have the sheet, the cables and one hand on the mixer. I'll be shouting suggestions. They're unhelpful."
   ]);
   const res = await A5.play("soundCheck", { faults: ["ground-hum", "dead-channel", "feedback", "wrong-input"], stage: "festival", difficulty: 3 }, { skipLabel: "Hand it to Mo" });
@@ -160,7 +160,7 @@ async function headlineSet(S) {
     "Okay. Let's build a set."
   ]);
   /* 1. playlist.Order: build the arc */
-  const pl = await A5.play("playlistOrder", { records: A5.SET_POOL.slice(), slots: 8, arc: "peak", difficulty: 3 }, { skipLabel: "Trust my gut" });
+  const pl = await A5.play("playlistOrder", { records: A5.SET_POOL.concat(["white_nyc93"]), slots: 8, arc: "peak", difficulty: 3 }, { skipLabel: "Trust my gut" });
   const order = (pl.order && pl.order.length ? pl.order : A5.DEFAULT_ORDER).filter(id => RP.rec(id));
   S.f.a5_setPlaylist = pl.score != null ? pl.score : 70;
   await RP.lines([
@@ -169,7 +169,11 @@ async function headlineSet(S) {
   ]);
   /* 2. crowd.Read: play the room */
   RP.audio && RP.audio.loop && RP.setMusic && RP.setMusic({ genre: "house", bpm: 122, volume: 0.32 });
-  const cr = await A5.play("crowdRead", { records: order.slice(), crowd: "festival", rounds: 5, goal: 4, difficulty: 3, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
+  /* the last round asks for a CLOSER: whatever the order dropped, one is always in the crate (and Ray's white label too) */
+  const crate = order.slice();
+  if (!crate.some(id => (RP.rec(id).vibe || []).indexOf("closer") >= 0)) crate.push("mood_ii_swing_closer");
+  if (crate.indexOf("white_nyc93") < 0) crate.push("white_nyc93");
+  const cr = await A5.play("crowdRead", { records: crate, crowd: "festival", rounds: 5, goal: 4, difficulty: 3, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
   S.f.a5_setCrowd = cr.score != null ? cr.score : 70;
   S.f.a5_pyro = true; RP.flash("#ffffff", 220); RP.sfx("cheer");
   await RP.lines([
@@ -216,7 +220,8 @@ async function headlineSet(S) {
   await RP.npcWalk("kosmo", 560, 177, "left");
   await RP.lines([
     "@kosmo ...Kid.",
-    "@kosmo No. I've been doing that for years. ...",
+    "Yes, Kosmo?",
+    "@kosmo I've been getting names wrong on purpose for years. It's a bit. I'm retiring it.",
     "@kosmo " + nm + ".",
     "Kosmo. You know my name.",
     "@kosmo I always knew it. The wrong names were a bit. A bit I committed to.",

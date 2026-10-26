@@ -35,10 +35,11 @@ button { font-family: var(--ui); }
 #toast { position: absolute; left: 0; right: 0; top: 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
 .toastItem { background: rgba(12, 9, 25, .92); border: 1px solid var(--pink); color: var(--fg); font-size: 17px; padding: 2px 10px; border-radius: 2px; transition: opacity .3s, transform .3s; }
 .toastItem.out { opacity: 0; transform: translateY(-6px); }
-#sentence { position: absolute; left: 0; top: 256px; width: 640px; height: 18px; box-sizing: border-box; padding-inline: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; color: var(--cyan); background: #07050f; }
-#sentence .hud { position: absolute; right: 8px; color: var(--muted); font-size: 15px; letter-spacing: .03em; }
-#sentence .snd, #sentence .menuBtn { position: absolute; left: 6px; color: var(--muted); font-size: 15px; background: none; border: 0; padding: 0 2px; cursor: pointer; }
-#sentence .menuBtn { left: 62px; color: var(--amber); }
+#sentence { position: absolute; left: 0; top: 256px; width: 640px; height: 18px; box-sizing: border-box; padding-inline: 6px; gap: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; color: var(--cyan); background: #07050f; }
+#sentence .hud { flex: none; margin-left: auto; color: var(--muted); font-size: 15px; letter-spacing: .03em; white-space: nowrap; }
+#sentence #sent { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#sentence .snd, #sentence .menuBtn { flex: none; color: var(--muted); font-size: 15px; background: none; border: 0; padding: 0 2px; cursor: pointer; }
+#sentence .menuBtn { color: var(--amber); }
 #sentence .snd:hover, #sentence .menuBtn:hover { color: var(--fg); }
 #panel { position: absolute; left: 0; top: 274px; width: 640px; height: 86px; box-sizing: border-box; padding: 4px 6px 5px; background: var(--panel); border-top: 1px solid var(--line); display: grid; grid-template-columns: 204px 1fr; gap: 8px; }
 #verbs { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 3px; }

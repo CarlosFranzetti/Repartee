@@ -218,7 +218,7 @@ RP.room({
   ],
   enter: async (S) => {
     if (S.f.a5_radioSeen) return;
-    S.f.a5_radioSeen = true;
+    S.f.a5_radioSeen = true; RP.setClock("FRI 9:58 AM");
     await RP.lines(["@a5_dana You're my ten o'clock. Stand by the mic. I'll cue you.", "Mic, okay. Mic. I've talked into worse things. A pipe hole, mostly."]);
   },
   self: { look: "A guest on the radio. My hair says \"I've never done this.\" My coat says \"I'm trying.\"", talk: "I'm warming up. Mi-mi-mi. Don't tell the engineer." }

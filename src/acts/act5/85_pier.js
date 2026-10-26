@@ -185,6 +185,7 @@ RP.room({
   enter: async (S, from) => {
     if (S.f.a5_pierArrived) return;
     S.f.a5_pierArrived = true;
+    RP.setClock("SUN 6:12 AM");
     await RP.fadeTo(0, 1200);
     await RP.lines([
       "@nar SUN 6:12 AM",

@@ -10,6 +10,9 @@ const HL = (c, x, y, w, col) => R(c, x, y, w, 1, col), VL = (c, x, y, h, col) =>
 const ph = S => S.f.a5_phase || 0;
 const axlOn = S => ph(S) >= 2 && !S.f.a5_overrunDone;
 const mode = S => ph(S) < 2 ? "day" : (S.f.a5_overrunDone ? "ready" : "live");
+/* the calling-desk clock follows the game clock ("SAT 5:20 PM" reads 5:20), and the cue lights follow the show */
+const deskTime = S => (S.clock || "").replace(/^[A-Z]+ /, "").replace(/ [AP]M$/, "") || "3:58";
+const overrunOn = S => ph(S) >= 2 && !!S.f.a5_louArrived && !S.f.a5_overrunDone;   /* the 11:52 problem, red lights and all */
 
 function paint(c, S) {
   const em = [];
@@ -46,9 +49,11 @@ function drawDesk(c, S) {
   PK.table(c, 88, 184, 76, 36, { color: "#2a2838", top: "#4a4658" });
   R(c, 96, 150, 40, 26, "#0a0810"); R(c, 98, 152, 36, 22, "#16344a"); PK.gradV(c, 98, 152, 36, 22, ["#ff7ab8", "#6a3aa8", "#1a2a5a"], { dither: 1 });
   R(c, 110, 168, 12, 6, "#17131f"); ell(c, 116, 164, 3, 3, "#17131f");
-  R(c, 140, 160, 20, 16, "#17131f"); R(c, 142, 162, 6, 6, S.f.a5_overrunDone ? "#3fd07a" : "#8a1a1a"); R(c, 150, 162, 6, 6, S.f.a5_overrunDone ? "#4a1a1a" : "#ff3a3a"); R(c, 142, 170, 14, 3, "#6a667c");
+  R(c, 140, 160, 20, 16, "#17131f");
+  const lg = S.f.a5_overrunDone ? "#3fd07a" : overrunOn(S) ? "#8a1a1a" : "#2a3a2e", lr = S.f.a5_overrunDone ? "#4a1a1a" : overrunOn(S) ? "#ff3a3a" : "#3a1a1a";   /* standby: both lights dim */
+  R(c, 142, 162, 6, 6, lg); R(c, 150, 162, 6, 6, lr); R(c, 142, 170, 14, 3, "#6a667c");
   R(c, 100, 120, 56, 22, "#0a0810"); outline(c, 100, 120, 56, 22, "#4a4658");
-  txtC(c, mode(S) === "day" ? "3:58" : S.f.a5_overrunDone ? "12:30" : "11:52", 128, 125, mode(S) === "live" ? "#ff3a3a" : "#3fd07a", 2, 1);
+  txtC(c, S.f.a5_overrunDone ? "12:30" : overrunOn(S) ? "11:52" : deskTime(S), 128, 125, overrunOn(S) ? "#ff3a3a" : "#3fd07a", 2, 1);
   R(c, 90, 178, 8, 4, "#17131f"); R(c, 164, 176, 10, 6, "#c8c4d8");
 }
 const outline = (c, x, y, w, h, col) => { HL(c, x, y, w, col); HL(c, x, y + h - 1, w, col); VL(c, x, y, h, col); VL(c, x + w - 1, y, h, col); };
@@ -119,7 +124,8 @@ async function overrun(S) {
 }
 
 async function rozWings(S) {
-  if (ph(S) < 2) { await RP.lines(["@a5_roz Stage is that way. Booth, center. Mo's on the talkback. Check it, then get out of my wings."]); return; }
+  if (ph(S) === 0) { await RP.lines(["@a5_roz Stage is that way. Booth, center. Mo's on the talkback. Check it, then get out of my wings."]); return; }
+  if (ph(S) === 1) { await RP.lines(["@a5_roz Soundcheck's done. Mo's pleased, so don't touch anything. Find out what Axl's people want, then come back."]); return; }
   if (S.f.a5_overrunDone) { await RP.lines(["@a5_roz Go. Up the stairs. Be good. Don't peak early."]); return; }
   if (!S.f.a5_louArrived) { await RP.lines(["@a5_roz It's not time. Axl's on at ten-fifteen. Come back when you've seen Lou."]); return; }
   await overrun(S);
@@ -142,19 +148,19 @@ RP.room({
   ],
   sprites: [
     { y: 192, draw: art.sprite((c, S) => drawBooth(c, S)) },
-    { y: 226, draw: art.sprite((c, S) => drawDesk(c, S), S => mode(S)) },
+    { y: 212, draw: art.sprite((c, S) => drawDesk(c, S), S => mode(S) + "|" + deskTime(S) + "|" + overrunOn(S)) },
     { y: 236, draw: art.sprite((c, S) => drawStool(c, S)) },
     { y: 240, draw: art.sprite((c, S) => drawFoot(c, S)) }
   ],
   hotspots: [
-    { id: "a5_wback", name: "stairs down", r: [0, 150, 22, 104], z: 25, walk: [92, 236, "left"], look: "The stairs back to the compound. And to the people who'd like to hold my hand.", exit: { room: "a5_backstage", x: 880, y: 236, face: "left" } },
+    { id: "a5_wback", name: "stairs down", r: [0, 150, 28, 104], z: 40, walk: [92, 236, "left"], look: "The stairs back to the compound. And to the people who'd like to hold my hand.", exit: { room: "a5_backstage", x: 880, y: 236, face: "left" } },
     { id: "a5_wstage", name: "the stage", r: [100, 10, 500, 180], z: 10, walk: [400, 232, "back"], look: S => mode(S) === "day" ? "The stage in daylight: a booth, a wall of dark screen, work lights and a stagehand arguing with a cable. It looks like a spaceship being repaired." : axlOn(S) ? "The stage, blinding. A very large DJ in a white tank is waving his arms at a crowd the size of a small town. He's on his fourth encore. They're still clapping. Maybe out of politeness. Maybe out of fear." : "The stage, empty and still glowing. The booth is waiting.", talk: "I yell something. A tech tells me to be quiet. I stop. I'm in a wing.", push: "I'm not pushing a stage.", pickup: "I can't lift it. It's a stage." },
-    { id: "a5_wexit", name: "to the stage", r: [570, 150, 70, 104], z: 28, walk: [586, 236, "right"], look: "A gap in the curtains. Past it, the stage. Past that, the crowd. I'm trying not to think about the crowd.",
+    { id: "a5_wexit", name: "stage entrance", r: [570, 150, 70, 104], z: 40, walk: [586, 236, "right"], look: "A gap in the curtains. Past it, the stage. Past that, the crowd. I'm trying not to think about the crowd.",
       exit: S => (ph(S) >= 2 && !S.f.a5_overrunDone) ? "Axl's still on. I'd step on his set. And probably his foot. Talk to Roz." : { room: "a5_mainstage", x: 110, y: 177, face: "right" } },
-    { id: "a5_wdesk", name: "calling desk", r: [86, 112, 90, 110], z: 32, walk: [128, 238, "back"], look: S => ["Roz's calling desk: a monitor with the stage camera, a clock, cue lights and a radio. The big red clock says " + (S.f.a5_overrunDone ? "12:30, in green. Finally a clock on my side." : "11:52. It's seven minutes later than it should be."), S.f.a5_overrunDone ? "Two lights: green for go, red for hold. Green's on. Roz looks almost relaxed." : "Two lights: green for go, red for hold. They're both red. They've been both red since 11:30."], pickup: "Roz would take my fingers. Politely.", use: "That's Roz's. It's all Roz's.", pull: "I'm not pulling the stage-manager cue. I'd start a war." },
-    { id: "a5_wclock", name: "stage clock", r: [98, 118, 62, 28], z: 38, walk: [128, 238, "back"], look: S => S.f.a5_overrunDone ? "12:30. Green. Roz's clock and mine finally agree." : "11:52. The clock is red. It's the color of Roz's face." },
+    { id: "a5_wdesk", name: "calling desk", r: [86, 112, 90, 110], z: 32, walk: [128, 238, "back"], look: S => ["Roz's calling desk: a monitor with the stage camera, a clock, cue lights and a radio. The big red clock says " + (S.f.a5_overrunDone ? "12:30, in green. Finally a clock on my side." : overrunOn(S) ? "11:52. It's seven minutes later than it should be." : deskTime(S) + ". Nobody's late yet. Give it time."), S.f.a5_overrunDone ? "Two lights: green for go, red for hold. Green's on. Roz looks almost relaxed." : overrunOn(S) ? "Two lights: green for go, red for hold. They're both red. They've been both red since 11:30." : "Two lights: green for go, red for hold. Both dark. Nothing is going yet."], pickup: "Roz would take my fingers. Politely.", use: "That's Roz's. It's all Roz's.", pull: "I'm not pulling the stage-manager cue. I'd start a war." },
+    { id: "a5_wclock", name: "stage clock", r: [98, 118, 62, 28], z: 38, walk: [128, 238, "back"], look: S => S.f.a5_overrunDone ? "12:30. Green. Roz's clock and mine finally agree." : overrunOn(S) ? "11:52. The clock is red. It's the color of Roz's face." : "The stage clock says " + deskTime(S) + ". It agrees with my phone, which is rare." },
     { id: "a5_wstool", name: "stool", r: [522, 202, 38, 40], z: 33, walk: [506, 238, "right"], look: "A stool in the wings. The best seat in the house for people who need to sit. Lou will take it.", use: "It's for Lou. I'm not sitting on Lou's throne." },
-    { id: "a5_wcases", name: "road cases", rects: [[4, 154, 50, 78], [594, 202, 44, 38]], z: 36, walk: [96, 240, "back"], look: "Black flight cases stenciled MON and DJ. Everything's black. If the world ended, it'd be on a road case.", pickup: "Crew-only." },
+    { id: "a5_wcases", name: "road cases", rects: [[28, 154, 26, 78]], z: 36, walk: [96, 240, "back"], look: "Black flight cases stenciled MON and DJ. Everything's black. If the world ended, it'd be on a road case.", pickup: "Crew-only." },
     { id: "a5_wcurtain", name: "masking curtain", rects: [[0, 0, 80, 150], [596, 0, 44, 200]], z: 12, walk: [92, 238, "back"], look: "A black wing curtain. They hide the mess and stage hands. Right now I'm one of them.", pull: "I tug the curtain. Roz clears her throat. I let go.", pickup: "Not pickable. Black cloth is eternal." },
     { id: "axl", name: "Axl Vanta", r: [348, 60, 70, 100], z: 15, vis: S => axlOn(S), walk: [400, 232, "back"], look: "Axl, in a sea of light, white tank, shades, arms up. He looks like the sun if the sun were a brand.", talk: "I shout. It disappears into the bass. He does a leap.", give: "I'm not handing him anything mid-leap." },
     { id: "a5_roz", name: "Roz", talk: S => rozWings(S), look: "Roz, in the dark, with a headset and a clipboard and a stare that says \"nine minutes ago.\"", give: "Roz: \"I'm busy.\"", pickup: "No.", push: "I'm not pushing Roz. She's got a radio.", use: S => rozWings(S) },

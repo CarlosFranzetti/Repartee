@@ -111,14 +111,14 @@ async function whitTalk(S) {
       "It says \"DJ " + A5.mangle(A5.pName(S)).replace(/^DJ /, "") + "\".",
       "@a5_whit That's... a stylistic choice. It's our brand voice.",
       "It's wrong. It's close, but it's wrong.",
-      "@a5_whit Close is collaboration! Look: twelve guest comps for artists. Names by eight tonight. Your friend with the tent says he needs thirty-one.",
+      "@a5_whit Close is collaboration! Look: twelve guest comps for artists. Names by eight tonight. Your friend with the tent says he's bringing thirty. Plus himself.",
       "He's not wrong. He's just... ambitious."
     ]);
     return;
   }
   await RP.convo([
     { text: "What's the running order?", once: true, run: async () => {
-      await RP.lines(["@a5_whit Saturday. Soundcheck at four. Doors at six. Axl Vanta closes the main stage at... well, he plays at ten-fifteen.", "@a5_whit You're on at eleven forty-five. You close the whole festival. The sunrise slot, if you want to be poetic. Which I do.", "Eleven forty-five. Okay. And Axl?", "@a5_whit Axl's team is... flexible. About the word \"schedule.\" It's a living document."] );
+      await RP.lines(["@a5_whit Saturday. Soundcheck at four. Doors at six. Axl Vanta closes the main stage at... well, he plays at ten-fifteen.", "@a5_whit You're on at eleven forty-five. You close the whole festival. The last slot of the night, if you want to be poetic. Which I do.", "Eleven forty-five. Okay. And Axl?", "@a5_whit Axl's team is... flexible. About the word \"schedule.\" It's a living document."] );
     } },
     { text: "About the guest list...", when: S2 => !S2.f.a5_guestDone, run: async () => { await RP.say("Right. Marcus has the... situation. I'll go talk to him.", "kid"); return "end"; } },
     { text: "Thanks, Whit.", end: true, run: async () => { await RP.say("Don't thank me! Thank synergy!", "a5_whit"); } }
@@ -132,8 +132,8 @@ async function marcusTalk(S) {
   await RP.lines([
     "@marcus You said I could bring a few people.",
     "I said \"a few,\" Marcus. A few is not thirty.",
-    "@marcus I counted it. It's thirty-one. I'm very specific.",
-    "That's thirty-one people. There's capacity for twelve.",
+    "@marcus I counted it. Thirty guests, plus me. That's thirty-one. I'm very specific.",
+    "Thirty-one people. There's room for twelve.",
     "@marcus Okay, so we'll fit twelve. The rest of us will wait outside, like it's 1993. Lou would understand."
   ]);
   const res = await A5.play("guestList", { capacity: 12, requests: 31, vip: ["Lou", "Ray", "Twinkie", "Jess", "Eddie Two-Times"], difficulty: 2, venue: "Harbor Lights" }, { skipLabel: "Just hand over the list" });
@@ -141,15 +141,16 @@ async function marcusTalk(S) {
   const admitted = res.admitted != null ? res.admitted : 12, angry = res.angry != null ? res.angry : 3;
   S.f.a5_guestAngry = angry;
   RP.sfx(res.ok && angry <= 3 ? "success" : "buzz");
-  if (angry <= 3) await RP.lines(["@a5_whit Twelve in. Nineteen out. Four slightly grumpy. That's the best list we've seen all week.", "@marcus I'm not mad. I'm... I'm fine. I've been betrayed, but I'm fine."]);
-  else await RP.lines(["@a5_whit Twelve in. A lot of people very, very loud about it. That was an experience.", "@marcus I WANT A RECOUNT. I WANT TO SPEAK TO A MANAGER.", "@a5_whit I'm the manager. The answer is no. But with synergy."]);
+  const inN = Math.min(12, admitted), outN = Math.max(0, 31 - inN);
+  if (angry <= 3) await RP.lines(["@a5_whit " + inN + " in. " + outN + " out. " + (angry ? angry + " slightly grumpy" : "Nobody grumpy") + ". That's the best list we've seen all week.", "@marcus I'm fine. The tent has a ukulele. We'll have our own party."]);
+  else await RP.lines(["@a5_whit " + inN + " in. A lot of people very, very loud about it. That was an experience.", "@marcus I WANT A RECOUNT. I WANT TO SPEAK TO A MANAGER.", "@a5_whit I'm the manager. The answer is no. But with synergy."]);
   S.f.a5_louPass = true; RP.give("a5_loupass"); RP.sfx("pickup");
   await RP.lines([
     "@a5_whit And one more thing: an envelope for \"Lou, 4B\"? A man phoned the office eighteen times. Each time he said, and I quote, \"Keep it DOWN.\"",
     "That's him. That's Lou.",
     "@a5_whit Okay, it's his. It's got a pass in it. No plus-one. He was very clear.",
     "He doesn't do plus-ones.",
-    "Marcus, you have a spot. Twelve people. Jess, Ray, Twinkie, Eddie. And Lou's pass is going through the pipe hole."
+    "Marcus is on the list, with Jess, Ray, Twinkie and Eddie. And Lou's pass is going through the pipe hole."
   ]);
   RP.setClock("FRI 8:20 PM"); RP.followers(Math.max(0, 600 - angry * 100));
   A5.setDay(S, 2, "FRI 8:40 PM", "night");
@@ -219,7 +220,7 @@ RP.room({
     { id: "a5_gwater", name: "the harbor", r: [0, 60, 330, 84], z: 12, walk: [160, 232, "back"], look: S => dusk(S) ? "The harbor at sunset. Manhattan on the other side, pink and gold and lit like a pinball machine. And a bridge. It's so beautiful it feels like a trap." : "The harbor in the sun. Manhattan's skyline across the water, a bridge, a tugboat. Somebody should put a stage here. Oh. They did.", talk: "The harbor doesn't answer. It's busy being gorgeous.", pickup: "I can't pick up a harbor. I've tried a lot of things in this game." },
     { id: "a5_gwheel", name: "Ferris wheel", r: [526, 40, 80, 90], z: 11, walk: [560, 232, "back"], look: "A Ferris wheel past the arch, spinning slowly in pink and yellow lights. Every festival has one. It's a rule. A beautiful, wobbly, overpriced rule.", use: "I'll ride it after the set. With one of the thousand people who'll hug me.", pickup: "Ferris wheel. Very big. No." },
     { id: "a5_whit", name: "Whit", talk: S => whitTalk(S), look: "Preston \"Whit\" Whitlock, Harbor Lights promoter. Linen suit, shades on his head, lanyard, a clipboard like a shield. The man who says \"synergy\" like other people breathe.", give: (S, item) => item === "a5_pass" ? "Whit: \"Don't give it back! It's authentic! Brian laminated it!\"" : "Whit: \"For me? A gift! I accept it on behalf of the synergy.\"", pickup: "I'm not carrying Whit. He'd see it as a networking opportunity." },
-    { id: "marcus", name: "Marcus", talk: S => marcusTalk(S), look: "Marcus. My best friend. He has a tent, a cooler, thirty-one friends and no regrets.", give: (S, item) => "Marcus: \"For ME? Thanks! Wait, what is it? Okay, I'll hold on to it, and I'm also on the list.\"", pickup: "Not even a little. He'd bring thirty friends." },
+    { id: "marcus", name: "Marcus", talk: S => marcusTalk(S), look: "Marcus. My best friend. He has a tent, a cooler, thirty friends and no regrets.", give: (S, item) => "Marcus: \"For ME? Thanks! Wait, what is it? Okay, I'll hold on to it, and I'm also on the list.\"", pickup: "Not even a little. He'd bring thirty friends." },
     { id: "a5_margo", name: "Margo", talk: S => margoTalk(S), look: "Margo Quist. My manager. Navy blazer, glasses, phone in one hand, clipboard in the other, expression of a woman who's seen the invoice and it was beautiful.", give: "Margo: \"Don't give me anything. Send me a PDF.\"", pickup: "No. She'd bill me for the lift." }
   ],
   combos: [

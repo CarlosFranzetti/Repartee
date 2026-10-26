@@ -195,6 +195,13 @@ RP.item("a5_tickets", {
   use: "I'll spend them wisely. Meaning: not at once."
 });
 
+RP.item("a5_water", {
+  name: "Eddie's water", short: "Water",
+  icon: c => I.bottle(c, "#cfe4ef", "#ffd23f"),
+  look: "A bottle of water. Nine dollars. Eddie's label says SPIRIT WATER, and under it, smaller, WATER.",
+  use: async S => { RP.take("a5_water"); RP.sfx("click"); await RP.lines(["I drink it. It's cold. It's water.", "Nine dollars, spent on hydration. Roz would approve."]); }
+});
+
 /* act-wide combos: usable in any act-5 room */
 A5.fixPass = async S => {
   if (S.f.a5_passFixed) return "It's already fixed. I'm not making a second correction. That's how you get a third.";
@@ -272,7 +279,7 @@ RP.defineAct({
   },
   combos: [["a5_marker", "a5_pass", S => A5.fixPass(RP.state)]],
   doneTitle: "SUPERSTAR DJ",
-  doneText: S => "Harbor Lights. Main stage. A rotary mixer, a white label, and a thousand people who knew every word. Dante's drink tickets: still unspent."
+  doneText: S => "Harbor Lights. Main stage. A rotary mixer, a white label, and a thousand people who stayed for the last bar. Dante's drink tickets: still unspent."
 });
 
 })();

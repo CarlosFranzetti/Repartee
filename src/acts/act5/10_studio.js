@@ -242,7 +242,7 @@ async function loTalk(S) {
         "@a5_lou ...Slide it under the pipe. If there's an actual invitation, I'll consider it. I said CONSIDER."
       ]);
     } },
-    { text: "Do you need anything for Saturday?", when: S2 => S2.f.a5_louAsked && !S2.f.a5_louPassGiven, run: async () => {
+    { text: "Do you need anything for Saturday?", once: true, when: S2 => S2.f.a5_louAsked && !S2.f.a5_louPassGiven, run: async () => {
       await RP.lines(["@a5_lou Don't be cute. An invitation. With my name on it. Spelled right.", "Spelled right. Got it. Everybody asks for that."]);
     } },
     { text: "Here, Lou. Your pass.", when: S2 => S2.f.a5_louPass && !S2.f.a5_louPassGiven, run: async () => { await giveLouPass(S); return "end"; } },
@@ -306,7 +306,7 @@ RP.room({
     { id: "a5_gerald", name: "Gerald", r: [306, 158, 62, 58], z: 33, walk: [298, 220, "right"], look: S => hasTaula(S) ? "Gerald. He's two feet taller than in Act One. He gets the best light. He is the only one of us who has his life together." : "That's Gerald. He grew all summer. I don't know what he's been through, but he's thriving.",
       talk: "Hang in there, Gerald. Wait. You're hanging in there better than I am.", use: "I water him when I remember. He forgives me. That's his superpower.", pickup: "Gerald stays where the light is. It's his whole thing." },
     { id: "a5_crate", name: "record crate", r: [260, 202, 40, 40], z: 28, walk: [280, 244, "back"], look: S => "My crate. " + S.records.length + " records. Every one is a decision. Some of them were very good decisions.", use: S => RP.crateView(), open: S => RP.crateView(), pickup: "It's got twenty-five records in it. I'm not carrying that to the subway. The festival has roadies. I have roadies now. Wow." },
-    { id: "a5_bedlap", name: "laptop", r: [184, 138, 38, 28], z: 40, walk: [196, 220, "back"], look: "My laptop. Held together with gaffer tape and ambition. A spreadsheet of tonight's tracks: HARBOR_SET_v14_FINAL_FINAL.xlsx.",
+    { id: "a5_bedlap", name: "laptop", r: [184, 138, 38, 28], z: 40, walk: [196, 220, "back"], look: "My laptop. Held together with gaffer tape and ambition. A spreadsheet of the set's tracks: HARBOR_SET_v14_FINAL_FINAL.xlsx.",
       use: S => ["The set notes, v14. They say: START LOW. CLIMB. DON'T PEAK BEFORE MIDNIGHT. SAVE THE WHITE LABEL.", "Margo's note in red: \"Don't be a hero. Be a headliner.\""], pickup: "It's safer on the bed. Everything is safer on the bed." },
     { id: "a5_turn", name: "Technics SL-1210MK7s", z: 36, walk: [450, 216, "back"],
       rects: () => { const mw = hasTaula(RP.state) ? 66 : 40, total = 70 * 2 + mw + 8, gx = 477 - Math.round(total / 2); return [[gx, 112, 74, 40], [gx + 74 + mw + 4, 112, 74, 40]]; },
@@ -336,7 +336,7 @@ RP.room({
   ],
   enter: async (S, from) => {
     if (!S.f.a5_gearDone) return;
-    if (!S.f.a5_unpackedLine) { S.f.a5_unpackedLine = true; await RP.lines(["Everything arrived. The Taula is on the desk. It looks like it was born there.", "Nothing's connected. Everything's connected. I'll test it with my eyes."]); }
+    if (!S.f.a5_unpackedLine) { S.f.a5_unpackedLine = true; RP.setClock("THU 6:05 PM"); await RP.lines(["Everything arrived. The Taula is on the desk. It looks like it was born there.", "Nothing's connected. Everything's connected. I'll test it with my eyes."]); }
   },
   self: { look: "The headliner. Slept in a hoodie. Dreamt of mixers.", talk: "I'd answer, but I'm practicing being calm." }
 });

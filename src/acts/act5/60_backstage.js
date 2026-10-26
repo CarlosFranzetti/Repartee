@@ -116,9 +116,9 @@ async function rozTalk(S) {
     await RP.lines([
       "@a5_roz You're the headliner. Roz. Stage manager. I run everything that isn't on fire. Don't make me add fire.",
       "@a5_roz Soundcheck's at four, main stage. Wings are east, past the steps. Mo's on the desk. He talks through the talkback. Don't be rude to Mo.",
-      "@a5_roz And you're on my board as \"DJ " + A5.mangle(A5.pName(S)).replace(/^DJ /, "") + "\". Is that right?",
-      "It's... close.",
-      "@a5_roz Close. Fine. I'm calling you \"Headliner.\" It's easier."
+      "@a5_roz Your name's on my board right. I reprinted it. Brian did the first batch.",
+      "Brian's been busy.",
+      "@a5_roz Brian's been told. I'm calling you \"Headliner\" anyway. It's easier."
     ]);
     return;
   }
