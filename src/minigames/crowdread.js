@@ -206,7 +206,7 @@ const CSS = `
 let cssDone = false;
 
 const LINES = {
-  great: ["That's the one. The whole floor leans in.", "Somebody whoops. It might be you.", "Heads nod in time. It's contagious.", "Half the room just found its feet.", "The bartender stops polishing and nods."],
+  great: ["That's the one. The whole floor leans in.", "Somebody whoops. It might be you.", "Heads nod in time. It's contagious.", "More of the floor just found its feet.", "The bartender stops polishing and nods."],
   good: ["Solid. The floor gets a little braver.", "They're with you. Keep building.", "Two more people drift in from the bar."],
   meh: ["Fine. Nobody leaves, nobody loves it.", "Polite nodding. Polite is not a party.", "It's a record. People heard it."],
   hard: ["Too much, too soon. A few people drift back to the bar.", "You scared them. Somebody checks their phone.", "The floor stares at the booth like you owe them money."],
@@ -310,11 +310,18 @@ RP.mg.register("crowdRead", {
 
       const say = t => { said.textContent = t; };
       /* the crowd's hint for this moment, in the record tags' own words: cold floor -> WARMUP, climbing -> BUILDER, near the goal -> PEAK, last record -> CLOSER */
+      const freeCards = () => cards.filter(c => !S.used.has(c.rec.id));
+      /* the crowd only asks for roles the crate can still provide; with none left it asks for the feel instead (and no round is "perfect" if the named role wasn't played) */
+      const ASK_FREE = ["Regular: \"Easy does it. Nothing that scares the room.\"", "Regular: \"Keep it climbing. Don't let the floor sag.\"", "Regular: \"Take it up. Don't you dare drop the tempo.\"", "Regular: \"Last record. Send us home with whatever you've got left.\""];
+      const ROLEV = { WARMUP: ["warmup"], BUILDER: ["builder"], PEAK: ["peak"], CLOSER: ["closer", "sunrise"], WEIRD: ["weird"] };
       function askLine() {
         const stage = S.round >= R.rounds - 1 ? 3 : S.E >= R.goal - 0.3 ? 2 : S.E < 2.4 ? 0 : 1;
-        return C.ask[stage] || C.ask[0];
+        const line = C.ask[stage] || C.ask[0], free = cards.length ? freeCards() : R.ids.map(id => ({ rec: RP.rec(id) }));
+        const named = (line.match(/\b(WARMUP|BUILDER|PEAK|CLOSER|WEIRD)\b/g) || []).filter((w, i, a) => a.indexOf(w) === i);
+        const have = named.filter(w => free.some(c => ROLEV[w].some(v => hasV(c.rec, v))));
+        S.askRoles = have.reduce((a, w) => a.concat(ROLEV[w]), []);
+        return named.length && !have.length ? ASK_FREE[stage] : line;
       }
-      const freeCards = () => cards.filter(c => !S.used.has(c.rec.id));
 
       function buildHand() {
         hand.innerHTML = ""; cards = [];
@@ -447,15 +454,15 @@ RP.mg.register("crowdRead", {
         msg.textContent = "Now playing: " + kit.full(rec);
         playBtn.disabled = true; playBtn.textContent = "THE FLOOR REACTS...";
         cards.forEach(c => { c.b.disabled = true; });
-        const E1 = ev.E2;
+        const E1 = ev.E2, roleOK = !(S.askRoles && S.askRoles.length) || S.askRoles.some(v => hasV(rec, v));
         host.timeout(() => {
           S.E = E1; S.prev = rec; S.peak = Math.max(S.peak, S.E); floor.setEnergy(S.E);
-          const tier = ev.surprise === "win" ? "weirdWin" : ev.surprise === "flop" ? "weirdFlop" : ev.fit >= 0.8 ? "great" : ev.fit >= 0.62 ? "good" : ev.fit >= 0.45 ? "meh" : ev.why === "hard" ? "hard" : ev.why === "soft" ? "soft" : ev.why === "tempo" ? "tempo" : "taste";
+          const tier = ev.surprise === "win" ? "weirdWin" : ev.surprise === "flop" ? "weirdFlop" : ev.fit >= 0.8 && roleOK ? "great" : ev.fit >= 0.62 ? "good" : ev.fit >= 0.45 ? "meh" : ev.why === "hard" ? "hard" : ev.why === "soft" ? "soft" : ev.why === "tempo" ? "tempo" : "taste";
           const good = ev.fit >= 0.62 || ev.surprise === "win";
           const bad = ev.fit < 0.45 || ev.surprise === "flop";
-          const label = ev.surprise === "win" ? "THEY GET IT!" : ev.surprise === "flop" ? "WHAT WAS THAT?" : ev.fit >= 0.8 ? "PERFECT BUILD" : ev.fit >= 0.62 ? "NICE ONE" : ev.fit >= 0.45 ? "OKAY" : tier === "hard" ? "TOO MUCH" : tier === "soft" ? "FLOOR DROP" : tier === "tempo" ? "TRAIN WRECK" : "WRONG ROOM";
+          const label = ev.surprise === "win" ? "THEY GET IT!" : ev.surprise === "flop" ? "WHAT WAS THAT?" : ev.fit >= 0.8 && roleOK ? "PERFECT BUILD" : ev.fit >= 0.62 ? "NICE ONE" : ev.fit >= 0.45 ? "OKAY" : tier === "hard" ? "TOO MUCH" : tier === "soft" ? "FLOOR DROP" : tier === "tempo" ? "TRAIN WRECK" : "WRONG ROOM";
           floor.pop(label, good ? "#9be15d" : bad ? "#ff6a6a" : "#ffd23f", 160, 64);
-          if (good) { host.sfx("cheer"); floor.emote(ev.fit >= 0.8 ? "heart" : "note", ev.fit >= 0.8 ? 5 : 4); floor.emote("note", 3); }
+          if (good) { host.sfx("cheer"); floor.emote(ev.fit >= 0.8 && roleOK ? "heart" : "note", ev.fit >= 0.8 && roleOK ? 5 : 4); floor.emote("note", 3); }
           else if (bad) { host.sfx("boo"); floor.emote("?", 5); }
           const dir = ev.gain > 0.05 ? "▲" : ev.gain < -0.05 ? "▼" : "■";
           say(pick(LINES[tier], S.rnd));

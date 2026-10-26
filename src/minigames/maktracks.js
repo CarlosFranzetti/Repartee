@@ -8,7 +8,7 @@
        difficulty: 1..5  (goals get tougher and MORE SOUNDS are available: 1 = starter kit, 5 = everything),
        collab: "Lou"  (default Lou when sampling the white label; any other value = no collaborator on screen),
        seed, arcade }
-   Result: { ok, score (0..100), track: { name, bpm, pattern, sample, goals: "3/5", energy: [8 bars 0..100], lou: 0..100 } }
+   Result: { ok, score (0..100), title (the name the player chose), track: { name, title, bpm, pattern, sample, goals: "3/5", energy: [8 bars 0..100], lou: 0..100 } }
      ok     score >= 55 (a track worth releasing on Pipe Hole Records).
      track.pattern = { steps: 16, rows: {kick, clap, hat, ohat, bass, chord, sample: [16 ints]}, voices: {row: voiceId},
                        arrangement: [8 section ids], layers: [8][7 booleans], swing }
@@ -370,7 +370,7 @@ const CSS = `
 .mt-card ul b { font-weight: 400; color: var(--fg); }
 .mt-card .row { justify-content: flex-end; }
 .mt-card canvas { width: 100%; image-rendering: pixelated; image-rendering: crisp-edges; border: 2px solid #3a2f78; aspect-ratio: 320 / 130; }
-.mt-toast { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); background: var(--amber); color: #12061a; font-size: 20px; padding: 3px 12px; z-index: 5; pointer-events: none; border: 2px solid #fff; }
+.mt-toast { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); background: var(--amber); color: #12061a; font-size: 20px; padding: 3px 12px; z-index: 5; pointer-events: none; border: 2px solid #fff; }
 .mt-wrap :focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
 @media (max-width: 860px) {
   .mt-head .btn.primary { display: none; }
@@ -1027,7 +1027,7 @@ RP.mg.register("makTracks", {
       const goalsPart = 56 * done / total;
       const energyQ = 0.6 * clamp((ev.dropMin - 40) / 50, 0, 1) + 0.4 * clamp(ev.jump / 30, 0, 1);
       const score = Math.round(clamp(goalsPart + 22 * energyQ + 22 * ev.tz.t / 100, 0, 100));
-      const res = { ok: score >= 55, score, track: { name: st.name, bpm: st.bpm, pattern: { steps: STEPS, rows: JSON.parse(JSON.stringify(pat)), voices: Object.assign({}, st.voice), arrangement: st.arr.slice(), layers: st.layers.map(l => l.slice()), swing: st.swing }, sample: rec.id, goals: done + "/" + total, energy: ev.en.slice(), lou: ev.tz.t } };
+      const res = { ok: score >= 55, score, title: st.name, track: { name: st.name, title: st.name, bpm: st.bpm, pattern: { steps: STEPS, rows: JSON.parse(JSON.stringify(pat)), voices: Object.assign({}, st.voice), arrangement: st.arr.slice(), layers: st.layers.map(l => l.slice()), swing: st.swing }, sample: rec.id, goals: done + "/" + total, energy: ev.en.slice(), lou: ev.tz.t } };
       wrap.remove(); head.remove();
       host.header("mak.Tracks", "Bounced");
       const card = el("div", { cls: "mt-card", style: "margin: 0 auto; border-color: var(--pink)" }, root);
@@ -1036,9 +1036,11 @@ RP.mg.register("makTracks", {
       el("p", { html: "<b style='color:var(--amber);font-weight:400'>" + RP.u.esc(st.name) + "</b> · " + st.bpm + " BPM" }, card);
       el("div", { cls: "big", text: String(score) }, card);
       const t = ev.tz.t;
+      /* Lou's one complaint follows what is actually in the pattern, so it never contradicts the track or his earlier remarks */
+      const louNit = count("bass") > count("kick") ? "The bass is too loud." : count("hat") >= 10 ? "The hats are too busy." : "Leave my hi-hat alone next time.";
       let line;
       if (!withLou) line = res.ok ? "Mastered, named, ready for Pipe Hole Records." : "It needs another pass before it goes anywhere.";
-      else if (t >= 75) line = "Lou, quiet for a second: “...That's it. That's the room. I haven't heard it through speakers since '93.” He sniffs. “The bass is too loud.”";
+      else if (t >= 75) line = "Lou, quiet for a second: “...That's it. That's the room. I haven't heard it through speakers since '93.” He sniffs. “" + louNit + "”";
       else if (t >= 50) line = "Lou, arms folded: “It's not 1993. But it's not bad. Don't tell anyone I said that.”";
       else line = "Lou: “You put my track in a blender, kid. ...Do it again. Slower.”";
       el("p", { text: line }, card);

@@ -52,7 +52,8 @@ const PLABEL = {
   headphones: ["FLEX BAND", "WIGGLE CABLE", "LISTEN", "LOOK CLOSER", "SERIAL / RECEIPT"],
   box: ["POWER UP", "TRY IT", "LISTEN", "LOOK CLOSER", "SERIAL / RECEIPT"]
 };
-const PTAG = ["SPIN", "CTRL", "EARS", "EYES", "PAPER"];
+/* the tag on a note names the test that was run, so a monitor's first test is POWER, not SPIN */
+const PTAG = { turntable: ["SPIN", "PITCH", "EARS", "EYES", "PAPER"], cdj: ["SPIN", "TEMPO", "EARS", "EYES", "PAPER"], mixer: ["POWER", "FADERS", "EARS", "EYES", "PAPER"], monitor: ["POWER", "KNOB", "EARS", "EYES", "PAPER"], headphones: ["BAND", "CABLE", "EARS", "EYES", "PAPER"], box: ["POWER", "TRY", "EARS", "EYES", "PAPER"] };
 /* what each probe tells you. [text, isEvidence]. Missing entries fall back to the "ok" line of that kind. */
 const T = {
   turntable: {
@@ -408,7 +409,8 @@ RP.mg.register("buyGear", {
     });
     function refreshProbes() {
       const l = cur(), lab = PLABEL[l.vk] || PLABEL.box;
-      pBtns.forEach((b, i) => { b.firstChild.textContent = lab[i]; b.classList.toggle("done", !!l.probes[PROBES[i]]); });
+      const rot = l.vk === "mixer" && l.gear.kind === "rotary";   /* a rotary mixer has knobs, not faders */
+      pBtns.forEach((b, i) => { b.firstChild.textContent = rot && i === 1 ? "TURN KNOBS" : lab[i]; b.classList.toggle("done", !!l.probes[PROBES[i]]); });
     }
     function noteText(l, k) {
       if (boutique) return BOUT[l.id === "can_electric_taula_4_mr" || l.vk === "mixer" ? 0 : 1][PROBES.indexOf(k)];
@@ -425,7 +427,7 @@ RP.mg.register("buyGear", {
       if (!have.length) { el("li", { html: "<span class='empty'>Nothing tested yet. Tap a test. Trust your eyes and ears, not Eddie.</span>" }, notes).className = "empty"; notes.firstChild.style.display = "block"; if (boutique) notes.firstChild.firstChild.textContent = "Look, listen, read the paperwork. Mercè is watching."; }
       have.forEach(k => {
         const n = l.notes[k]; const li = el("li", { cls: n.evidence ? (l.flaw ? "warn" : "cos") : "good" }, notes);
-        el("i", { text: PTAG[PROBES.indexOf(k)] }, li); el("span", { text: n.text }, li);
+        el("i", { text: (l.vk === "mixer" && l.gear.kind === "rotary" && k === "ctl" ? "KNOBS" : (PTAG[l.vk] || PTAG.box)[PROBES.indexOf(k)]) }, li); el("span", { text: n.text }, li);
       });
     }
 
@@ -636,9 +638,9 @@ RP.mg.register("buyGear", {
       const spec = el("div", { cls: "bg-spec", "aria-hidden": "true" });
       for (let i = 0; i < 12; i++) el("i", {}, spec);
       const specTick = () => { [...spec.children].forEach((c, i) => { const bnd = i < 4 ? 0 : i < 8 ? 1 : 2; const h = (bnd === ci ? 0.12 : 0.55 + Math.random() * 0.4); c.style.height = Math.round(h * 100) + "%"; c.style.background = bnd === ci ? "var(--pink)" : "var(--cyan)"; }); };
-      const specLive = () => { [...spec.children].forEach(c => { c.style.height = Math.round((0.4 + Math.random() * 0.5) * 100) + "%"; }); };
-      if (noAudio) { specTick(); host.interval(specTick, 300); } else { specLive(); host.interval(specLive, 160); }
-      ask(noAudio ? "(No sound here: watch the bars.) Which band is <b>cut</b>?" : "Which band is <b>cut</b>? Listen.", [{ t: "LOW (the thump)", i: 0 }, { t: "MID (the keys)", i: 1 }, { t: "HIGH (the hats)", i: 2 }], op => {
+      /* the analyzer always shows the cut band as the low bars (left = LOW, right = HIGH), so the test works by ear or by eye */
+      specTick(); host.interval(specTick, noAudio ? 300 : 160);
+      ask(noAudio ? "(No sound here: watch the bars.) Which band is <b>cut</b>?" : "Which band is <b>cut</b>? Listen, or watch the bars: left is LOW, right is HIGH.", [{ t: "LOW (the thump)", i: 0 }, { t: "MID (the keys)", i: 1 }, { t: "HIGH (the hats)", i: 2 }], op => {
         st.bandStop && st.bandStop(); st.bandStop = null; spec.remove();
         if (op.i === ci) { st.good++; move(3); speak("Yes. The " + cut.toLowerCase() + ". You listen. Good.", "happy"); RP.sfx("success"); } else { move(-1); speak("No. It was the " + cut.toLowerCase() + ". Your ears need a nap.", "worried"); RP.sfx("error"); }
         next(round2);

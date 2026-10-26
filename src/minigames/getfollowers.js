@@ -1,6 +1,6 @@
 /* get.Followers — a week planner on a pixel phone. Three slots a day (morning, afternoon, night):
    post a clip, practice, dig records, network at a party, collab, or sleep. Random events: a clip
-   goes viral, a hater, the algorithm changes, burnout, a very sketchy offer for 10,000 followers.
+   goes viral, a hater, the algorithm changes, burnout, a very sketchy offer to buy followers.
    Each event happens at most once a week; the sketchy DM and one algorithm change always show up.
    Difficulty scales the follower gains (and, with no goal given, the goal).
    Params (all optional): { days (7), start (followers), goal, difficulty 1..5, arcade }
@@ -149,9 +149,9 @@ const EV = [
   { id: "viral", w: 3, cond: G => G.posts > 0 && (G.postsToday + G.postsYesterday) > 0, title: "A CLIP GOES VIRAL", text: "One of your clips escapes into the wild. A stranger in Ohio is dancing to it. He is now your biggest fan.",
     ch: [{ text: "Ride it!", run: (G, r) => { const g = Math.round((50 + r() * 60) * (1 + G.K / 100)); G.F += g; G.H = clamp(G.H + 20, 0, 100); G.viral = 2; return "+" + g + " followers. Posts get a boost for two days."; } }] },
   { id: "hater", w: 3, cond: G => G.F > 80, title: "A HATER APPEARS", text: "\"Your transitions sound like a washing machine in a hurry.\" 14 likes. Several are bots.",
-    ch: [{ text: "Reply with a joke (needs skill)", run: (G, r) => { if (G.K >= 30) { G.E = clamp(G.E - 6, 0, 100); G.F += 22; G.H = clamp(G.H + 6, 0, 100); return "Your reply is a banger. The hater deletes his account. +22."; } G.E = clamp(G.E - 6, 0, 100); G.F -= 10; return "The joke flops. The hater has a better one. -10."; } },
+    ch: [{ text: "Reply with a joke (-6 energy, needs skill 30+)", run: (G, r) => { if (G.K >= 30) { G.E = clamp(G.E - 6, 0, 100); G.F += 22; G.H = clamp(G.H + 6, 0, 100); return "Your reply is a banger. The hater deletes his account. +22."; } G.E = clamp(G.E - 6, 0, 100); G.F -= 10; return "The joke flops. The hater has a better one. -10."; } },
          { text: "Block, mute, breathe", run: (G) => { G.H = clamp(G.H - 2, 0, 100); return "You mute him. Your skin gets thicker by a micron."; } },
-         { text: "Reply in all caps", run: (G, r) => { G.E = clamp(G.E - 10, 0, 100); if (r() < 0.5) { G.F += 30; return "It goes viral for the wrong reasons. +30. Don't do it again."; } G.F -= 14; return "A pile-on. -14. You regret everything."; } }] },
+         { text: "Reply in all caps (-10 energy)", run: (G, r) => { G.E = clamp(G.E - 10, 0, 100); if (r() < 0.5) { G.F += 30; return "It goes viral for the wrong reasons. +30. Don't do it again."; } G.F -= 14; return "A pile-on. -14. You regret everything."; } }] },
   { id: "algoGood", w: 2.4, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "The feed now LOVES short clips. For two days, posts do 40% better. (It will change again. It always does.)",
     ch: [{ text: "Noted.", run: (G) => { G.algo = { type: "clips", days: 2, label: "CLIPS +40%" }; return "Posts +40% for two days."; } }] },
   { id: "algoBad", w: 2.2, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "The feed now LOVES studio gear tours, and you don't have a studio. For two days your clips reach 30% fewer people. Still post once a day: a day with no post costs more.",
@@ -168,14 +168,14 @@ const EV = [
     ch: [{ text: "Grab it", run: (G) => { G.M = clamp(G.M + 30, 0, 100); return "+30 material. Half of it is gospel and half is regret."; } }] },
   { id: "shout", w: 2, cond: G => G.F > 60, title: "TWINKIE TAGGED YOU", text: "Twinkie shared your clip. Twinkie knows everyone. Everyone now knows you.",
     ch: [{ text: "Say thanks", run: (G) => { G.F += 40; G.C = clamp(G.C + 1, 0, 5); return "+40 followers, +1 contact."; } }] },
-  { id: "bots", w: 1.8, cond: G => G.F > 0, title: "A VERY SKETCHY DM", text: "\"10,000 FOLLOWERS FOR $5!!!\" The sender's name is a string of numbers. Tempting, in a bad way.",
-    ch: [{ text: "Buy 260 followers ($5)", run: (G) => { G.F += 260; G.bots = 260; G.botsFlag = true; return "+260 followers. For now. Bots don't stay."; } },
-         { text: "Delete and report", run: (G) => { G.H = clamp(G.H + 6, 0, 100); return "You report the bot. Integrity is its own follower. (+hype)"; } }] },
+  { id: "bots", w: 1.8, cond: G => G.F > 0, title: "A VERY SKETCHY DM", text: "\"260 FOLLOWERS FOR $5!!!\" The sender's name is a string of numbers. Tempting, in a bad way.",
+    ch: [{ text: "Pay the $5 (+260 followers now, purged later)", run: (G) => { G.F += 260; G.bots = 260; G.botsFlag = true; return "+260 followers. For now. Bots don't stay."; } },
+         { text: "Delete and report (+hype)", run: (G) => { G.H = clamp(G.H + 6, 0, 100); return "You report the bot. Integrity is its own follower. (+hype)"; } }] },
   { id: "gig", w: 1.6, cond: G => G.K >= 35, title: "A FREE OPENING SLOT", text: "A venue needs an opener tonight. Twenty minutes. Free beer. The crowd is mostly the bar staff.",
     ch: [{ text: "Take it (-25 energy)", run: (G) => { G.E = clamp(G.E - 25, 0, 100); const g = Math.round(40 + G.K * 0.4); G.F += g; G.C = clamp(G.C + 1, 0, 5); G.H = clamp(G.H + 8, 0, 100); return "+" + g + " followers, +1 contact. The bartender claps once."; } },
-         { text: "Pass. Sleep is a gig too.", run: (G) => { G.E = clamp(G.E + 8, 0, 100); return "You stay in. +8 energy."; } }] },
+         { text: "Pass. Sleep is a gig too. (+8 energy)", run: (G) => { G.E = clamp(G.E + 8, 0, 100); return "You stay in. +8 energy."; } }] },
   { id: "rent", w: 1, cond: G => true, title: "THE LANDLORD TEXTS", text: "\"Re: the thing.\" You spend an hour on hold with a man who is also the landlord's cousin.",
-    ch: [{ text: "Ugh.", run: (G) => { G.E = clamp(G.E - 10, 0, 100); return "-10 energy. Rent is a lifestyle."; } }] }
+    ch: [{ text: "Ugh. (-10 energy)", run: (G) => { G.E = clamp(G.E - 10, 0, 100); return "-10 energy. Rent is a lifestyle."; } }] }
 ];
 /* every event happens at most once a week, two algorithm changes at most. The sketchy DM is
    promised in the rules, so it arrives by ~60% of the week; one algorithm change arrives by day 3. */

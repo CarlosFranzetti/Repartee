@@ -14,9 +14,9 @@ const K = () => RP.setkit;
 
 const lerpPts = (pts, u) => { for (let i = 1; i < pts.length; i++) if (u <= pts[i][0]) { const a = pts[i - 1], b = pts[i]; return a[1] + (b[1] - a[1]) * ((u - a[0]) / (b[0] - a[0] || 1)); } return pts[pts.length - 1][1]; };
 const ARCS = {
-  warmup: { name: "WARM-UP", blurb: "Start soft, rise gently. Nothing too hard, nothing that belongs at 2 AM.", target: u => lerpPts([[0, 1.5], [1, 3.3]], u), dir: 1, bad: ["peak", "closer", "sunrise"], good: ["warmup", "builder"], first: "warmup" },
-  peak: { name: "PEAK TIME", blurb: "Hit the floor hard and keep it there. Build in, then stay on top.", target: u => lerpPts([[0, 3.5], [0.3, 4.4], [0.7, 4.8], [1, 5]], u), dir: 1, bad: ["warmup", "sunrise"], good: ["peak", "builder"] },
-  journey: { name: "THE JOURNEY", blurb: "A full night: warm in, build, peak around three quarters, then glide down.", target: u => lerpPts([[0, 1.8], [0.25, 3], [0.55, 4.2], [0.75, 5], [0.9, 3.9], [1, 2.9]], u), dir: 0, bad: [], good: ["warmup", "builder", "peak", "closer", "sunrise"], weirdMid: true },
+  warmup: { name: "WARM-UP", blurb: "Start soft, rise gently. Nothing tagged PEAK, CLOSER or SUNRISE; open on a WARMUP.", target: u => lerpPts([[0, 1.5], [1, 3.3]], u), dir: 1, bad: ["peak", "closer", "sunrise"], good: ["warmup", "builder"], first: "warmup" },
+  peak: { name: "PEAK TIME", blurb: "Hit the floor hard and keep it there. Build in, then stay on top. Nothing tagged WARMUP or SUNRISE.", target: u => lerpPts([[0, 3.5], [0.3, 4.4], [0.7, 4.8], [1, 5]], u), dir: 1, bad: ["warmup", "sunrise"], good: ["peak", "builder"] },
+  journey: { name: "THE JOURNEY", blurb: "A full night: warm in, build, peak around three quarters, then glide down, and end on a CLOSER or SUNRISE record (not before the middle).", target: u => lerpPts([[0, 1.8], [0.25, 3], [0.55, 4.2], [0.75, 5], [0.9, 3.9], [1, 2.9]], u), dir: 0, bad: [], good: ["warmup", "builder", "peak", "closer", "sunrise"], weirdMid: true },
   closer: { name: "THE CLOSER", blurb: "Bring them home: start high, come down gently, end on THE closing record.", target: u => lerpPts([[0, 4.5], [0.35, 4], [0.7, 2.9], [1, 2]], u), dir: -1, bad: ["warmup"], good: ["closer", "sunrise"], last: ["closer", "sunrise"] }
 };
 const tolScale = d => 1.25 - 0.125 * (d - 1);
