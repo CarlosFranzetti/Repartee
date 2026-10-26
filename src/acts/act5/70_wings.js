@@ -99,8 +99,8 @@ async function overrun(S) {
   const how = await RP.choose(["Walk on, take the second channel and slide the room away from him, one record at a time.", "Ask Roz to pull his monitor mix.", "Wait it out. He promised."]);
   S.f.a5_overrunHow = how;
   const smooth = how === 0 || (how === 2 && won);
-  if (how === 0) await RP.lines(["I walk on in the dark with a pair of headphones, and nod at his tech. His tech, who hates him, nods back.", "I find the key of his last record and bring mine in underneath. Eight bars. Then sixteen.", "@a5_roz " + (won ? "Six minutes, like he promised. Don't thank me, thank the nine hundred times I reminded him." : "Fourteen minutes. I counted every one. Keep going.")]);
-  else if (how === 2 && won) await RP.lines(["I stay put and watch the clock. Roz holds a fader and a very long look.", "@a5_roz He owes me. He said eleven-thirty, he's six late, and he knows exactly how late. Watch.", "On the stage the sun does an encore bow and is, almost gracefully, finished."]);
+  if (how === 0) await RP.lines(["I walk on in the dark with a pair of headphones, and nod at his tech. His tech, who hates him, nods back.", "I find the key of his last record and bring mine in underneath. Eight bars. Then sixteen.", "@a5_roz " + (won ? "Six minutes of his time left, and he knows I'm counting. He kept half a promise. Keep going." : "He had fourteen more in him. You took them off him. Keep going.")]);
+  else if (how === 2 && won) await RP.lines(["I stay put and watch the clock. Roz holds a fader and a very long look.", "@a5_roz He said eleven-thirty. It's eleven fifty-two. He gets six more minutes because I asked nicely. Watch the clock.", "On the stage the sun does an encore bow and is, almost gracefully, finished."]);
   else if (how === 2) await RP.lines(["I wait. Roz waits. The clock does not.", "@a5_roz Promised, he says. To who? Who did he promise?", "Nobody. At 12:06 he's still waving."]);
   S.f.a5_overrunDone = true; S.f.a5_overrunScore = smooth ? 85 : 55;
   RP.sfx(smooth ? "success" : "buzz");

@@ -38,8 +38,7 @@ const friday = [
   ["talk", "hot:marcus"], ["expect", "!S.f.a5_guestDone", "Whit's list first"],
   ["talk", "hot:a5_whit"], ["expect", "RP.has('a5_pass') && S.f.a5_gateMet", "typo'd artist pass"],
   ["answers", [2]], ["talk", "hot:a5_whit"],
-  q("guestList", { ok: true, score: 80, admitted: 12, angry: 2 }),
-  ["talk", "hot:marcus"], ["expect", "S.f.a5_guestDone && RP.has('a5_loupass')", "guest list done; Lou's envelope"],
+  ["answers", [1]], ["talk", "hot:marcus"], ["expect", "S.f.a5_guestDone && S.f.a5_guestIn === 9 && RP.has('a5_loupass')", "guest list done (nine in); Lou's envelope"],
   ["travel", "a5_loc_studio"], ["expect", "S.f.a5_tod === 'night'", "Friday night at home"],
   ["use", "hot:a5_bed"], ["expect", "S.f.a5_day === 2", "can't sleep: Lou's pass first"],
   ["answers", ["I want you to come", "Never mind"]], ["talk", "hot:a5_hole"],
@@ -74,13 +73,13 @@ const saturday = [
   ["walk", "hot:a5_wback"], ["expect", "S.room === 'a5_backstage'", "backstage again"],
   ["talk", "hot:a5_roz"], ["expect", "S.f.a5_axlAsked", "Roz: Axl wants the slot; bring a smoothie"],
   ["pickup", "hot:a5_bsmoothie"], ["expect", "RP.has('a5_smoothie')", "Axl's smoothie"],
-  ["answers", [2]],
-  q("clubDrama", { ok: true, score: 82, outcome: "win" }),
+  ["answers", ["Alex"]],
   ["use", "hot:a5_baxl"],
+  ["expect", "S.f.a5_axlWon && S.f.a5_axlLeverage", "Twinkie's intel won the slot"],
   ["expect", "S.f.a5_axlDone && S.f.a5_phase === 2 && S.room === 'a5_backstage' && S.f.a5_louArrived", "Axl handled; Lou and Marcus arrive"],
   ["talk", "hot:lou"], ["talk", "hot:marcus"],
-  q("setTime", { ok: true, score: 80, floor: 70 }),
-  ["walk", "hot:a5_bwings"], ["expect", "S.room === 'a5_wings' && S.f.a5_overrunDone && S.f.a5_phase === 3", "the wings: Axl overran, set.Time, Axl is off the stage"],
+  ["answers", [0]],
+  ["walk", "hot:a5_bwings"], ["expect", "S.room === 'a5_wings' && S.f.a5_overrunDone && S.f.a5_phase === 3 && S.f.a5_overrunHow === 0", "the wings: Axl overran, Roz's call, Axl is off the stage"],
   ["talk", "hot:a5_roz"],
   ["talk", "hot:lou"],
   ["walk", "hot:a5_wexit"], ["expect", "S.room === 'a5_mainstage' && S.f.a5_phase === 3", "the main stage at night"],
@@ -88,10 +87,11 @@ const saturday = [
 ];
 
 const set = [
-  q("playlistOrder", { ok: true, score: 86, order: ["mr_fingers_washing_machine_can_you_feel_it", "frankie_knuckles_your_love", "mood_ii_swing_closer", "nuyorican_soul_runaway", "masters_at_work_blood_vibes_the_ha_dance", "robin_s_show_me_love", "david_morales_presents_the_face_needin_u", "donna_summer_i_feel_love"] }),
+  ["answers", [0, 0]],
   q("crowdRead", { ok: true, score: 90, peak: 5, final: 4.5, played: [] }),
   q("beatMatch", { ok: true, score: 92 }),
   ["use", "hot:a5_mbooth"],
+  ["expect", "S.f.a5_setOpener && S.f.a5_setCloser === 'mood_ii_swing_closer'", "opener and closer picked"],
   ["expect", "S.f.a5_setDone && S.f.a5_kosmoName && S.room === 'a5_pier'", "headline set done; Kosmo said the name; sunrise on the pier"]
 ];
 

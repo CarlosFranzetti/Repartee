@@ -1,6 +1,6 @@
 /* Act 5 — a5_mainstage: the Harbor Lights main stage (scrolling, 960 wide), seen from the field.
    Two looks: the afternoon SOUNDCHECK (work lights, empty field, soundCheck mini-game) and the night SHOW (LED wall, beams, a sea of crowd).
-   The headline set is a chain: playlistOrder -> crowdRead -> Lou comes on for "NYC 93" -> beatMatch finale -> Kosmo says your name right. */
+   The headline set is a chain: opener + closer picks (a choice each) -> crowdRead -> Lou comes on for "NYC 93" -> beatMatch finale -> Kosmo says your name right. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -159,21 +159,24 @@ async function headlineSet(S) {
     "A thousand faces in the dark, and one white label in my coat.",
     "Okay. Let's build a set."
   ]);
-  /* 1. playlist.Order: build the arc */
-  const pl = await A5.play("playlistOrder", { records: A5.SET_POOL.concat(["white_nyc93"]), slots: 8, arc: "peak", difficulty: 3 }, { skipLabel: "Trust my gut" });
-  const order = (pl.order && pl.order.length ? pl.order : A5.DEFAULT_ORDER).filter(id => RP.rec(id));
-  S.f.a5_setPlaylist = pl.score != null ? pl.score : 70;
+  /* 1. the running order: you pick the opener and the closer; the middle is the crate you packed */
+  await RP.lines(["The crate is open on the booth. Ray's white label is in my coat, and a thousand people are waiting on the first record.", "Open first. Then decide how it ends."]);
+  const OPEN = ["mr_fingers_washing_machine_can_you_feel_it", "kerri_chandler_atmosphere_ep_vol_1", "frankie_knuckles_your_love"];
+  const oi = await RP.choose(["Open low: Mr. Fingers, \"Can You Feel It\". Let the field lean in.", "Open on the groove: Kerri Chandler, \"Atmosphere\".", "Open on the voice: Frankie Knuckles, \"Your Love\"."]);
+  const CLOSE = ["mood_ii_swing_closer", "robin_s_show_me_love", "donna_summer_i_feel_love"];
+  const ci = await RP.choose(["Close it down: Mood II Swing, \"Closer\".", "Close with hands in the air: Robin S, \"Show Me Love\".", "Close on the synth: Donna Summer, \"I Feel Love\"."]);
+  S.f.a5_setOpener = OPEN[oi]; S.f.a5_setCloser = CLOSE[ci];
   await RP.lines([
-    pl.score >= 75 ? "The arc is there. Slow burn, a climb, a peak around the middle. It looks right on paper." : "The order's a little wonky. I'll make it up on the fly. That's what the crowd's for.",
+    ["Slow first record. They'll lean in or they'll check their phones. I'm betting on leaning.", "A groove first. Nobody has to decide anything yet.", "A voice first. Everyone in a field knows what a voice is."][oi],
+    ["I'll land them with \"Closer\". You don't drop a field from a height.", "Ending on \"Show Me Love\" means the hour before it has to earn it.", "A 1977 synth to end a night in Brooklyn. Nobody will mind."][ci],
     "@a5_foh (talkback) Nice. Start, whenever."
   ]);
   /* 2. crowd.Read: play the room */
   RP.audio && RP.audio.loop && RP.setMusic && RP.setMusic({ genre: "house", bpm: 122, volume: 0.32 });
-  /* the last round asks for a CLOSER: whatever the order dropped, one is always in the crate (and Ray's white label too) */
-  const crate = order.slice();
-  if (!crate.some(id => (RP.rec(id).vibe || []).indexOf("closer") >= 0)) crate.push("mood_ii_swing_closer");
-  if (crate.indexOf("white_nyc93") < 0) crate.push("white_nyc93");
-  const cr = await A5.play("crowdRead", { records: crate, crowd: "festival", rounds: 5, goal: 4, difficulty: 3, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
+  /* the crate: your opener and closer, the middle of the pool, a closer always on hand, and Ray's white label */
+  const crate = [OPEN[oi], "peech_boys_dont_make_me_wait", "nuyorican_soul_runaway", "masters_at_work_blood_vibes_the_ha_dance", "marshall_jefferson_move_your_body", "bucketheads_the_bomb", "david_morales_presents_the_face_needin_u", CLOSE[ci], "mood_ii_swing_closer", "white_nyc93"];
+  const crateIds = crate.filter((id, k) => crate.indexOf(id) === k && (id === "white_nyc93" || RP.rec(id)));
+  const cr = await A5.play("crowdRead", { records: crateIds, crowd: "festival", rounds: 5, goal: 4, difficulty: 3, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
   S.f.a5_setCrowd = cr.score != null ? cr.score : 70;
   S.f.a5_pyro = true; RP.flash("#ffffff", 220); RP.sfx("cheer");
   await RP.lines([
