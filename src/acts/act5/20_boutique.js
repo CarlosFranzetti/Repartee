@@ -247,9 +247,11 @@ async function buyMonitors(S) {
     "@a5_merce The Core 47s on the stands are the demo pair. They're not for sale.",
     "@a5_merce Sealed ones came in. They are in Eddie's van. Double-parked. I do not like it. I do not like it at all.",
     "@eddie Three listings in the van! One's a Core 47, one's a mystery, one's... also a mystery! Come see!",
-    "Eddie's van. Right. I'll look with my eyes, not my heart."
+    "Eddie's van. Right. I'll look with my eyes, not my heart.",
+    "(I'm here for the Core 47s. Anything else in that van goes straight back to Eddie.)"
   ]);
-  const res = await RP.mg.play("buyGear", { slot: "monitors", options: [CORE, "dynaudio_lyd_5", "krk_rokit_5_g4"], seller: "Eddie Two-Times", budget: Math.floor(S.money), scams: 1, difficulty: 3 });
+  /* flaws pinned: the Core 47s are always sound; the LYD 5s hum (the lemon); the Rokits are scuffed but honest */
+  const res = await RP.mg.play("buyGear", { slot: "monitors", options: [CORE, "dynaudio_lyd_5", "krk_rokit_5_g4"], flaws: ["ok", "hum", "cosmetic"], seller: "Eddie Two-Times", budget: Math.floor(S.money), difficulty: 3 });
   if (res && res.ok && (res.bought === CORE || res.missing)) {
     const paid = await payFor(S, CORE, res, "monitors", 0.9);
     S.f.a5_gearMonitors = true; RP.sfx("success");
@@ -258,14 +260,14 @@ async function buyMonitors(S) {
     return;
   }
   if (res && res.ok && res.bought) {
-    await RP.lines(["That's a good pair of monitors. But it's not the pair I came for.", "@eddie A good pair! Not the pair! Same thing, spiritually!", "I'll look at the other listings."]);
+    await RP.lines(["They work. They're just not the Core 47s. I hand them back before any money moves.", "@eddie A return! Nobody returns to Eddie! ...Fine. Full refund. It's a one-time deal.", "I'll look at the other listings."]);
     S.f.a5_monFails = fails + 1;
     return;
   }
   S.f.a5_monFails = fails + 1;
   if (res && res.paid > 0) {
     RP.money(-res.paid);
-    await RP.lines(["BZZT. It's a lemon. It buzzed, it hummed, and one cone just fell off.", "@eddie It was working this morning!", "@eddie Okay, okay! Store credit. Sixty percent back. I only take forty. Twice."]);
+    await RP.lines(["BZZT. It's a lemon. It hums with nothing playing, like a fridge with opinions.", "@eddie It was working this morning!", "@eddie Okay, okay! Store credit. Sixty percent back. I only take forty. Twice."]);
     RP.money(Math.round(res.paid * 0.6));
   } else await RP.lines(["I walk away. The van waves at me in a sad way.", "@eddie I'll hold them! Not for long! Two-time rule!"]);
 }

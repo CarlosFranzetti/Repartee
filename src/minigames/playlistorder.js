@@ -174,6 +174,7 @@ const CSS = `
 .pl-ghost { position: fixed; z-index: 60; pointer-events: none; width: 230px; opacity: .92; }
 .pl-act { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .pl-act .spacer { flex: 1; }
+@media (min-width: 701px) { .pl-msg, .pl-act { order: 1; } .pl-pool { order: 2; } }
 @media (max-width: 700px) {
   .pl-slot { min-height: 70px; padding: 3px; } .pl-slot .t { display: none; } .pl-slot .m .pips { display: none; }
   .pl-pool { grid-template-columns: minmax(0, 1fr); }

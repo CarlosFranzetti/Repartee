@@ -119,7 +119,7 @@ async function sortCollection(S, pay) {
   RP.setClock("MON 1:20 PM");
   await RP.say("Hours later. Dust in my teeth, a crate in every direction, a pile of 'maybe' that's bigger than most people's collection.", "nar");
   await RP.fadeTo(0, 700);
-  const res = await A3.mg("crateDigging", { records: COLLECTION, budget: pay, keepSlots: 8, difficulty: 2 }, { giveUp: "Later", tries: 1,
+  const res = await A3.mg("crateDigging", { records: COLLECTION, budget: pay, keepSlots: 8, difficulty: 2, owner: "Hal", seller: "Tanya", place: "Woodside, Queens" }, { giveUp: "Later", tries: 1,
     onFail: async () => { await RP.lines(["I leave a lot of it in the crates. Some of it's good. I'll know later."]); } });
   const keep = (res.keep && res.keep.length ? res.keep : (res.missing || res.assisted || res.ok ? GEMS : [])).filter(id => RP.rec(id));
   const sold = (res.sold || []).filter(id => RP.rec(id));

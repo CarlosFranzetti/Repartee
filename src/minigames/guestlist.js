@@ -17,6 +17,7 @@ const CSS = `
 @media (max-width: 959px) { .gl-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "meters" "say" "case" "acts" "clip"; } .gl-layout > .sk-side { display: contents; } .gl-layout .gl-meters { grid-area: meters; } .gl-layout .gl-case { grid-area: case; } .gl-layout .gl-clip { grid-area: clip; } }
 .gl-meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .gl-meters .sk-meter { min-width: 0; }
+.gl-room { grid-column: 1 / -1; font-size: 17px; line-height: 1.1; color: var(--muted); letter-spacing: .04em; } .gl-room b { font-weight: 400; color: var(--fg); } .gl-room .gold { color: var(--amber); } .gl-room .warn { color: #ff8a8a; }
 .gl-clip { background: #e8dcb8; color: #2a2030; border: 2px solid #8a7a52; border-top-width: 10px; border-top-color: #4a4660; border-radius: 3px; padding: 6px 10px 8px; font-size: 18px; line-height: 1.06; box-shadow: 3px 3px 0 #000; position: relative; }
 .gl-clip::before { content: ""; position: absolute; left: 50%; top: -12px; width: 38px; height: 10px; margin-left: -19px; background: #9a9ab8; border: 1px solid #2a2840; }
 .gl-clip h3 { margin: 0 0 3px; font-weight: 400; font-size: 17px; letter-spacing: .1em; color: #6a1a4a; }
@@ -56,8 +57,8 @@ const CSS = `
 let cssDone = false;
 
 /* ------------------------------------------------------------------------------------------ names & lines */
-const FIRST = ["Rosa", "Jamal", "Priya", "Tommy", "Mei", "Dev", "Sasha", "Luis", "Keisha", "Gus", "Noor", "Beth", "Marcel", "Yuki", "Femi", "Chloe", "Hank", "Imani", "Tariq", "Dolores", "Ines", "Walt", "Anya", "Cleo", "Raj", "Bao", "Nia", "Otis", "Lena", "Mo"];
-const LAST = ["Hernandez", "Pierce", "Nair", "Calloway", "Tanaka", "Kapoor", "Volkov", "Ortega", "Boyd", "Papadakis", "Haddad", "Kowalski", "Dubois", "Ito", "Adeyemi", "Park", "Muller", "Cole", "Rahman", "Quinn", "Moreno", "Frye", "Petrov", "Lopez", "Shah", "Tran", "Okafor", "Lindqvist", "Diaz", "Bell"];
+const FIRST = ["Greta", "Jamal", "Wren", "Tommy", "Mei", "Omar", "Sasha", "Luis", "Keisha", "Basil", "Noor", "Beth", "Marcel", "Esme", "Femi", "Chloe", "Farid", "Imani", "Tariq", "Odette", "Zora", "Walt", "Anya", "Cleo", "Raj", "Bao", "Nia", "Otis", "Lena", "Leon"];
+const LAST = ["Hernandez", "Pierce", "Novak", "Calloway", "Tanaka", "Kapoor", "Volkov", "Ortega", "Boyd", "Papadakis", "Haddad", "Sorensen", "Dubois", "Ito", "Adeyemi", "Park", "Muller", "Cole", "Rahman", "Quinn", "Moreno", "Frye", "Petrov", "Lopez", "Shah", "Tran", "Halloran", "Lindqvist", "Diaz", "Bell"];
 const VIP_DEFAULT = ["Kosmo Delacroix", "Twinkie", "Axl Vanta"];
 const VIP_CHAR = { kosmo: "kosmo", twinkie: "twinkie", axl: "axl", dante: "dante", eddie: "eddie", lou: "lou", ray: "ray", jess: "jess" };
 
@@ -82,6 +83,7 @@ const ADMIT_CRASH = ["Ha. Nice doing business.", "Wow, that actually worked.", "
 const DENY_REPLY = ["Wow. Okay.", "You'll hear about this.", "I'll tell everyone you suck.", "This place is overrated anyway.", "My lawyer will hear about this. My lawyer is also the guy behind me.", "Fine. I didn't want to come in. I wanted to be asked."];
 const DENY_FAKE = ["Eh. Worth a shot.", "Whatever. It was a long shot.", "...Is the line for the other door shorter?", "Okay okay. Have a nice night. Don't mention me."];
 const DENY_VIP = ["Do you know who I am? ...Never mind. I'll go somewhere else.", "Noted. I will remember this. I have a very good memory.", "Wow. Okay. Tell {dj} I said goodbye."];
+const FULL_REPLY = ["Full? Fine. I'll tell everyone I got in.", "Okay. Fair. The fire marshal has a face.", "Next time I'm writing my name on the list in pen.", "Full. Sure. I'll stand near it. Same thing."];
 const MARCUS_PART = ["It's my BIRTHDAY.", "It's not even my birthday. It's a spiritual birthday. Okay? Fine.", "You're making this weird. I'm being very normal."];
 
 /* ------------------------------------------------------------------------------------------ people */
@@ -304,7 +306,7 @@ async function run(host, p, SK) {
       steps: [
         "People arrive one at a time. Decide who gets in, <b>and how many</b>: use the <b>+</b> / <b>-</b> counter, then <b>LET IN</b> or <b>TURN AWAY</b>.",
         "Check the <b>LIST</b> (<b>1</b>), the <b>ID</b> (<b>2</b>) and the <b>WRISTBAND</b> (<b>3</b>). The name must be on the list <i>and</i> match the ID.",
-        "<b>Capacity is real.</b> Hold spots for the VIPs still to come. Crashers eat your room.",
+        "<b>Capacity is real.</b> Hold a spot for every VIP still to come. When the room is full, \"we're full\" is a fair answer. Crashers eat your room.",
         "Marcus is <b>+1</b>. He will say plus three" + (diff >= 5 ? " (today, plus thirty)" : "") + ". It is still +1."
       ],
       pill: "DIFFICULTY " + diff,
@@ -317,13 +319,14 @@ async function run(host, p, SK) {
     const mIn = SK.meter(hud, { label: "INSIDE", color: "#39d0ff", max: cap, value: 0, marks: [] }); mIn.set(0, "0/" + cap);
     const mHeat = SK.meter(hud, { label: "LINE", color: "#ff6a3a", max: 100, value: 0 });
     const mAng = SK.meter(hud, { label: "ANGRY", color: "#ff3fa4", max: 10, value: 0 }); mAng.set(0, "0/10");
+    const roomEl = el("div", { cls: "gl-room", "aria-live": "polite" }, hud);
     // clipboard
     const clip = el("div", { cls: "gl-clip" }, side);
     const clipH = el("h3", { text: "CLIPBOARD \u2014 " + venue.toUpperCase() }, clip);
     clipH.addEventListener("click", () => clip.classList.toggle("closed"));
     if ((window.innerHeight || 800) < 460) clip.classList.add("closed");
     const cul = el("ul", {}, clip);
-    el("li", { html: "Capacity <b>" + cap + "</b>. List: <b>" + list.length + "</b> names." }, cul);
+    el("li", { html: "Capacity <b>" + cap + "</b>. List: <b>" + list.length + "</b> names. VIPs count." }, cul);
     el("li", { html: "VIPs: <b>" + G.vipNames.slice(0, Math.max(1, G.vipCount)).join(", ") + "</b>. Gold band. No ID needed." }, cul);
     el("li", { html: "Tonight's band: <b>" + band.name + "</b>. Re-entry only." }, cul);
     el("li", { html: "Name on list = name on ID. \"I'm with the DJ\" is not a name." }, cul);
@@ -361,7 +364,7 @@ async function run(host, p, SK) {
     const blinkQ = {};
     const anim = { front: null, fx: 160, fy: 226, fs: 2, fa: 1, mode: "idle", t: 0, dur: 0.6, from: null, to: null, exitKind: null, walk: 0, expr: "", talking: false };
     const queue = []; // upcoming people (for drawing)
-    let inside = 0, angry = 0, crashers = 0, vipsIn = 0, vipsMissed = 0, correct = 0, total = 0, admittedTotal = 0, held = G.vipCount;
+    let inside = 0, angry = 0, crashers = 0, vipsIn = 0, vipsMissed = 0, correct = 0, total = 0, admittedTotal = 0, held = G.vipCount, legitIn = 0, full = 0;
     let heat = 0, awaiting = false, cur = null, count = 1, doneAll = false;
     const heatRate = [0, 1.5, 2.3, 3.1, 4.0][diff - 1];
     const lightFront = { lx: -0.45, rim: { color: "#ff3fa4", side: 1 }, shadow: 0, cast: false };
@@ -474,7 +477,12 @@ async function run(host, p, SK) {
     rows.band.btn.addEventListener("click", () => doCheck("band"));
 
     // ---------- decisions
-    const setCount = n => { count = clamp(n, 1, cur ? Math.max(1, cur.size) : 1); cntEl.innerHTML = count + "<small>" + (count === 1 ? "PERSON" : "PEOPLE") + "</small>"; };
+    // free = room left once every VIP still due has a spot; warns before the count eats one
+    const showRoom = () => {
+      const due = held - (cur && awaiting && cur.vip ? 1 : 0), room = cap - inside, free = Math.max(0, room - due), over = cur && awaiting && !cur.reentry && count > free;
+      roomEl.innerHTML = "FREE <b>" + free + "</b>" + (due > 0 ? " · HELD FOR VIPS <b class='gold'>" + due + "</b>" : "") + (over ? " · <span class='warn'>" + (count > room ? count + " won't fit" : count + " takes a VIP's spot") + "</span>" : "");
+    };
+    const setCount = n => { count = clamp(n, 1, cur ? Math.max(1, cur.size) : 1); cntEl.innerHTML = count + "<small>" + (count === 1 ? "PERSON" : "PEOPLE") + "</small>"; showRoom(); };
     bMinus.addEventListener("click", () => setCount(count - 1)); bPlus.addEventListener("click", () => setCount(count + 1));
     bAll.addEventListener("click", () => setCount(cur ? cur.size : 1));
     let decide = null;
@@ -512,6 +520,7 @@ async function run(host, p, SK) {
       anim.mode = "idle"; anim.talking = true;
       awaiting = true; lockActs(true);
       if (inside >= cap && !pr.reentry) bYes.disabled = true;
+      showRoom();
       SK.__last = { cur: { allowed: pr.allowed, size: pr.size, type: pr.type, vip: pr.vip, reentry: pr.reentry }, room: cap - inside, held };
       warmPerson(queue[1]);
       [queue[5], queue[6]].forEach(q => { if (q) SK.warmQueue(S, [() => SK.warm(q.def, { face: "front", act: "stand" }, lightQ), () => SK.warm(q.def, { face: "front", act: "phone" }, lightQ)], 70); });
@@ -521,11 +530,11 @@ async function run(host, p, SK) {
       heat = Math.max(0, heat - 55); mHeat.set(heat);
       // ----- evaluate
       total++;
-      const room = cap - inside, n = count;
+      const room = cap - inside, n = count, fair = cap - legitIn - (held - (pr.vip ? 1 : 0));
       let adm = 0;
       if (choice === "in") adm = pr.reentry ? n : Math.min(n, Math.max(0, room));
       if (choice === "in" && !pr.reentry && n > room) { floats.add("FULL!", 84, 60, "#ff6a6a", { sc: 2, life: 1.6 }); RP.sfx("error"); }
-      if (!pr.reentry) { inside += adm; admittedTotal += adm; }
+      if (!pr.reentry) { inside += adm; admittedTotal += adm; legitIn += Math.min(adm, pr.allowed); }
       if (pr.vip) held--;
       let verdict = "", reply = "";
       if (pr.allowed === 0) {
@@ -535,19 +544,21 @@ async function run(host, p, SK) {
         verdict = adm === pr.allowed ? "good" : "extra"; correct += adm === pr.allowed ? 1 : 0.6; if (adm > pr.allowed) crashers += adm - pr.allowed;
         if (pr.vip) vipsIn++;
       } else if (adm > 0) { verdict = "short"; correct += 0.4; angry++; }
+      else if (!pr.vip && !pr.reentry && pr.allowed > fair) { verdict = "full"; correct += 1; full++; } // no room left that crashers didn't take: fair
       else { verdict = "miss"; angry += pr.vip ? 2 : 1; if (pr.vip) vipsMissed++; }
       const fakeish = ["fakevip", "imposter", "fakeband", "bribe", "stranger", "strangerPlus"].includes(pr.type);
       if (verdict === "good" && choice === "in") { reply = pr.type === "marcus" ? (diff >= 5 ? "THIRTY? We said... okay. Plus one. I'll tell them. They won't understand." : SK.pick(MARCUS_PART, rnd)) : SK.pick(ADMIT_REPLY, rnd); floats.add("+" + adm, 84, 58, "#9be15d", { sc: 2, life: 1.3, icon: "check" }); RP.sfx(pr.vip ? "cheer" : "ping"); anim.expr = "happy"; }
       else if (verdict === "good") { reply = fakeish ? SK.pick(DENY_FAKE, rnd) : SK.pick(DENY_REPLY, rnd); floats.add("GOOD CALL", 84, 58, "#9be15d", { sc: 2, life: 1.3, icon: "check" }); RP.sfx("ping"); anim.expr = "sad"; }
       else if (verdict === "crash") { reply = SK.pick(ADMIT_CRASH, rnd); floats.add("CRASHER IN!", 84, 58, "#ff6a6a", { sc: 2, life: 1.5, icon: "skull" }); RP.sfx("buzz"); anim.expr = "happy"; }
       else if (verdict === "extra") { reply = pr.type === "marcus" ? "Plus three! Thank you! ...Wait, what did the list say? Forget it. Thank you!" : SK.pick(ADMIT_CRASH, rnd); floats.add((adm - pr.allowed) + " TOO MANY", 84, 58, "#ffc44d", { sc: 2, life: 1.5 }); RP.sfx("buzz"); anim.expr = "happy"; }
+      else if (verdict === "full") { reply = SK.pick(FULL_REPLY, rnd); floats.add("FULL. FAIR.", 84, 58, "#9be15d", { sc: 2, life: 1.3, icon: "check" }); RP.sfx("ping"); anim.expr = "sad"; }
       else if (verdict === "short") { reply = pr.type === "marcus" ? "It's my BIRTHDAY." : "Wait, what about my friends? They were right here. ...Fine."; floats.add("SHORT", 84, 58, "#ffc44d", { sc: 2, life: 1.3 }); RP.sfx("buzz"); anim.expr = "sad"; }
       else { // miss
         reply = pr.reentry ? "I was INSIDE. I have the stamp. This is the worst night of my life." : pr.vip ? SK.fmt(SK.pick(DENY_VIP, rnd), { dj: myName }) : SK.pick(DENY_REPLY, rnd);
         floats.add(pr.vip ? "VIP TURNED AWAY!" : "WRONG!", 84, 58, "#ff6a6a", { sc: 2, life: 1.6, icon: "cross" }); RP.sfx(pr.vip ? "boo" : "buzz"); anim.expr = "angry";
       }
       if (angry > 10) angry = 10;
-      mIn.set(inside, inside + "/" + cap); mAng.set(angry, angry + "/10");
+      mIn.set(inside, inside + "/" + cap); mAng.set(angry, angry + "/10"); showRoom();
       anim.talking = true;
       await speak(pr, reply, { speed: 85 });
       await S.wait(380);
@@ -570,6 +581,7 @@ async function run(host, p, SK) {
     grid.style.display = "none"; wrap.querySelectorAll(".sk-tip").forEach(n => { n.style.display = "none"; });
     const title = vipsMissed ? "You bounced a VIP" : crashers > crashLimit ? "The room is... festive" : angry >= 5 ? "Door's closed. Reviews are mixed." : sc >= 85 ? "Immaculate door" : "Doors closed";
     const lines = [vipsMissed ? "A VIP stood outside in the cold. The fire marshal was less of a problem than the group chat." : crashers ? crashers + " crashers slipped through. \"I know the DJ\" worked " + crashers + " time" + (crashers > 1 ? "s" : "") + "." : "Nobody got in who shouldn't have. Marcus is still sulking."];
+    if (full && !vipsMissed) lines.push(full + (full > 1 ? " groups" : " group") + " turned away for room. Nobody argues with a fire code. They try.");
     const stats = [["INSIDE", inside + "/" + cap], ["VIPS IN", vipsIn + "/" + G.vipCount, vipsMissed ? "bad" : "ok"], ["CRASHERS", crashers, crashers ? "bad" : "ok"], ["ANGRY", angry, angry > 3 ? "bad" : ""]];
     const stamp = { w: 64, h: 24, k: 4, draw(g) { const col = ok ? "#9be15d" : "#ff6a6a"; R(g, 0, 0, 64, 24, "#0a0716"); R(g, 1, 1, 62, 22, col); R(g, 3, 3, 58, 18, "#0a0716"); txtC(g, ok ? "DOORS OK" : "DOORS SHUT", 32, 8, col, 2, 1); } };
     await SK.endCard(S, wrap, { kicker: venue.toUpperCase() + " · DOOR REPORT", title, lines, stats, score: sc, ok, stamp, rank: sc >= 90 ? "BEST BOUNCER" : sc >= 75 ? "SHARP DOOR" : sc >= 55 ? "ACCEPTABLE" : sc >= 35 ? "LEAKY" : "WIDE OPEN" });

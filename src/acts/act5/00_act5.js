@@ -117,17 +117,20 @@ A5.ensureCrate = (S, quiet) => {
    --------------------------------------------------------------------------------------------------- */
 A5.day = S => S.f.a5_day || 1;
 A5.pName = S => (S.name && S.name.trim()) || "DJ KID";
-/* the festival misspells your name, as promoters do. Always differs from the real one. */
+/* the festival misspells your name, as promoters do. Always differs from the real one.
+   Returns "DJ " + the misspelled name part, so callers can strip /^DJ / and keep their own prefix. */
 A5.mangle = name => {
-  const n = String(name || "DJ KID").toUpperCase();
-  const parts = n.split(" ");
+  const n = String(name || "DJ KID").toUpperCase().trim().replace(/\s+/g, " ");
+  const body = n.replace(/^DJ(\s+|$)/, "") || "DJ";
+  const parts = body.split(" ");
   let w = parts[0], out;
   if (w.length >= 4) out = w[0] + w[2] + w[1] + w.slice(3);
   else if (w.length === 3) out = w[0] + w[2] + w[1];
+  else if (w.length === 2) out = w[1] + w[0];
   else out = w + "Y";
-  if (out === w) out = w.slice(0, -1) + (w.slice(-1) === "X" ? "Z" : "X");
+  if (out === w || out === "DJ") out = w.slice(0, -1) + (w.slice(-1) === "X" ? "Z" : "X");
   parts[0] = out;
-  return parts.join(" ");
+  return "DJ " + parts.join(" ");
 };
 /* robust mini-game call: handles missing mini-games, failure (retry or wing it), never dead-ends */
 A5.play = async function (id, params, o) {

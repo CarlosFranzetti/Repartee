@@ -94,6 +94,8 @@ function evalPick(C, st, rec) {
   return { fit, fe, fb, fg, want, d, E2, gain, surprise, why, parts, jump: st.prev ? rec.bpm - st.prev.bpm : 0 };
 }
 
+/* compare at display precision so a floor showing the goal's number has reached it */
+const reached = (E, g) => +E.toFixed(1) >= +g.toFixed(1);
 function summarize(C, E0, steps, goal) {
   // steps: [{fit,fe,fb,fg,E2}]
   const n = steps.length || 1;
@@ -104,14 +106,14 @@ function summarize(C, E0, steps, goal) {
   const build = 0.6 * (rising / n) + 0.4 * (1 - clamp((peak - final) / 1.2, 0, 1));
   const goalR = clamp((final - E0) / Math.max(0.5, goal - E0), 0, 1);
   const score = Math.round(100 * (0.3 * avg("fe") + 0.2 * avg("fg") + 0.15 * avg("fb") + 0.15 * build + 0.2 * goalR));
-  return { score: clamp(score, 0, 100), final, peak, build, energy: avg("fe"), taste: avg("fg"), tempo: avg("fb"), goalR, ok: final >= goal - 1e-6 };
+  return { score: clamp(score, 0, 100), final, peak, build, energy: avg("fe"), taste: avg("fg"), tempo: avg("fb"), goalR, ok: reached(final, goal) };
 }
 
 /* ---- defaults ---- */
 function normGoal(g, C, diff) {
-  if (g == null || isNaN(+g)) return clamp(C.goal + (diff - 2) * 0.15, 2, 4.9);
+  if (g == null || isNaN(+g)) return +clamp(C.goal + (diff - 2) * 0.15, 2, 4.9).toFixed(1);
   g = +g; if (g > 5) g /= 20;
-  return clamp(g, 1.5, 4.9);
+  return +clamp(g, 1.5, 4.9).toFixed(1);
 }
 function pickDefaultRecords(C, rounds, rnd, diff) {
   const all = (RP.data.records || []).concat(Object.values(RP.data.extraRecords || {})).filter(r => r.bpm && r.energy);
@@ -354,7 +356,7 @@ RP.mg.register("crowdRead", {
         gl1.innerHTML = "FLOOR ENERGY <b>" + E.toFixed(1) + "</b>";
         gl2.textContent = "GOAL " + R.goal.toFixed(1);
         barFill.style.width = barPct(E);
-        bar.classList.toggle("win", E >= R.goal);
+        bar.classList.toggle("win", reached(E, R.goal));
         // hint band (difficulty 1 only)
         if (R.diff <= 1 && phase === "pick") {
           const want = clamp(E + (E >= R.goal ? 0.25 : C.step), 1, 5);
@@ -460,7 +462,7 @@ RP.mg.register("crowdRead", {
           msg.innerHTML = "";
           msg.appendChild(document.createTextNode(label + "  " + dir + " floor " + S.E.toFixed(1) + (ev.gain >= 0 ? "  (+" : "  (") + ev.gain.toFixed(1) + ")"));
           msg.className = "mg-msg cr-msg " + (good ? "ok" : bad ? "bad" : "");
-          const was = S.bart; S.bart = S.E >= R.goal; floor.bartDance = S.bart;
+          const was = S.bart; S.bart = reached(S.E, R.goal); floor.bartDance = S.bart;
           if (S.bart && !was) { host.timeout(() => { floor.pop("BARTENDERS DANCING!", "#ffd23f", 236, 26); host.sfx("cheer"); floor.emote("star", 4); }, 700); }
           if (!S.bart && was) say("The bartenders put the bottle down. Back to work.");
           refresh();

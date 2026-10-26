@@ -112,7 +112,7 @@ RP.room({
     { id: "a3_p_edge", name: "platform edge", r: [0, 166, 640, 34], z: 4, floor: true, walk: [320, 210, "front"],
       look: "The platform edge, a yellow line and a lot of ambition. Don't stand behind it. Don't stand ON it. Stand wherever the train isn't.",
       use: S => runTrain(S), talk: "Hello, track. You're what's between me and bed." },
-    { id: "a3_p_sleeper", name: "sleeping guy", r: [250, 146, 60, 80], z: 30, walk: [330, 220, "left"], look: "A man asleep on the bench with his coat pulled over his head. The universal posture of the J train at 4 AM.", talk: "Hey. ...He's out. Respect.", pickup: "Absolutely not." },
+    { id: "a3_sleeper", name: "sleeping guy", z: 80, walk: [330, 220, "left"], look: "A man asleep on the bench with his coat pulled over his head. The universal posture of the J train at 4 AM.", talk: "Hey. ...He's out. Respect.", pickup: "Absolutely not." },
     { id: "a3_p_bench", name: "bench", r: [232, 186, 106, 44], z: 20, walk: [260, 236, "back"], look: "A wooden bench with a lot of carved initials and one very fresh 'JAY + KELLY 4EVR.' The 'EVR' is almost legible.", use: "I'm not sitting next to him. He's got the whole bench." },
     { id: "a3_p_vend", name: "vending machine", r: [540, 144, 50, 80], z: 25, walk: [564, 236, "back"], look: "A vending machine with a sign: OUT OF ORDER. In front of it, a half-eaten pretzel nobody's going to claim.", use: "Out of order. Which saves my rent money from a bag of chips at four in the morning.", pickup: "It's bolted down. By the same people who bolted down the sign." },
     { id: "a3_p_kiosk", name: "MetroCard machine", r: [82, 148, 54, 80], z: 25, walk: [112, 236, "back"], look: "A MetroCard machine: OUT OF SERVICE. TRY NEXT MACHINE. There's no next machine. There never is.", use: "It's out of service. It takes my hope instead. No, it doesn't even take that.", push: "Pushing it won't make it work. Yelling won't either. I try both." },
@@ -124,7 +124,7 @@ RP.room({
   ],
   combos: [
     ["a3_bag", "a3_p_edge", "I take a breath. The bag's heavier than it was at midnight. So am I."],
-    ["a3_chips", "a3_p_sleeper", "I leave the chips on the bench next to him. He can have them. It's the smallest thing I can do for the J-train brotherhood."]
+    ["a3_chips", "a3_sleeper", "I leave the chips on the bench next to him. He can have them. It's the smallest thing I can do for the J-train brotherhood."]
   ],
   self: { look: "Tired, jacket askew, a bag of records and a phone at three percent. The classic last-train look.", talk: "Hello, subway. It's me. The one who always comes at four." }
 });

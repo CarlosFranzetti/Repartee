@@ -92,6 +92,7 @@ function drawFloor(c, S) {
   art.roadCase(c, 130, 156, 30, 22, { label: "MON", wheels: true }); art.roadCase(c, 780, 156, 30, 22, { label: "MON", wheels: true });
 }
 function draw(c, S, t) {
+  t = Math.max(0, t || 0); /* the first frame can arrive with t < 0 */
   const sh = show(S);
   if (sh) {
     const fr = makeLedFrames(S), reduced = RP.fx && RP.fx.reduced, idx = reduced ? 0 : Math.floor(t / 520) % fr.length;
@@ -281,8 +282,8 @@ RP.room({
     { id: "a5_mcrowd", name: "the crowd", r: [0, 214, 960, 42], z: 6, vis: S => show(S), walk: [480, 180, "back"], look: "A sea of people: heads, phones, raised hands, one cardboard sign that says +30. Thousands of them. Every one of them came to listen.", talk: "\"Hello, Brooklyn!\" is not for me. I'm in the sound; I'm not that person. I just raise a hand. They roar. That's enough." },
     { id: "a5_mfield", name: "the field", r: [0, 214, 960, 42], z: 6, vis: S => !show(S), walk: [480, 180, "back"], look: "An empty field, a long pavement, a line of barricades and a few cones. It's weird to see a place be this empty when it's about to be this full." },
     { id: "a5_mwater", name: "the harbor", r: [0, 60, 960, 66], z: 12, walk: [480, 180, "back"], look: S => show(S) ? "The harbor and the skyline behind the rig, from the stage. Ferries drift by with their lights on, like they're checking in." : "The harbor over the lip of the stage: a bridge, a ferry and the skyline. Someone's clearly picked the best seat in town for the sound guy.", talk: "I give the harbor a nod. A ferry honks. Is that a review?" },
-    { id: "a5_mtech1", name: "stagehand", talk: "Stagehand: \"Don't step on tape. The tape knows.\"", look: "A stagehand with a headset and a roll of gaffer tape, constantly adding more. If there's a heaven, it's made of gaffer.", give: "Stagehand: \"Not now. I'm busy being invisible.\"", pickup: "No.", clickable: false },
-    { id: "a5_mtech2", name: "stagehand", talk: "Stagehand: \"Mo's yelling. Don't listen to Mo. Listen to the sound.\"", look: "A stagehand in a black cap, checking a line. They're the ones who make the magic and never get thanked.", give: "No.", pickup: "No.", clickable: false },
+    { id: "a5_tech1", name: "stagehand", talk: S => RP.lines(["@a5_tech1 Don't step on the tape. The tape knows.", "What does the tape know?", "@a5_tech1 Where everything goes. Including you."]), look: "A stagehand with a headset and a roll of gaffer tape, constantly adding more. If there's a heaven, it's made of gaffer.", give: "\"Not now. I'm busy being invisible.\"", pickup: "No." },
+    { id: "a5_tech2", name: "stagehand", talk: S => RP.lines(["@a5_tech2 Mo's yelling. Don't listen to Mo. Listen to the sound.", "Is the sound yelling?", "@a5_tech2 Not yet. That's your job."]), look: "A stagehand in a black cap, checking a line. They're the ones who make the magic and never get thanked.", give: "No.", pickup: "No." },
     { id: "lou", name: "Lou", talk: S => RP.lines(["@lou Don't look at me. Look at the people. They're looking at you.", "I'm looking at you, Lou.", "@lou Don't."]), look: "Lou, in the good navy cardigan, on the biggest stage in Brooklyn, with the expression of a man who is going to complain about this for twenty years, with joy.", give: "He's holding the sleeve. Don't mess with that.", pickup: "Absolutely not." },
     { id: "kosmo", name: "Kosmo Delacroix", talk: S => RP.say("Say it again.", "kosmo"), look: "Kosmo Delacroix, coat and shades, walking onto the stage like it's a hotel lobby. The only man who could make me feel eight and eighty.", give: "I give nothing to Kosmo. He's in the middle of my favorite moment.", pickup: "I'm not carrying a legend." }
   ],

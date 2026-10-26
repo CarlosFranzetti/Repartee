@@ -241,7 +241,7 @@ function drawPhone(c, W, H, G, shown, ui, name) {
   }
   // notification banner
   if (ui.note) {
-    const t = ui.noteT, y = sy + (compact ? H - 24 : 10) + (t < 0.25 ? -(1 - t / 0.25) * 16 : 0);
+    const t = ui.noteT, y = sy + 10 + (t < 0.25 ? -(1 - t / 0.25) * 16 : 0);
     U.R(c, sx + 2, y, sw - 4, 15, "#0a0716"); U.R(c, sx + 2, y, sw - 4, 1, ui.noteCol || "#ff3fa4"); U.R(c, sx + 2, y + 14, sw - 4, 1, ui.noteCol || "#ff3fa4");
     const txts = ui.note.split("|");
     txt(c, txts[0].slice(0, Math.floor((sw - 8) / 4)), sx + 4, y + 3, "#ffffff", 1, 1); if (txts[1]) txt(c, txts[1].slice(0, Math.floor((sw - 8) / 4)), sx + 4, y + 9, ui.noteCol || "#ff8fcf", 1, 1);

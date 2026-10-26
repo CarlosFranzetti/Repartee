@@ -47,8 +47,10 @@ const SC = {
     want: u => 3.4 + 1.1 * u, pot: u => 80 + 8 * u,
     taste: { pop: 1, house: .95, disco: .8, techno: .6, acid: .6, electro: .5, hiphop: .5, breaks: .4, funk: .5, ambient: .2 }, over: { italo: .85 },
     goal: { final: 66, avg: 52 },
-    brief: { story: "Your slot starts at 11:00 PM. {L} is still on the decks and nobody told him. The promoter is sweating, the next act's crew is circling, and the crowd is getting restless.", goal: "Get on, play a tight set, and be out by midnight.",
-      tips: ["{L} runs 20 minutes over. You can't MIX in until he's done (or you pull his plug, which has a price).", "Handle the promoter: his patience is the clock you can't see.", "Your set will be short. Pick your best records and hand over on time."] }
+    brief: { story: "Your slot starts at {START}. {L} is still on the decks and nobody told him. The promoter is sweating, the next act's crew is circling, and the crowd is getting restless.", goal: "Get on, play a tight set, and be out by {END}.",
+      tips: ["{L} runs {O} minutes over. You can't MIX IN until he's done (or you pull his plug, which has a price).", "Handle the promoter: his patience is the clock you can't see.", "Every minute he takes comes out of yours. Pick your best records and hand over on time."] },
+    head: { title: "THE OVERRUN", story: "{START}. Your headline slot has already started. {L} is on the fourth encore of a set with no encores, and every clock backstage is his.", goal: "Get {L} off, get on, and hold the field on his decks until your rig goes in at {END}.",
+      tips: ["{L} has {O} more minutes in him. You can't MIX IN until he's done (or you pull his plug, which has a price).", "Keep {M} on side: that patience is the clock you can't see.", "Every minute he takes comes out of yours. Cue your opener now, and mix out clean before the changeover."] }
   },
   closing: {
     title: "THE CLOSING", theme: "loft", venue: "MESEROLE", start: 3 * 60 + 20, minutes: 40, floor0: 90, pat0: 75, meter: "STAFF PATIENCE",
@@ -65,6 +67,7 @@ const SC = {
    fx: { floor, pat, mood: [delta, minutes], time, stale, plug, overEnd, ready } or a function (G, R) => { fx..., say } */
 function eventsFor(key, R) {
   const L = R.legendShort, W = R.wrongName, N = R.myName;
+  const O = R.overrun, O1 = Math.max(1, Math.round(O * 0.3)), O2 = Math.max(1, Math.round(O * 0.1)), HD = R.head, MN = R.manager.toUpperCase(), MI = R.managerId;
   const E = {
     opener: [
       { at: 3, who: "dante", name: "DANTE", role: "PROMOTER", text: "\"It's 10:05 and the floor is EMPTY. Do something.\"", def: 0, choices: [
@@ -108,25 +111,25 @@ function eventsFor(key, R) {
         { t: "Thanks, " + L + ".", fx: G => (G.floor >= 65 ? { win: 12, floor: 3, say: "He nods. For him, that's a standing ovation.", r: 1 } : { win: -2, say: "He glances at the floor. And says nothing.", r: 0.3 }) }] }
     ],
     overrun: [
-      { at: 2, who: "dante", name: "THE PROMOTER", role: "SWEATING", text: "\"" + L + "'s agent says twenty more minutes. I can trim your set, or I can pull his plug. Your call.\"", def: 0, choices: [
-        { t: "Trim my set. I'll make it count.", fx: { pat: 12 }, say: "He exhales. \"Pro. I'll remember this.\"", r: 1 },
+      { at: Math.max(0.5, Math.min(2, O * 0.15)), pre: true, who: HD ? MI : "dante", name: HD ? MN : "THE PROMOTER", role: HD ? "STAGE MANAGER" : "SWEATING", text: "\"" + (HD ? "His tour manager" : L + "'s agent") + " says " + O + " more minutes. I can trim your " + (HD ? "opening" : "set") + ", or I can pull his plug. Your call.\"", def: 0, choices: [
+        { t: "Trim my set. I'll make it count.", fx: { pat: 12 }, say: "A long exhale. \"Pro. I'll remember this.\"", r: 1 },
         { t: "Pull his plug.", fx: { floor: -14, pat: -14, plug: true }, say: "Silence. Boos. You can take over now. You may regret it.", r: 0.25 },
-        { t: "Let me talk to " + L + ".", fx: { pat: 4, overEnd: -6 }, say: L + " grudgingly agrees to wrap up six minutes early.", r: 0.85 }] },
-      { at: 8, who: "sk_fan", name: "THE CROWD", role: "RESTLESS", text: "Half the floor is staring at the booth. Some are drifting to the bar.", def: 2, choices: [
+        { t: "Let me talk to " + L + ".", fx: { pat: 4, overEnd: -O1 }, say: L + " grudgingly agrees to wrap up " + O1 + (O1 > 1 ? " minutes" : " minute") + " early.", r: 0.85 }] },
+      { at: O * 0.4, pre: true, who: "sk_fan", name: "THE CROWD", role: "RESTLESS", text: "Half the floor is staring at the booth. Some are drifting to the bar.", def: 2, choices: [
         { t: "Cue your opener. Stand ready.", fx: { ready: true, floor: 1 }, say: "Headphones on, record cued. They can see you're ready.", r: 1 },
-        { t: "Hype them up on the mic.", fx: { floor: 4, pat: -4 }, say: "The promoter winces. The crowd cheers.", r: 0.5 },
+        { t: "Hype them up on the mic.", fx: { floor: 4, pat: -4 }, say: (HD ? MN.charAt(0) + MN.slice(1).toLowerCase() : "The promoter") + " winces. The crowd cheers.", r: 0.5 },
         { t: "Check your phone.", fx: { floor: -2 }, say: "Four texts from Marcus. All say \"plus three\".", r: 0.1 }] },
-      { at: 14, who: "sk_sec", name: "TOUR MANAGER", role: L.toUpperCase() + "'S CREW", text: "\"" + L + " is doing a few more. Don't touch the decks!\"", def: 0, choices: [
+      { at: O * 0.7, pre: true, who: "sk_sec", name: "TOUR MANAGER", role: L.toUpperCase() + "'S CREW", text: "\"" + L + " is doing a few more. Don't touch the decks!\"", def: 0, choices: [
         { t: "Fine. Prep a tight set.", fx: { pat: 4, ready: true }, say: "You sequence your five best records. Mentally.", r: 1 },
-        { t: "Slip in at the next break.", fx: { overEnd: -2, pat: -2 }, say: "You're ready to pounce. Two minutes sooner.", r: 0.7 },
+        { t: "Slip in at the next break.", fx: { overEnd: -O2, pat: -2 }, say: "You're ready to pounce. " + O2 + (O2 > 1 ? " minutes" : " minute") + " sooner.", r: 0.7 },
         { t: "Mix over him. Just start.", fx: { floor: -10, pat: -8, plug: true }, say: "Two kicks, two keys, one train wreck.", r: 0 }] },
-      { at: 27, who: "dante", name: "THE PROMOTER", role: "WATCHING THE CLOCK", text: "\"Midnight sharp. The headliner's team is waiting.\"", def: 0, choices: [
-        { t: "Understood. I'll end on time.", fx: { pat: 4 }, say: "He pats the booth like it's a horse.", r: 1 },
+      { at: O + (R.M - O) * 0.175, who: HD ? MI : "dante", name: HD ? MN : "THE PROMOTER", role: HD ? "CALLING THE SHOW" : "WATCHING THE CLOCK", text: HD ? "\"Your rig goes in at " + fmtClock(R.start + R.M) + ". Hold them on his decks till then.\"" : "\"" + (fmtClock(R.start + R.M) === "12:00 AM" ? "Midnight" : fmtClock(R.start + R.M)) + " sharp. The headliner's team is waiting.\"", def: 0, choices: [
+        { t: "Understood. I'll end on time.", fx: { pat: 4 }, say: HD ? "A nod, and a word into the headset." : "He pats the booth like it's a horse.", r: 1 },
         { t: "Can I get five extra minutes?", fx: (G) => (G.pat >= 55 ? { pat: -6, time: 5, say: "\"...Five. Not six.\" You're good: you earned it.", r: 0.8 } : { pat: -8, say: "\"Absolutely not.\" You haven't earned any favors tonight.", r: 0.1 }) }] },
-      { at: 41, who: "sk_snd", name: "SOUND GUY", role: "FOH", text: "\"Ten minutes! Cue your closer!\"", def: 0, choices: [
-        { t: "Pick the last record now.", fx: { ready: true, pat: 3 }, say: "Cued. The last 10 minutes are going to be clean.", r: 1 },
+      { at: G => Math.max(O + 4, G.mEnd - 10), who: "sk_snd", name: "SOUND GUY", role: "FOH", text: G => "\"" + Math.max(1, Math.round(G.mEnd - G.t)) + " minutes" + (HD ? " to the changeover! Cue something big.\"" : "! Cue your closer!\""), def: 0, choices: [
+        { t: "Pick the last record now.", fx: { ready: true, pat: 3 }, say: "Cued. The last few minutes are going to be clean.", r: 1 },
         { t: "Keep going. No worries.", fx: { pat: -2 }, say: "He gives you a look that says \"worries\".", r: 0.3 }] },
-      { at: 52, who: "sk_sec", name: "HEADLINER'S CREW", role: "SIDE OF THE STAGE", text: "The flight cases are rolling in. They're waiting for you to finish.", def: 0, choices: [
+      { at: G => Math.max(O + 6, G.mEnd - 6), who: "sk_sec", name: HD ? "STAGE CREW" : "HEADLINER'S CREW", role: "SIDE OF THE STAGE", text: HD ? "Your rig is rolling up the ramp. They need the booth for the changeover." : "The flight cases are rolling in. They're waiting for you to finish.", def: 0, choices: [
         { t: "Wrap it with a clean mix-out.", fx: { pat: 6 }, say: "A thumbs-up from the crew. Rare.", r: 1 },
         { t: "Play one more.", fx: { pat: -10 }, say: "The crew stops. Folds arms. Stares.", r: 0 }] }
     ],
@@ -188,12 +191,14 @@ function resolveST(p) {
   const D = SC[key];
   const diff = clamp(Math.round(p.difficulty || 2), 1, 5);
   const M = clamp(Math.round(p.minutes || D.minutes), 20, 120);
-  const overrun = key === "overrun" ? Math.min(Math.round(D.overrun * M / 60), Math.round(M * 0.5)) : 0;
+  /* overrun: minutes the other act eats out of the slot (default scales with the slot); you always keep at least half */
+  const overrun = key === "overrun" ? clamp(Math.round(p.overrun != null && isFinite(+p.overrun) ? +p.overrun : D.overrun * M / 60), 0, Math.floor(M * 0.5)) : 0;
+  const st = /^\d{1,2}:\d{2}$/.test(String(p.start)) ? String(p.start).split(":").reduce((h, m) => h * 60 + +m, 0) : typeof p.start === "number" && isFinite(p.start) ? p.start : D.start;
   const mPlay = M - (key === "overrun" ? overrun : (key === "follow-legend" ? D.handover : 0));
   const legend = String(p.followName || (key === "overrun" ? "Axl Vanta" : "Kosmo Delacroix"));
   const legendShort = legend.split(/\s+/)[0];
   let ids = Array.isArray(p.records) ? p.records.filter((x, i, a) => x && a.indexOf(x) === i) : [];
-  const R = { key, D, diff, M, overrun, mPlay, legend, legendShort, legendName: legend, rnd, seed: Math.floor(rnd() * 1e6), venue: p.venue ? String(p.venue) : null, theme: p.theme || D.theme, ids0: ids.slice() };
+  const R = { key, D, diff, M, overrun, mPlay, start: ((Math.round(st) % 1440) + 1440) % 1440, head: key === "overrun" && !!p.headline, meter: key === "overrun" && p.headline ? (p.manager ? String(p.manager).toUpperCase() : "STAGE MANAGER") : D.meter, manager: String(p.manager || "the stage manager"), managerId: String(p.managerId || "dante"), legend, legendShort, legendName: legend, rnd, seed: Math.floor(rnd() * 1e6), venue: p.venue ? String(p.venue) : null, theme: p.theme || D.theme, ids0: ids.slice() };
   const myName = (p.myName || (RP.state && RP.state.name) || "DJ").toString();
   R.myName = myName.charAt(0).toUpperCase() + myName.slice(1).toLowerCase();
   R.wrongName = WRONG[(((RP.state && RP.state.act) || 3) + myName.length) % WRONG.length];
@@ -416,7 +421,7 @@ RP.mg.register("setTime", {
         secPerMin = (1.9 - 0.1 * (R.diff - 1)) / (+params.speed > 0 ? +params.speed : 1);
         const D = R.D;
         G = { t: 0, phase: "brief", floor: D.floor0, pat: D.pat0, win: 15, stale: 0, cur: null, next: null, hand: R.ids.map(id => RP.rec(id)), played: [], mixes: [], evs: eventsFor(R.key, R), evi: 0, curEv: null, evLog: [], dead: false, deadMin: 0, deadStart: 0,
-          holding: false, hold: 0, tension: 0, cd: 0, mood: 0, moodUntil: -1, flags: {}, mEnd: R.M, h0: D.handover, overEnd: D.handover, handed: false, ended: false, fade: null, sumF: 0, sumT: 0, minF: 100, lastFit: 0.5, sumFit: 0, fitT: 0, failed: null, lastEvEnd: -9, nextPrompt: 0, hint: "" };
+          holding: false, hold: 0, tension: 0, cd: 0, mood: 0, moodUntil: -1, flags: {}, mEnd: R.M, h0: R.key === "overrun" ? R.overrun : D.handover, handed: false, ended: false, fade: null, sumF: 0, sumT: 0, minF: 100, lastFit: 0.5, sumFit: 0, fitT: 0, failed: null, lastEvEnd: -9, nextPrompt: 0, hint: "" };
         // record lengths so that a good plan roughly fills the playable time
         const base = clamp(R.mPlay / Math.max(2, Math.min(D.ideal, R.ids.length)) + 0.9, 5.5, 14);
         G.lens = {}; R.ids.forEach(id => { G.lens[id] = Math.round(base * (0.88 + 0.24 * ((hashStr(id) % 100) / 100)) * 10) / 10; });
@@ -448,11 +453,12 @@ RP.mg.register("setTime", {
       window.addEventListener("resize", placeBrief); host.cleanup(() => window.removeEventListener("resize", placeBrief));
       function showBrief() {
         placeBrief();
-        const B = R.D.brief, rep = s => s.replace(/\{L\}/g, R.legendShort);
+        const B = R.head ? R.D.head : R.D.brief, endC = fmtClock(R.start + R.M);
+        const rep = s => s.replace(/\{L\}/g, R.legendShort).replace(/\{O\}/g, R.overrun).replace(/\{M\}/g, R.manager).replace(/\{START\}/g, fmtClock(R.start)).replace(/\{END\}/g, endC === "12:00 AM" ? "midnight" : endC);
         briefBox.hidden = false; briefBox.innerHTML = "";
         const bx = el("div", { cls: "st-brief" }, briefBox);
         el("h3", { text: R.D.title }, bx);
-        el("div", { cls: "mg-sub", text: fmtClock(R.D.start) + " – " + fmtClock(R.D.start + R.M) + " · " + R.M + " game minutes" }, bx);
+        el("div", { cls: "mg-sub", text: fmtClock(R.start) + " – " + fmtClock(R.start + R.M) + " · " + R.M + " game minutes" + (R.overrun ? " (" + R.legendShort + " has the first " + R.overrun + ")" : "") }, bx);
         el("p", { text: rep(B.story) }, bx);
         if (R.key === "follow-legend") el("p", { html: "<b style='color:#c8b0ff;font-weight:400'>" + U.esc(R.legendShort) + ":</b> \"Good luck, uh... " + U.esc(R.wrongName) + ". Don't wreck the vibe.\"" }, bx);
         el("div", { cls: "goal", text: "GOAL: " + rep(B.goal) }, bx);
@@ -468,7 +474,7 @@ RP.mg.register("setTime", {
       function start() {
         if (G.phase !== "brief") return;
         host.sfx("select");
-        G.phase = R.D.handover > 0 ? "wait" : "play";
+        G.phase = R.key === "overrun" || R.D.handover > 0 ? "wait" : "play";
         briefBox.hidden = true; showIdle();
         if (G.phase === "wait") { msg.textContent = (R.key === "overrun" ? R.legend + " is still on the decks. Prep your first record." : R.legendShort + " is finishing up. Cue your first record.") + " Events pop up — choose fast."; }
         else msg.textContent = "The clock is running. Cue a record and MIX IN inside the green window.";
@@ -588,13 +594,13 @@ RP.mg.register("setTime", {
 
       /* ---------- events ---------- */
       function openEvent(ev) {
-        G.curEv = { ev, left: evTimeout(), done: false };
+        const ce = G.curEv = { ev, left: evTimeout(), done: false, text: typeof ev.text === "function" ? ev.text(G) : ev.text };
         clearTimeout(outTO);
         evBox.className = "mg-panel st-ev st-evbox"; evBox.innerHTML = "";
         const pc = el("canvas", { width: 32, height: 32 }, evBox);
         try { pc.getContext("2d").drawImage(RP.chars.portrait(ev.who, 32), 0, 0); } catch (e) { /* ignore */ }
         el("div", { cls: "who", html: "<b>" + U.esc(ev.name) + "</b> · " + U.esc(ev.role || "") }, evBox);
-        el("div", { cls: "tx", text: ev.text }, evBox);
+        el("div", { cls: "tx", text: ce.text }, evBox);
         const ch = el("div", { cls: "ch" }, evBox);
         ev.choices.forEach((c, i) => {
           const b = el("button", { cls: "btn", type: "button" }, ch);
@@ -604,19 +610,19 @@ RP.mg.register("setTime", {
         host.sfx("ping");
         msg.textContent = ""; say.textContent = "";
       }
-      function choose(i) {
+      function choose(i, timedOut) {
         const ce = G.curEv; if (!ce || ce.done) return; ce.done = true;
         const ev = ce.ev, c = ev.choices[i]; if (!c) return;
         let fx = c.fx, sayT = c.say, r = c.r == null ? 0.5 : c.r;
         if (typeof fx === "function") { const o = fx(G, R) || {}; fx = o; if (o.say) sayT = o.say; if (o.r != null) r = o.r; }
         applyFx(fx);
-        G.evLog.push({ id: ev.at, r });
+        G.evLog.push({ id: G.evi, r: timedOut ? r * 0.5 : r, late: !!timedOut }); // nobody answered: the default happens, at half credit
         G.curEv = null; G.lastEvEnd = G.t;
         evBox.className = "mg-panel st-ev st-evbox"; evBox.innerHTML = "";
         const pc = el("canvas", { width: 32, height: 32 }, evBox);
         try { pc.getContext("2d").drawImage(RP.chars.portrait(ev.who, 32), 0, 0); } catch (e) { /* ignore */ }
         el("div", { cls: "who", html: "<b>" + U.esc(ev.name) + "</b> · " + U.esc(ev.role || "") }, evBox);
-        el("div", { cls: "tx", text: ev.text }, evBox);
+        el("div", { cls: "tx", text: ce.text }, evBox);
         el("div", { cls: "out " + (r >= 0.7 ? "" : r >= 0.4 ? "mid" : "bad"), text: (r >= 0.7 ? "✔ " : r >= 0.4 ? "• " : "✘ ") + (sayT || "") }, evBox);
         host.sfx(r >= 0.7 ? "success" : r >= 0.4 ? "click" : "error");
         refresh(true);
@@ -642,8 +648,10 @@ RP.mg.register("setTime", {
         // moods fade
         if (G.t >= G.moodUntil) G.mood = 0;
         // events
-        if (!G.curEv && G.evi < G.evs.length && G.t >= G.evs[G.evi].at && G.t - G.lastEvEnd > 2.5 && G.t < G.mEnd - 1.5) { openEvent(G.evs[G.evi++]); }
-        if (G.curEv) { G.curEv.left -= dt; if (evTimerEl) evTimerEl.style.width = clamp(G.curEv.left / evTimeout(), 0, 1) * 100 + "%"; if (G.curEv.left <= 0) choose(G.curEv.ev.def == null ? 0 : G.curEv.ev.def); }
+        const evAt = ev => typeof ev.at === "function" ? ev.at(G) : ev.at;
+        while (!G.curEv && G.evi < G.evs.length && G.evs[G.evi].pre && (G.handed || G.t >= G.h0 - 0.5)) G.evi++; // too late for a "he's still on" moment
+        if (!G.curEv && G.evi < G.evs.length && G.t >= evAt(G.evs[G.evi]) && G.t - G.lastEvEnd > 2.5 && G.t < G.mEnd - 1.5) { openEvent(G.evs[G.evi++]); }
+        if (G.curEv) { G.curEv.left -= dt; if (evTimerEl) evTimerEl.style.width = clamp(G.curEv.left / evTimeout(), 0, 1) * 100 + "%"; if (G.curEv.left <= 0) choose(G.curEv.ev.def == null ? 0 : G.curEv.ev.def, true); }
         if (G.phase === "wait") {
           c.pos += dm;
           // the crowd cools while someone else hogs the decks
@@ -704,7 +712,8 @@ RP.mg.register("setTime", {
         // component scores
         const finalF = G.floor, avgF = G.sumT > 0 ? G.sumF / G.sumT : G.floor;
         const fs = clamp(0.7 * (finalF / D.goal.final) + 0.3 * (avgF / D.goal.avg), 0, 1);
-        const qs = G.mixes.length ? G.mixes.reduce((a, m) => a + m.q, 0) / G.mixes.length : 0.25;
+        const none = !G.played.length, floorLow = finalF < D.goal.final * 0.7;
+        const qs = G.mixes.length ? G.mixes.reduce((a, m) => a + m.q, 0) / G.mixes.length : none ? 0 : 0.25;
         const ms = clamp(qs - 0.08 * G.deadMin, 0, 1);
         const es = G.evLog.length ? G.evLog.reduce((a, e) => a + e.r, 0) / G.evLog.length : 0.55;
         let ts;
@@ -718,15 +727,16 @@ RP.mg.register("setTime", {
           const closerish = lr && (hasV(lr, "closer") || hasV(lr, "sunrise") || lr.energy <= 3);
           ts = clamp(ts + (closerish ? 0.15 : -0.15) + (G.flags.promised && lr && hasV(lr, "closer") ? 0.1 : G.flags.promised ? -0.1 : 0), 0, 1);
         }
-        if (R.key === "overrun" && !G.handed) ts = 0;
+        if (none || (R.key === "overrun" && !G.handed)) ts = 0;
         const pm = clamp(G.pat / 100, 0, 1), pw = R.key === "follow-legend" ? clamp(G.pat / 60, 0, 1) : pm;
         let score = Math.round(100 * (0.35 * fs + 0.2 * ms + 0.2 * es + 0.15 * ts + 0.1 * pw));
-        if (G.failed) score = Math.min(score, 45);
-        score = clamp(score, 0, 100);
-        const ok = !G.failed && score >= 58 && finalF >= D.goal.final * 0.7;
+        /* a set that fails can't show a passing number: cap it, and say why on the card */
+        const why = G.failed ? "fail" : none ? "no-records" : floorLow ? "floor" : "";
+        score = clamp(Math.min(score, { fail: 45, "no-records": 15, floor: 55 }[why] || 100), 0, 100);
+        const ok = !why && score >= 58;
         const count = lbl => G.mixes.filter(m => m.label === lbl).length;
-        const res = { ok, score, scenario: R.key, floor: Math.round(finalF), avgFloor: Math.round(avgF), mixes: { clean: count("clean"), smooth: count("smooth"), sloppy: count("sloppy"), wreck: count("wreck") }, deadAir: Math.round(G.deadMin * 10) / 10, events: G.evLog.length, meter: Math.round(G.pat), reason: G.failed || (ok ? "" : "score"), minutes: R.M };
-        host.timeout(() => showEnd(res, { fs, ms, es, ts, pw, kind }), kind === "fail" ? 500 : 1100);
+        const res = { ok, score, scenario: R.key, floor: Math.round(finalF), avgFloor: Math.round(avgF), mixes: { clean: count("clean"), smooth: count("smooth"), sloppy: count("sloppy"), wreck: count("wreck") }, deadAir: Math.round(G.deadMin * 10) / 10, events: G.evLog.length, meter: Math.round(G.pat), reason: G.failed || why || (ok ? "" : "score"), minutes: R.M };
+        host.timeout(() => showEnd(res, { fs, ms, es, ts, pw, kind, why }), kind === "fail" ? 500 : 1100);
         const lab = G.failed ? "SET OVER" : kind === "fade" ? "GRACEFUL EXIT" : kind === "early" ? "EARLY EXIT" : R.key === "closing" ? "LIGHTS ON" : "HANDOVER";
         floor.pop(lab, G.failed ? "#ff6a6a" : "#9be15d", 160, 72); host.sfx(G.failed ? "fail" : "cheer");
         refresh(true);
@@ -735,17 +745,20 @@ RP.mg.register("setTime", {
         if (finished) return;
         stage.hidden = true;
         const D = R.D, ok = res.ok;
-        const parts = [{ label: "THE FLOOR", v: p.fs, color: "#ff3fa4" }, { label: "MIXING", v: p.ms, color: "#62e6ff" }, { label: "EVENTS", v: p.es, color: "#ffc44d" }, { label: "TIMING", v: p.ts, color: "#9be15d" }, { label: D.meter, v: p.pw, color: "#c8b0ff" }];
+        const parts = [{ label: "THE FLOOR", v: p.fs, color: "#ff3fa4" }, { label: "MIXING", v: p.ms, color: "#62e6ff" }, { label: "EVENTS", v: p.es, color: "#ffc44d" }, { label: "TIMING", v: p.ts, color: "#9be15d" }, { label: R.meter, v: p.pw, color: "#c8b0ff" }];
         const lines = [], dim = [];
         if (G.failed) lines.push(G.failed);
-        else lines.push(ok ? ({ opener: "You handed over a warm floor: " + res.floor + "% full as the next DJ stepped up.", "follow-legend": "You followed " + R.legendShort + " and held the floor at " + res.floor + "%. They were chanting your name. Well. A name.", overrun: "You got on, you played tight, and you handed over on time. The promoter nearly smiled.", closing: "The lights came up on a happy floor and a perfect last record." }[R.key]) : "The set limped home: floor " + res.floor + "%, " + res.mixes.wreck + " train wreck(s), " + res.deadAir + " min of dead air.");
-        const worst = G.evLog.slice().sort((a, b) => a.r - b.r)[0];
+        else if (p.why === "no-records") lines.push({ opener: "You never played a record. The house tape did the whole hour, and nobody's paying the tape.", "follow-legend": "You never played a record. " + R.legendShort + "'s last one ran out on its own.", overrun: "You never got a record on. " + R.legendShort + " finally stepped back, and the decks just sat there.", closing: "You never played a record." }[R.key]);
+        else if (p.why === "floor") lines.push("The floor finished at " + res.floor + "%. You needed at least " + Math.ceil(D.goal.final * 0.7) + "% still dancing at the end, and the last record is what they remember.");
+        else lines.push(ok ? ({ opener: "You handed over a warm floor: " + res.floor + "% full as the next DJ stepped up.", "follow-legend": "You followed " + R.legendShort + " and held the floor at " + res.floor + "%. They were chanting your name. Well. A name.", overrun: R.head ? "You got " + R.legendShort + " off and held the field until the changeover. " + R.manager.charAt(0).toUpperCase() + R.manager.slice(1) + " nearly smiled." : "You got on, you played tight, and you handed over on time. The promoter nearly smiled.", closing: "The lights came up on a happy floor and a perfect last record." }[R.key]) : "The set limped home: floor " + res.floor + "%, " + res.mixes.wreck + " train wreck(s), " + res.deadAir + " min of dead air.");
+        const worst = G.evLog.filter(e => !e.late).sort((a, b) => a.r - b.r)[0], late = G.evLog.filter(e => e.late).length;
         if (worst && worst.r < 0.4) dim.push("One of those moments went badly. Think about what the room needed.");
+        if (late) dim.push(late + (late > 1 ? " moments" : " moment") + " timed out and decided themselves. Answering counts.");
         if (res.deadAir > 0.5) dim.push("Dead air: " + res.deadAir + " game minutes. Cue the next record before the current one ends.");
         if (res.mixes.wreck) dim.push(res.mixes.wreck + " train wreck(s). Watch the BPM gap and the green window.");
         dim.push("Played: " + (G.played.map(id => RP.rec(id).title).join("  ›  ") || "nothing"));
         host.sfx(ok ? "success" : "fail");
-        const choice = await kit.endCard(host, endBox, { ok, score: res.score, kicker: (R.venue || D.venue) + " · " + D.title, title: ok ? ({ opener: "A WARM HANDOVER", "follow-legend": "YOU HELD THE FLOOR", overrun: "OUT ON TIME", closing: "LIGHTS ON, HEARTS FULL" }[R.key]) : (G.failed ? "SET CUT SHORT" : "A ROUGH SET"), parts, lines, dim, canAgain: !ok, againLabel: "TRY AGAIN" });
+        const choice = await kit.endCard(host, endBox, { ok, score: res.score, kicker: (R.venue || D.venue) + " · " + D.title, title: ok ? ({ opener: "A WARM HANDOVER", "follow-legend": "YOU HELD THE FLOOR", overrun: R.head ? "THE STAGE IS YOURS" : "OUT ON TIME", closing: "LIGHTS ON, HEARTS FULL" }[R.key]) : (G.failed ? "SET CUT SHORT" : { "no-records": "NOTHING PLAYED", floor: "THE FLOOR WALKED" }[p.why] || "A ROUGH SET"), parts, lines, dim, canAgain: !ok, againLabel: "TRY AGAIN" });
         if (finished) return;
         if (choice === "again") { endBox.innerHTML = ""; stage.hidden = false; floorReset(); return; }
         done(res);
@@ -756,14 +769,14 @@ RP.mg.register("setTime", {
       function refresh(force) {
         const D = R.D, c = G.cur;
         const u = clamp(G.t / R.M, 0, 1);
-        timeEl.innerHTML = fmtClock(D.start + G.t).replace(/ (AM|PM)/, "<small>$1</small>");
+        timeEl.innerHTML = fmtClock(R.start + G.t).replace(/ (AM|PM)/, "<small>$1</small>");
         clockSub.textContent = G.phase === "brief" ? "ready" : G.phase === "end" ? "done" : (G.mEnd - G.t > 0 ? Math.ceil(G.mEnd - G.t) + " min left" : "time");
         slotFill.style.width = (clamp(G.t / G.mEnd, 0, 1) * 100) + "%";
         if (R.key === "overrun" || R.key === "follow-legend") { slotGhost.style.display = ""; slotGhost.style.left = "0"; slotGhost.style.width = (clamp((G.h0) / G.mEnd, 0, 1) * 100) + "%"; slotStart.style.display = "none"; } else { slotGhost.style.display = "none"; slotStart.style.display = "none"; }
-        slotL.innerHTML = "<span>" + fmtClock(D.start) + "</span><span>" + (R.key === "closing" ? "LIGHTS ON " : "HANDOVER ") + fmtClock(D.start + G.mEnd) + "</span>";
+        slotL.innerHTML = "<span>" + fmtClock(R.start) + "</span><span>" + (R.key === "closing" ? "LIGHTS ON " : R.head ? "CHANGEOVER " : "HANDOVER ") + fmtClock(R.start + G.mEnd) + "</span>";
         g1a.innerHTML = "THE FLOOR <b>" + Math.round(G.floor) + "%</b>"; g1b.textContent = "GOAL " + D.goal.final + "%";
         bar1f.style.width = clamp(G.floor, 0, 100) + "%"; bar1g.style.left = D.goal.final + "%"; bar1.classList.toggle("low", G.floor < 25);
-        g2a.innerHTML = D.meter + " <b>" + Math.round(G.pat) + "</b>"; g2b.textContent = R.key === "follow-legend" ? "60+ wins them" : (G.pat < 25 ? "DANGER" : "");
+        g2a.innerHTML = U.esc(R.meter) + " <b>" + Math.round(G.pat) + "</b>"; g2b.textContent = R.key === "follow-legend" ? "60+ wins them" : (G.pat < 25 ? "DANGER" : "");
         bar2f.style.width = clamp(G.pat, 0, 100) + "%"; bar2.classList.toggle("low", G.pat < 25 && R.key !== "follow-legend");
         // transport
         const label = c ? (c.prev || c.tape ? (c.label || kit.pair(c.rec)) : kit.pair(c.rec)) : "—";

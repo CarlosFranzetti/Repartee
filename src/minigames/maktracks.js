@@ -966,7 +966,7 @@ RP.mg.register("makTracks", {
       for (let y = 0; y < 28; y += 2) { lc.fillStyle = "#0e2a20"; lc.fillRect(0, y, 160, 1); }
       const ink = "#9be15d", dim = "#4a7a3a";
       const nm = String(st.name).toUpperCase(); txt(lc, nm.length > 28 ? nm.slice(0, 27) + "." : nm, 3, 3, ink, 1);
-      txt(lc, String(st.bpm), 126, 3, "#ffd23f", 2, 1); txt(lc, "BPM", 143, 10, dim, 1);
+      txt(lc, String(st.bpm), 143 - txtW(st.bpm, 2, 1), 3, "#ffd23f", 2, 1); txt(lc, "BPM", 146, 10, dim, 1);
       const bar = st.curBar >= 0 ? st.curBar + 1 : (st.mode === "song" ? 0 : "-");
       txt(lc, (st.mode === "song" ? "SONG" : "PAT") + " BAR " + (st.mode === "song" ? (st.curBar >= 0 ? (st.curBar + 1) + "/8" : "-/8") : "-") + " " + (st.curBar >= 0 ? SECS[st.arr[st.curBar]].name : ""), 3, 11, dim, 1);
       for (let s = 0; s < STEPS; s++) { const on = s === st.curStep; R(lc, 3 + s * 8, 20, 6, 5, on ? "#ffd23f" : (s % 4 === 0 ? "#2a5a3a" : "#16382a")); if (on) R(lc, 3 + s * 8, 19, 6, 1, "#ffffff"); }

@@ -136,7 +136,7 @@ async function marcusTalk(S) {
     "That's thirty-one people. There's capacity for twelve.",
     "@marcus Okay, so we'll fit twelve. The rest of us will wait outside, like it's 1993. Lou would understand."
   ]);
-  const res = await A5.play("guestList", { capacity: 12, requests: 31, vip: ["Lou", "Ray", "Twinkie", "Jess", "Eddie Two-Times"], difficulty: 2 }, { skipLabel: "Just hand over the list" });
+  const res = await A5.play("guestList", { capacity: 12, requests: 31, vip: ["Lou", "Ray", "Twinkie", "Jess", "Eddie Two-Times"], difficulty: 2, venue: "Harbor Lights" }, { skipLabel: "Just hand over the list" });
   S.f.a5_guestDone = true;
   const admitted = res.admitted != null ? res.admitted : 12, angry = res.angry != null ? res.angry : 3;
   S.f.a5_guestAngry = angry;
