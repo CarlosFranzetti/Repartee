@@ -61,7 +61,7 @@ function update(dt, S, t) {
 }
 
 async function runTrain(S) {
-  const res = await A3.mg("lastTrain", { from: "Delancey St (Lower East Side)", to: "Bushwick (Apt 4C)", battery: 3, money: 0, carrying: "records", mode: "subway", difficulty: 2 }, {
+  const res = await A3.mg("lastTrain", { from: "Delancey St (Lower East Side)", to: "Bushwick (Apt 4C)", fromStation: "Delancey St", toStation: "Halsey St", start: 95, lineNames: { amber: "J" }, carryName: "a bag of records", intro: "1:35 AM. The MetroCard machine is out of service and the turnstile takes no cash.", battery: 3, money: 0, carrying: "records", mode: "subway", difficulty: 2 }, {
     giveUp: "Wait on the bench", onFail: async () => { await RP.lines(["I missed it by four seconds. Four seconds, and the train takes my dignity with it.", "The next one's in eleven minutes."]); },
     assist: async () => { await RP.lines(["A stranger with oranges swipes me through at the turnstile. 'Pay it forward,' he says. 'In oranges.'"]); } });
   if (res.giveUp) { await RP.say("I'm not ready. Let me sit with it. Everything hurts."); return false; }

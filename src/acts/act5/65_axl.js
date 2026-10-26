@@ -118,7 +118,7 @@ async function axlScene(S) {
     await RP.lines(["@axl ...What did you say?", "Alex. Your mother has a banner. It says \"MY ALEX.\"", "@axl ...Who told you about the banner?", "A woman who remembers everything.", "@axl Twinkie. Of course. Okay. Okay okay okay. Listen. That's between us."]);
     diff = 2; S.f.a5_axlLeverage = true;
   } else { await RP.lines(["I back out slowly.", "@axl Where do you think you're going? We're mid-argument."]); }
-  const res = await A5.play("clubDrama", { scenario: "ego", rival: "Axl Vanta", difficulty: diff }, { skipLabel: "Let him have the last word" });
+  const res = await A5.play("clubDrama", { scenario: "ego", rival: "Axl Vanta", venue: "Harbor Lights", slot: "11:45 PM", rivalSlot: "10:15 PM", difficulty: diff }, { skipLabel: "Let him have the last word" });
   S.f.a5_axlDone = true; S.f.a5_axlWon = !!(res.ok && !res.skipped);
   if (S.f.a5_axlWon) {
     RP.sfx("success");

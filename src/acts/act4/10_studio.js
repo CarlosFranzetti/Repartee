@@ -232,7 +232,7 @@ async function makeTrack(S) {
     onFail: async (r, n) => { playing = false; await RP.lines([n === 1 ? "@a4_lou That's not music. That's a car alarm with ambition." : "@a4_lou Again. Fewer cowbells. Maybe none.", "Okay. From the top."]); playing = true; }
   });
   playing = false;
-  S.f.a4_track = true; S.f.a4_trackScore = res.score || 0; S.f.a4_trackName = res.track && res.track.name ? String(res.track.name) : "";
+  S.f.a4_track = true; S.f.a4_trackScore = res.score || 0; S.f.a4_trackName = String(res.title || (res.track && (res.track.title || res.track.name)) || "");
   if (res.forced) await RP.say("It's... a track. It's got a beat. I've heard worse at weddings.", "a4_lou");
   await RP.say("Okay. It's done. Lou, I want you to hear it properly.");
   await louHearsIt(S);
@@ -302,7 +302,7 @@ async function release(S) {
   await RP.say("One week of promotion later.", "nar");
   await RP.fadeTo(0, 500);
   const before = S.followers;
-  const res = await A4.tryMg("getFollowers", { days: 7, start: before, goal: before + 3000, difficulty: 2 }, S, { max: 2, fallbackScore: 70, onFail: () => RP.say("Slow week. The algorithm woke up on the wrong side of the bed. Let's go again.") });
+  const res = await A4.tryMg("getFollowers", { days: 7, start: before, goal: before + 800, difficulty: 2 }, S, { max: 2, fallbackScore: 70, onFail: () => RP.say("Slow week. The algorithm woke up on the wrong side of the bed. Let's go again.") });
   const gained = res.gained != null ? Math.max(0, res.gained) : (800 + Math.round((res.score || 50) * 38));
   RP.followers(gained);
   S.f.a4_viral = true;
@@ -333,7 +333,7 @@ async function ingridCall(S) {
   await A4.ing("Exposure is very valuable.");
   await RP.say("Exposure doesn't pay for flights.");
   await A4.ing("Everyone says that. And then they take the exposure.");
-  const res = await A4.tryMg("promoterTalk", { promoter: "Ingrid Falk", charId: "a4_ingrid", ask: "your fee, flights, hotel and rider", currency: "$", patience: 5, difficulty: 2 }, S, {
+  const res = await A4.tryMg("promoterTalk", { promoter: "Ingrid Falk", charId: "a4_ingrid", promoterPronoun: "she", ask: "your fee, flights, hotel and rider", currency: "$", patience: 5, difficulty: 2 }, S, {
     max: 3, fallbackScore: 72,
     onFail: async (r, n) => { await A4.ing(n === 1 ? "I'm not hearing a number. I'm hearing a feeling." : "Let me give you one more try. Say the word 'fee'. F, E, E."); }
   });

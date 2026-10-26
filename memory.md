@@ -27,12 +27,10 @@ After a PR merges, restart the branch from `origin/main`. The remote copy of the
   `docs/PLAYTEST_LOG.md`, "Levels 3-5 ... fixed on 2026-10-26"). Every walkthrough, the full Level 1-5 run in one save
   and the contrast check passed on a scratch build after these.
 
-**Open work (next).** The Level 3-5 blind-take findings, listed as 3-1..3-11, 4-1..4-11, 5-1..5-10 under "Open" in
-`docs/PLAYTEST_LOG.md`. Most important: 4-1 (Level 4 cover photo: Use phone on the hole opens the phone menu; a
-blocker) and 5-1 (Level 5 stage-left stairs exit does nothing). A fix round with six agents was started and then paused
-by the owner; two half-done edits (club.Drama, get.Followers) are in `git stash` as "round 3 partial ..." (untested;
-safe to drop or use as a starting point). Also open: negative first-frame colour index in `act3/30_halcyon.js`,
-`act3/31_booth.js`, `act4/10_studio.js`; beat.Match deck subtitles truncated; re-measure room speed on an idle machine.
+**Open work (next).** All Level 3-5 findings from the blind takes, the story audit and the sweeps are fixed on the
+work branch (see `docs/PLAYTEST_LOG.md`); two small items remain open there. Every walkthrough, the full Level 1-5 run,
+smoke, perf (0 of 49 rooms over budget) and contrast pass on the rebuilt `dist/`. Next: open a PR, merge, deploy and
+check the Vercel production deploy actually starts; optionally re-run a blind take on Levels 3-5 to confirm.
 
 **How fixes are run.** Split by file ownership so no two agents edit the same file (act3, act4, act5, `src/core` +
 `src/game.js` + `src/style.css`, and mini-game files). Each agent builds scratch copies with `--out` (never the plain

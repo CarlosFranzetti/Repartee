@@ -103,7 +103,7 @@ async function boardTrain(S) {
   await RP.walkTo(240, 224, "back");
   RP.setClock("SUN 12:07 AM");
   await RP.lines(["The doors close. The train hums. It's 12:07 exactly. The Germans are a precise people.", "@a4_pa FEX nach Berlin Hauptbahnhof. Nächster Halt: Ostkreuz. Next stop: Ostkreuz. Please mind the gap and your record bag."]);
-  const res = await RP.mg.play("lastTrain", { from: "BER Airport", to: "Halle Neun, Berlin", battery: 18, money: Math.round(S.money), carrying: "records", mode: "airport", difficulty: 2 });
+  const res = await RP.mg.play("lastTrain", { from: "BER Airport", to: "Halle Neun, Berlin", fromStation: "Airport Rail", start: 7, lineNames: { rex: "FEX" }, carryName: "a bag of records", intro: "The FEX is pulling out. Pick your line.", battery: 18, money: Math.round(S.money), carrying: "records", mode: "airport", difficulty: 2 });
   const r = res || { ok: false };
   const ok = !!r.ok && !(r.minutesLate > 25);
   S.f.a4_trainDone = true; S.f.a4_late = Math.max(0, Math.round(r.minutesLate || (ok ? 0 : 40)));

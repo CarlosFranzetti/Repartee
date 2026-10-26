@@ -72,7 +72,7 @@ async function night1Set(S) {
   RP.setClock("THU 10:00 PM");
   await lines(["Ten PM. The floor's empty: five people at the bar, four of whom work here.", "Gus gives me a thumbs-up from the desk. His other hand is in the chips."]);
   S.f.a3_brandonSeen = true;
-  const res = await A3.mg("setTime", { scenario: "opener", records: A3.pool(S, 8), minutes: 60, difficulty: 1 }, {
+  const res = await A3.mg("setTime", { scenario: "opener", records: A3.pool(S, 8), minutes: 60, promoter: "Odessa", promoterId: "a3_odoff", promoterPronoun: "she", difficulty: 1 }, {
     giveUp: "Not yet", onFail: async () => { await lines(["The floor's still empty. The bartenders have started to dance on their own, out of pity.", "Go again, softer."]); },
     assist: async () => { await say("A couple walks in, sees me trying, and starts dancing out of mercy. It's a start."); } });
   if (res.giveUp) return;
@@ -271,7 +271,7 @@ A3.confrontBrandon = async function (S, withOdessa) {
   }
   await lines(["@a3_odessa ...Explain the yawn. I want to hear him explain the yawn.", "@a3_brandon That's not me. It's a lookalike. It's a very handsome lookalike. It's a plot to frame me!"]);
   AC("a3_brandon").expr = "angry";
-  const res = await A3.mg("clubDrama", { scenario: "rival", rival: "DJ Brandon Shine", difficulty: 2 }, {
+  const res = await A3.mg("clubDrama", { scenario: "rival", rival: "DJ Brandon Shine", venue: "Halcyon Room", boss: "Odessa", difficulty: 2 }, {
     giveUp: "Back off", tries: 2,
     onFail: async () => { await lines(["@a3_brandon You can't prove I meant it! It's entrapment! It's a hug!", "Try again. Stay calm. Let him dig."]); },
     assist: async () => { await say("Odessa pulls the plug on the argument: 'Brandon, the clip's got your face, your vest, and a very bad yawn.'", "kid"); } });

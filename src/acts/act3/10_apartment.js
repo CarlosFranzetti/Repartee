@@ -209,7 +209,7 @@ RP.room({
         if (!S.f.a3_opener) return "No time to edit. Records in the bag, USB in my pocket. That's the whole plan.";
         if (S.f.a3_promo) return "I've posted enough this week. The algorithm needs a break from me.";
         await RP.say("Time to be a person on the internet. A week of posting, practicing and digging. How do I split it?");
-        const res = await A3.mg("getFollowers", { days: 7, start: S.followers, goal: 900, difficulty: 2 }, {
+        const res = await A3.mg("getFollowers", { days: 7, start: S.followers, goal: S.followers + 450, difficulty: 2 }, {
           giveUp: "Not now", onFail: async () => { await RP.lines(["The algorithm ate my week.", "Marcus 'plus-three'd' a few friends into following. It's something."]); },
           assist: async () => { await RP.say("Fine. I'll take the pity follows."); } });
         if (res.giveUp) return;

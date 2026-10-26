@@ -131,7 +131,7 @@ async function soundcheck(S) {
     "@a5_foh Four faults on the sheet. Ground hum, a dead channel, feedback, and somebody patched a deck into the wrong input.",
     "@a5_foh Fix them. You have the sheet, the cables and one hand on the mixer. I'll be shouting suggestions. They're unhelpful."
   ]);
-  const res = await A5.play("soundCheck", { faults: ["ground-hum", "dead-channel", "feedback", "wrong-input"], stage: "festival", difficulty: 3 }, { skipLabel: "Hand it to Mo" });
+  const res = await A5.play("soundCheck", { faults: ["ground-hum", "dead-channel", "feedback", "wrong-input"], stage: "festival", tech: "Mo (FOH)", difficulty: 3 }, { skipLabel: "Hand it to Mo" });
   S.f.a5_soundDone = true; S.f.a5_soundFixed = res.fixed != null ? res.fixed : (res.ok ? 4 : 2);
   const good = res.ok && !res.skipped;
   RP.sfx(good ? "success" : "buzz");

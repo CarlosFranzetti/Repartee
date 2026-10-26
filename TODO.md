@@ -6,8 +6,8 @@
       (`node tools/blindplay.mjs serve --level N --port 710N --out runs/levelN`; the agent plays through the
       `node tools/blindplay.mjs --port 710N ...` commands, with sound). Log every bug, confusing clue, unfair puzzle and
       text problem in [`docs/PLAYTEST_LOG.md`](docs/PLAYTEST_LOG.md), with the level, place and run.
-- [ ] **Then send a swarm of agents to fix everything in the log.** In progress: the audit and sweep findings are fixed;
-      the Level 3-5 blind-take findings (Open in the log) are next. Split the open findings by area (one agent per level
+- [x] **Then send a swarm of agents to fix everything in the log.** Done 2026-10-26 on the work branch (not merged yet);
+      two small items remain open in the log. Split the open findings by area (one agent per level
       or mini-game, so no two edit the same file), have each run its level's walkthrough
       (`node tests/run.mjs walk actN --act N --page <scratch build>`), then integrate, run `node tests/full.mjs`,
       `node tests/perf.mjs` and `node tests/contrast.mjs`, and ship one pull request.
