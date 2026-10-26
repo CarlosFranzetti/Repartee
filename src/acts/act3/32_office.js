@@ -120,7 +120,7 @@ async function dvr(S, key) {
   RP.take("a3_key_nico"); RP.take("a3_key_bex");
   RP.sfx("unlock"); await RP.wait(600);
   S.f.a3_footageGot = true; RP.give("a3_footage");
-  await RP.lines(["The DVR whirs. I scroll back to nine-fifty. Bar-cam, the booth in the corner of the shot...",
+  await RP.lines(["The DVR whirs. I scroll back to nine-thirty. Bar-cam, the booth in the corner of the shot...",
     "There. Brandon, with a friendly hug and a very unfriendly hand in my jacket. Then the USB. Then a blue USB back in. Then a fake yawn.",
     "He even checks the camera. He looks right at it. He THINKS the camera is the one by the register. Amazing.",
     "I burn the clip onto a thumb drive. A pink-sticker thumb drive. Evidence."]);

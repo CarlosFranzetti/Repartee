@@ -161,10 +161,10 @@ RP.room({
     { crowd: { n: 4, rect: [90, 208, 470, 12], seed: 41, face: "back", act: "stand", scale: 0.95 } }
   ],
   enter: async (S, from) => {
-    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; RP.setClock("SUN 11:40 AM"); await RP.lines(["The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
+    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; RP.setClock("SUN 11:40 AM"); await RP.lines(["The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "The kid on the three-dollar cash box sees my record bag, decides I'm a vendor and waves me in. I don't correct him.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
   },
   hotspots: [
-    { id: "a3_f_door", name: "door", r: [4, 38, 54, 114], z: 20, walk: [66, 214, "left"], look: "The gym door. A hand-lettered sign says 'RECORD FAIR: $3, CASH ONLY.' A second sign says 'NO RUNNING.' Nobody's running. Everyone's walking quickly.", exit: S => "travel" },
+    { id: "a3_f_door", name: "door", r: [4, 38, 54, 114], z: 20, walk: [66, 214, "left"], look: "The gym door. A hand-lettered sign says 'RECORD FAIR: $3, CASH ONLY.' A second sign says 'NO RUNNING.' Nobody's running. Everyone's walking quickly. The cash-box kid thinks I'm a vendor. The bag gets me in everywhere.", exit: S => "travel" },
     { id: "a3_mort", name: "Mort", z: 80, look: "Mort. Cap, suspenders, a gaze like a stylus coming down on a scratch. His table says 'MORT'S PLATTERS SINCE '79.'",
       talk: S => mortTalk(S), give: async (S, item) => { if (item === "a3_coffee") { if (!S.f.a3_rayTip) return "Mort doesn't know me yet. Coffee as a first impression? Weird."; if (S.f.a3_clue2) return "@a3_mort I've had one. It's enough."; await mortCoffee(S); return; } return "@a3_mort Nah."; } },
     { id: "a3_vendor", name: "vendor", z: 80, look: "A vendor behind the bargain bins. A sign: 'EVERYTHING $1. NOTHING IS A STEAL.'", talk: ["Hey. Anything good?", "@a3_vendor Everything's good. Some of it's also bad. That's what a dollar bin is.", "I like him."] },

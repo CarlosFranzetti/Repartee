@@ -218,9 +218,10 @@ async function enterClub(S) {
   if (!S.f.a3_tinyMet) {
     S.f.a3_tinyMet = true;
     await RP.walkTo(330, 222, "left");
-    if (!RP.has("a3_bag")) { await RP.lines(["@a3_tiny Name?", "I'm the DJ.", "@a3_tiny You look like a customer. DJs have bags. You've got a phone.", "Fair. Bag."]); S.f.a3_tinyMet = false; return; }
-    await RP.lines(["@a3_tiny Name?", "I'm the DJ. Thursdays.", "@a3_tiny That's what everybody says. Name.", "@a3_tiny ...Let me check the list. Billed as: " + A3.billed(S) + ".",
-      "That's me. Different spelling.", "@a3_tiny Every DJ says that. Go in. Odessa's by the bar. Snack for Gus?", "Yes. Absolutely. I have a snack.", "@a3_tiny You don't. Go in anyway."]);
+    if (!RP.has("a3_bag")) { await RP.lines(["@a3_tiny Thursday. Where's the bag?", "...At home.", "@a3_tiny Six months, I've never seen you without a bag. Go get it.", "Fair. Bag."]); S.f.a3_tinyMet = false; return; }
+    const snack = RP.has("a3_chips") || RP.has("a3_rinds") || RP.has("a3_pickle");
+    await RP.lines(["@a3_tiny Thursday.", "Tiny. Six months, and you've never once said my name.", "@a3_tiny Can't. The list says " + A3.billed(S) + ".", "Different spelling. Same guy.",
+      "@a3_tiny Every week. Odessa's by the bar. Snack for Gus?"].concat(snack ? ["Got it.", "@a3_tiny Go in."] : ["...", "@a3_tiny Bodega's right there. Go in anyway."]));
     await go(); return;
   }
   if (!RP.has("a3_bag") && !S.f.a3_opener) { await RP.walkTo(330, 222, "left"); await RP.say("Bag.", "a3_tiny"); return; }
@@ -304,7 +305,7 @@ RP.room({
       talk: S => useEddie(S), give: async (S, item) => { if (item === "a3_chips") return "@a3_eddie Chips? I'm a man of the people. But no. Cash."; return "@a3_eddie A trade? A two-time deal? No. Cash."; } },
     { id: "a3_tiny", name: "Tiny", z: 80,
       look: "Tiny. Six-foot-six, black bomber, a smile like a locked door. The sign above him says HALCYON. The sign above his head says DO NOT.",
-      talk: S => S.f.a3_opener ? RP.lines(["Hey, Tiny.", "@a3_tiny You're on the list. Go in. Stop talking to me."]) : RP.lines(["Hey, Tiny.", "@a3_tiny Name?", "Never mind, I'll just go in."]),
+      talk: S => S.f.a3_opener ? RP.lines(["Hey, Tiny.", "@a3_tiny You're on the list. Go in. Stop talking to me."]) : RP.lines(["Hey, Tiny.", "@a3_tiny Thursday. Go in.", "Six months of 'Thursday.' It's practically a nickname."]),
       give: "Tiny doesn't take gifts. He takes names." },
     { id: "a3_twinkie", name: "Twinkie", z: 80,
       look: "Twinkie. After-hours regular. Knows everyone, remembers everything, sleeps never. Today's boots: patent leather, killer.",

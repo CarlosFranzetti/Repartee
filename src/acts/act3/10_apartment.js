@@ -125,7 +125,7 @@ async function pickBag(S) {
 
 async function loulines(S) {
   if (!S.f.a3_opener) {
-    await RP.lines(["Hey, Lou.", "@a3_lou KID. You're leaving. Where's the racket going this time?", "The Halcyon Room, Lou. It's a residency.", "@a3_lou A residency. In my day we just called that 'going out every Saturday, 1993.'", "@a3_lou Wear a jacket. Clubs are cold."]);
+    await RP.lines(["Hey, Lou.", "@a3_lou KID. You're leaving. Where's the racket going this time?", "The Halcyon Room, Lou. Same as every Thursday.", "@a3_lou Thursday already? A residency. In my day we just called that 'going out every Saturday, 1993.'", "@a3_lou Wear a jacket. Clubs are cold."]);
     return;
   }
   if (S.f.a3_thu3) {
@@ -145,7 +145,7 @@ async function endScene(S) {
   RP.actor("kid").face = "front";
   await RP.lines([
     "@nar Friday, 5:12 AM.",
-    "Home. Every record. Zero dollars. Phone at 3%. I'm counting that as a win.",
+    "Home. Every record. " + (S.money > 0 ? "Rent money intact." : "Zero dollars.") + " Phone at 3%. I'm counting that as a win.",
     "@a3_lou ...Kid? Is that you? It's five in the morning.",
     "I know, Lou.",
     "@a3_lou Did you play my 1993?",
@@ -154,11 +154,11 @@ async function endScene(S) {
   ]);
   RP.sfx("ping");
   await RP.phone([
-    { from: "ROSALIND AUBRY (EMAIL)", text: "Subject: Booking enquiry. Hello! A friend sent me a clip from the Halcyon Room. We're Aubry & Dahl Artists, in Amsterdam. We'd love to talk about a European run. Are you free for a call? Best, R. Aubry", hot: true },
+    { from: "INGRID FALK (EMAIL)", text: "Subject: Your Thursday. A friend sent me a clip of your Thursday at the Halcyon Room. I watched it twice. I don't watch things twice. I book Halle Neun, in Berlin. I will be in touch about a Berlin date. Ingrid Falk, Nachtwerk Booking", hot: true },
     { from: "ODESSA", text: "Saturday. 11 PM. Main floor. Don't be late. -O", hot: true },
-    { from: "MARCUS", text: "SATURDAY??? plus 3. plus 4. plus however many Amsterdam is" }
+    { from: "MARCUS", text: "SATURDAY??? plus 3. plus 4. plus however many Berlin is" }
   ]);
-  await RP.lines(["Amsterdam. An actual booking agent. In an actual other country.", "Saturday at the Halcyon Room. And now a continent.", "I'm going to sleep for a week. Right after I read that email four more times."]);
+  await RP.lines(["Berlin. An actual booking agent. In an actual other country.", "Saturday at the Halcyon Room. And now a continent.", "I'm going to sleep for a week. Right after I read that email four more times."]);
   S.f.a3_email = true;
   await RP.completeAct([
     [true, "Opened an empty floor on Thursday"], [!!S.f.a3_cdj, "Bought used " + deckName(S) + " from Eddie"], [!!S.f.a3_dj350, "Got the DJM-350 from Gus (for a pickle)"],

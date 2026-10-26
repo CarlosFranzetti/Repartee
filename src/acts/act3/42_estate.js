@@ -70,7 +70,7 @@ function paint(c, S) {
   R(c, 542, 92, 20, 40, "#2a2018"); R(c, 542, 92, 20, 1, "#6a5a48"); ell(c, 552, 106, 6, 6, "#4a3a28"); ell(c, 552, 106, 3, 3, "#1a1008"); ell(c, 552, 124, 4, 4, "#4a3a28");
   em.push.apply(em, PK.lamp(c, 418, 62, { kind: "floor", on: true, color: "#e8d8a8" }));
   // window with blinds (right)
-  em.push.apply(em, PK.window(c, 568, 30, 62, 70, { view: "brick", time: "dusk", blinds: 0.5, frame: "#e8dcc8", seed: 1024 }));
+  em.push.apply(em, PK.window(c, 568, 30, 62, 70, { view: "brick", time: "day", blinds: 0.5, frame: "#e8dcc8", seed: 1024 }));
   // clock stopped at 3:15, photos of Hal
   PK.clock(c, 22, 14, { d: 18, hour: 3, min: 15 });
   [[580, 108, "#2a2a3a"], [602, 110, "#e8c8a0"]].forEach(([x, y, col], i) => PK.frame(c, x, y, 20, 26, { palette: [col, "#c8905a", "#f2d0a8", "#fff0d8"], kind: "portrait", seed: 1025 + i }));
@@ -130,8 +130,8 @@ async function sortCollection(S, pay) {
   if (S.f.a3_priyaAtEstate) {
     await RP.lines(["@a3_priya ...You keep the good ones. Fine. I'll take the rest off your hands. Fair price. Not a penny of it fair to ME."]);
     if (cash) { RP.money(cash); }
-    S.f.a3_priyaAtEstate = false;
     await RP.lines(["@a3_priya Don't look at me like that. I get the junk. You get the glory. We both go home with something. Bye."]);
+    S.f.a3_priyaAtEstate = false;
   } else if (cash) { RP.money(cash); await RP.say("A junk dealer takes the rest for $" + cash + ". It's an honest hustle."); }
   S.f.a3_dug = true;
   await RP.lines(["Now the turntables. And whatever's on that platter."]);
@@ -226,7 +226,7 @@ RP.room({
     { id: "a3_e_chair", name: "armchair", r: [518, 130, 94, 80], z: 30, walk: [560, 220, "back"], look: "A recliner under a dust sheet. On the arm: reading glasses folded neatly. Somebody's sat here for fifty years, listening. You can see the shape.", use: "I'd sit, but it's Hal's chair. It still has his shape in it.", pickup: "It's an armchair. It's not leaving without a crew and a prayer." },
     { id: "a3_e_clock", name: "clock", r: [20, 12, 22, 22], z: 20, look: "A clock that stopped at 3:15. Somebody didn't want to wind it after. I don't blame them." },
     { id: "a3_e_photos", name: "photos of Hal", rects: [[578, 106, 24, 30], [600, 108, 24, 30]], z: 20, walk: [590, 216, "back"], look: "Hal in his thirties with a crate of records on each shoulder. Hal at eighty with a record in each hand. Same grin. Same pose. Sixty years in two frames." },
-    { id: "a3_e_window", name: "window", r: [566, 28, 66, 74], z: 18, look: "A window onto the neighbor's brick wall. A sliver of orange sky and a clothesline. Woodside, Queens, at dusk, in miniature." },
+    { id: "a3_e_window", name: "window", r: [566, 28, 66, 74], z: 18, look: "A window onto the neighbor's brick wall. A sliver of pale blue sky and a clothesline. Woodside, Queens, on a weekday morning, in miniature." },
     { id: "a3_e_lamp", name: "floor lamp", r: [408, 60, 24, 76], z: 36, walk: [420, 214, "back"], look: "A floor lamp with a cream shade, burned brown at the top where Hal read for thirty years. The light's the same color as the nicest part of an afternoon.", pickup: "It's the only thing in the room not for sale. A note on the base says 'HAL'S. DON'T.'" },
     { id: "a3_e_speaker", name: "speakers", rects: [[370, 90, 24, 44], [540, 90, 24, 44]], z: 33, look: "A pair of walnut speakers the size of mini-fridges. The tweeter on one has a tiny dent. He probably hit it with a record sleeve in 1991 and never forgave himself." }
   ],

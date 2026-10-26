@@ -1,4 +1,4 @@
-/* Act 3 — story scripts for the Halcyon Room: Night 1 (the opener), the week, Night 3 (Kosmo, Brandon, the anniversary set),
+/* Act 3 — story scripts for the Halcyon Room: Night 1 (a routine Thursday, six months in), the week, Night 3 (Kosmo, Brandon, the anniversary set),
    the bartender feud, Gus and his snacks. Everything hangs off RP.A3.* so the room files stay readable. */
 (function () {
 "use strict";
@@ -9,6 +9,7 @@ const U = RP.u;
 const say = (t, who) => RP.say(t, who);
 const lines = a => RP.lines(a);
 const GRAIL = "loose_joints_is_it_all_over_my_face";
+const TAB = 200;   // the anniversary envelope, and the anniversary bar tab: the same two hundred dollars
 const AC = id => RP.actor(id) || {};   // actors only exist in their own room; a missing one is a harmless dummy
 
 /* ====================================================================== room entry */
@@ -18,10 +19,10 @@ A3.hallEnter = async function (S, from) {
   if (!S.f.a3_week && !S.f.a3_thu3 && !S.f.a3_metOdessa) {
     S.f.a3_metOdessa = true; S.f.noTravel = true; RP.setClock("THU 9:08 PM");
     await RP.walkTo(100, 232, "right");
-    await lines(["@nar The Halcyon Room. 9:08 PM.", "Smells like fog juice and ambition.", "@a3_odessa You're late.", "It's nine-oh-eight. Doors are at ten.", "@a3_odessa Exactly. Late is anything that isn't early.",
-      "@a3_odessa Thursday is where I find out who's a DJ and who just owns the jacket.", "@a3_odessa Saturday belongs to Brandon Shine. Gold vest. Sunglasses indoors. You'll know him.",
-      "Can I have Saturday?", "@a3_odessa You can have a Thursday. Fill it, and we'll talk.", "@a3_odessa Gus has the monitors. They're asleep. He doesn't wake them for people with empty hands.",
-      "Empty hands?", "@a3_odessa I said what I said."]);
+    await lines(["@nar The Halcyon Room. Thursday, 9:08 PM.", "Smells like fog juice and ambition. Same as every Thursday.", "@a3_odessa Nine-oh-eight. Cutting it close.", "Doors are at ten.", "@a3_odessa Six months, never late. Don't start the week before the anniversary.",
+      "Six months ago Odessa came down to Vic's Basement Tapes for my monthly and offered me Thursdays before the last record ended. I still play Vic's. Thursdays pay the rent.",
+      "@a3_odessa Next Thursday's the anniversary. Six months. I want the room full and you on it.", "And Saturday?", "@a3_odessa Saturday is Brandon Shine's. Gold vest. Sunglasses indoors. Same as last week.",
+      "@a3_odessa Fill tonight. Then we'll talk Saturday.", "@a3_odessa Gus has the monitors. They're asleep. You know the rule.", "Snack.", "@a3_odessa Don't say it out loud. He can hear it."]);
     return;
   }
   // ---- the week: the club in daylight
@@ -77,13 +78,13 @@ async function night1Set(S) {
   S.f.a3_floor = "full"; RP.relight();
   RP.followers(40);
   RP.setClock("FRI 12:40 AM");
-  await lines(["It builds. Slowly, then all at once. The floor fills like a tub.", "@a3_odessa Eighty people. For a Thursday that's a miracle.", "@a3_odessa For you it's a start."]);
+  await lines(["It builds. Slowly, then all at once. The floor fills like a tub.", "@a3_odoff Eighty people. On a Thursday. You're getting good at this.", "@a3_odoff Next Thursday I want two hundred."]);
   RP.sfx("cheer");
   await RP.fadeTo(1, 600); S.f.a3_opener = true; await RP.fadeTo(0, 600);
-  await lines(["Odessa finds me at the bar, holds out an envelope. Two hundred dollars and a napkin with lipstick on it.", "@a3_odessa Your pay. Don't spend it in one place. Spend it in several, like an adult.", "@a3_odessa Read the napkin. Do the napkin. Come back with the napkin."]);
+  await lines(["Odessa finds me at the bar, holds out an envelope. Two hundred dollars and a napkin with lipstick on it.", "@a3_odoff Your pay. Don't spend it in one place. Spend it in several, like an adult.", "@a3_odoff Read the napkin. Do the napkin. Come back with the napkin."]);
   RP.money(200); RP.give("a3_list");
-  await lines(["Gear that doesn't embarrass her. A sound of my own. A crowd. And an anniversary Thursday in a week and a half. Odessa's whole business plan, in lipstick.",
-    "@a3_brandon Cute. Cute set. I'd say 'I'm proud,' but then I'd have to be. See you Saturdays. Oh wait. You won't."]);
+  await lines(["Gear that doesn't embarrass her. A sound of my own. A crowd. And the anniversary, next Thursday. Odessa's whole business plan, in lipstick.",
+    "@a3_brandonoff Cute. Cute set. I'd say 'I'm proud,' but then I'd have to be. See you Saturdays. Oh wait. You won't."]);
   AC("a3_brandon").expr = "angry";
   await RP.fadeTo(1, 700);
   S.f.a3_week = true; S.f.noTravel = false; S.f.a3_floor = null;
@@ -128,10 +129,10 @@ async function kosmoOverrun(S) {
     giveUp: "A minute", onFail: async () => { await lines(["The floor drifts. Half of it is on its phones, the other half is asking Odessa for something she doesn't have.", "Right: breathe, watch the clock, pick the right moment."]); },
     assist: async () => { await say("Odessa steps up with a sheet of paper that says 'FIVE MORE MINUTES' in lipstick. The legend reads it. The legend wraps."); } });
   if (res.giveUp) return;
+  await lines(["@a3_kosmo ...Not bad, Wendell. Not bad at all.", "@a3_kosmo Keep the room warm. I'm going to find a sandwich."]);
   S.f.a3_kosmoDone = true; RP.relight();
   RP.followers(25);
-  await lines(["@a3_kosmo ...Not bad, Wendell. Not bad at all.", "@a3_kosmo Keep the room warm. I'm going to find a sandwich.", "He hands me the headphones like a sacred object and walks off the stage.",
-    "Kosmo Delacroix just told me 'not bad.' In the right light, that's practically a knighthood."]);
+  await lines(["He hands me the headphones like a sacred object and walks off the stage.", "Kosmo Delacroix just told me 'not bad.' In the right light, that's practically a knighthood."]);
   RP.setClock("FRI 12:30 AM");
   await say("Now the room's mine. Time to play the set. Plan it first.");
 }
@@ -146,21 +147,31 @@ async function anniversarySet(S) {
   RP.followers(80);
   RP.setClock("FRI 1:55 AM");
   const hasGrail = RP.hasRecord(GRAIL);
-  await lines(["The first record drops. The room settles like a sigh.", "Mood, then Hardrive, then something nobody in here has heard: the white label. Lou's 1993. The room goes quiet for a beat, then loud."]);
-  if (hasGrail) await lines(["For the last record I pull out the one sleeve in the bag that says 'FOR COMPANY.' Loose Joints. 'Is It All Over My Face?' Larry Levan's remix, the one everyone knows. On the Technics' cousin in the booth.",
+  const ids = (res.order || []).filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist;
+  const wi = ids.indexOf("white_nyc93"), gi = ids.indexOf(GRAIL);
+  const setLines = ["The first record drops" + (ids[0] ? ": " + nm(ids[0]) : "") + ". The room settles like a sigh."];
+  if (ids.length >= 3) setLines.push("Then " + nm(ids[1]) + ", then " + nm(ids[2]) + ". Build, don't jump. For once, I don't jump.");
+  setLines.push(wi >= 0 && wi < 3 ? "The white label is Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud."
+    : wi >= 0 || !ids.length ? "Somewhere in there, something nobody in here has heard: the white label. Lou's 1993. The room goes quiet for a beat, then loud."
+    : "Then one record that isn't on the plan: the white label. Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud.");
+  await lines(setLines);
+  if (hasGrail) await lines([(gi >= 0 && gi < ids.length - 1 ? "When its turn comes, I pull out" : "For the last record I pull out") + " the one sleeve in the bag that says 'FOR COMPANY.' Loose Joints. 'Is It All Over My Face?' Larry Levan's remix, the one everyone knows. On the Technics' cousin in the booth.",
     "Somebody screams. Somebody cries. Somebody films it, which is the same thing."]);
   RP.sfx("cheer");
   S.f.a3_vegaHere = true;
   await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend."]);
   await say("Nice blend. Louie Vega said 'nice blend.' I'm going to put it on my gravestone.");
-  await lines(["@a3_odessa ...That's the one. That's the set. That's Saturday.", "@a3_odessa Saturday. Eleven PM. The main floor. Prime time. Brandon's got a vacation.", "@a3_odessa Take the old booth monitors. Dynaudio BM5s. Too good for Gus, who only listens to the sound of a bag opening."]);
+  await lines(["@a3_odoff ...That's the one. That's the set. That's Saturday.", "@a3_odoff Saturday. Eleven PM. The main floor. Prime time. Brandon's got a vacation.", "@a3_odoff Take the old booth monitors. Dynaudio BM5s. Too good for Gus, who only listens to the sound of a bag opening."]);
   RP.setGear("monitors", "dynaudio_bm5_mkiii");
   S.f.a3_saturday = true;
-  RP.money(0);
-  await lines(["@a3_marcus That was... the best night of my life. And I've been to a lot of nights.", "I'm going to cry. In front of Marcus. In front of Rico, Dee and the guy from the cab."]);
-  const tab = Math.round(S.money);
-  RP.money(-tab);
-  await lines(["Then Dee, Rico and the guy from the cab put eleven drinks on 'the DJ.' Odessa covers... half. The other half is me.", "My wallet's empty. Odessa pays by check on Friday. A check. My landlord will love it.", "Phone: 3%. Bag: every record I own. Time: nearly four in the morning."]);
+  await lines(["@a3_odoff And your envelope. Two hundred. Thursdays are cash."]);
+  RP.money(TAB);
+  await lines(["@a3_marcusoff That was... the best night of my life. And I've been to a lot of nights.", "I'm going to cry. In front of Marcus. In front of Rico, Dee and the guy from the cab."]);
+  RP.setClock("FRI 3:45 AM");
+  await lines(["Two hours of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ.' Odessa covers half. My half is two hundred dollars.",
+    "I hand Nico the envelope without opening it. I just played the best set of my life for free."]);
+  RP.money(-TAB);
+  await lines(["Phone: 3%. Bag: every record I own. Time: quarter to four in the morning."]);
   await RP.fadeTo(1, 800); S.f.noTravel = false;
   await RP.goto("a3_platform", 540, 230, "left");
   await RP.fadeTo(0, 400);
@@ -170,7 +181,7 @@ async function anniversarySet(S) {
 A3.gusTalk = async function (S) {
   await say(S.f.a3_soundcheck ? "Snack?" : "Snack.", "a3_gus");
   await RP.convo([
-    { text: "Hi, Gus. I'm the opener.", run: () => say("Snack.", "a3_gus") },
+    { text: "Hi, Gus. Six months of Thursdays. Do you know my name yet?", run: () => say("Snack.", "a3_gus") },
     { text: "What do I have to do for the monitors?", when: S2 => !S2.f.a3_soundcheck, run: () => say("Snack.", "a3_gus") },
     { text: "What kind of snack?", when: S2 => !S2.f.a3_soundcheck, run: () => lines(["@a3_gus Salt. Vinegar. Chip. Blue bag.", "That's the most words I've ever heard. He used four. He's showing off."]) },
     { text: "Any spare gear around, Gus?", when: S2 => !!S2.f.a3_soundcheck && !S2.f.a3_dj350, run: () => lines(["@a3_gus ...Mixer. Lost and found. Lost since 2019.", "The mixer's in the lost and found. What does it cost?", "@a3_gus Snack. Different one. Green. Wet. Sour.", "A pickle. The man wants a pickle."]) },

@@ -2,7 +2,8 @@
    Everything in src/acts/act3 prefixes its ids with "a3_" (recurring cast from src/data/cast.js keeps its ids).
 
    STORY SHAPE (flags, all S.f.a3_*)
-     Night 1 (Thu)   a3_soundcheck (Gus + snack) -> a3_opener (set.Time "opener", paycheck)
+     Night 1 (Thu, six months into the residency, a week before the anniversary)
+                     a3_soundcheck (Gus + snack) -> a3_opener (set.Time "opener", paycheck)
      The week        a3_cdj (Eddie, buy.Gear) · a3_dj350 (Gus, 2nd snack) · a3_rayTip/a3_clue* -> a3_hunt (record.Hunt)
                      -> a3_estateDone (crate.Digging, Technics) · a3_promo (get.Followers) -> sleep -> Thursday
      Night 3 (Thu)   a3_kosmoIn · a3_swap (USB swapped) · a3_feudOver (two bartenders) · a3_footage · a3_brandonDone
@@ -79,6 +80,8 @@ RP.chars.update("kosmo", { top: { style: "coat", color: "#2a1c3a", color2: "#c03
 RP.voice("a3_lou", { color: "#9be15d", prefix: "", anchor: [331, 118] });
 RP.voice("a3_odph", { color: "#ffc44d", prefix: "ODESSA (TEXT): ", anchor: S => [RP.actor("kid") ? RP.actor("kid").x : 320, 40] });
 RP.voice("a3_odoff", { color: "#ffc44d", prefix: "ODESSA (OFF): ", anchor: [320, 50] });
+RP.voice("a3_brandonoff", { color: "#ffe45c", prefix: "BRANDON (OFF): ", anchor: [320, 50] });
+RP.voice("a3_marcusoff", { color: "#ffd23f", prefix: "MARCUS (OFF): ", anchor: [320, 50] });
 RP.voice("a3_pa", { color: "#e8e4f0", prefix: "PA: ", anchor: [320, 34] });
 RP.voice("a3_mta", { color: "#ffd23f", prefix: "MTA: ", anchor: [320, 40] });
 RP.voice("a3_cell", { color: "#ffffff", prefix: "", anchor: S => [RP.actor("kid") ? RP.actor("kid").x : 320, 60] });
@@ -190,7 +193,7 @@ RP.item("a3_pickle", { name: "bodega pickle", short: "Pickle", icon: c => { ell(
 RP.item("a3_key_nico", { name: "Nico's DVR key", short: "Nico key", icon: c => I.key(c, "#6ad0ff"), look: "A small brass key on a blue bar-towel tag. It says NICO, in a nervous hand." });
 RP.item("a3_key_bex", { name: "Bex's DVR key", short: "Bex key", icon: c => I.key(c, "#ff8a5a"), look: "A small brass key with a pink guitar-pick tag. It says BEX. It says it loudly." });
 RP.item("a3_footage", { name: "bar-cam clip", short: "Clip", icon: c => { I.usb(c, "#c0302c"); R(c, 8, 10, 6, 4, "#efeaf6"); P(c, 10, 11, "#c0302c"); },
-  look: "A thumb drive with last hour of the bar camera. Brandon, the booth, my USB, a fake yawn. Cinema.", use: "I'm not watching it again. I'm going to make a certain someone watch it." });
+  look: "A thumb drive with the last hour of the bar camera. Brandon, the booth, my USB, a fake yawn. Cinema.", use: "I'm not watching it again. I'm going to make a certain someone watch it." });
 
 /* ======================================================================
    locations (subway map pins on the 320x200 map)
@@ -243,7 +246,7 @@ RP.defineAct({
     await RP.lines(["Odessa's three house rules: be early, stay sober, bring Gus a snack. Nobody knows why the third one.", "Record bag, USB, jacket. Then the subway map. In that order."]);
   },
   doneTitle: "SATURDAY NIGHT",
-  doneText: S => "The Halcyon Room. Anniversary Thursday. You followed Kosmo Delacroix (he called you " + A3.KOSMO_NAME + "), beat Brandon Shine's USB, and Odessa gave you Saturday. A booking agent in Europe just emailed.",
+  doneText: S => "The Halcyon Room. Anniversary Thursday. You followed Kosmo Delacroix (he called you " + A3.KOSMO_NAME + "), beat Brandon Shine's USB, and Odessa gave you Saturday. A booking agent in Berlin just emailed.",
   combos: []
 });
 })();

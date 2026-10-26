@@ -1,4 +1,4 @@
-/* Act 3 — Delancey St platform, 4 AM. The way home after the anniversary night: a bag of records, zero dollars,
+/* Act 3 — Delancey St platform, 4 AM. The way home after the anniversary night: a bag of records, rent money only,
    a phone at 3%. last.Train mini-game, then the J pulls in. Flags: a3_trainTry, a3_train. */
 (function () {
 "use strict";
@@ -66,11 +66,11 @@ async function runTrain(S) {
     assist: async () => { await RP.lines(["A stranger with oranges swipes me through at the turnstile. 'Pay it forward,' he says. 'In oranges.'"]); } });
   if (res.giveUp) { await RP.say("I'm not ready. Let me sit with it. Everything hurts."); return false; }
   S.f.a3_train = true;
-  await RP.lines(["The turnstile swallows my last quarter. ...Oh no, I have no quarter. A guy slips me a swipe. A real hero. A hero with oranges.", "Down the platform, the J's headlights come round the curve like a promise."]);
+  await RP.lines(["My hand goes to the rent money. It stops. A guy slips me a swipe. A real hero. A hero with oranges.", "Down the platform, the J's headlights come round the curve like a promise."]);
   trainState = 1; trainT = 0; doorsOpen = false;
   await RP.wait(3800);
   await RP.walkTo(330, 214, "back");
-  await RP.lines(["I get on. The car's empty, except for a man asleep with a bag of oranges and a woman reading a paperback about a vampire.", "Phone: 2%. Bag: all records. Money: zero. I made it.", "@nar The J train, Friday morning. Somewhere under the East River, the bass is still going."]);
+  await RP.lines(["I get on. The car's empty, except for a man asleep with a bag of oranges and a woman reading a paperback about a vampire.", "Phone: 2%. Bag: all records. Rent money: untouched. I made it.", "@nar The J train, Friday morning, over the Williamsburg Bridge. The river's black, and the bass is still going."]);
   await RP.fadeTo(1, 1200);
   trainState = 0; doorsOpen = false;
   await RP.goto("a3_apartment", 560, 232, "left");
@@ -103,8 +103,8 @@ RP.room({
     if (S.f.a3_train) return;
     if (!S.f.a3_platSeen) {
       S.f.a3_platSeen = true; RP.setClock("FRI 4:07 AM");
-      await RP.lines(["@nar Friday. 4:07 AM. Delancey Street.", "A bag of records on my shoulder. Zero dollars in my pocket. My phone at 3%.",
-        "Odessa pays by check on Fridays. 'By check.' At four in the morning. My MetroCard expired at midnight, and I was going to renew it with the first paycheck. That's tomorrow's problem. Tonight's is the J train."]);
+      await RP.lines(["@nar Friday. 4:07 AM. Delancey Street.", "A bag of records on my shoulder. My phone at 3%. " + (S.money > 0 ? "$" + Math.round(S.money) + " in my wallet, and every dollar of it belongs to my landlord." : "Zero dollars in my pocket."),
+        "My MetroCard expired at midnight. The machine's out of service, and the turnstile doesn't take cash, or sympathy. Tonight's problem is the J train home."]);
     }
     await runTrain(S);
   },
@@ -114,11 +114,11 @@ RP.room({
       use: S => runTrain(S), talk: "Hello, track. You're what's between me and bed." },
     { id: "a3_p_sleeper", name: "sleeping guy", r: [250, 146, 60, 80], z: 30, walk: [330, 220, "left"], look: "A man asleep on the bench with his coat pulled over his head. The universal posture of the J train at 4 AM.", talk: "Hey. ...He's out. Respect.", pickup: "Absolutely not." },
     { id: "a3_p_bench", name: "bench", r: [232, 186, 106, 44], z: 20, walk: [260, 236, "back"], look: "A wooden bench with a lot of carved initials and one very fresh 'JAY + KELLY 4EVR.' The 'EVR' is almost legible.", use: "I'm not sitting next to him. He's got the whole bench." },
-    { id: "a3_p_vend", name: "vending machine", r: [540, 144, 50, 80], z: 25, walk: [564, 236, "back"], look: "A vending machine with a sign: OUT OF ORDER. In front of it, a half-eaten pretzel nobody's going to claim.", use: "It takes dollars. I have zero. It takes my hope, too.", pickup: "It's bolted down. By the same people who bolted down the sign." },
-    { id: "a3_p_kiosk", name: "MetroCard machine", r: [82, 148, 54, 80], z: 25, walk: [112, 236, "back"], look: "A MetroCard machine: OUT OF SERVICE. TRY NEXT MACHINE. There's no next machine. There never is.", use: "It accepts cash and cards. I have neither. It accepts hope. No.", push: "Pushing it won't make it work. Yelling won't either. I try both." },
+    { id: "a3_p_vend", name: "vending machine", r: [540, 144, 50, 80], z: 25, walk: [564, 236, "back"], look: "A vending machine with a sign: OUT OF ORDER. In front of it, a half-eaten pretzel nobody's going to claim.", use: "Out of order. Which saves my rent money from a bag of chips at four in the morning.", pickup: "It's bolted down. By the same people who bolted down the sign." },
+    { id: "a3_p_kiosk", name: "MetroCard machine", r: [82, 148, 54, 80], z: 25, walk: [112, 236, "back"], look: "A MetroCard machine: OUT OF SERVICE. TRY NEXT MACHINE. There's no next machine. There never is.", use: "It's out of service. It takes my hope instead. No, it doesn't even take that.", push: "Pushing it won't make it work. Yelling won't either. I try both." },
     { id: "a3_p_map", name: "subway map", r: [166, 58, 56, 42], z: 20, look: "The subway map: a bowl of colored spaghetti with a few dots called 'stations.' Somewhere on there is my bed." },
     { id: "a3_p_clock", name: "clock", r: [298, 16, 24, 24], z: 20, look: "4:07 AM. Every clock on the platform has a different time. This one at least looks sure of itself." },
-    { id: "a3_p_board", name: "next-train board", r: [418, 18, 100, 24], z: 20, look: "J to Broad St: eleven minutes. Which is what it says. Which is what it said six minutes ago." },
+    { id: "a3_p_board", name: "next-train board", r: [418, 18, 100, 24], z: 20, look: "Brooklyn-bound J to Jamaica Center: eleven minutes. Which is what it said six minutes ago." },
     { id: "a3_p_slice", name: "pizza slice", r: [418, 232, 26, 14], z: 20, floor: true, look: "A slice of pizza on the platform floor. A tragedy and a metaphor.", pickup: "No. NO. I'm broke, not that broke." },
     { id: "a3_p_rat", name: "rat", r: [0, 150, 640, 16], z: 3, look: "A rat on the track bed, strolling like it's the mayor. New York's real landlord." }
   ],
