@@ -190,7 +190,7 @@ async function twinkieTalk(S) {
       await RP.lines(["@twinkie The pier. East end, past the Ferris wheel. The sun hits it first. I'll save you a spot.", "A sunrise afters. For after my set. That's the only afters I've ever wanted."]);
     } },
     { text: "Any news?", once: true, run: async () => {
-      await RP.lines(["@twinkie Marcus is bringing twelve. Jess is bringing the cat. Eddie is bringing a bill.", "@twinkie Dante is \"on his way.\" Which means he's still in the parking lot, looking for his keys."]);
+      await RP.lines(["@twinkie Marcus is bringing " + A5.guest(S).nw + ". Jess is bringing the cat. Eddie is bringing a bill.", "@twinkie Dante is \"on his way.\" Which means he's still in the parking lot, looking for his keys."]);
     } },
     { text: "Later, Twinkie.", end: true }
   ]);

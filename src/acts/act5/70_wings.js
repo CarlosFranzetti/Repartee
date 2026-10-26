@@ -1,5 +1,5 @@
 /* Act 5 — a5_wings: stage left, seen from the dark. Axl Vanta is still playing on the blazing stage beyond the masking curtains.
-   Roz's calling desk, the clock, Lou's stool. set.Time (scenario "overrun"): get Axl off so the headline set can start. */
+   Roz's calling desk, the clock, Lou's stool. The overrun: a short scene and a choice to get Axl off so the headline set can start. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -92,14 +92,19 @@ async function overrun(S) {
     "Where's Whit?",
     "@a5_roz Whit's in the lighting booth saying \"synergy\" into a radio. Nobody's answering.",
     S.f.a5_axlWon ? "@a5_roz He promised you eleven-thirty. He owes me. Six more minutes, tops. I'll see to it." : "@a5_roz He says he's got \"a few more\". With Axl, a few is fourteen.",
-    "@a5_roz You. Go. Do the thing where you nicely take the room away from someone. Play his decks until Mo has your rig in. I'll help."
+    "@a5_roz You. Do the thing where you nicely take the room away from someone. Mo needs a few minutes to patch your rig in. I'll help. How do you want to do it?"
   ]);
   /* the overrun comes out of the first stretch of your slot (11:52 to the 12:28 changeover); winning the argument with Axl buys minutes back */
-  const recs = A5.DEFAULT_ORDER.slice(0, 6);
-  const res = await A5.play("setTime", { scenario: "overrun", headline: true, manager: "Roz", managerId: "a5_roz", records: recs, followName: "Axl Vanta", start: "23:52", minutes: 36, overrun: S.f.a5_axlWon ? 6 : 14, difficulty: 3 }, { skipLabel: "Let Roz cut the power" });
-  S.f.a5_overrunDone = true; S.f.a5_overrunScore = res.score || 0;
-  RP.sfx(res.ok && !res.skipped ? "success" : "buzz");
-  if (res.ok && !res.skipped) {
+  const won = !!S.f.a5_axlWon;
+  const how = await RP.choose(["Walk on, take the second channel and slide the room away from him, one record at a time.", "Ask Roz to pull his monitor mix.", "Wait it out. He promised."]);
+  S.f.a5_overrunHow = how;
+  const smooth = how === 0 || (how === 2 && won);
+  if (how === 0) await RP.lines(["I walk on in the dark with a pair of headphones, and nod at his tech. His tech, who hates him, nods back.", "I find the key of his last record and bring mine in underneath. Eight bars. Then sixteen.", "@a5_roz " + (won ? "Six minutes, like he promised. Don't thank me, thank the nine hundred times I reminded him." : "Fourteen minutes. I counted every one. Keep going.")]);
+  else if (how === 2 && won) await RP.lines(["I stay put and watch the clock. Roz holds a fader and a very long look.", "@a5_roz He owes me. He said eleven-thirty, he's six late, and he knows exactly how late. Watch.", "On the stage the sun does an encore bow and is, almost gracefully, finished."]);
+  else if (how === 2) await RP.lines(["I wait. Roz waits. The clock does not.", "@a5_roz Promised, he says. To who? Who did he promise?", "Nobody. At 12:06 he's still waving."]);
+  S.f.a5_overrunDone = true; S.f.a5_overrunScore = smooth ? 85 : 55;
+  RP.sfx(smooth ? "success" : "buzz");
+  if (smooth) {
     await RP.lines([
       "@a5_roz That's how you take a room. He faded, you were in before the cheers died, and nobody in that field heard the seam.",
       "(Somewhere offstage, into a microphone nobody turned on:)",

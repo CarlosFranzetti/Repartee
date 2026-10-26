@@ -3,12 +3,12 @@
 
    STORY SHAPE (flags, all S.f.a3_*)
      Night 1 (Thu, six months into the residency, a week before the anniversary)
-                     a3_soundcheck (Gus + snack) -> a3_opener (set.Time "opener", paycheck)
-     The week        a3_cdj (Eddie, buy.Gear) · a3_dj350 (Gus, 2nd snack) · a3_rayTip/a3_clue* -> a3_hunt (record.Hunt)
-                     -> a3_estateDone (crate.Digging, Technics) · a3_promo (get.Followers) -> sleep -> Thursday
+                     a3_soundcheck (Gus + snack) -> a3_opener (crowd.Read, the empty bar, paycheck)
+     The week        a3_cdj (Eddie, buy.Gear) · a3_dj350 (Gus, 2nd snack) · a3_rayTip/a3_clue* -> a3_hunt (the clues add up)
+                     -> a3_estateDone (sorting the boxes, Technics) · a3_promo (the posting week) -> sleep -> Thursday
      Night 3 (Thu)   a3_kosmoIn · a3_swap (USB swapped) · a3_feudOver (two bartenders) · a3_footage · a3_brandonDone
-                     (club.Drama) · a3_kosmoDone (set.Time "follow-legend") · a3_setDone (playlist.Order)
-     Aftermath       a3_saturday · a3_train (last.Train) · a3_email -> RP.completeAct */
+                     (the confrontation) · a3_kosmoDone (crowd.Read, the warm room) · a3_setDone (opener and closer picked)
+     Aftermath       a3_saturday · a3_train (the platform) · a3_email -> RP.completeAct */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -121,12 +121,19 @@ A3.mg = async function (id, params, opt = {}) {
   }
 };
 
-/* the pool of records offered to the set mini-games: whatever is in the crate, padded so there are always enough */
+/* the pool of records offered for the sets: whatever is in the crate, padded so there are always enough */
 A3.pool = function (S, min) {
   const pad = ["everything_but_the_girl_missing", "phuture_acid_tracks", "white_nyc93", "cece_peniston_finally", "mood_ii_swing_closer", "hardrive_deep_inside",
     "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "crystal_waters_gypsy_woman", "mr_fingers_washing_machine_can_you_feel_it", "francois_k_fk_ep", "kerri_chandler_the_mood_ep"];
   const out = (S.records || []).filter(id => id !== "grover_washington_jr_winelight" || true);
   for (const id of pad) { if (out.length >= (min || 8)) break; if (!out.includes(id)) out.push(id); }
+  return out;
+};
+
+/* a hand of up to n records for crowd.Read: the wanted ones first (if they are in the pool), then the rest; records without a tempo or energy are skipped */
+A3.hand = function (S, n, want) {
+  const pool = A3.pool(S, n), out = [];
+  (want || []).concat(pool).forEach(id => { const r = RP.rec(id); if (out.length < n && pool.includes(id) && r && r.bpm && r.energy && !out.includes(id)) out.push(id); });
   return out;
 };
 

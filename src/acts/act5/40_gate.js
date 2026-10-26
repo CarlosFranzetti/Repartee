@@ -1,5 +1,5 @@
 /* Act 5 — a5_gate: the Harbor Lights main gate on the waterfront.
-   Friday dusk: artist check-in (Whit, the typo'd pass) and Marcus's "plus thirty" guest list (guest.List).
+   Friday dusk: artist check-in (Whit, the typo'd pass) and Marcus's "plus thirty" guest list (a scene with Whit's twelve comps and a choice).
    Saturday afternoon: arrival, Margo in person, the queue, noTravel on. East exit leads into the grounds. */
 (function () {
 "use strict";
@@ -127,7 +127,7 @@ async function whitTalk(S) {
 
 async function marcusTalk(S) {
   if (!fri(S)) { await RP.say("Marcus is in the guest line somewhere, being loudly himself.", "kid"); return; }
-  if (S.f.a5_guestDone) { await RP.lines(["@marcus I'M ON THE LIST. I'M ON THE LIST. I'M ON THE LIST.", "Yes, Marcus. All of you."]); return; }
+  if (S.f.a5_guestDone) { await RP.lines(A5.guest(S).again); return; }
   if (!S.f.a5_gateMet) { await RP.lines(["@marcus There he is! The man! The legend!", "Hey, Marcus. Is that a tent?", "@marcus I got here at noon. Whit's the guy with the clipboard. Talk to him first. He's the gatekeeper."]); return; }
   await RP.lines([
     "@marcus You said I could bring a few people.",
@@ -136,14 +136,17 @@ async function marcusTalk(S) {
     "Thirty-one people. There's room for twelve.",
     "@marcus Okay, so we'll fit twelve. The rest of us will wait outside, like it's 1993. Lou would understand."
   ]);
-  const res = await A5.play("guestList", { capacity: 12, requests: 31, vip: ["Lou", "Ray", "Twinkie", "Jess", "Eddie Two-Times"], difficulty: 2, venue: "Harbor Lights" }, { skipLabel: "Just hand over the list" });
-  S.f.a5_guestDone = true;
-  const admitted = res.admitted != null ? res.admitted : 12, angry = res.angry != null ? res.angry : 3;
+  await RP.lines([
+    "@a5_whit (from the tent, waving the clipboard) Twelve comps, total. Five names are already on it: Marcus, Jess, Ray, Twinkie, Eddie. That leaves seven.",
+    "@marcus Seven! Seven is a start. I have a spreadsheet. It has colors."
+  ]);
+  const gi = await RP.choose(["Give him all seven. Twelve on the list, Whit can explain it to the fire marshal.", "Marcus picks four. Nine on the list, and Whit keeps three comps for the walk-ups.", "Just the five of us. Nobody gets picked, nobody gets insulted."]);
+  const G = A5.GUEST[gi];
+  S.f.a5_guestDone = true; S.f.a5_guestPick = gi; S.f.a5_guestIn = G.n;
+  const angry = G.angry;
   S.f.a5_guestAngry = angry;
-  RP.sfx(res.ok && angry <= 3 ? "success" : "buzz");
-  const inN = Math.min(12, admitted), outN = Math.max(0, 31 - inN);
-  if (angry <= 3) await RP.lines(["@a5_whit " + inN + " in. " + outN + " out. " + (angry ? angry + " slightly grumpy" : "Nobody grumpy") + ". That's the best list we've seen all week.", "@marcus I'm fine. The tent has a ukulele. We'll have our own party."]);
-  else await RP.lines(["@a5_whit " + inN + " in. A lot of people very, very loud about it. That was an experience.", "@marcus I WANT A RECOUNT. I WANT TO SPEAK TO A MANAGER.", "@a5_whit I'm the manager. The answer is no. But with synergy."]);
+  RP.sfx(angry <= 3 ? "success" : "buzz");
+  await RP.lines(G.scene);
   S.f.a5_louPass = true; RP.give("a5_loupass"); RP.sfx("pickup");
   await RP.lines([
     "@a5_whit And one more thing: an envelope for \"Lou, 4B\"? A man phoned the office eighteen times. Each time he said, and I quote, \"Keep it DOWN.\"",

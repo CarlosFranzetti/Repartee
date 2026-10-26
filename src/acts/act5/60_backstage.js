@@ -187,7 +187,7 @@ async function louArrives(S) {
     "@marcus Lou's with me. We got the best chair in the VIP lounge. It has a cushion. He asked for a cushion.",
     "@a5_roz Lou, you can watch from the wings. Stage left. There's a stool. It's the best seat in the house.",
     "@a5_lou In the wings. With a stool. All right.",
-    "@marcus I counted: twelve people came in. TWELVE. Plus thirty is just a state of mind."
+    A5.guest(S).back
   ]);
   RP.text("MARGO (MGR)", "Lou's in. Marcus is a hero. Axl's still on stage. Roz will cue you in the wings. Breathe.", false);
 }
@@ -241,7 +241,7 @@ RP.room({
     { id: "a5_dj_spinna", name: "DJ Spinna", talk: S => cameo(S, "spinna"), look: "DJ Spinna. He runs the Spinnafest event, and he's on the bill. He's wearing a cap and a calm expression. He gives me a thumbs up.", give: "I won't.", pickup: "No.", use: "I'd like to say hi. I'm going to do it with a wave.", push: "Not touching a legend." },
     { id: "a5_dj_francois_k", name: "Francois K", talk: S => cameo(S, "k"), look: "Francois Kevorkian. Co-founded the Body & Soul party with Danny Krivit and Joe Claussell. He's reading the running order, and he glances up at me.", give: "I won't.", pickup: "No.", use: "I'd like to say hi. I'll mime it.", push: "Not touching a legend." },
     { id: "lou", name: "Lou", talk: S => RP.lines(["@lou It's loud. I like it. Don't tell anyone.", "I won't, Lou.", "@lou Don't touch the stool. It's mine."]), look: "Lou, in the good navy cardigan and his dancing shoes. He's sitting on a stool as if it were a throne. He looks about ten years younger and fifteen years more irritated.", give: "Lou doesn't take things. Lou gives them. Mostly pipe-hole advice.", pickup: "Lou would break me.", use: "Not Lou. Lou's the user." },
-    { id: "marcus", name: "Marcus", talk: S => RP.lines(["@marcus I counted: TWELVE. Twelve in. And a hundred outside. I'm a hero.", "You're a hero, Marcus."]), look: "Marcus, wearing a Harbor Lights lanyard like a medal, a tote bag with a picture of himself on it, and an expression of pure triumph.", give: "He'd take it, and also thirty friends.", pickup: "No." },
+    { id: "marcus", name: "Marcus", talk: S => RP.lines(A5.guest(S).hot), look: "Marcus, wearing a Harbor Lights lanyard like a medal, a tote bag with a picture of himself on it, and an expression of pure triumph.", give: "He'd take it, and also thirty friends.", pickup: "No." },
     { id: "a5_bcases", name: "road cases", rects: [[332, 160, 40, 76], [568, 194, 34, 28], [702, 198, 30, 26]], z: 35, walk: [350, 240, "back"], look: "Flight cases stenciled FOH, CABLES, LIGHTS, BACKLINE. A festival is a pile of black boxes with wheels, held together by tape and Roz.", open: "Locked. These are all professional boxes. Professionals lock their boxes.", pickup: "Crew rule: if it's on wheels, it's theirs." },
     { id: "a5_bwings", name: "stairs to the stage", r: [804, 12, 156, 150], z: 20, walk: [880, 236, "back"], look: "A set of black steel steps up to the side of the stage, a sign: STAGE LEFT, CREW + ARTISTS. It's the beginning of the best day of my life. Or the most embarrassing.",
       exit: S => ({ room: "a5_wings", x: 60, y: 232, face: "right" }) },

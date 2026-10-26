@@ -72,7 +72,8 @@ async function night1Set(S) {
   RP.setClock("THU 10:00 PM");
   await lines(["Ten PM. The floor's empty: five people at the bar, four of whom work here.", "Gus gives me a thumbs-up from the desk. His other hand is in the chips."]);
   S.f.a3_brandonSeen = true;
-  const res = await A3.mg("setTime", { scenario: "opener", records: A3.pool(S, 8), minutes: 60, promoter: "Odessa", promoterId: "a3_odoff", promoterPronoun: "she", difficulty: 1 }, {
+  await say("Nobody is here to impress, so I get to be careful. Start soft, build, and let the room find me.");
+  const res = await A3.mg("crowdRead", { records: A3.hand(S, 9, ["everything_but_the_girl_missing", "inner_city_good_life", "sylvester_you_make_me_feel_mighty_real", "cece_peniston_finally", "hardrive_deep_inside", "crystal_waters_gypsy_woman", "mr_fingers_washing_machine_can_you_feel_it", "mood_ii_swing_closer", "phuture_acid_tracks"]), crowd: "empty-bar", rounds: 4, difficulty: 1, venue: "Halcyon Room" }, {
     giveUp: "Not yet", onFail: async () => { await lines(["The floor's still empty. The bartenders have started to dance on their own, out of pity.", "Go again, softer."]); },
     assist: async () => { await say("A couple walks in, sees me trying, and starts dancing out of mercy. It's a start."); } });
   if (res.giveUp) return;
@@ -126,9 +127,10 @@ A3.usbIn = async function (S) {
 async function kosmoOverrun(S) {
   RP.setClock("FRI 12:04 AM");
   await lines(["Midnight. Kosmo's still playing.", "@a3_kosmo Wendell! One more. One more. The room is alive!", "Kosmo, it's twelve-oh-four.", "@a3_kosmo Time is a flat circle, Wendell."]);
-  const res = await A3.mg("setTime", { scenario: "follow-legend", followName: "Kosmo Delacroix", records: A3.pool(S, 8), minutes: 25, difficulty: 2 }, {
-    giveUp: "A minute", onFail: async () => { await lines(["The floor drifts. Half of it is on its phones, the other half is asking Odessa for something she doesn't have.", "Right: breathe, watch the clock, pick the right moment."]); },
-    assist: async () => { await say("Odessa steps up with a sheet of paper that says 'FIVE MORE MINUTES' in lipstick. The legend reads it. The legend wraps."); } });
+  await lines(["He finally lets go of the headphones at 12:21, like a man handing back a borrowed child.", "The room is warm, which is Kosmo's gift, and wobbling, which is his other one. Don't let it cool, don't spike it. Read it."]);
+  const res = await A3.mg("crowdRead", { records: A3.hand(S, 10, ["hardrive_deep_inside", "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "masters_at_work_blood_vibes_the_ha_dance", "loleatta_holloway_love_sensation", "double_exposure_ten_percent", "everything_but_the_girl_missing", "class_action_weekend", "cece_peniston_finally", "white_nyc93"]), crowd: "house", rounds: 5, difficulty: 2, venue: "Halcyon Room" }, {
+    giveUp: "A minute", onFail: async () => { await lines(["The floor drifts. Half of it is on its phones, the other half is asking Odessa for something she doesn't have.", "Right: breathe, watch the floor, pick the right record."]); },
+    assist: async () => { await say("Odessa steps up with a sheet of paper that says 'FIVE MORE MINUTES' in lipstick. The room reads it. The room forgives me."); } });
   if (res.giveUp) return;
   await lines(["@a3_kosmo ...Not bad, Wendell. Not bad at all.", "@a3_kosmo Keep the room warm. I'm going to find a sandwich."]);
   S.f.a3_kosmoDone = true; RP.relight();

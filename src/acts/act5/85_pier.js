@@ -95,7 +95,7 @@ async function danteTalk(S) {
 }
 async function simpleTalk(S, who) {
   const L = {
-    marcus: ["@marcus I counted: twelve people got in. Twelve! And I got the rest of them to sing from outside. It counts.", "It counts, Marcus.", "@marcus PLUS THIRTY. It was a state of mind. It's always been a state of mind."],
+    marcus: [A5.guest(S).pier, "It counts, Marcus.", "@marcus PLUS THIRTY. It was a state of mind. It's always been a state of mind."],
     ray: ["@ray Not bad. You didn't peak early. You peaked right. That's the whole job.", "@ray The white label thing was good. Keep it for the book you're going to write.", "Is that praise, Ray?", "@ray It's a medical observation. Don't tell anyone."],
     twinkie: ["@twinkie Honey. You played it all. I remember everything, and I'm still going to remember that.", "@twinkie Sit. Watch the sun. It's the best part of the night. The rest is just the buildup."],
     eddie: ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie It's an invoice for introductions. Two-time. Don't worry about it. I'll take it in spirit."],
@@ -122,7 +122,7 @@ async function finale(S) {
   const checks = [
     [!!S.f.a5_gearDone, "Bought the rig: Taula 4 MR, Core 47s, CDJ-3000s"],
     [!!S.f.a5_interviewDone, "Radio Harbor interview (Dante: \"next week\", live)"],
-    [!!S.f.a5_guestDone, "Marcus's \"plus thirty\" handled (twelve got in)"],
+    [!!S.f.a5_guestDone, "Marcus's \"plus thirty\" handled (" + A5.guest(S).nw + " got in)"],
     [!!S.f.a5_soundDone, "Soundcheck on the main stage"],
     [!!S.f.a5_axlDone, "Faced down Axl Vanta"],
     [!!S.f.a5_overrunDone, "Got Axl off the stage"],

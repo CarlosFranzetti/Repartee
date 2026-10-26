@@ -2,10 +2,10 @@
    Act definition, characters, voices, items, locations and shared helpers (window.RP.a5).
 
    Flags (S.f.a5_*):  day (1 Thu, 2 Fri, 3 Sat) · tod ("day"|"night") · calledMargo · gearMixer / gearMonitors / gearDecks / gearDone
-   · boutiqueMet · interviewDone · interviewScore · danteOnAir · gateMet · guestDone · louPass (have it) · louPassGiven · louComing
+   · boutiqueMet · interviewDone · interviewScore · danteOnAir · gateMet · guestDone · guestPick (0 all seven, 1 four, 2 none) · guestIn · louPass (have it) · louPassGiven · louComing
    · slept2 / slept3 · phase (Saturday: 0 arrive, 1 soundcheck done, 2 axl handled, 3 overrun handled, 4 on stage, 5 set done)
    · rayMet · sharpie · passFixed · gloriaOK · twinkieIntel · axlIntel · jessMet · smoothie · axlDone · louArrived · soundDone ·
-   overrunDone · setPlaylist · setCrowd · setFinale · kosmoName · pierDone */
+   overrunDone · overrunHow · setOpener · setCloser · setCrowd · setFinale · kosmoName · pierDone */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -96,7 +96,7 @@ A5.BASE_CRATE = [
   "mr_fingers_washing_machine_can_you_feel_it", "rhythim_is_rhythim_strings_of_life", "barbara_tucker_beautiful_people",
   "inner_city_good_life", "armand_van_helden_you_dont_know_me"
 ];
-/* the 12 the festival set is built from (playlist.Order pool) */
+/* the 12 the festival set draws its crate from (opener, middle and closer picks in 80_mainstage) */
 A5.SET_POOL = [
   "mr_fingers_washing_machine_can_you_feel_it", "kerri_chandler_atmosphere_ep_vol_1", "frankie_knuckles_your_love", "peech_boys_dont_make_me_wait",
   "mood_ii_swing_closer", "nuyorican_soul_runaway", "marshall_jefferson_move_your_body", "masters_at_work_blood_vibes_the_ha_dance",
@@ -154,6 +154,28 @@ A5.setDay = (S, day, clock, tod) => {
   RP.relight();
 };
 A5.line = (who, text) => RP.say(text, who);
+/* Marcus's list, by what you chose at the gate (a5_guestPick 0 all seven / 1 four / 2 none): n in, angry outside, and his later lines */
+A5.GUEST = [
+  { n: 12, nw: "twelve", angry: 4,
+    scene: ["@a5_whit Twelve on the list. That is every comp I have. If Francois K's plus-one turns up, I'm sending him to your tent.", "@marcus I'm not going to pick. I'm going to draw names out of a hat. ...The hat is a bucket.", "@a5_whit Nineteen people who weren't in the bucket are being very loud about it. That was an experience.", "@marcus I WANT A RECOUNT. I WANT TO SPEAK TO A MANAGER.", "@a5_whit I'm the manager. The answer is no. But with synergy."],
+    again: ["@marcus Nineteen people are texting me in capital letters. I'M ON THE LIST. I'M ON THE LIST.", "Yes, Marcus. Twelve of you."],
+    back: "@marcus I counted: twelve people came in. TWELVE. Nineteen are still texting me. Plus thirty is just a state of mind.",
+    hot: ["@marcus I counted: TWELVE. Twelve in. And nineteen outside, shouting my name. I'm a hero.", "You're a hero, Marcus."],
+    pier: "@marcus I counted: twelve people got in. Twelve! And the other nineteen sang from outside. It counts." },
+  { n: 9, nw: "nine", angry: 1,
+    scene: ["@marcus Four. I get four. ...Okay. That's Doreen, Big Phil, my cousin who can actually dance, and the guy with the generator.", "@a5_whit Nine in. Twenty-two out. One slightly grumpy. And three comps in my pocket for whoever turns up crying on Saturday. That's the best list we've seen all week.", "@marcus I'm fine. The tent has a ukulele. We'll have our own party."],
+    again: ["@marcus Nine on the list. Doreen cried. In a good way. Then Big Phil cried, in the other way.", "Picking four is hard, Marcus.", "@marcus It's the hardest thing I've ever done. I want a medal."],
+    back: "@marcus I counted: nine people came in. NINE. Doreen is already on the dance floor. Plus thirty is a state of mind.",
+    hot: ["@marcus Nine in. Twenty-two outside, singing. Whit gave Doreen's sister one of the spare comps at the gate. I'm a hero.", "You're a hero, Marcus."],
+    pier: "@marcus I counted: nine got in. Nine! And Whit's three spares went to Doreen's sister and two lost cousins. It counts." },
+  { n: 5, nw: "five", angry: 3,
+    scene: ["@marcus The five of us. Just the five. ...You're not going to make me pick? I'd have picked wrong.", "@a5_whit Five in. Twenty-six out. Nobody was chosen, so nobody's mad at Marcus. They're mad at me, in a calm and organized way. Three of them wrote letters.", "@marcus I'm fine. I'm a little hurt. The tent has a ukulele. We'll have our own party."],
+    again: ["@marcus Five on the list. Twenty-six in the parking lot. I told them it was a lottery.", "Was it?", "@marcus It was a lottery where nobody won. That's called fair."],
+    back: "@marcus I counted: five. FIVE. The twenty-six outside are all on my side. Plus thirty is a state of mind.",
+    hot: ["@marcus I counted: five in. Twenty-six outside, loving me from the fence. I'm a hero.", "You're a hero, Marcus."],
+    pier: "@marcus I counted: five got in. Five! And I got the other twenty-six to sing from the fence. It counts." }
+];
+A5.guest = S => A5.GUEST[S.f.a5_guestPick || 0];
 
 /* ---------------------------------------------------------------------------------------------------
    items
