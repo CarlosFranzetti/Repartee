@@ -585,6 +585,7 @@ RP.mg.register("buyGear", {
     }
     function callBS() {
       const l = cur(); if (l.status !== "open" || st.done) return;
+      st.buying = false;
       if (l.scam) {
         l.called = true; l.status = "busted"; RP.sfx("success");
         const desc = noteText(l, firstEvidence(l));
@@ -668,7 +669,8 @@ RP.mg.register("buyGear", {
       if (st.done) return;
       const l = cur(), price = priceOf(l);
       if (l.status !== "open" || price > sc.budget) return;
-      if (!st.buying) { st.buying = true; RP.sfx("blip"); host.timeout(() => { st.buying = false; refreshDeal(); }, 3200); refreshDeal(); return; }
+      /* the SURE? stays until you pick something else (no timer: a slow tap or a screen reader must be able to confirm) */
+      if (!st.buying) { st.buying = true; RP.sfx("blip"); refreshDeal(); return; }
       finishGame(l);
     }
     let resolveFn = null;

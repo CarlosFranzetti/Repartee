@@ -1,6 +1,8 @@
 /* get.Followers — a week planner on a pixel phone. Three slots a day (morning, afternoon, night):
    post a clip, practice, dig records, network at a party, collab, or sleep. Random events: a clip
    goes viral, a hater, the algorithm changes, burnout, a very sketchy offer for 10,000 followers.
+   Each event happens at most once a week; the sketchy DM and one algorithm change always show up.
+   Difficulty scales the follower gains (and, with no goal given, the goal).
    Params (all optional): { days (7), start (followers), goal, difficulty 1..5, arcade }
    Result: { ok, score 0..100, gained (followers gained), followers (final), goal, energy, skill }
    ok = reached the goal. Never mutates RP.state. */
@@ -63,13 +65,14 @@ const ORDER = ["post", "practice", "dig", "network", "collab", "sleep"];
 const SLOTS = ["MORNING", "AFTERNOON", "NIGHT"];
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const GOALS = [250, 330, 420, 520, 620];
+const GAIN = [1.2, 1, 0.94, 0.88, 0.82];          /* follower gains by difficulty */
 
 function newGame(p, diffIn) {
   const diff = clamp(Math.round(diffIn || p.difficulty || 2), 1, 5);
   const start = Math.max(0, Math.round(p.start != null ? p.start : ((RP.state && RP.state.followers) || 0) || 120));
   const days = clamp(Math.round(p.days || 7), 3, 14);
   const goal = Math.round(p.goal != null ? p.goal : start + GOALS[diff - 1] * (days / 7));
-  return { diff, start, days, goal, F: start, E: 85, K: 15, M: 20, H: 10, C: 0, day: 1, slot: 0, algo: null, bots: 0, botsFlag: false, postsToday: 0, postsYesterday: 0, viral: 0, hung: false, hist: [start], log: [], plan: [], lostSlot: false, posts: 0, today0: start, burned: 0 };
+  return { diff, gain: GAIN[diff - 1], seen: {}, algos: 0, hangover: 0, start, days, goal, F: start, E: 85, K: 15, M: 20, H: 10, C: 0, day: 1, slot: 0, algo: null, bots: 0, botsFlag: false, postsToday: 0, postsYesterday: 0, viral: 0, hung: false, hist: [start], log: [], plan: [], lostSlot: false, posts: 0, today0: start, burned: 0 };
 }
 function algoMult(G, kind) {
   const a = G.algo; if (!a) return 1;
@@ -83,7 +86,8 @@ function act(G, id, rnd) {
   let dF = 0, msg = "", sfx = "ping", tired = G.E < 15;
   const rr = (lo, hi) => lo + (hi - lo) * rnd();
   if (id !== "sleep" && tired && rnd() < 0.3) { G.E = Math.min(100, G.E + 8); G.burned++; return { dF: 0, msg: "You stare at the screen. The screen stares back. Nothing happens.", sfx: "error", tag: "wasted" }; }
-  const tm = tired && id !== "sleep" ? 0.5 : 1;
+  const tm = (tired && id !== "sleep" ? 0.5 : 1) * (id === "sleep" || id === "practice" || id === "dig" ? 1 : G.gain);
+  const F0 = G.F;
   G.E = clamp(G.E - a.cost, 0, 100);
   if (id === "post") {
     const q = 0.12 + 0.88 * Math.min(1, (G.K * 0.6 + G.M * 0.4) / 70);
@@ -108,7 +112,7 @@ function act(G, id, rnd) {
     G.C = clamp(G.C + 1, 0, 5);
     dF = Math.round((10 + G.C * 3) * (slot === 2 ? 1.4 : 0.8) * tm * rr(0.8, 1.25)); G.H = clamp(G.H + 4, 0, 100);
     msg = slot === 2 ? "You work the party. Business cards, hugs, one questionable handshake." : "A daytime party. Brunch. Somehow still networking.";
-    if (rnd() < 0.2) { G.E = clamp(G.E - 10, 0, 100); msg += " Hangover tomorrow."; }
+    if (rnd() < 0.2) { G.hangover = 10; msg += " Hangover tomorrow."; }
     sfx = "glass";
   } else if (id === "collab") {
     const s = Math.min(1, G.K / 45);
@@ -121,21 +125,23 @@ function act(G, id, rnd) {
     msg = "You sleep. In a bed. Like a person."; sfx = "whoosh";
   }
   G.F = Math.max(0, G.F + dF);
-  if (G.E <= 0 && id !== "sleep") { const loss = Math.round(G.F * 0.06); G.F -= loss; G.E = 12; msg += " At 3 AM you post a rant. -" + loss + " followers. You sleep it off."; sfx = "buzz"; }
-  return { dF, msg, sfx, tag: id };
+  if (G.E <= 0 && id !== "sleep") { const loss = Math.round(G.F * 0.06); G.F -= loss; G.E = 12; msg += (dF ? " (" + (dF > 0 ? "+" : "") + dF + ")" : "") + " Then, out of energy, you post a rant at 3 AM. -" + loss + " followers. You sleep it off."; sfx = "buzz"; }
+  return { dF: G.F - F0, msg, sfx, tag: id };
 }
 function endOfDay(G) {
   let note = "";
+  const F0 = G.F;
   const passive = Math.round(G.H * 0.12 + G.F * 0.004);
   G.F += passive;
-  if (G.postsToday === 0) { const l = Math.round(G.F * 0.015); G.F -= l; note = "A quiet day: -" + l + "."; }
+  if (G.postsToday === 0) { const l = Math.round(G.F * 0.015); G.F -= l; note = "No post today: -" + l + "."; }
+  if (G.hangover) { G.E = clamp(G.E - G.hangover, 0, 100); note += " The hangover arrives: -" + G.hangover + " energy."; G.hangover = 0; }
   if (G.botsFlag && G.bots > 0) { const lost = Math.round(G.bots * 0.7); G.F = Math.max(0, G.F - lost); note += " The bots got purged: -" + lost + "."; G.bots = 0; G.botsFlag = false; G.H = clamp(G.H - 12, 0, 100); }
   G.H = clamp(G.H * 0.92, 0, 100);
   G.postsYesterday = G.postsToday; G.postsToday = 0;
   if (G.algo) { G.algo.days--; if (G.algo.days <= 0) G.algo = null; }
   if (G.viral > 0) G.viral--;
   G.hist.push(G.F);
-  return { passive, note: note.trim() };
+  return { passive, net: G.F - F0, note: note.trim() };
 }
 
 /* events: { id, w, cond(G), title, text, ch: [{ text, run(G, rnd) -> msg }] } */
@@ -146,14 +152,14 @@ const EV = [
     ch: [{ text: "Reply with a joke (needs skill)", run: (G, r) => { if (G.K >= 30) { G.E = clamp(G.E - 6, 0, 100); G.F += 22; G.H = clamp(G.H + 6, 0, 100); return "Your reply is a banger. The hater deletes his account. +22."; } G.E = clamp(G.E - 6, 0, 100); G.F -= 10; return "The joke flops. The hater has a better one. -10."; } },
          { text: "Block, mute, breathe", run: (G) => { G.H = clamp(G.H - 2, 0, 100); return "You mute him. Your skin gets thicker by a micron."; } },
          { text: "Reply in all caps", run: (G, r) => { G.E = clamp(G.E - 10, 0, 100); if (r() < 0.5) { G.F += 30; return "It goes viral for the wrong reasons. +30. Don't do it again."; } G.F -= 14; return "A pile-on. -14. You regret everything."; } }] },
-  { id: "algoGood", w: 2.4, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "The feed now LOVES short clips. For two days, posting is boosted. (It will change again. It always does.)",
-    ch: [{ text: "Noted.", run: (G) => { G.algo = { type: "clips", days: 2, label: "CLIPS +40%" }; return "Posting is boosted for two days."; } }] },
-  { id: "algoBad", w: 2.2, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "The feed now LOVES studio setups and hates everything else. Posting is weaker for two days. Time to network, dig and practice.",
-    ch: [{ text: "Adapt.", run: (G) => { G.algo = { type: "studio", days: 2, label: "STUDIO POSTS -30%" }; return "Posting is weaker for two days."; } }] },
-  { id: "algoSpam", w: 1.6, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "New rule: the feed punishes spam. The first post of a day is boosted. More than one a day is mud.",
+  { id: "algoGood", w: 2.4, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "The feed now LOVES short clips. For two days, posts do 40% better. (It will change again. It always does.)",
+    ch: [{ text: "Noted.", run: (G) => { G.algo = { type: "clips", days: 2, label: "CLIPS +40%" }; return "Posts +40% for two days."; } }] },
+  { id: "algoBad", w: 2.2, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "The feed now LOVES studio gear tours, and you don't have a studio. For two days your clips reach 30% fewer people. Still post once a day: a day with no post costs more.",
+    ch: [{ text: "Adapt.", run: (G) => { G.algo = { type: "studio", days: 2, label: "YOUR POSTS -30%" }; return "Your posts do 30% worse for two days. One a day still beats none."; } }] },
+  { id: "algoSpam", w: 1.6, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "New rule: the feed punishes spam. For two days the first post of a day gets +15%. Every post after that does 45% worse.",
     ch: [{ text: "One a day, then.", run: (G) => { G.algo = { type: "spam", days: 2, label: "1 POST/DAY" }; return "One good post a day. Two is a crime."; } }] },
-  { id: "algoCollab", w: 1.4, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "The feed now loves collabs. Solo clips are out. Bring a friend.",
-    ch: [{ text: "Call somebody.", run: (G) => { G.algo = { type: "collab", days: 2, label: "COLLABS +50%" }; return "Collabs are boosted for two days."; } }] },
+  { id: "algoCollab", w: 1.4, cond: G => !G.algo, title: "THE ALGORITHM CHANGED", text: "The feed now loves collabs: +50% for two days. Solo clips do 20% worse. Bring a friend.",
+    ch: [{ text: "Call somebody.", run: (G) => { G.algo = { type: "collab", days: 2, label: "COLLABS +50%" }; return "Collabs +50%, solo posts -20%, for two days."; } }] },
   { id: "cat", w: 2, cond: G => true, title: "THE CAT CLIP", text: "Someone's cat walked across your keyboard mid-mix. The clip has 4,000 likes. You didn't make the clip. The cat did.",
     ch: [{ text: "Take the credit", run: (G) => { G.F += 24; return "+24 followers. The cat does not need credit."; } }] },
   { id: "lou", w: 1.5, cond: G => true, title: "LOU BANGS THE PIPE", text: "\"In 1993 we had one algorithm,\" Lou shouts through the wall. \"It was called Gary.\" It's weirdly useful.",
@@ -171,16 +177,23 @@ const EV = [
   { id: "rent", w: 1, cond: G => true, title: "THE LANDLORD TEXTS", text: "\"Re: the thing.\" You spend an hour on hold with a man who is also the landlord's cousin.",
     ch: [{ text: "Ugh.", run: (G) => { G.E = clamp(G.E - 10, 0, 100); return "-10 energy. Rent is a lifestyle."; } }] }
 ];
+/* every event happens at most once a week, two algorithm changes at most. The sketchy DM is
+   promised in the rules, so it arrives by ~60% of the week; one algorithm change arrives by day 3. */
 function rollEvents(G, rnd) {
-  const out = [];
+  const out = [], seen = G.seen || (G.seen = {});
+  const take = e => { out.push(e); seen[e.id] = true; if (e.id.startsWith("algo")) G.algos = (G.algos || 0) + 1; };
+  const free = e => !seen[e.id] && !out.find(o => o.id === e.id) && !(e.id.startsWith("algo") && (G.algos >= 2 || G.algo || out.find(o => o.id.startsWith("algo"))));
   if (G.E < 22) out.push({ id: "burnout", forced: true, title: "BURNOUT", text: "You wake up and stare at the ceiling for two hours. A pigeon judges you. Your morning slot is gone.", ch: [{ text: "Fine.", run: (G) => { G.E = clamp(G.E + 18, 0, 100); G.lostSlot = true; return "Morning lost. +18 energy. Plan some sleep."; } }] });
-  const n = rnd() < 0.7 ? (rnd() < 0.25 ? 2 : 1) : 0;
+  const bots = EV.find(e => e.id === "bots");
+  if (!seen.bots && G.day >= Math.ceil(G.days * 0.6) && bots.cond(G)) take(bots);
+  else if (!G.algos && G.day >= Math.min(3, G.days)) { const al = EV.filter(e => e.id.startsWith("algo") && free(e)); if (al.length) take(al[Math.floor(rnd() * al.length)]); }
+  const n = out.length >= 2 ? 0 : rnd() < 0.7 ? (rnd() < 0.25 ? 2 : 1) : 0;
   for (let i = 0; i < n; i++) {
-    const pool = EV.filter(e => e.cond(G) && !out.find(o => o.id === e.id) && !(e.id.startsWith("algo") && out.find(o => o.id.startsWith("algo"))));
+    const pool = EV.filter(e => e.cond(G) && free(e));
     const tot = pool.reduce((a, e) => a + e.w, 0); if (!pool.length) break;
     let r0 = rnd() * tot, pickE = pool[0];
     for (const e of pool) { r0 -= e.w; if (r0 <= 0) { pickE = e; break; } }
-    out.push(pickE);
+    take(pickE);
   }
   return out;
 }
@@ -296,9 +309,9 @@ async function run(host, p, SK) {
       lead: "You have " + G.days + " days and " + fmtNum(G.start) + " followers. The goal: " + fmtNum(G.goal) + ".",
       steps: [
         "Every day has <b>three slots</b>: morning, afternoon, night. Pick an activity for each (click, or press <b>1</b>–<b>6</b>).",
-        "<b>Posting</b> brings followers but needs <b>material</b> (dig) and <b>skill</b> (practice). Night posts do best.",
+        "<b>Posting</b> brings followers but needs <b>material</b> (dig) and <b>skill</b> (practice). Night posts do best. A day with <b>no post</b> loses a few followers.",
         "<b>Networking</b> earns contacts; <b>collabs</b> spend them for big gains. <b>Sleep</b> or burn out.",
-        "Events happen: viral clips, haters, algorithm changes, a very sketchy offer. Adapt."
+        "Events happen: viral clips, haters, algorithm changes, and one very sketchy offer. Run out of energy and you do something you'll regret."
       ],
       pill: "DIFFICULTY " + G.diff,
       button: "START THE WEEK"
@@ -355,7 +368,7 @@ async function run(host, p, SK) {
         const a = ACT[id], b = el("button", { cls: "gf-act", type: "button" }, box);
         el("span", { cls: "k", text: String(i + 1) }, b);
         const t = el("span", {}, b); t.appendChild(document.createTextNode(a.label));
-        const sm = el("small", { html: a.note + " <i>" + (a.cost > 0 ? "-" + a.cost : "+" + (G.slot === 2 ? 46 : 38)) + " energy</i>" }, t);
+        const sm = el("small", { html: a.note + " <i>" + (a.cost > 0 ? "-" + a.cost : "+" + (G.slot === 2 ? 46 : 38)) + " energy</i>" + (a.cost > 0 && G.E - a.cost <= 0 ? " <i>(you'll crash)</i>" : "") }, t);
         if (id === "collab" && G.C < 1) { b.disabled = true; sm.textContent = "Needs a contact. Go network first."; }
         b.addEventListener("click", () => choose(i));
         return b;
@@ -399,13 +412,13 @@ async function run(host, p, SK) {
         setStats(); addF(r.dF);
         RP.sfx(r.sfx);
         notify((choiceId === "post" ? "NEW POST" : ACT[choiceId].label.toUpperCase()).slice(0, 26) + "|" + (r.dF ? (r.dF > 0 ? "+" : "") + r.dF + " FOLLOWERS" : "ENERGY " + Math.round(G.E)), r.dF < 0 ? "#ff6a6a" : "#ff3fa4");
-        say(r.msg + (r.dF ? " (" + (r.dF > 0 ? "+" : "") + r.dF + ")" : ""));
+        say(r.msg + (r.dF && r.sfx !== "buzz" ? " (" + (r.dF > 0 ? "+" : "") + r.dF + ")" : ""));
         await S.wait(1100);
       }
       G.slot = 2;
       const eod = endOfDay(G);
       shown = shown; paintStatus(); setStats();
-      if (eod.passive || eod.note) { addF(eod.passive); say("Day " + G.day + " done. " + (eod.passive ? "Passive growth: +" + eod.passive + ". " : "") + eod.note); notify("DAY " + G.day + " DONE|+" + eod.passive + " PASSIVE", "#39d0ff"); await S.wait(1000); }
+      if (eod.passive || eod.note) { addF(eod.net); say("Day " + G.day + " done. " + (eod.passive ? "Passive growth: +" + eod.passive + ". " : "") + eod.note); notify("DAY " + G.day + " DONE|" + (eod.net >= 0 ? "+" : "") + eod.net + " OVERNIGHT", eod.net < 0 ? "#ff6a6a" : "#39d0ff"); await S.wait(1000); }
       if (G.F >= G.goal * 1.6 && G.day < G.days) { /* way ahead: keep playing, no early exit */ }
     }
     panel.textContent = "";

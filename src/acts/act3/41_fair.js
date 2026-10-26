@@ -73,6 +73,7 @@ function light(S) {
 async function checkHunt(S) {
   if (S.f.a3_hunt || !S.f.a3_clue1 || !S.f.a3_clue2 || !S.f.a3_clue3) return;
   await RP.lines(["Okay. A tip from Ray. A name from Mort. A flyer off the corkboard.", "I spread them over a folding table. This is how detectives do it. On TV, there's string."]);
+  A3.clockTo(S, "SUN 10:00 AM");
   const res = await A3.mg("recordHunt", {
     target: "loose_joints_is_it_all_over_my_face",
     clues: ["Ray: a clean copy of 'Is It All Over My Face?' has sat in a Queens collection for thirty years.", "Mort: the collector was Hal Pruitt. He passed in March. The family is emptying the house this week.", "A flyer: 'PRUITT ESTATE SALE. WOODSIDE. EVERYTHING MUST GO.'"],
@@ -81,7 +82,7 @@ async function checkHunt(S) {
   if (res.giveUp) return;
   S.f.a3_hunt = true;
   RP.unlock("a3_loc_estate");
-  RP.setClock("MON 9:00 AM");
+  A3.clockTo(S, "SUN 6:15 PM");
   RP.toast("New place on the map: The Pruitt house");
   await RP.lines(["The Pruitt house, Woodside, Queens. An estate sale. Everything must go.", "Everything includes the Loose Joints. Everything includes whatever else Hal kept for sixty years."]);
 }
@@ -161,7 +162,7 @@ RP.room({
     { crowd: { n: 4, rect: [90, 208, 470, 12], seed: 41, face: "back", act: "stand", scale: 0.95 } }
   ],
   enter: async (S, from) => {
-    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; RP.setClock("SUN 11:40 AM"); await RP.lines(["The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "The kid on the three-dollar cash box sees my record bag, decides I'm a vendor and waves me in. I don't correct him.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
+    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; A3.clockTo(S, "SUN 10:00 AM"); await RP.lines(["The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "The kid on the three-dollar cash box sees my record bag, decides I'm a vendor and waves me in. I don't correct him.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
   },
   hotspots: [
     { id: "a3_f_door", name: "door", r: [4, 38, 54, 114], z: 20, walk: [66, 214, "left"], look: "The gym door. A hand-lettered sign says 'RECORD FAIR: $3, CASH ONLY.' A second sign says 'NO RUNNING.' Nobody's running. Everyone's walking quickly. The cash-box kid thinks I'm a vendor. The bag gets me in everywhere.", exit: S => "travel" },

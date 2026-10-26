@@ -74,7 +74,7 @@ function draw(c, S, t) {
   c.save(); c.globalAlpha = 0.5;
   for (let i = 0; i < 38; i++) {
     const h = Math.round(5 + (Math.sin(t / 240 + i * 0.7) + Math.sin(t / 380 + i * 1.3) + 2) * 9);
-    c.fillStyle = ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff"][(i + Math.floor(t / 900)) % 4];
+    c.fillStyle = ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff"][(i + Math.floor(Math.max(0, t) / 900)) % 4];
     c.fillRect(162 + i * 8, 76 - h, 6, h);
   }
   c.restore();

@@ -128,7 +128,8 @@ async function checkInPassport(S) {
   await RP.lines([
     "@a4_dolores Passport.", "@a4_dolores ...Berlin. Round trip. You look like a one-way.", "I'm a round trip with feelings.",
     "@a4_dolores The booking says \"" + tagName(S) + ".\" Passport says " + A4.dj(S) + ". I'll allow it. This once.",
-    "@a4_dolores Window seat, 23A. Bring snacks. Your bag?"
+    S.f.a4_cls === "business" ? "@a4_dolores Your fare says business. Business is oversold, so you're back here with the rest of us. Window seat, 23A. There's a voucher. The voucher is also oversold." : "@a4_dolores Window seat, 23A. Bring snacks.",
+    "@a4_dolores Your bag?"
   ]);
   RP.give("a4_boarding");
   RP.sfx("typing");
@@ -137,7 +138,7 @@ async function checkInPassport(S) {
 async function checkInBag(S) {
   if (!S.f.a4_checkedPass) { await RP.say("Passport first, hon. I can't tag a bag with no person attached.", "a4_dolores"); return; }
   if (S.f.a4_bagChecked) return "She's already got the bag. I could feel it go. Somewhere a conveyor is doing the thing it does.";
-  await RP.lines(["@a4_dolores Up on the scale. ...Thirty-eight kilos.", "It's records.", "@a4_dolores It's thirty-eight kilos of records. Limit's twenty-three. Seventy-five dollars."]);
+  await RP.lines(["@a4_dolores Up on the scale. ...Thirty-eight kilos.", "It's records.", "@a4_dolores It's thirty-eight kilos of records. Limit's twenty-three" + (S.f.a4_cls === "business" ? ". Business would have been thirty-two" : "") + ". Seventy-five dollars."]);
   if (S.money >= 75) { RP.money(-75); await RP.say("Seventy-five dollars. For the privilege of being separated from my career."); }
   else await RP.say("I... can't. I have a record. She sighs and waves me through. \"Because it's seven a.m. on a Saturday.\"", "a4_dolores");
   await RP.lines(["@a4_dolores Berlin. BER. Sticker on, tag on. Claim tag's yours. Don't lose it.", "@a4_dolores Name on the tag: \"" + tagName(S) + ".\" It's how it's always been."]);
@@ -150,7 +151,7 @@ async function checkInBag(S) {
   await RP.say("Will passenger " + tagName(S) + " please report to Baggage Services, Level 1. Passenger " + tagName(S) + ".", "a4_pa");
   RP.text("TRANSATLANTIS", "Bag BER-4471 requires your attention. See Baggage Services, Level 1. Reply STOP to stop. You can't stop.", false);
   S.f.a4_msgBag = true;
-  await RP.lines(["Of course. Of course the bag.", "I told Lou \"don't lose the bag\" in my head and now it's a prophecy.", "Baggage Services is the door on the far left. Let's go find out what an airline can do to a record bag."]);
+  await RP.lines(["Of course. Of course the bag.", "Lou said \"don't lose the bag\" and now it's a prophecy.", "Baggage Services is the door on the far left. Let's go find out what an airline can do to a record bag."]);
 }
 async function doloresTalk(S) {
   if (!S.f.a4_checkedPass) { await RP.lines(["Hi. Berlin, please.", "@a4_dolores Passport."]); return; }
@@ -229,7 +230,7 @@ RP.room({
     { id: "a4_coffee", name: "coffee kiosk", r: [596, 98, 44, 56], z: 42, walk: [610, 212, "back"], look: "\"BEANS & REGRET.\" A $9 coffee, with a menu that doesn't mention the regret. It's in the price.", use: "Nine dollars for hot water that has met coffee once. No.", talk: "Nobody's there. Even the barista has given up on the barista." },
     { id: "a4_gates", name: "Security & Gates", r: [588, 54, 50, 100], z: 18, walk: [606, 224, "right"],
       look: "The entrance to security, past a stanchion maze built for patience I don't have.",
-      exit: S => !RP.has("a4_boarding") ? "Security wants a boarding pass. Check-in first. Dolores is the one with the lanyard." : (!S.f.a4_bagChecked ? "Delgado would arrest this bag on sight. Thirty-eight kilos. Check it first." : { room: "a4_security", x: 80, y: 232, face: "right" }) },
+      exit: S => !RP.has("a4_boarding") ? "Security wants a boarding pass. Check-in first. Dolores is the one with the lanyard." : (!S.f.a4_bagChecked ? "Security would flag this bag on sight. Thirty-eight kilos. Check it first." : { room: "a4_security", x: 80, y: 232, face: "right" }) },
     { id: "a4_window", name: "terminal windows", r: [330, 94, 214, 56], z: 10, walk: [440, 214, "back"], look: "A parked TransAtlantis plane out there, with its tail dreaming of Berlin. A baggage train is crawling past. Mine is not on it. I think.", open: "It's glass. The only openings are for planes and people." },
     { id: "a4_cart", name: "luggage cart", r: [36, 206, 42, 44], z: 60, walk: [88, 238, "left"], look: "Luggage carts, $7 a pop. They want a deposit. I put a $75 bag on a belt and they want $7 for a cart. It's a pyramid scheme.", pickup: "It's got a deposit lock. Seven dollars. For a cart. In 2026.", use: "I don't need a cart. I'm traveling light. Just 38 kilos, a career and a bad feeling." },
     { id: "a4_wet", name: "wet floor sign", r: [370, 210, 22, 26], z: 62, walk: [380, 240, "right"], look: "CAUTION: WET FLOOR. The floor is bone dry. The sign is just worried.", pickup: "I'm not taking the sign. It's the only one here that cares.", use: "Everyone here is slipping already. Metaphorically." },

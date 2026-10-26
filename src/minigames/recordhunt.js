@@ -4,7 +4,8 @@
    Params (all optional):
      { target: recordId (default "loose_joints_is_it_all_over_my_face"),
        clues: [strings]   (first = what you start with; extra ones replace the default tips in order),
-       places: [{id, label, hint, kind?, area?, u?, v?, opens?, closes?, found?: true (the final spot)}],
+       places: [{id, label, hint, kind?, area?, u?, v?, opens?, closes?, found?: true (the final spot), where?: "On the left platter, under the dust sheet" (the reveal line), say?}],
+                 (at the final spot of a custom hunt you need two different clues in the notebook, a first one gets "what else have you got?")
        difficulty: 1..5, seed? }
    Result: { ok, score (0..100), found: bool }   (LEAVE / GIVE UP => { ok:false, score:0, found:false })
    Uses RP.digkit (digkit_lib.js) inside play(). All shops and people are fictional. */
@@ -118,7 +119,7 @@ function buildScenario(rec, p, rnd, diff, DK) {
         npc: isRay ? "ray" : g.npc, npcName: isRay ? "RAY" : g.name, intro: isRay ? ["RAY: \"You again. Make it quick. The cat's trying to sleep.\""] : g.intro,
         fallback: { say: isRay ? ["RAY: \"I already told you everything I know. That was the rude part.\""] : g.fb, find: true, junk: !!g.junk },
         u: q.u != null ? q.u : Math.min(0.95, pos[0] + (key && used.size > 1 ? (i % 2 ? 0.03 : -0.03) : 0)), v: q.v != null ? q.v : Math.min(0.9, pos[1] + (key ? (i % 3) * 0.02 : 0)),
-        opens: q.opens != null ? q.opens : d.opens, closes: q.closes != null ? q.closes : d.closes, fee: q.fee != null ? q.fee : (kind === "fair" ? 0 : d.fee), found: !!q.found, say: q.say });
+        opens: q.opens != null ? q.opens : d.opens, closes: q.closes != null ? q.closes : d.closes, fee: q.fee != null ? q.fee : (kind === "fair" ? 0 : d.fee), found: !!q.found, say: q.say, where: q.where });
     });
     final = (base.find(b => b.found) || base[base.length - 1]).id;
     places = base; startClues = [];
@@ -388,7 +389,7 @@ RP.mg.register("recordHunt", {
       } else if (S.mode === "reveal") {
         msg.textContent = "";
         const h = el("h3", { text: "THERE IT IS." }, card); el("small", { text: byId[S.at].label }, h);
-        el("div", { cls: "dk-meta", text: "Under the mothballs and a crocheted doily: " + rec.artist + " – " + rec.title + "." }, card);
+        el("div", { cls: "dk-meta", text: (byId[S.at].where || (byId[S.at].generic ? "Under the dust sheet" : "Under the mothballs and a crocheted doily")) + ": " + rec.artist + " – " + rec.title + (/[?!.]$/.test(rec.title) ? "" : ".") }, card);
       } else if (S.mode === "intro") {
         el("h3", { text: "THE HUNT" }, card);
       }
@@ -434,7 +435,10 @@ RP.mg.register("recordHunt", {
       advance(10); const key = q.id + ":" + clueId; const first = !S.asked[key]; S.asked[key] = true;
       let ent = q.asks && q.asks[clueId];
       if (q.generic) {
-        if (q.final) ent = { say: q.say ? [].concat(q.say) : ["YOU: \"I'm after '" + rec.title + "'. Somebody said it was here.\"", "\"...Under the dust sheet. Where it's always been. Careful with the sleeve.\""], found: true };
+        /* with two or more clues in the notebook, one of them alone isn't enough at the right spot: they want a second piece (a name AND a place) */
+        const need = Math.min(2, sc.startClues.length), got = Object.keys(S.asked).filter(k => k.indexOf(q.id + ":") === 0).length;
+        if (q.final && got < need) ent = { say: ["YOU: \"I'm after '" + rec.title + "'. A tip says it's here.\"", "\"Maybe. A tip's a tip. What else have you got?\""] };
+        else if (q.final) ent = { say: q.say ? [].concat(q.say) : ["YOU: \"I'm after '" + rec.title + "'. Somebody said it was here.\"", "\"...Under the dust sheet. Where it's always been. Careful with the sleeve.\""], found: true };
         else ent = null;
       }
       S.log = S.log.slice(-3);

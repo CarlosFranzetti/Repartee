@@ -125,7 +125,7 @@ RP.room({
     { id: "a3_ray", char: "ray", x: 540, y: 176, face: "front", act: "stand", name: "Ray" }
   ],
   enter: async (S, from) => {
-    if (!S.f.a3_dcSeen) { S.f.a3_dcSeen = true; RP.setClock("FRI 2:15 PM"); await RP.lines(["Deep Cuts. It smells like cardboard and 'I told you so.'"]); }
+    if (!S.f.a3_dcSeen) { S.f.a3_dcSeen = true; A3.clockTo(S, "FRI 2:15 PM"); await RP.lines(["Deep Cuts. It smells like cardboard and 'I told you so.'"]); }
   },
   hotspots: [
     { id: "a3_dc_door", name: "door to the street", r: [4, 38, 52, 130], z: 20, walk: [64, 220, "left"], look: "The door to the street. There's a bell on it that's been ringing since the nineties.", exit: S => "travel" },
@@ -140,7 +140,7 @@ RP.room({
     { id: "a3_dc_sign", name: "sign", r: [498, 22, 74, 44], z: 20, walk: [535, 218, "back"], look: "NO, I DON'T HAVE THAT. YES, I KNOW WHAT IT IS. NO. A sign that saves Ray a hundred conversations a day. Each of them ends 'okay.'", pickup: "It's Ray's mission statement. He'd want it back." },
     { id: "a3_dc_bins", name: "record bins", r: [74, 124, 290, 66], z: 30, walk: [210, 218, "back"],
       look: "Rows and rows of sleeves, alphabetized by a system only Ray understands. House, soul, disco, jazz, and a section marked 'REGRET.'",
-      use: S => S.f.a3_rayTip ? "I could flip through, but the grail isn't in there. Ray says. And he never lies about records." : "I flip through for a minute. I find three things I can't afford and one I'd never buy. A normal Tuesday.", pickup: "I'd take the whole bin if I could afford the whole bin. I can't. Ray knows." },
+      use: S => S.f.a3_rayTip ? "I could flip through, but the grail isn't in there. Ray says. And he never lies about records." : "I flip through for a minute. I find three things I can't afford and one I'd never buy. A normal week.", pickup: "I'd take the whole bin if I could afford the whole bin. I can't. Ray knows." },
     { id: "a3_dc_dollar", name: "dollar bin", r: [200, 140, 94, 50], z: 32, walk: [248, 218, "back"],
       look: "The dollar bin. Where dreams go to get cheaper. A sticker says 'ALL SALES FINAL. ALL OF THEM.'", use: S => rayDollar(S), pickup: S => rayDollar(S) },
     { id: "a3_dc_counter", name: "counter", r: [434, 140, 204, 56], z: 25, walk: [500, 218, "back"], look: "Ray's counter. A register, a stack of receipts, and a bell nobody needs to ring because Ray already knows you're here.", use: "I tap the bell. Ray doesn't look up. 'I know,' he says.", pickup: "It's a counter. It's attached to the floor and to Ray's opinions." },

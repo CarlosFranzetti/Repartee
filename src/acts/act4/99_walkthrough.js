@@ -93,7 +93,7 @@ RP.walkthroughs.act4fail = [
   ["use", "hot:a4_decks", "a4_white"],
   ["mg", { ok: false, score: 10 }], ["mg", { ok: false, score: 12 }], ["mg", { ok: false, score: 20 }],     // three failures: forced through, never stuck
   ["use", "hot:a4_sampler"], ["expect", "S.f.a4_track", "forced through after three failed tries"],
-  ["use", "hot:a4_hole", "phone"],
+  ["answers", [0]], ["use", "hot:a4_hole", "phone"], ["run", async (S, RP) => { RP.test.answers.length = 0; }],
   ["answers", [1]], ["mg", { ok: false, score: 5 }], ["mg", { ok: false, score: 5 }],                          // followers fails twice -> fallback
   ["mg", { ok: false, score: 20 }], ["mg", { ok: false, score: 20 }], ["mg", { ok: false, score: 20 }],
   ["use", "hot:a4_laptop"], ["expect", "S.f.a4_deal && S.f.a4_fee >= 350", "weak deal, but a deal"],

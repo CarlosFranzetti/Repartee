@@ -116,7 +116,7 @@ async function tanyaTalk(S) {
 }
 async function sortCollection(S, pay) {
   await RP.fadeTo(1, 700);
-  RP.setClock("MON 1:20 PM");
+  A3.clockTo(S, "MON 1:20 PM");
   await RP.say("Hours later. Dust in my teeth, a crate in every direction, a pile of 'maybe' that's bigger than most people's collection.", "nar");
   await RP.fadeTo(0, 700);
   const res = await A3.mg("crateDigging", { records: COLLECTION, budget: pay, keepSlots: 8, difficulty: 2, owner: "Hal", seller: "Tanya", place: "Woodside, Queens" }, { giveUp: "Later", tries: 1,
@@ -165,7 +165,7 @@ async function maybeFinish(S) {
     S.f.a3_estateDone = true;
     await RP.lines(["A grail. Two turntables. A bird. Wait. Not the bird.", "@a3_tanya Take the bird. Please.", "...Maybe next time. Gerald would be jealous."]);
     RP.text("RAY", "Heard you got a house full of Hal Pruitt. Don't tell me about it. Come by. I'll pretend I'm not jealous. -R");
-    RP.text("ODESSA", "Saw your socials. Estate sale? Technics?? Bring one, we're talking Saturday. -O", true);
+    RP.text("ODESSA", "Word travels. Estate sale? Technics?? Bring one, we're talking Saturday. -O", true);
   }
 }
 async function birdTalk(S) {
@@ -200,7 +200,7 @@ RP.room({
   ],
   enter: async (S, from) => {
     if (!S.f.a3_estateSeen) {
-      S.f.a3_estateSeen = true; RP.setClock("MON 11:05 AM");
+      S.f.a3_estateSeen = true; A3.clockTo(S, "MON 11:05 AM");
       S.f.a3_priyaAtEstate = true;
       await RP.lines(["The Pruitt house. A Queens row house the color of a cough drop, and every room is a record store without a roof.", "Sixty years of one man's life: floor to ceiling shelves, milk crates on the stairs, price stickers on everything. It smells like cardboard, pipe tobacco and time."]);
       await priyaArgument(S);

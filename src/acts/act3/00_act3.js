@@ -99,8 +99,13 @@ A3.misspell = function (name) {
 A3.billed = S => A3.misspell(S.name);
 A3.djName = S => (String(S.name || "DJ NOBODY").toUpperCase().startsWith("DJ ") ? S.name : "DJ " + (S.name || "NOBODY"));
 
-/* minutes-of-the-week clock labels (HUD text) */
+/* HUD clock for the week: only ever moves forward (visits happen in any order); the nights set it outright with RP.setClock */
 A3.clock = RP.setClock;
+A3.clockTo = function (S, label) {
+  const D = { THU: 0, FRI: 1, SAT: 2, SUN: 3, MON: 4, TUE: 5, WED: 6 };
+  const val = s => { const m = /^(\w{3}) (\d+):(\d+) (AM|PM)$/.exec(s || ""); return m ? D[m[1]] * 1440 + ((+m[2]) % 12 + (m[4] === "PM" ? 12 : 0)) * 60 + (+m[3]) : -1; };
+  if (val(label) >= val(S.clock)) RP.setClock(label);
+};
 
 /* run a mini-game and make sure the story can never dead-end on it:
    a missing module or a won game is ok; a lost game offers a retry and, after `tries` losses, a graceful assist. */
@@ -131,7 +136,7 @@ A3.tasks = function (S) {
   return [
     [!!(f.a3_cdj && f.a3_dj350), "Gear that doesn't embarrass me. (Eddie knows a guy. Eddie is the guy.)"],
     [!!f.a3_estateDone, "A sound of my own. (Ray says: dig. Ray says it rudely.)"],
-    [!!f.a3_promo, "A crowd. (Phone. Fingers. Hashtags.)"],
+    [!!f.a3_promo, "A crowd. (Laptop. Fingers. Hashtags.)"],
     [!!f.a3_saturday, "Anniversary Thursday. Don't embarrass ME."]
   ];
 };

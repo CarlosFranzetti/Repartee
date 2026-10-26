@@ -106,7 +106,7 @@ async function sleepNow(S) {
     return;
   }
   await RP.walkTo(120, 214, "back");
-  await RP.say("Everything on the napkin has a check mark. Weird. I'm suspicious of how good this feels.");
+  await RP.say("Every line on the napkin is done, bar the anniversary itself. Weird. I'm suspicious of how good this feels.");
   await RP.fadeTo(1, 900);
   S.f.a3_thu3 = true; S.f.noTravel = false;
   RP.setClock("THU 5:40 PM"); RP.relight();
@@ -125,11 +125,11 @@ async function pickBag(S) {
 
 async function loulines(S) {
   if (!S.f.a3_opener) {
-    await RP.lines(["Hey, Lou.", "@a3_lou KID. You're leaving. Where's the racket going this time?", "The Halcyon Room, Lou. Same as every Thursday.", "@a3_lou Thursday already? A residency. In my day we just called that 'going out every Saturday, 1993.'", "@a3_lou Wear a jacket. Clubs are cold."]);
+    await RP.lines(["Hey, Lou.", "@a3_lou KID. You're leaving. Where's the racket going this time?", "The Halcyon Room, Lou. Same as every Thursday.", "@a3_lou Thursday already? A residency. In my day we just called that 'going out every Saturday, 1993.'", "@a3_lou That white label I gave you. NYC '93. Mine. Play it the night it counts.", "@a3_lou Wear a jacket. Clubs are cold."]);
     return;
   }
   if (S.f.a3_thu3) {
-    await RP.lines(["Lou? Anniversary night.", "@a3_lou Six months. I counted. Every Thursday through the pipe hole, like Christmas.", "@a3_lou Play my 1993, kid. On the wax. Computers lie.", "He's not wrong. He's never been wrong about computers. Or anything else computers-adjacent."]);
+    await RP.lines(["Lou? Anniversary night.", "@a3_lou Six months. I counted. Every Thursday through the pipe hole, like Christmas.", "@a3_lou Play my 1993, kid. The white label. On the wax. Computers lie.", "He's not wrong. He's never been wrong about computers. Or anything else computers-adjacent."]);
     return;
   }
   if (S.f.a3_estateDone) {
@@ -141,12 +141,12 @@ async function loulines(S) {
 
 async function endScene(S) {
   S.f.a3_end = true;
-  RP.setClock("FRI 5:12 AM");
+  RP.setClock("FRI 3:00 AM");
   RP.actor("kid").face = "front";
   await RP.lines([
-    "@nar Friday, 5:12 AM.",
-    "Home. Every record. " + (S.money > 0 ? "Rent money intact." : "Zero dollars.") + " Phone at 3%. I'm counting that as a win.",
-    "@a3_lou ...Kid? Is that you? It's five in the morning.",
+    "@nar Friday, 3:00 AM.",
+    "Home. Every record. " + (S.money > 0 ? "Rent money intact." : "Zero dollars.") + " Phone dead. I'm counting that as a win.",
+    "@a3_lou ...Kid? Is that you? It's three in the morning.",
     "I know, Lou.",
     "@a3_lou Did you play my 1993?",
     "I played your 1993, Lou.",
@@ -192,7 +192,7 @@ RP.room({
     { id: "a3_door", name: "door", r: [4, 32, 50, 134], z: 20, walk: [64, 214, "left"],
       look: "4C. Kowalski's deadbolt from last fall. This time I have a key. It still feels like a privilege.",
       exit: S => {
-        if (S.f.a3_end) return "It's five in the morning. The only place I'm going is horizontal.";
+        if (S.f.a3_end) return "It's three in the morning. The only place I'm going is horizontal.";
         if (!S.f.a3_opener || S.f.a3_thu3) {
           if (!RP.has("a3_bag")) return "I'm not walking into a club empty-handed. Where's my record bag?";
           if (!RP.has("a3_usb")) return "My tracks USB. I'd forget my head, so I keep a checklist. It says USB.";
@@ -201,12 +201,12 @@ RP.room({
       },
       pull: "It's not stuck. It's a pull door and a push door. The landlord knows which.", push: "I'll use the door like a normal person.", talk: "Door, you and me. Six months. We make a good team." },
     { id: "a3_bed", name: "bed", r: [58, 104, 158, 66], z: 30, walk: [118, 214, "back"],
-      look: "Still the bed. Now with a bag of records under it instead of a warped one.",
+      look: S => RP.has("a3_bag") ? "Still the bed. Nothing under it now but dust and a warped record I refuse to discuss." : "Still the bed. The record bag is on the floor where I left it, which is a kind of storage.",
       use: S => sleepNow(S), pull: S => sleepNow(S), pickup: "It's bolted to the building. In my head.", push: "It's against the wall. That's where beds go." },
     { id: "a3_laptop", name: "laptop", r: [152, 98, 38, 28], z: 47, walk: [168, 214, "back"],
       look: S => S.f.a3_promo ? "Posted, tagged, hashtagged. My thumbs have blisters and my ex has muted me." : "Every track I own, backed up twice. The other backup is a cloud I don't remember signing up for.",
       use: async S => {
-        if (!S.f.a3_opener) return "No time to edit. The vinyl hour needs records, the second hour needs the USB. That's it.";
+        if (!S.f.a3_opener) return "No time to edit. Records in the bag, USB in my pocket. That's the whole plan.";
         if (S.f.a3_promo) return "I've posted enough this week. The algorithm needs a break from me.";
         await RP.say("Time to be a person on the internet. A week of posting, practicing and digging. How do I split it?");
         const res = await A3.mg("getFollowers", { days: 7, start: S.followers, goal: 900, difficulty: 2 }, {
@@ -214,7 +214,7 @@ RP.room({
           assist: async () => { await RP.say("Fine. I'll take the pity follows."); } });
         if (res.giveUp) return;
         const gained = Math.max(60, Math.round(res.gained != null ? res.gained : (res.score || 60) * 5));
-        S.f.a3_promo = true;
+        S.f.a3_promo = true; A3.clockTo(S, "WED 11:30 PM");
         RP.followers(gained);
         await RP.lines(["Week's up. The numbers say " + S.followers.toLocaleString("en-US") + " fans.", "Odessa will like that number. She likes numbers. She calls them 'bodies.'"]);
         RP.text("ODESSA", "Saw the numbers. Bodies, good. -O");

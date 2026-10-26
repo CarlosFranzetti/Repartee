@@ -221,7 +221,7 @@ async function finale(S) {
     { from: "MARCUS", text: "BRO. i saw the clip. berlin. plus three for the next one?? i am NOT asking. i'm just saying", hot: true },
     { from: "DANTE", text: "heard about berlin!! proud. gonna pay u next week", hot: false },
     { from: "KOSMO DELACROIX", text: "Brenton. Heard it went well. Who is this? - K", hot: false },
-    { from: "LOU (4B)", text: "Is it loud there? Tell them the hi-hat is too loud.", hot: false },
+    { from: "LOU (4B)", text: "Grandniece set this phone up. Is it loud there? Tell them the hi-hat is too loud.", hot: false },
     { from: "RAY (DEEP CUTS)", text: "Told you. Don't tell anyone I said so.", hot: false },
     { from: "INGRID FALK", text: "Video call. Now. It's not a drill. It's even better.", hot: true }
   ]);

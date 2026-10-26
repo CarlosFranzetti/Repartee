@@ -28,14 +28,14 @@ A3.hallEnter = async function (S, from) {
   // ---- the week: the club in daylight
   if (S.f.a3_week && !S.f.a3_thu3 && !S.f.a3_weekHall) {
     S.f.a3_weekHall = true;
-    await lines(["The Halcyon Room at 3 PM. Work lights, mop buckets, and chairs upside-down on tables. It looks like a club that's been caught with its pants down.", "@a3_odessa Don't look at it. It doesn't like being looked at."]);
+    await lines(["The Halcyon Room in daylight. Work lights, mop buckets, and chairs upside-down on tables. It looks like a club that's been caught with its pants down.", "@a3_odessa Don't look at it. It doesn't like being looked at."]);
     return;
   }
   // ---- Night 3 arrival: Brandon's big hug
   if (S.f.a3_thu3 && !S.f.a3_n3intro) {
-    S.f.a3_n3intro = true; S.f.noTravel = true; S.f.a3_floor = "full"; RP.setClock("THU 9:32 PM");
+    S.f.a3_n3intro = true; S.f.noTravel = true; S.f.a3_floor = "full"; RP.setClock("THU 8:58 PM");
     await RP.walkTo(100, 232, "right");
-    await lines(["@nar Anniversary night. Six months of Thursdays.", "The room's already packed. The banner says '6 MONTHS.' It doesn't say my name. It's for the room. It's still my favorite banner.",
+    await lines(["@nar Anniversary night. Six months of Thursdays.", "The room's filling fast. The banner says '6 MONTHS.' It doesn't say my name. It's for the room. It's still my favorite banner.",
       "@a3_odessa Six months. You've been late zero times. I've never had a DJ be early six months in a row.", "@a3_odessa Kosmo's here. He's in the booth. Don't speak unless spoken to. And if spoken to, don't speak too much.",
       "@a3_brandon THERE he is! The Thursday kid!"]);
     AC("a3_brandon").x = 150; AC("a3_brandon").y = 232;
@@ -69,6 +69,7 @@ A3.boothEnter = async function (S, from) {
 
 /* ====================================================================== the booth: sets */
 async function night1Set(S) {
+  RP.setClock("THU 10:00 PM");
   await lines(["Ten PM. The floor's empty: five people at the bar, four of whom work here.", "Gus gives me a thumbs-up from the desk. His other hand is in the chips."]);
   S.f.a3_brandonSeen = true;
   const res = await A3.mg("setTime", { scenario: "opener", records: A3.pool(S, 8), minutes: 60, difficulty: 1 }, {
@@ -77,7 +78,7 @@ async function night1Set(S) {
   if (res.giveUp) return;
   S.f.a3_floor = "full"; RP.relight();
   RP.followers(40);
-  RP.setClock("FRI 12:40 AM");
+  RP.setClock("THU 11:10 PM");
   await lines(["It builds. Slowly, then all at once. The floor fills like a tub.", "@a3_odoff Eighty people. On a Thursday. You're getting good at this.", "@a3_odoff Next Thursday I want two hundred."]);
   RP.sfx("cheer");
   await RP.fadeTo(1, 600); S.f.a3_opener = true; await RP.fadeTo(0, 600);
@@ -117,7 +118,7 @@ A3.boothUse = async function (S) {
 };
 
 A3.usbIn = async function (S) {
-  if (!S.f.a3_thu3) { await say("The USB's for the second hour. The first hour's vinyl, the second is tracks. I'll plug it in when I need it."); return; }
+  if (!S.f.a3_thu3) { await say("The USB's my backup. Vinyl first; tracks only if a record skips. I'll plug it in at the booth if I need it."); return; }
   if (S.f.a3_swap && !S.f.a3_usbBack) { await lines(["I plug it in and cue the first track. 'SUMMER OF SHINE.' It's still Brandon.", "I unplug it before the CDJ catches 'Shine.'"]); return; }
   await say("My real USB's back in my pocket. I'll play vinyl and keep it as a backup.");
 };
@@ -145,7 +146,7 @@ async function anniversarySet(S) {
   if (res.giveUp) return;
   S.f.a3_setDone = true;
   RP.followers(80);
-  RP.setClock("FRI 1:55 AM");
+  RP.setClock("FRI 1:15 AM");
   const hasGrail = RP.hasRecord(GRAIL);
   const ids = (res.order || []).filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");
   const wi = ids.indexOf("white_nyc93"), gi = ids.indexOf(GRAIL);
@@ -167,11 +168,11 @@ async function anniversarySet(S) {
   await lines(["@a3_odoff And your envelope. Two hundred. Thursdays are cash."]);
   RP.money(TAB);
   await lines(["@a3_marcusoff That was... the best night of my life. And I've been to a lot of nights.", "I'm going to cry. In front of Marcus. In front of Rico, Dee and the guy from the cab."]);
-  RP.setClock("FRI 3:45 AM");
-  await lines(["Two hours of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ.' Odessa covers half. My half is two hundred dollars.",
+  RP.setClock("FRI 1:35 AM");
+  await lines(["Twenty minutes of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ.' Odessa covers half. My half is the envelope: two hundred dollars.",
     "I hand Nico the envelope without opening it. I just played the best set of my life for free."]);
   RP.money(-TAB);
-  await lines(["Phone: 3%. Bag: every record I own. Time: quarter to four in the morning."]);
+  await lines(["Phone: 3%. Bag: every record I own. Time: twenty-five to two."]);
   await RP.fadeTo(1, 800); S.f.noTravel = false;
   await RP.goto("a3_platform", 540, 230, "left");
   await RP.fadeTo(0, 400);
@@ -216,7 +217,7 @@ A3.gusGive = async function (S, item) {
 /* ====================================================================== Odessa */
 A3.odessaTalk = async function (S) {
   if (!S.f.a3_thu3) {
-    if (!S.f.a3_week) { await lines(["Anything else, Odessa?", "@a3_odessa Gus. Snack. Booth. Set. In that order."]); return; }
+    if (!S.f.a3_week) { await lines(["Anything else, Odessa?", S.f.a3_soundcheck ? "@a3_odessa Gus is awake. Booth. Set. In that order." : "@a3_odessa Gus. Snack. Booth. Set. In that order."]); return; }
     const left = A3.todoLeft(S);
     await say("Odessa. Where am I on the napkin?");
     if (left.length) { await say("Still on the list: " + left.join("; ") + ".", "a3_odessa"); await say("And do it before the anniversary. After that, nobody's counting.", "a3_odessa"); }
@@ -276,6 +277,7 @@ A3.confrontBrandon = async function (S, withOdessa) {
     assist: async () => { await say("Odessa pulls the plug on the argument: 'Brandon, the clip's got your face, your vest, and a very bad yawn.'", "kid"); } });
   if (res.giveUp) { await say("I'll come back with the clip. Nobody leaves the building. Odessa makes sure of it."); return; }
   S.f.a3_brandonDone = true; S.f.a3_usbBack = true; RP.relight();
+  if (RP.has("a3_footage")) RP.take("a3_footage");
   RP.followers(15);
   await lines(["@a3_brandon Fine. FINE. Here. Your USB. It was a joke. A prank. A harmless, extremely illegal prank.", "He slaps my real USB into my palm and unwraps a blue-and-gold one from his pocket like a trophy.",
     "@a3_odessa Brandon. My office. Now. We're discussing your Saturday.", "@a3_brandon You can't do that! It's MY Saturday!", "@a3_odessa It's a Saturday. I'm the one who has it.",

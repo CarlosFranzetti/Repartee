@@ -270,7 +270,7 @@ RP.room({
       await RP.lines(["The Halcyon Room. Ludlow Street, 8:52 PM. The line's already forming, and it's mostly people who think a DJ's name on a door means free drinks.", "Odessa says be early. Gus says bring a snack. Tiny says nothing, which is scarier."]);
     }
     if (S.f.a3_thu3 && !S.f.a3_arr3) {
-      S.f.a3_arr3 = true; RP.setClock("THU 9:10 PM");
+      S.f.a3_arr3 = true; RP.setClock("THU 8:40 PM");
       await RP.lines(["@nar Anniversary night.", "The line goes around the corner. That's a thing I get to say now: 'the line goes around the corner.'"]);
     }
   },

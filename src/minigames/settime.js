@@ -7,6 +7,7 @@
      start: slot start on the clock, "23:52" or minutes after midnight (scenario default)
      overrun: minutes the other act eats out of the slot (overrun; default 20 per 60, capped at half the slot)
      headline: true (overrun) = it's your headline slot; the set runs to the changeover   manager / managerId: who runs the stage
+     promoter: "Odessa" (who runs the room in the opener, the overrun and the closing; default "Dante")   promoterId: character id to draw   promoterPronoun: "he" | "she" | "they"
      theme: "house"|"techno"|"festival"|"loft"|"empty-bar" (the room)   seed   arcade: bool
    Result: { ok, score 0-100, scenario, floor (0-100 at the end), avgFloor, mixes: {clean, smooth, sloppy, wreck},
              deadAir (game minutes), events: n handled, meter (second gauge 0-100), reason }
@@ -22,6 +23,7 @@ const K = () => RP.setkit;
 /* ======================================================================
    scenarios
    ====================================================================== */
+const PRON = { he: { he: "he", He: "He", his: "his", him: "him" }, she: { he: "she", He: "She", his: "her", him: "her" }, they: { he: "they", He: "They", his: "their", him: "them" } };
 const WRONG = ["Dennis", "Kevin", "Dwayne", "Brad", "Dylan", "Marvin", "Terrence"];
 const LEGEND_LAST = "donna_summer_i_feel_love";
 const pickOf = (a, rnd) => a[Math.floor((rnd || Math.random)() * a.length)];
@@ -33,7 +35,7 @@ const SC = {
     want: u => 1.6 + 1.9 * Math.pow(u, 1.15), pot: u => 22 + 52 * Math.pow(u, 1.1),
     taste: { house: 1, disco: 1, funk: .7, pop: .6, acid: .5, techno: .3, electro: .5, hiphop: .5, breaks: .5, ambient: .5 }, over: { "deep house": 1, boogie: 1, garage: 1 },
     goal: { final: 58, avg: 38 },
-    brief: { story: "10 PM at the Halcyon Room. The floor is empty, the promoter keeps checking his phone, and your first record is sitting on the deck.", goal: "Hand over a warm floor at the end of the hour.",
+    brief: { story: "{START}. {VENUE}. The floor is empty, the promoter keeps checking {his} phone, and your first record is sitting on the deck.", goal: "Hand over a warm floor at the end of the hour.",
       tips: ["Start low and warm. Raise the energy one notch per record.", "Too hard too early scares people off. Too soft for too long bores the promoter.", "Cue a record, then MIX IN inside the green window."] }
   },
   "follow-legend": {
@@ -52,7 +54,7 @@ const SC = {
     taste: { pop: 1, house: .95, disco: .8, techno: .6, acid: .6, electro: .5, hiphop: .5, breaks: .4, funk: .5, ambient: .2 }, over: { italo: .85 },
     goal: { final: 66, avg: 52 },
     brief: { story: "Your slot starts at {START}. {L} is still on the decks and nobody told him. The promoter is sweating, the next act's crew is circling, and the crowd is getting restless.", goal: "Get on, play a tight set, and be out by {END}.",
-      tips: ["{L} runs {O} minutes over. You can't MIX IN until he's done (or you pull his plug, which has a price).", "Handle the promoter: his patience is the clock you can't see.", "Every minute he takes comes out of yours. Pick your best records and hand over on time."] },
+      tips: ["{L} runs {O} minutes over. You can't MIX IN until he's done (or you pull his plug, which has a price).", "Handle the promoter: {his} patience is the clock you can't see.", "Every minute he takes comes out of yours. Pick your best records and hand over on time."] },
     head: { story: "{START}. Your headline slot has already started. {L} is on the fourth encore of a set with no encores, and every clock backstage is his.", goal: "Get {L} off, get on, and hold the field on his decks until your rig goes in at {END}.",
       tips: ["{L} has {O} more minutes in him. You can't MIX IN until he's done (or you pull his plug, which has a price).", "Keep {M} on side: that patience is the clock you can't see.", "Every minute he takes comes out of yours. Cue your opener now, and mix out clean before the changeover."] }
   },
@@ -71,11 +73,11 @@ const SC = {
    fx: { floor, pat, mood: [delta, minutes], time, stale, plug, overEnd, ready } or a function (G, R) => { fx..., say } */
 function eventsFor(key, R) {
   const L = R.legendShort, W = R.wrongName, N = R.myName;
-  const O = R.overrun, O1 = Math.max(1, Math.round(O * 0.3)), O2 = Math.max(1, Math.round(O * 0.1)), HD = R.head, MN = R.manager.toUpperCase(), MI = R.managerId;
+  const O = R.overrun, O1 = Math.max(1, Math.round(O * 0.3)), O2 = Math.max(1, Math.round(O * 0.1)), HD = R.head, MN = R.manager.toUpperCase(), MI = R.managerId, PI = R.promoterId, PN = R.promoter.toUpperCase();
   const E = {
     opener: [
-      { at: 3, who: "dante", name: "DANTE", role: "PROMOTER", text: "\"It's 10:05 and the floor is EMPTY. Do something.\"", def: 0, choices: [
-        { t: "Patience. They come at 11.", fx: { pat: 7 }, say: "Dante grunts. It's not a no.", r: 1 },
+      { at: 3, who: PI, name: PN, role: "PROMOTER", text: "\"It's " + fmtClock(R.start + 3) + " and the floor is EMPTY. Do something.\"", def: 0, choices: [
+        { t: "Patience. They come late.", fx: { pat: 7 }, say: R.promoter + " grunts. It's not a no.", r: 1 },
         { t: "Crank it up. That'll pull them in.", fx: { floor: -6, pat: -4, mood: [0.7, 8] }, say: "The two guys at the bar flinch. One of them leaves.", r: 0 },
         { t: "Send Marcus out to wave people in.", fx: { floor: 5, pat: 2 }, say: "Marcus comes back with a crowd. Plus three, of course.", r: 0.8 }] },
       { at: 13, who: "sk_bar", name: "BARTENDER", role: "BAR", text: "\"Two guys at the bar are trying to talk. Can you take it down a notch?\"", def: 0, choices: [
@@ -89,8 +91,8 @@ function eventsFor(key, R) {
         { t: "Hold the vibe. Change nothing.", fx: { floor: 7 }, say: "They relax. One nods. Then all four.", r: 1 },
         { t: "Hit them with something big.", fx: { floor: -9, pat: -3 }, say: "Four drinks, four exits.", r: 0 },
         { t: "Wave and smile.", fx: { floor: 2 }, say: "Friendly. They stay seated. For now.", r: 0.6 }] },
-      { at: 44, who: "sk_sec", name: "DOOR", role: "SECURITY", text: "\"The line's out the door. Everybody shows up at eleven.\"", def: 0, choices: [
-        { t: "Here we go.", fx: G => (G.floor >= 25 ? { floor: 10, pat: 4, say: "The 11 PM rush! The floor swells.", r: 1 } : { floor: 3, say: "They come in, look around, and wait to see what you do.", r: 0.5 }) }] },
+      { at: 44, who: "sk_sec", name: "DOOR", role: "SECURITY", text: "\"The line's out the door. They all got here at once.\"", def: 0, choices: [
+        { t: "Here we go.", fx: G => (G.floor >= 25 ? { floor: 10, pat: 4, say: "The rush! The floor swells.", r: 1 } : { floor: 3, say: "They come in, look around, and wait to see what you do.", r: 0.5 }) }] },
       { at: 51, who: "sk_fan", name: "DRUNK GUY", role: "BOOTH", text: "\"PLAY SOMETHING FASTER! LOUDER! I LOVE THIS PLACE!\"", def: 0, choices: [
         { t: "Smile. Ignore.", fx: { floor: 2 }, say: "He hugs a speaker and wanders off.", r: 0.9 },
         { t: "Hand him the headphones.", fx: { floor: 3, pat: -2 }, say: "He puts them on backwards. The room laughs.", r: 0.6 },
@@ -115,7 +117,7 @@ function eventsFor(key, R) {
         { t: "Thanks, " + L + ".", fx: G => (G.floor >= 65 ? { win: 12, floor: 3, say: "He nods. For him, that's a standing ovation.", r: 1 } : { win: -2, say: "He glances at the floor. And says nothing.", r: 0.3 }) }] }
     ],
     overrun: [
-      { at: Math.max(0.5, Math.min(2, O * 0.15)), pre: true, who: HD ? MI : "dante", name: HD ? MN : "THE PROMOTER", role: HD ? "STAGE MANAGER" : "SWEATING", text: "\"" + (HD ? "His tour manager" : L + "'s agent") + " says " + O + " more minutes. I can trim your " + (HD ? "opening" : "set") + ", or I can pull his plug. Your call.\"", def: 0, choices: [
+      { at: Math.max(0.5, Math.min(2, O * 0.15)), pre: true, who: HD ? MI : PI, name: HD ? MN : "THE PROMOTER", role: HD ? "STAGE MANAGER" : "SWEATING", text: "\"" + (HD ? "His tour manager" : L + "'s agent") + " says " + O + " more minutes. I can trim your " + (HD ? "opening" : "set") + ", or I can pull his plug. Your call.\"", def: 0, choices: [
         { t: "Trim my set. I'll make it count.", fx: { pat: 12 }, say: "A long exhale. \"Pro. I'll remember this.\"", r: 1 },
         { t: "Pull his plug.", fx: { floor: -14, pat: -14, plug: true }, say: "Silence. Boos. You can take over now. You may regret it.", r: 0.25 },
         { t: "Let me talk to " + L + ".", fx: { pat: 4, overEnd: -O1 }, say: L + " grudgingly agrees to wrap up " + O1 + (O1 > 1 ? " minutes" : " minute") + " early.", r: 0.85 }] },
@@ -127,8 +129,8 @@ function eventsFor(key, R) {
         { t: "Fine. Prep a tight set.", fx: { pat: 4, ready: true }, say: "You sequence your five best records. Mentally.", r: 1 },
         { t: "Slip in at the next break.", fx: { overEnd: -O2, pat: -2 }, say: "You're ready to pounce. " + O2 + (O2 > 1 ? " minutes" : " minute") + " sooner.", r: 0.7 },
         { t: "Mix over him. Just start.", fx: { floor: -10, pat: -8, plug: true }, say: "Two kicks, two keys, one train wreck.", r: 0 }] },
-      { at: O + (R.M - O) * 0.175, who: HD ? MI : "dante", name: HD ? MN : "THE PROMOTER", role: HD ? "CALLING THE SHOW" : "WATCHING THE CLOCK", text: HD ? "\"Your rig goes in at " + fmtClock(R.start + R.M) + ". Hold them on his decks till then.\"" : "\"" + (fmtClock(R.start + R.M) === "12:00 AM" ? "Midnight" : fmtClock(R.start + R.M)) + " sharp. The headliner's team is waiting.\"", def: 0, choices: [
-        { t: "Understood. I'll end on time.", fx: { pat: 4 }, say: HD ? "A nod, and a word into the headset." : "He pats the booth like it's a horse.", r: 1 },
+      { at: O + (R.M - O) * 0.175, who: HD ? MI : PI, name: HD ? MN : "THE PROMOTER", role: HD ? "CALLING THE SHOW" : "WATCHING THE CLOCK", text: HD ? "\"Your rig goes in at " + fmtClock(R.start + R.M) + ". Hold them on his decks till then.\"" : "\"" + (fmtClock(R.start + R.M) === "12:00 AM" ? "Midnight" : fmtClock(R.start + R.M)) + " sharp. The headliner's team is waiting.\"", def: 0, choices: [
+        { t: "Understood. I'll end on time.", fx: { pat: 4 }, say: HD ? "A nod, and a word into the headset." : R.pro.He + " pats the booth like it's a horse.", r: 1 },
         { t: "Can I get five extra minutes?", fx: (G) => (G.pat >= 55 ? { pat: -6, time: 5, say: "\"...Five. Not six.\" You're good: you earned it.", r: 0.8 } : { pat: -8, say: "\"Absolutely not.\" You haven't earned any favors tonight.", r: 0.1 }) }] },
       { at: G => Math.max(O + 4, G.mEnd - 10), who: "sk_snd", name: "SOUND GUY", role: "FOH", text: G => "\"" + Math.max(1, Math.round(G.mEnd - G.t)) + " minutes" + (HD ? " to the changeover! Cue something big.\"" : "! Cue your closer!\""), def: 0, choices: [
         { t: "Pick the last record now.", fx: { ready: true, pat: 3 }, say: "Cued. The last few minutes are going to be clean.", r: 1 },
@@ -144,9 +146,9 @@ function eventsFor(key, R) {
       { at: 9, who: "twinkie", name: "TWINKIE", role: "AFTER-HOURS", text: "\"Don't stop! I know an after. Play something that says 'come with me'.\"", def: 0, choices: [
         { t: "One more big one, then we'll see.", fx: { floor: 5 }, say: "She whoops. Half the floor follows her whoop.", r: 1 },
         { t: "Tempting. But I've got a job.", fx: { pat: 4 }, say: "She salutes. \"Professional. Boring.\"", r: 0.6 }] },
-      { at: 17, who: "dante", name: "DANTE", role: "PROMOTER", text: "\"Play the closer I asked for. 'Finally.' You know the one.\"", def: 1, choices: [
-        { t: "Sure. It's in the crate.", fx: { pat: 3, promised: true }, say: "He claps once. \"Next week I pay you.\"", r: 0.8 },
-        { t: "I pick the closer.", fx: { pat: -1 }, say: "He shrugs. \"Your funeral.\"", r: 0.6 }] },
+      { at: 17, who: PI, name: PN, role: "PROMOTER", text: "\"Play the closer I asked for. 'Finally.' You know the one.\"", def: 1, choices: [
+        { t: "Sure. It's in the crate.", fx: { pat: 3, promised: true }, say: R.pro.He + " claps once. \"Next week I pay you.\"", r: 0.8 },
+        { t: "I pick the closer.", fx: { pat: -1 }, say: R.pro.He + " shrugs. \"Your funeral.\"", r: 0.6 }] },
       { at: 25, who: "sk_fan", name: "A COUPLE", role: "CORNER", text: "Two people are slow-dancing in the corner, ignoring the beat.", def: 1, choices: [
         { t: "Slow it down. Give them their moment.", fx: { floor: 3, pat: 3, mood: [-0.4, 6] }, say: "Half the floor follows them into the slow burn.", r: 1 },
         { t: "Keep it banging.", fx: { floor: 1 }, say: "They'd have preferred ballads. They're polite.", r: 0.5 }] },
@@ -202,7 +204,7 @@ function resolveST(p) {
   const legend = String(p.followName || (key === "overrun" ? "Axl Vanta" : "Kosmo Delacroix"));
   const legendShort = legend.split(/\s+/)[0];
   let ids = Array.isArray(p.records) ? p.records.filter((x, i, a) => x && a.indexOf(x) === i) : [];
-  const R = { key, D, diff, M, overrun, mPlay, start: ((Math.round(st) % 1440) + 1440) % 1440, head: key === "overrun" && !!p.headline, meter: key === "overrun" && p.headline ? (p.manager ? String(p.manager).toUpperCase() : "STAGE MANAGER") : D.meter, manager: String(p.manager || "the stage manager"), managerId: String(p.managerId || "dante"), legend, legendShort, legendName: legend, rnd, seed: Math.floor(rnd() * 1e6), venue: p.venue ? String(p.venue) : null, theme: p.theme || D.theme, ids0: ids.slice() };
+  const R = { key, D, diff, M, overrun, mPlay, start: ((Math.round(st) % 1440) + 1440) % 1440, head: key === "overrun" && !!p.headline, meter: key === "overrun" && p.headline ? (p.manager ? String(p.manager).toUpperCase() : "STAGE MANAGER") : D.meter, manager: String(p.manager || "the stage manager"), managerId: String(p.managerId || p.promoterId || "dante"), promoter: String(p.promoter || "Dante"), promoterId: String(p.promoterId || "dante"), pro: PRON[p.promoterPronoun] || PRON.he, legend, legendShort, legendName: legend, rnd, seed: Math.floor(rnd() * 1e6), venue: p.venue ? String(p.venue) : null, theme: p.theme || D.theme, ids0: ids.slice() };
   const myName = (p.myName || (RP.state && RP.state.name) || "DJ").toString();
   R.myName = myName.charAt(0).toUpperCase() + myName.slice(1).toLowerCase();
   R.wrongName = WRONG[(((RP.state && RP.state.act) || 3) + myName.length) % WRONG.length];
@@ -463,7 +465,7 @@ RP.mg.register("setTime", {
       function showBrief() {
         placeBrief();
         const B = R.head ? R.D.head : R.D.brief, endC = fmtClock(R.start + R.M);
-        const rep = s => s.replace(/\{L\}/g, R.legendShort).replace(/\{O\}/g, R.overrun).replace(/\{M\}/g, R.manager).replace(/\{START\}/g, fmtClock(R.start)).replace(/\{END\}/g, endC === "12:00 AM" ? "midnight" : endC);
+        const rep = s => s.replace(/\{L\}/g, R.legendShort).replace(/\{O\}/g, R.overrun).replace(/\{M\}/g, R.manager).replace(/\{START\}/g, fmtClock(R.start)).replace(/\{VENUE\}/g, R.venue || R.D.venue.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase())).replace(/\{his\}/g, R.pro.his).replace(/\{END\}/g, endC === "12:00 AM" ? "midnight" : endC);
         briefBox.hidden = false; briefBox.innerHTML = "";
         const bx = el("div", { cls: "st-brief" }, briefBox);
         el("h3", { text: R.D.title }, bx);
@@ -639,12 +641,13 @@ RP.mg.register("setTime", {
       }
 
       /* ---------- per-frame simulation ---------- */
+      const uAt = t => clamp((t - (R.key === "overrun" ? G.h0 : 0)) / Math.max(1, G.mEnd - (R.key === "overrun" ? G.h0 : 0)), 0, 1);
+      /* the energy the room wants at game minute t (a mood from an event counts only while it lasts) */
+      const wantAt = t => clamp(R.D.want(uAt(t)) + (t < G.moodUntil ? G.mood : 0), 1, 5);
       function fitNow() {
         const c = G.cur; if (!c) return { fit: 0.5 };
-        const u = clamp((G.t - (R.key === "overrun" ? G.h0 : 0)) / Math.max(1, G.mEnd - (R.key === "overrun" ? G.h0 : 0)), 0, 1);
-        const mood = G.t < G.moodUntil ? G.mood : 0;
-        const want = clamp(R.D.want(u) + mood, 1, 5);
-        const f = fitOf(R.D, c.rec, want, R.diff); f.want = want; f.u = u; return f;
+        const want = wantAt(G.t);
+        const f = fitOf(R.D, c.rec, want, R.diff); f.want = want; f.u = uAt(G.t); return f;
       }
       function sim(dt) {
         if (G.phase !== "wait" && G.phase !== "play") return;
@@ -765,6 +768,7 @@ RP.mg.register("setTime", {
         const worst = G.evLog.filter(e => !e.late).sort((a, b) => a.r - b.r)[0], late = G.evLog.filter(e => e.late).length;
         if (worst && worst.r < 0.4) dim.push("One of those moments went badly. Think about what the room needed.");
         if (late) dim.push(late + (late > 1 ? " moments" : " moment") + " timed out and decided themselves. Answering counts.");
+        if (p.ts < 0.9 && !G.failed && p.why !== "no-records") dim.push("TIMING " + Math.round(p.ts * 100) + "%: " + (p.kind === "fade" ? "you faded out with " + Math.max(1, Math.round(G.fade.rem)) + " min left. Closer to the end scores higher." : p.kind === "early" ? "you left with " + Math.round(G.fade.rem) + " min still on the clock." : R.key === "overrun" && !G.handed ? "you never took over the decks." : "the clock ran out mid-record. Press FADE OUT in the last three minutes, with the record near its end, for a clean exit."));
         if (res.deadAir > 0.5) dim.push("Dead air: " + res.deadAir + " game minutes. Cue the next record before the current one ends.");
         if (res.mixes.wreck) dim.push(res.mixes.wreck + " train wreck(s). Watch the BPM gap and the green window.");
         dim.push("Played: " + (G.played.map(id => RP.rec(id).title).join("  ›  ") || "nothing"));
@@ -817,19 +821,22 @@ RP.mg.register("setTime", {
         const curRem = c && !c.prev && !c.tape ? Math.max(0, c.len - c.pos) : 0;
         const per = (remain - curRem) / Math.max(1, leftN);
         cLeft.innerHTML = "RECORDS LEFT <b>" + leftN + "</b>";
-        const pace = leftN === 0 ? ["no records left!", "r"] : per > avgLen * 1.45 ? ["running short: loop or stretch", "a"] : per < avgLen * 0.55 ? ["too many: mix earlier", "a"] : ["pace ok", "g"];
+        const pace = leftN === 0 ? ["no records left!", "r"] : per > avgLen * 1.45 ? ["running short: loop or stretch", "a"] : per < avgLen * 0.55 && leftN > 1 ? ["too many: mix earlier", "a"] : ["pace ok", "g"];
         cPace.innerHTML = "PACE <b class='" + (pace[1] === "g" ? "ok" : pace[1] === "r" ? "bad" : "") + "'>" + pace[0] + "</b>";
         const f = fitNow();
-        if (R.diff <= 3 && G.phase !== "brief" && f.want) { cWant.style.display = ""; cWant.innerHTML = "THE ROOM WANTS <b>" + ["", "▮", "▮▮", "▮▮▮", "▮▮▮▮", "▮▮▮▮▮"][clamp(Math.round(f.want), 1, 5)] + "</b>"; } else cWant.style.display = "none";
+        /* the room moves on while the record plays: rate the crate against what it will want when you mix in */
+        const mixT = c && !c.prev && !c.tape ? Math.min(G.mEnd, G.t + Math.max(0, c.len - win() - c.pos)) : Math.min(G.mEnd, Math.max(G.t, G.h0));
+        const wantMix = wantAt(mixT), bars = w => ["", "▮", "▮▮", "▮▮▮", "▮▮▮▮", "▮▮▮▮▮"][clamp(Math.round(w), 1, 5)];
+        if (R.diff <= 3 && G.phase !== "brief" && f.want) { cWant.style.display = ""; cWant.innerHTML = "THE ROOM WANTS <b>" + bars(f.want) + "</b>" + (bars(wantMix) !== bars(f.want) ? " · BY YOUR MIX <b>" + bars(wantMix) + "</b>" : ""); } else cWant.style.display = "none";
         // crate
-        const want = f.want || 3;
+        const want = (f.want ? wantMix : 0) || 3;
         cards.forEach(cd => {
           const used = G.played.indexOf(cd.rec.id) >= 0;
           cd.b.classList.toggle("used", used); cd.b.disabled = used || G.ended;
           const nx = G.next && G.next.id === cd.rec.id;
           cd.b.classList.toggle("next", !!nx); cd.b.classList.toggle("sel", !!nx); cd.b.setAttribute("aria-selected", nx ? "true" : "false");
           if (used) { cd.rd.textContent = "played"; cd.rd.className = "rd"; }
-          else if (R.diff <= 3) { const d = cd.rec.energy - want; cd.rd.className = "rd " + (Math.abs(d) <= 0.7 ? "g" : Math.abs(d) <= 1.4 ? "a" : "r"); cd.rd.textContent = Math.abs(d) <= 0.7 ? "right energy" : d > 0 ? "too hot now" : "too soft now"; }
+          else if (R.diff <= 3) { const d = cd.rec.energy - want; cd.rd.className = "rd " + (Math.abs(d) <= 0.7 ? "g" : Math.abs(d) <= 1.4 ? "a" : "r"); cd.rd.textContent = Math.abs(d) <= 0.7 ? "right energy" : d > 0 ? "too hot" : "too soft"; }
           else { cd.rd.textContent = ""; }
         });
       }
