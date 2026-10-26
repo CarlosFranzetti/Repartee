@@ -2,6 +2,7 @@
 // game's real controls, one command at a time, while the browser records a video.
 //
 //   node tools/blindplay.mjs serve --level 1 --port 7101 --out runs/level1     start a session (keeps running)
+//     add --unlock for Levels 2-5: their pages stay locked until the level is finished, so this marks all finished
 //   node tools/blindplay.mjs --port 7101 <command> [args] [--why "what I'm thinking"] [--wait ms]
 //
 // Game time is frozen between commands, so thinking time never costs anything in timed scenes or
@@ -151,6 +152,8 @@ if (argv[0] !== "serve") {
   const browser = await chromium.launch({ args: ["--autoplay-policy=no-user-gesture-required"] });
   const ctx = await browser.newContext({ viewport: { width: VW, height: VH }, recordVideo: { dir: out, size: { width: VW, height: VH } } });
   await ctx.addInitScript(SHIM + OVERLAY);
+  // level pages 2+ open only after that level is finished; --unlock marks every level finished so the page plays
+  if (argv.includes("--unlock")) await ctx.addInitScript(() => { try { if (!localStorage.getItem("reparte.unlocked")) localStorage.setItem("reparte.unlocked", JSON.stringify([2, 3, 4, 5, 6])); } catch (e) { /* no storage */ } });
   const page = await ctx.newPage();
   const T0 = Date.now();
   const errors = [];
