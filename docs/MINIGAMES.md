@@ -55,7 +55,7 @@ Put game-specific CSS in a `<style>` you inject once (see beatmatch.js).
 |---|---|---|---|---|
 | `beatMatch` | beat.Match | 1, 4, 5 | `a, b` record ids; `caller` (phone framing); `difficulty`; `tolerance` | `{ok, score, time}` |
 | `crowdRead` | crowd.Read | 1, 4, 5 | `records: [ids]` (the set you can play); `crowd: "empty-bar"|"house"|"techno"|"festival"|"loft"`; `rounds` (4); `goal` (energy target); `difficulty`; `venue` label | `{ok, score, played: [ids], peak}` |
-| `setTime` | set.Time | 3, 5 | `scenario: "opener"|"follow-legend"|"overrun"|"closing"`; `records`; `followName` ("Kosmo Delacroix"); `minutes`; `difficulty` | `{ok, score}` |
+| `setTime` | set.Time | 3, 5 | `scenario: "opener"|"follow-legend"|"overrun"|"closing"`; `records`; `followName` ("Kosmo Delacroix"); `minutes`; `start` (clock, e.g. "23:52"); `overrun` (minutes the act before you runs over, capped at half the slot); `headline`; `manager`/`managerId`; `difficulty` | `{ok, score, reason}` (`reason`: `floor`, `no-records`, `early` or `score`) |
 | `playlistOrder` | playlist.Order | 3, 5 | `records: [ids]` (pool); `slots` (6–10); `arc: "warmup"|"peak"|"journey"|"closer"`; `difficulty` | `{ok, score, order: [ids]}` |
 | `goDigging` | go.Digging | 1, 3 | `store` ("Deep Cuts"); `budget` ($); `bins: [{label, records:[ids]}]`; `want: {vibe?, genre?, maxPrice?, id?}`; `wallet` (total cash, shown beside the budget); `budgetNote` (what the rest is for); `difficulty` | `{ok, score, bought: [ids], spent}` |
 | `crateDigging` | crate.Digging | 3 | `records: [ids]` (the collection; junk + gems); `budget`; `time`; `difficulty` | `{ok, score, keep: [ids], sold: [ids], profit}` |
