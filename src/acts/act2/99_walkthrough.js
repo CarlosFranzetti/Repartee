@@ -22,7 +22,6 @@ const W = (...steps) => flat(steps);
 
 const FB = {
   buy: ["AT-LP120-USB pair", "Take it"],
-  list: ["Stick to"],
   sound: ["Swap", "Lift", "Turn"],
   after: ["Text Marcus", "Text Dani", "Text Moxie"],
   talk: ["not in a rush", "I know your party", "white label"]
@@ -84,10 +83,10 @@ RP.walkthroughs.act2 = W(
   go("a2_exit", "a2_loc_couch"),
   hot("use", "a2_stoopdoor"),
   exp("S.room === 'a2_couch'", "home on the couch"),
-  // sleep until Friday, work Marcus's door (guest.List)
+  // sleep until Friday, work Marcus's door (the door scene)
   say(["Sleep"]), hot("use", "a2_couch"), clear(),
   exp("S.f.a2_ch === 2 && S.f.a2_partyStarted && S.f.noTravel", "Friday: the party starts"),
-  mg("guestList", { ok: true, score: 80, admitted: 12, angry: 1 }, FB.list), hot("use", "a2_listdoor"), clear(),
+  say(["Stick to"]), hot("use", "a2_listdoor"), clear(),
   exp("S.f.a2_jessHere && S.f.a2_jar > 0", "the door is done, Jess is here, the jar paid"),
   hot("give", "jess", "usb_cat"),
   exp("S.f.a2_usbBack && S.f.a2_ampGot && S.inv.includes('a2_amp') && S.f.a2_twinkieGift && RP.hasRecord('robin_s_show_me_love')", "USB returned, amp borrowed, Twinkie's record"),
@@ -147,7 +146,7 @@ RP.walkthroughs.act2alt = W(
   hot("use", "a2_stoopdoor"),
   say(["Sleep"]), hot("use", "a2_couch"), clear(),
   // the party: a failed door still moves on (forgiving), then Jess and Twinkie
-  mg("guestList", { ok: false, score: 20, admitted: 4, angry: 6 }, ["Stick to"]), hot("use", "a2_listdoor"), clear(),
+  say(["plus three"]), hot("use", "a2_listdoor"), clear(),
   hot("give", "jess", "usb_cat"),
   exp("S.f.a2_ch === 3", "Saturday"),
   hot("use", "a2_door"),

@@ -1,5 +1,5 @@
 /* Act 2 — Marcus's apartment (Bed-Stuy). The kid's couch by day (ch1), the birthday party at night (ch2:
-   guest.List mini-game, Jess + the amp, Twinkie), and the Saturday morning after (ch3).
+   the door, Jess + the amp, Twinkie), and the Saturday morning after (ch3).
    Flags: a2_plan, a2_knock, a2_tvOn, a2_flyerGot, a2_daniText, a2_partyStarted, a2_partyDone, a2_ampGot, a2_usbBack,
    a2_twinkieMet, a2_jar, a2_envelope, a2_satBrief */
 (function () {
@@ -229,15 +229,13 @@ async function workDoor(S) {
   await RP.walkTo(70, 226, "left");
   await RP.say("Okay. Clipboard. Pen. Resting face.");
   RP.sfx("knock");
-  const res = await A2.mg("guestList", { capacity: 14, requests: 18, vip: ["Aunt Denise", "Twinkie", "Jess", "Marcus's boss"], difficulty: 2 }, async () => {
-    const i = await RP.choose(["Let in everyone with a casserole", "Let in anyone who says \"plus three\"", "Stick to the list, with a tiny bit of mercy"]);
-    return { ok: i === 2 || i === 0, score: i === 2 ? 85 : 60, admitted: i === 2 ? 12 : 16, angry: i === 1 ? 6 : 1, fallback: true };
-  });
-  const ok = res && res.ok !== false;
-  const adm = res && res.admitted != null ? res.admitted : 12;
+  await RP.lines(["Eleven minutes in, the line is down the stoop. Aunt Denise is at the front, holding a casserole like a badge.", "@marcus Capacity is fourteen. Eighteen people have said \"plus three.\" Do the math, door guy."]);
+  const i = await RP.choose(["Let in everyone with a casserole", "Let in anyone who says \"plus three\"", "Stick to the list, with a tiny bit of mercy"]);
+  let ok = true, adm = 12;
+  if (i === 0) { adm = 14; await RP.lines(["Casserole policy. Six foil trays, one lasagna, a flan nobody can explain. The fridge will never be empty again.", "The line is a mood, but it's moving."]); }
+  else if (i === 1) { ok = false; adm = 17; await RP.lines(["\"Plus three\" works once. Then it works six more times. Somebody's cousin gets in by hitting somebody with a casserole.", "@marcus Eh. We'll call it \"cozy.\" Everyone's close tonight."]); }
+  else await RP.lines(["Aunt Denise, Twinkie, Jess's name in pencil. Everyone else gets a look and a verdict. Two get mercy, and one of them is a mime.", "@marcus Nobody's mad? Nobody's mad. You're a natural. A tyrant, but a natural."]);
   S.f.a2_adm = adm;
-  if (ok) await RP.lines(["The door's under control. The line is a mood, but it's moving.", "@marcus Nobody's mad? Nobody's mad. You're a natural. A tyrant, but a natural."]);
-  else await RP.lines(["The door was chaos. Somebody's cousin got in by hitting somebody with a casserole.", "@marcus Eh. We'll call it \"cozy.\" Everyone's close tonight."]);
   const jar = Math.max(40, Math.min(110, 45 + adm * 4 + (ok ? 15 : 0)));
   S.f.a2_jar = jar;
   RP.followers(ok ? 18 : 8);
