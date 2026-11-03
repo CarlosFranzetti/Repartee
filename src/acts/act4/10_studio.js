@@ -1,6 +1,6 @@
 /* Act 4 — a4_studio: apartment 4C, upgraded. Technics MK7s, BM5 monitors, a sampler, Lou on the couch.
    Threads: email (laptop) -> Ray's box + passport (Gerald) -> Lou (pipe hole) -> sample (white label on the deck)
-   -> mak.Tracks (sampler) -> emotional play -> cover photo (phone + hole) -> release (laptop) -> get.Followers
+   -> mak.Tracks (sampler) -> emotional play -> cover photo (phone + hole) -> release (laptop) -> release week
    -> promoter.Talk (Ingrid on video) -> pack the bag -> leave for JFK.
    Flags: a4_email a4_rayBox a4_passport a4_louCalled a4_louIn a4_louTold a4_louOK a4_sampled a4_track a4_trackScore
           a4_photo a4_released a4_viral a4_deal a4_dealScore a4_fee a4_packed a4_dim */
@@ -118,7 +118,7 @@ function draw(c, S, t) {
     P(c, tx + Math.cos(platterAng) * 17, ty + Math.sin(platterAng) * 8, "#ffffff"); P(c, tx + Math.cos(platterAng + 3.14) * 17, ty + Math.sin(platterAng + 3.14) * 8, "#ffffff");
   }
   // Lou's TV, seen through the hole when he's home next door
-  if (!S.f.a4_louIn) { const f = Math.floor(t / 600) % 3; P(c, 334, 145, ["#6a8ad8", "#ffd27a", "#39d0ff"][f]); P(c, 337, 147, ["#ffd27a", "#6a8ad8", "#ff9ad5"][f]); }
+  if (!S.f.a4_louIn) { const f = Math.floor(Math.max(0, t) / 600) % 3; P(c, 334, 145, ["#6a8ad8", "#ffd27a", "#39d0ff"][f]); P(c, 337, 147, ["#ffd27a", "#6a8ad8", "#ff9ad5"][f]); }
 }
 
 function light(S) {
@@ -137,17 +137,17 @@ function light(S) {
 }
 
 /* ------------------------------------------------------------------ scenes */
-const REPLY = S => ["Hi " + A4.dj(S) + ",", "A friend sent me a clip of your Thursday at the Halcyon Room. I stopped what I was doing, which is rare.",
-  "I book Halle Neun, a warehouse club in Berlin. Techno floor, Saturday, two a.m. I would like you to open the second room.",
-  "One problem: nobody books a DJ who has nothing out. Do you have a release?", "P.S. Bring your passport. You would be amazed how many don't.", "Ingrid Falk, Nachtwerk Booking"];
+const REPLY = S => ["Hi " + A4.dj(S) + ",", "Ingrid Falk again, Halle Neun. In the spring I said I would be in touch. This is me, in touch. In Berlin, six months is prompt.",
+  "The offer: Saturday, two a.m., the main room, after our headliner. I won't say who. You would only get nervous.",
+  "One problem: nobody books a DJ who has nothing out. Do you have a release?", "P.S. Bring your passport. You would be amazed how many don't.", "Grüße, Ingrid Falk, Nachtwerk Booking"];
 
 async function readEmail(S) {
-  await RP.card({ kicker: "EMAIL", title: "Halle Neun. Saturday.", sub: "From: Ingrid Falk, Nachtwerk Booking (Berlin)", body: REPLY(S), button: "CLOSE" });
+  await RP.card({ kicker: "EMAIL", title: "Re: Halle Neun", sub: "From: Ingrid Falk, Nachtwerk Booking (Berlin)", body: REPLY(S), button: "CLOSE" });
   if (S.f.a4_email) return;
   S.f.a4_email = true;
-  RP.text("INGRID FALK", "Got no reply? Fine. I'll wait. I'm German; waiting is a hobby.", true);
+  RP.text("INGRID FALK", "Take your time. I'll wait. I'm German; waiting is a hobby.", true);
   await RP.lines([
-    "Berlin. A real booking agent. Writing to ME.",
+    "Berlin. She said she'd be in touch, and then she was. Nobody in this business does that.",
     "She wants a release. I have a stack of other people's records and a drawer full of half-finished loops.",
     "...And a white label that sounds like 1993. Lou. I need to ask Lou."
   ]);
@@ -172,10 +172,10 @@ async function louPipe(S) {
     RP.setClock("THU 4:44 PM");
     await RP.say("Five minutes later.", "nar");
     await RP.fadeTo(0, 500);
-    await RP.say("*knock knock*");
+    await RP.say("*knock knock*", "nar");
     await RP.say("Lou. The door has a doorbell.", "kid");
     await RP.npcWalk("a4_lou", 410, 232, "left");
-    await RP.npcWalk("a4_lou", 292, 228, "left");
+    await RP.npcWalk("a4_lou", 168, 228, "left");
     RP.actor("a4_lou").face = "front";
     await RP.lines(["@a4_lou It's a nice place. Where did you get all this equipment?", "Mostly from people who thought I was kidding.", "@a4_lou Hm. The couch is comfortable. I'll supervise from here.", "Lou's in my studio. This is the first time 4B and 4C have been in the same room."]);
     return;
@@ -187,7 +187,7 @@ async function louTalk(S) {
   await RP.say("Lou?");
   await RP.convo([
     { text: "What's the story behind NYC 93?", when: S => !S.f.a4_louTold, run: async () => {
-      S.f.a4_louTold = true;
+      S.f.a4_louTold = true; louFact(S);
       await RP.lines(["@a4_lou Nineteen ninety-three. I was twenty-nine. Days at the post office, nights out. Every Saturday.",
         "@a4_lou A buddy had a four-track and a drum machine he'd borrowed from his church's youth group.",
         "@a4_lou We made it in his basement in one night. A dishwasher was running the whole time.",
@@ -208,6 +208,7 @@ async function louTalk(S) {
 async function loadSample(S) {
   if (!S.f.a4_louIn) { await RP.say("This is Lou's record. I'm not touching it without Lou. He'd hear me through the wall. Probably through two."); return; }
   if (!S.f.a4_louOK) { await RP.say("Lou, what's the deal for the sample?"); await RP.say("Ask me first, kid. About everything. That's the deal.", "a4_lou"); return; }
+  if (S.f.a4_track) { await RP.say("It's already a track. The white label goes back in its sleeve."); return; }
   if (S.f.a4_sampled) { await RP.say("The sample's cued. Try the sampler."); return; }
   await RP.walkTo(412, 214, "back");
   await RP.lines(["Needle down on Lou's white label. Here goes nothing.", "@a4_lou Not so close to the speaker. It's fragile."]);
@@ -231,7 +232,7 @@ async function makeTrack(S) {
     onFail: async (r, n) => { playing = false; await RP.lines([n === 1 ? "@a4_lou That's not music. That's a car alarm with ambition." : "@a4_lou Again. Fewer cowbells. Maybe none.", "Okay. From the top."]); playing = true; }
   });
   playing = false;
-  S.f.a4_track = true; S.f.a4_trackScore = res.score || 0;
+  S.f.a4_track = true; S.f.a4_trackScore = res.score || 0; S.f.a4_trackName = String(res.title || (res.track && (res.track.title || res.track.name)) || "");
   if (res.forced) await RP.say("It's... a track. It's got a beat. I've heard worse at weddings.", "a4_lou");
   await RP.say("Okay. It's done. Lou, I want you to hear it properly.");
   await louHearsIt(S);
@@ -261,8 +262,16 @@ async function louHearsIt(S) {
   await RP.say("A track. A real one. Needs a cover and a label. Pipe Hole Records... I know exactly what the cover is.");
 }
 
+const coverOpen = S => !!S.f.a4_track && !RP.has("a4_photo") && !S.f.a4_released;
+async function holeOffer(S) {
+  const i = await RP.choose(["Photograph the hole with my phone", "Leave it"]);
+  if (i === 0) await takePhoto(S);
+}
+const louFact = S => { const r = RP.rec("white_nyc93"); if (r && S.f.a4_louTold) r.fact = "No label, no artist. Just \"NYC 93\" in marker. Lou made it in a friend's basement in 1993, with a dishwasher running."; };
+
 async function takePhoto(S) {
   if (RP.has("a4_photo")) { await RP.say("I already have the photo. The hole is photogenic, but it's not a model."); return; }
+  if (S.f.a4_released) { await RP.say("The cover is already out. The hole has had its moment."); return; }
   await RP.walkTo(316, 214, "back");
   if (S.f.a4_louIn) await RP.say("Are you taking a picture of my wall?", "a4_lou");
   RP.sfx("camera"); RP.flash("#ffffff", 220);
@@ -273,27 +282,34 @@ async function takePhoto(S) {
 
 async function release(S) {
   if (!S.f.a4_track) { await RP.say("Nothing to release yet. The record doesn't exist outside my head and a dishwasher in 1993."); return; }
-  if (!RP.has("a4_photo")) { await RP.say("Track's done. A record needs a cover, and a cover needs a point. The hole. I'll take a picture of the hole."); return; }
+  if (!RP.has("a4_photo")) { await RP.say("Track's done. A record needs a cover, and a cover needs a point. The hole. Phone out, point it at the wall."); return; }
   await RP.walkTo(238, 214, "back");
   await RP.lines(["Okay. Upload page. Title. Artwork. Label. Catalog number.", "PHR-001. Pipe Hole Records. Look at that. A company."]);
-  const i = await RP.choose(["NYC 93 (Pipe Hole Remix)", "NYC 93 (Lou's Version)", "The Hole Thing"]);
-  const reply = [["@a4_lou Fine. It's accurate."], ["@a4_lou ...That's the nicest thing a computer has ever shown me."], ["@a4_lou Absolutely not.", "...Fine. It's the working title."]][i];
-  await RP.lines(["Title: " + ["NYC 93 (Pipe Hole Remix)", "NYC 93 (Lou's Version)", "The Hole Thing"][i], ...(S.f.a4_louIn ? reply : [])]);
+  let title = S.f.a4_trackName, reply = ["@a4_lou Fine. It's accurate."];
+  if (!title) {
+    const i = await RP.choose(["NYC 93 (Pipe Hole Remix)", "NYC 93 (Lou's Version)", "The Hole Thing"]);
+    title = ["NYC 93 (Pipe Hole Remix)", "NYC 93 (Lou's Version)", "The Hole Thing"][i];
+    reply = [["@a4_lou Fine. It's accurate."], ["@a4_lou ...That's the nicest thing a computer has ever shown me."], ["@a4_lou Absolutely not.", "...Fine. It's the working title."]][i];
+  }
+  await RP.lines(["Title: " + title, ...(S.f.a4_louIn ? reply : [])]);
   RP.take("a4_photo");
   RP.sfx("typing"); await RP.wait(700);
   S.f.a4_released = true; RP.relight(); RP.setClock("FRI 9:12 AM");
   RP.sfx("success");
   await RP.lines(["Upload. Publish. Done.", "My first release. On my own label. In my own apartment. Next to a pizza box. (Someone else's pizza box.)"]);
-  // get.Followers: the week after
+  // the release week
+  const wk = await RP.choose(["Email every blog, radio show and group chat I know", "Post a clip a day, each dumber than the last", "Hand the socials to Marcus, plus three"]);
   await RP.fadeTo(1, 500);
   await RP.say("One week of promotion later.", "nar");
+  await RP.card({ kicker: "RELEASE WEEK", title: "PHR-001", sub: "Pipe Hole Records, day 1 to day 7", body: [
+    ["Mon: 41 emails sent, 3 answered. One says \"cute.\" It's from Mom.", "Mon: a clip of me nodding at the decks. 212 views. 200 are me.", "Mon: Marcus makes a list. It has a section called \"cat.\""][wk],
+    ["Wed: a blog in Leipzig posts it with the caption \"fine.\" It's the nicest thing a Leipzig blog has said all year.", "Wed: a clip of me explaining the pipe hole. 3,000 views. Comments: \"is this a bit.\"", "Wed: Marcus posts it as \"the song that Aunt Denise cried to.\" Aunt Denise has not heard it."][wk],
+    ["Sun: the group chats do the rest. Slowly. Politely. Mostly in German.", "Sun: a clip of me falling off a stool in time with the beat. It gets out of hand.", "Sun: Marcus tags everyone he has ever met. Everyone he has ever met tags someone back."][wk]
+  ], button: "CLOSE" });
   await RP.fadeTo(0, 500);
-  const before = S.followers;
-  const res = await A4.tryMg("getFollowers", { days: 7, start: before, goal: before + 3000, difficulty: 2 }, S, { max: 2, fallbackScore: 70, onFail: () => RP.say("Slow week. The algorithm woke up on the wrong side of the bed. Let's go again.") });
-  const gained = res.gained != null ? Math.max(0, res.gained) : (800 + Math.round((res.score || 50) * 38));
-  RP.followers(gained);
+  RP.followers([2400, 3400, 4400][wk]);
   S.f.a4_viral = true;
-  await RP.lines(["It's... working?", "A clip of a cat falling off a couch, set to my remix. 4 million views.", "I don't even own a cat."]);
+  await RP.lines(["It's... working?", "A clip of a cat falling off a couch, set to my remix. 4 million views.", "I don't even own a cat.", "@a4_lou That's Biscuit. Orange cat off the flyer in the hall. She came in my window in June, I fed her a sardine, and now she lives with me.", "@a4_lou She falls off my couch every day. Somebody must have filmed it. I did not know she was a celebrity.", "Lou has a cat. Biscuit has a record deal. Nobody told me either."]);
   await RP.phone([
     { from: "JESS", text: "is that MR WHISKERS in 40,000 videos. i want 10%. and the usb back", hot: true },
     { from: "MARCUS", text: "BRO. cat video. you're famous. berlin?? plus three?", hot: false },
@@ -312,14 +328,15 @@ async function ingridCall(S) {
   await A4.ingLines([
     "Hello, " + A4.dj(S) + ". Ingrid Falk. We should be glad the cat has so many followers.",
     "@kid That's my song.",
-    "It is a very good cat song. Halle Neun, Saturday, two a.m., second room.",
+    "It is a very good cat song. Halle Neun, Saturday, two a.m., main room.",
     "We can offer exposure."
   ]);
-  await RP.lines(["Exposure.", "You'd be playing to eight hundred of Berlin's most discerning, mostly sober people."]);
+  await RP.say("Exposure.");
+  await A4.ing("You'd be playing to eight hundred of Berlin's most discerning, mostly sober people.");
   await A4.ing("Exposure is very valuable.");
   await RP.say("Exposure doesn't pay for flights.");
   await A4.ing("Everyone says that. And then they take the exposure.");
-  const res = await A4.tryMg("promoterTalk", { promoter: "Ingrid Falk", charId: "a4_ingrid", ask: "your fee, flights, hotel and rider", currency: "$", patience: 5, difficulty: 2 }, S, {
+  const res = await A4.tryMg("promoterTalk", { promoter: "Ingrid Falk", charId: "a4_ingrid", promoterPronoun: "she", ask: "your fee, flights, hotel and rider", currency: "$", patience: 5, difficulty: 2 }, S, {
     max: 3, fallbackScore: 72,
     onFail: async (r, n) => { await A4.ing(n === 1 ? "I'm not hearing a number. I'm hearing a feeling." : "Let me give you one more try. Say the word 'fee'. F, E, E."); }
   });
@@ -328,11 +345,15 @@ async function ingridCall(S) {
   const dfee = typeof deal.fee === "number" ? deal.fee : 0;
   const fee = res.forced || dfee <= 0 ? 350 : Math.max(350, Math.round(dfee));
   S.f.a4_dealScore = sc; S.f.a4_fee = fee; S.f.a4_deal = true;
-  const terms = deal.terms || {};
-  await A4.ingLines([res.forced ? "Fine. A fee of $" + fee + ". Flights. A hotel that is also a hotel." : "Fine. A fee of $" + fee + (terms.flights ? ", flights (" + String(terms.flights).toLowerCase() + ")" : ", flights") + ", the hotel and a rider.",
+  S.f.a4_cls = res.forced ? "" : String(deal.flights || "");
+  const FLT = { none: "flights (she books them, you owe her one)", economy: "flights (economy)", "economy-direct": "flights (economy, direct)", business: "flights (business class)" };
+  await A4.ingLines([res.forced ? "Fine. A fee of $" + fee + ". Flights. A hotel that is also a hotel." : "Fine. A fee of $" + fee + ", " + (FLT[S.f.a4_cls] || "flights") + ", the hotel and a rider.",
     "The rider: water, towels, and a vegetable that is not a pickle.",
-    "@kid And no exposure?", "No exposure. We have an exposure budget. I'm saving it for the tourists."]);
-  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 4:55 PM, Terminal 4. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Passport!!", false);
+    "@kid And no exposure?", "No exposure. We have an exposure budget. I'm saving it for the tourists.",
+    "Katja checks the rider at the door of the booth. Bring it yourself. Nachtwerk's rider budget is an urban legend, and every item you miss comes off your fee.",
+    "@kid I thought a rider meant the club buys it.", "In theory. Bring it. Also bring cash: I book the flight, I do not book your luggage."]);
+  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 8:55 AM, Terminal 4. Lands 10:55 PM Berlin time. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Rider: water, towels, 1 vegetable (NOT a pickle). Katja counts it. Passport!!", false);
+  RP.give("a4_rider");
   A4.callOff(S);
   RP.setClock("FRI 11:58 AM");
   RP.unlock("a4_loc_jfk");
@@ -341,7 +362,7 @@ async function ingridCall(S) {
     "@a4_lou I haven't left Brooklyn since the Gulf War.", "@a4_lou Go. Make a mess. Don't lose the bag."]);
   await RP.say("Don't lose the bag. Lou doesn't know it yet, but that's a curse.");
   await louLeaves(S);
-  await RP.lines(["Checklist for Berlin: passport, the record bag, a cat I don't own.", "The box from Ray is by the door. The passport is... somewhere in here."]);
+  await RP.lines(["Checklist for Berlin: passport, the record bag, a cat I don't own.", !S.f.a4_passport ? (S.f.a4_rayBox ? "The passport is... somewhere in here." : "The box from Ray is by the door. The passport is... somewhere in here.") : !S.f.a4_rayBox ? "The passport is sorted. The box from Ray is by the door." : S.f.a4_packed ? "Passport, box, bag: all sorted. Only the cat is missing." : "Passport and Ray's box are sorted. The bag just needs packing."]);
 }
 
 async function louLeaves(S) {
@@ -379,23 +400,23 @@ RP.room({
     { id: "a4_window", name: "window", r: [200, 20, 132, 106], z: 20, walk: [266, 214, "back"],
       look: "Bushwick at golden hour. Somewhere over the roofs a promoter is saying \"next week\" to a DJ.",
       open: "It sticks. It's been stuck since 2019. The landlord calls that \"character.\"", close: "It's closed. Frankly, it's always been closed." },
-    { id: "a4_hole", name: "hole in the wall", r: [326, 138, 20, 18], z: 40, walk: [322, 214, "back"],
-      look: S => S.f.a4_louIn ? "The famous hole. Lou's TV flickers in there like a distant fireplace." : "The pipe hole to 4B. I can see Lou's TV flickering through it.",
-      talk: S => louPipe(S), use: "It's a hole. It's for talking to Lou and for nothing else.",
+    { id: "a4_hole", name: "hole", r: [326, 138, 20, 18], z: 40, walk: [322, 214, "back"],
+      look: async S => { await RP.say(S.f.a4_louIn ? "The famous hole. Lou's TV flickers in there like a distant fireplace." : "The pipe hole to 4B. I can see Lou's TV flickering through it."); if (coverOpen(S)) { await RP.say("Phone in my pocket, track on the laptop. That hole is the cover."); await holeOffer(S); } },
+      talk: S => louPipe(S), use: async S => { if (coverOpen(S)) { await RP.say("Phone out. The hole is the cover."); await holeOffer(S); return; } return "It's a hole. It's for talking to Lou and for nothing else."; },
       pickup: "It's attached to the building. So is Lou.", push: "Pushing a hole. Deep. I get it.",
       give: (S, item) => item === "a4_white" ? "He gave it to me for a reason." : "Lou doesn't want anything through the hole. Except noise complaints." },
     { id: "a4_radiator", name: "radiator", r: [216, 132, 84, 36], z: 15, walk: [266, 214, "back"], look: "It still clanks all winter. In October it only clanks to remind me it exists.", use: "It's on. Warmth is a social construct.", push: "It's bolted to the building. The building wins." },
     { id: "a4_laptop", name: "laptop", r: [210, 118, 32, 26], z: 50, walk: [232, 214, "back"],
-      look: S => S.f.a4_email ? "Email from a booking agent in Berlin, open on the screen. I haven't been this nervous since I opened a Dante text." : "My laptop. One new email. The sender's name has an umlaut. I've read it nine times.",
+      look: S => S.f.a4_email ? "Email from a booking agent in Berlin, open on the screen. I haven't been this nervous since I opened a Dante text." : "My laptop. One new email from Ingrid Falk, Berlin. It signs off with an umlaut. I've read it nine times.",
       use: S => !S.f.a4_email ? readEmail(S) : S.f.a4_released ? "TrackShack says 4,000,000 plays. Most of them are cats." : release(S), open: S => S.f.a4_released ? "It's open. It's always open. It's the cat video that's always playing." : (S.f.a4_email ? release(S) : readEmail(S)),
       pickup: "I'm not carrying a laptop to Berlin. They have laptops there." },
     { id: "a4_sampler", name: "sampler", r: [248, 122, 50, 22], z: 50, walk: [272, 214, "back"],
       look: "A pad sampler with a tiny screen and sixteen pads. Only four of them have ever hit a note I meant.", use: S => makeTrack(S), push: S => makeTrack(S), pickup: "Nope. It stays. It's attached to my ambitions." },
-    { id: "a4_decks", name: "Technics SL-1210MK7", rects: [[374, 108, 74, 34], [488, 108, 74, 34]], z: 55, walk: [440, 214, "back"],
-      look: "A pair of Technics SL-1210MK7s. Direct drive, the same decks every club on earth has. They're mine. I'm still getting used to that.",
+    { id: "a4_decks", name: "Technics", rects: [[374, 108, 74, 34], [488, 108, 74, 34]], z: 55, walk: [440, 214, "back"],
+      look: "A pair of Technics SL-1210MK7s. Direct drive, the same decks every club on earth has. They're mine. I'm still getting used to that. Under the desk, Hal Pruitt's MK2s keep them company, the old guard.",
       use: S => loadSample(S), push: "Don't push the Technics. They look at you.", pull: "Pitch fader's at zero. Where it belongs.", pickup: "Each weighs about as much as a toddler. A rich, important toddler." },
-    { id: "a4_mixer", name: "Pioneer DJM-350", r: [447, 108, 42, 34], z: 56, walk: [470, 214, "back"], look: "Pioneer DJM-350. Two channels, zero crackle. The crackle was a phase of my life.", use: "Faders up, faders down. I could do this for hours.", pickup: "It's wired into the whole studio. It's an organ. Of my studio." },
-    { id: "a4_monitors", name: "Dynaudio BM5 mkIII", rects: [[346, 94, 30, 48], [560, 94, 30, 48]], z: 54, walk: [470, 214, "back"], look: "Dynaudio BM5 mkIII studio monitors. They tell me the truth about my music. The truth is a lot.", use: "Quiet in here for now. Lou would like to keep it that way.", pickup: "They're heavy and they cost more than my first car. Which I didn't have." },
+    { id: "a4_mixer", name: "mixer", r: [447, 108, 42, 34], z: 56, walk: [470, 214, "back"], look: "Pioneer DJM-350. Two channels, zero crackle. The crackle was a phase of my life.", use: "Faders up, faders down. I could do this for hours.", pickup: "It's wired into the whole studio. It's an organ. Of my studio." },
+    { id: "a4_monitors", name: "monitors", rects: [[346, 94, 30, 48], [560, 94, 30, 48]], z: 54, walk: [470, 214, "back"], look: "Dynaudio BM5 mkIII studio monitors. They tell me the truth about my music. The truth is a lot.", use: "Quiet in here for now. Lou would like to keep it that way.", pickup: "They're heavy and they cost more than my first car. Which I didn't have." },
     { id: "a4_desk", name: "desk", rects: [[346, 140, 244, 60], [206, 142, 122, 52]], z: 10, walk: [470, 214, "back"], look: "Two desks, a lot of cables, and a glass of water I keep forgetting to drink." },
     { id: "a4_neon", name: "label neon", r: [388, 26, 108, 44], z: 30, walk: [440, 214, "back"], vis: S => !!S.f.a4_released,
       look: "PIPE HOLE RECORDS. Pink neon, one burnt tube from the factory. I'm choosing to call it \"vintage.\"", use: "It's already on. It's not a toaster." },
@@ -403,9 +424,9 @@ RP.room({
       look: "LABEL NAME? \"Wall Music (no)\", \"Lou & Me (no)\", \"Hole (yes?)\". I have a very small creative team.", pickup: "It's taped up with six layers of tape. It's staying." },
     { id: "a4_panels", name: "acoustic panels", rects: [[346, 20, 98, 50], [550, 20, 44, 50]], z: 12, walk: [470, 214, "back"], look: "Foam panels. Soundproofing. Lou says they don't work. Lou says that every time he hears me through them." },
     { id: "a4_shelf", name: "record shelf", r: [12, 16, 136, 82], z: 20, walk: [80, 218, "back"],
-      look: "Every record that didn't fit in the crate. Alphabetized by how much I love them.", use: S => RP.crateView ? RP.crateView() : "A lot of vinyl.", open: S => RP.crateView ? RP.crateView() : "A lot of vinyl." },
+      look: "Every record that didn't fit in the crate. Alphabetized by how much I love them. Top shelf, behind glass: Loose Joints, \"Is It All Over My Face?\", in a sleeve marked FOR COMPANY. Hal Pruitt's last record is staying home.", use: S => RP.crateView ? RP.crateView() : "A lot of vinyl.", open: S => RP.crateView ? RP.crateView() : "A lot of vinyl." },
     { id: "a4_couch", name: "couch", r: [10, 108, 142, 62], z: 25, walk: [90, 226, "back"], look: "My couch. It's also my guest room, my Sunday and Lou's seat for the remix.", use: "I sit. I stand. Sitting is a lot.", push: "Couches don't move. They arrive and they stay.", pull: "I've tried pulling out the couch bed. It pulls out like a ghost." },
-    { id: "a4_poster", name: "Halcyon poster", r: [156, 22, 44, 60], z: 22, walk: [180, 218, "back"], look: "HALCYON ROOM, THURSDAYS. Dante's flyer person misspelled my name on the first printing. This is the corrected one. It's also wrong." },
+    { id: "a4_poster", name: "Halcyon poster", r: [156, 22, 44, 60], z: 22, walk: [180, 218, "back"], look: "HALCYON ROOM, THURSDAYS. Odessa's flyer guy misspelled my name on the first printing. This is the corrected one. It's also wrong." },
     { id: "a4_iou", name: "framed IOU", r: [150, 86, 50, 36], z: 24, walk: [180, 218, "back"], look: "A framed IOU from Dante: \"Next week.\" It's the oldest document in the apartment. It's a better investment than most stocks.", pickup: "If I take it down, the wall will hold a grudge." },
     { id: "a4_plant", name: "Gerald", r: [152, 150, 52, 50], z: 52, walk: [186, 222, "right"],
       look: S => S.f.a4_passport ? "Gerald, the plant. He's been through a lot, including my passport. He's fine." : "Gerald, the plant. Something blue is poking out of the soil. Gerald's never been a sharer.",
@@ -420,7 +441,7 @@ RP.room({
     { id: "a4_door", name: "door", r: [598, 36, 42, 130], z: 20, walk: [598, 224, "right"],
       look: "The door to the hall, the stairs, the rest of the world. And Lou's door, next to mine, behind which a TV plays a courtroom drama.",
       exit: S => leaveCheck(S) },
-    { id: "a4_rug", name: "rug", r: [190, 222, 270, 28], z: 8, floor: true, look: "A rug that ties the room together. In particular, the part where a pizza box used to be." }
+    { id: "a4_rug", name: "rug", r: [190, 222, 270, 28], z: 8, floor: true, look: "A rug that ties the room together. The pizza box by the couch is a separate issue." }
   ],
   combos: [
     ["a4_white", "a4_decks", S => loadSample(RP.state)],
@@ -430,7 +451,7 @@ RP.room({
     ["a4_white", "a4_lou", "He knows what it is. He's the one who made it."],
     ["a4_white", "a4_hole", "He gave it to me for a reason."],
     ["phone", "a4_hole", S => takePhoto(RP.state)],
-    ["phone", "a4_lou", "Lou doesn't own a phone. He owns a rotary phone. It's attached to a wall like a hostage."],
+    ["phone", "a4_lou", "Lou has a rotary phone, attached to a wall like a hostage. He'd look at mine the same way."],
     ["a4_photo", "a4_laptop", S => release(RP.state)],
     ["a4_photo", "a4_hole", "It's the photo OF the hole. Putting it back would be recursive."],
     ["a4_passport", "a4_plant", "The plant already had my passport. I've seen what it does with it."],
@@ -438,6 +459,7 @@ RP.room({
     ["a4_bag", "a4_decks", "I don't need to play anything right now. Also, it's a bag."]
   ],
   enter: async (S, from) => {
+    louFact(S);
     if (S.f.a4_louIn && !RP.actor("a4_lou").vis) { /* ensure state is consistent */ }
     if (from && from !== "a4_studio" && S.f.a4_deal && !S.f.a4_enterNote) { S.f.a4_enterNote = true; }
   }
@@ -464,7 +486,7 @@ async function packBag(S) {
   await RP.lines(["Records in. Zipper up. It weighs about as much as a medium dog.", "Every record I own that matters is in here. If it gets lost, I'm done."]);
 }
 function leaveCheck(S) {
-  if (!S.f.a4_deal) return S.f.a4_email ? "Ingrid hasn't confirmed anything yet. First the record, then the money, then the airport." : "I'm not going anywhere before I read that email. It's got an umlaut. It could be important.";
+  if (!S.f.a4_deal) return S.f.a4_email ? "Ingrid hasn't confirmed anything yet. First the record, then the money, then the airport." : "I'm not going anywhere before I read that email. It's from Berlin. It has an umlaut. It could be important.";
   if (!S.f.a4_passport) return "Passport. I can't go anywhere without it. Last seen: here. Somewhere.";
   if (!S.f.a4_packed) return !S.f.a4_rayBox ? "The box from Ray, by the door. It's got my Berlin records in it." : "The record bag. By the couch. Don't leave without the bag.";
   S.f.a4_leaving = true;
@@ -484,9 +506,9 @@ A4.wtStudio = [
   ["use", "hot:a4_decks", "a4_white"], ["expect", "S.f.a4_sampled", "sample cued"],
   ["mg", { ok: true, score: 82, track: { name: "NYC 93 (Pipe Hole Remix)", bpm: 122 } }],
   ["use", "hot:a4_sampler"], ["expect", "S.f.a4_track", "track made"],
-  ["use", "hot:a4_hole", "phone"], ["expect", "RP.has('a4_photo')", "cover photo"],
-  ["answers", [0]], ["mg", { ok: true, score: 80, gained: 6200 }], ["mg", { ok: true, score: 74, deal: { fee: 1800 } }],
-  ["use", "hot:a4_laptop"], ["expect", "S.f.a4_released && S.f.a4_viral && S.f.a4_deal", "released, spread, booked"],
+  ["answers", [0]], ["use", "hot:a4_hole", "phone"], ["run", async (S, RP) => { RP.test.answers.length = 0; }], ["expect", "RP.has('a4_photo')", "cover photo"],
+  ["mg", { ok: true, score: 74, deal: { fee: 1800 } }],
+  ["use", "hot:a4_laptop"], ["expect", "S.f.a4_released && S.f.a4_viral && S.f.a4_deal && RP.has('a4_rider')", "released, spread, booked; the rider is in my pocket"],
   ["use", "hot:a4_door"], ["expect", "S.room === 'a4_studio'", "not leaving without the bag"],
   ["pickup", "hot:a4_bag"], ["expect", "RP.has('a4_bag')", "bag packed"],
   ["run", async (S, RP) => { RP.test.travelQ.push("a4_loc_jfk"); }], ["use", "hot:a4_door"], ["expect", "S.room === 'a4_jfk'", "at JFK"]

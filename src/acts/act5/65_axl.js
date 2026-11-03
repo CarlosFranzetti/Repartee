@@ -1,5 +1,5 @@
-/* Act 5 — a5_axl: Axl Vanta's gold dressing-room trailer. Enter with the smoothie. club.Drama (scenario "ego") over the slot swap.
-   Twinkie's intel (Alex / Staten Island / his mother's banner) lowers the difficulty. Winning makes him promise to end at 11:30 sharp. (He won't.) */
+/* Act 5 — a5_axl: Axl Vanta's gold dressing-room trailer. Enter with the smoothie. A dialogue choice over the slot swap.
+   Making the 11:30 finish his own idea wins (so does Twinkie's intel: Alex / Staten Island / his mother's banner). Winning makes him promise to end at 11:30 sharp. (He won't.) */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -98,28 +98,31 @@ async function axlScene(S) {
     "I'm looking at the ceiling. It's very nice.",
     "@axl Okay. You live. Who are you?",
     "I'm the headliner.",
+    ...(S.f.a5_axlAngry ? ["@axl ...Wait. I know that voice. \"Axl who?\" That was you.", "It was a bit, on the radio.", "@axl Margo played it for me. Twice. On speaker. In the car. I've been having feelings since Friday."] : []),
     "@axl I'M the headliner.",
     "There are two headliners?",
     "@axl There's ONE. Look at the poster. My name's bigger. I've got a billion streams. A billion! Do you know what a billion is?",
     "It's a lot of lonely people with headphones.",
     "@axl ...That's very rude. Also correct. Keep going.",
-    "Your agent emailed Roz. They want to move me to nine and you to midnight.",
-    "@axl The algorithm says I close. The algorithm's rarely wrong. It's said so."
+    ...(S.f.a5_axlAsked ? ["Your agent emailed Roz. They want to move me to nine and you to midnight.", "@axl The algorithm says I close. The algorithm's rarely wrong. It's said so."] : ["@axl My agent says the algorithm wants me at midnight and you at nine. Tell me you're here to agree.", "I'm here to talk about that. My slot is eleven forty-five.", "@axl The algorithm says I close. The algorithm's rarely wrong. It's said so."])
   ]);
-  /* choose how to handle it */
-  const opts = ["Hold the line: \"11:45 is in my contract.\"", "Flatter him: \"You're the reason I started.\""];
+  /* choose how to handle it: the smart move makes the early finish his idea; Twinkie's intel is the other way in */
+  const opts = ["Hold the line: \"11:45 is in my contract.\"", "Flatter him: \"You're the reason I started.\"", "Sell it: \"A real headliner walks off on the high. Leave them begging at 11:30, and the encore is all anyone remembers.\""];
   if (S.f.a5_axlIntel) opts.push("\"Alex. Your mom's in the front row. With a banner.\"");
-  opts.push("Back out of the trailer slowly");
   const i = await RP.choose(opts);
-  let diff = S.f.a5_axlAngry ? 4 : 3, bonus = "";
-  if (i === 0) await RP.lines(["@axl A contract. I have lawyers that eat contracts for lunch.", "I have Priya. Priya eats lawyers."]);
-  else if (i === 1) { await RP.lines(["@axl Of course I'm the reason. Everyone says that. It gets old. It doesn't. Say it again.", "You... shaped a generation."]); diff = Math.max(2, diff - 1); }
-  else if (S.f.a5_axlIntel && i === 2) {
+  let win = false;
+  if (i === 0) await RP.lines(["@axl A contract. I have lawyers that eat contracts for lunch.", "I have Margo. Margo eats lawyers.", "@axl ...Margo can eat them in January. I'm busy now."]);
+  else if (i === 1) await RP.lines(["@axl Of course I'm the reason. Everyone says that. It gets old. It doesn't. Say it again.", "You... shaped a generation.", "@axl I did. I really did. And the clock is still mine."]);
+  else if (i === 2) {
+    await RP.lines(["@axl ...Go on.", "Nobody remembers who played after the legend. They remember the exit.", "@axl The exit.", "You do it at eleven-thirty, the field is still screaming, and the encore is a rumor they carry home.", "@axl ...A rumor. I LIKE a rumor."]);
+    win = true;
+  } else {
     await RP.lines(["@axl ...What did you say?", "Alex. Your mother has a banner. It says \"MY ALEX.\"", "@axl ...Who told you about the banner?", "A woman who remembers everything.", "@axl Twinkie. Of course. Okay. Okay okay okay. Listen. That's between us."]);
-    diff = 2; S.f.a5_axlLeverage = true;
-  } else { await RP.lines(["I back out slowly.", "@axl Where do you think you're going? We're mid-argument."]); }
-  const res = await A5.play("clubDrama", { scenario: "ego", rival: "Axl Vanta", difficulty: diff }, { skipLabel: "Let him have the last word" });
-  S.f.a5_axlDone = true; S.f.a5_axlWon = !!(res.ok && !res.skipped);
+    win = true; S.f.a5_axlLeverage = true;
+  }
+  if (win && S.f.a5_axlAngry) await RP.lines(["@axl ...It's a good idea. I'm allowed to have a good idea, even from the guy who said \"Axl who.\"", "@axl I'm keeping the clip, though. For my lawyers. They eat contracts and clips."]);
+  else if (!win && S.f.a5_axlAngry) await RP.lines(["@axl And that's before the radio. I haven't even started on the radio."]);
+  S.f.a5_axlDone = true; S.f.a5_axlWon = win;
   if (S.f.a5_axlWon) {
     RP.sfx("success");
     await RP.lines([
@@ -128,7 +131,7 @@ async function axlScene(S) {
       "Sharp.",
       "@axl Don't push it. You've made me emotional. I need to go stare at myself."
     ]);
-    RP.followers(500);
+    RP.followers(S.f.a5_axlAngry ? 300 : 500);
   } else {
     await RP.lines([
       "@axl Here's the thing. You play at eleven forty-five. But the stage clock is MY clock. If I'm a bit over, you wait. That's the deal.",
@@ -136,8 +139,10 @@ async function axlScene(S) {
       "@axl Same thing, with better lighting."
     ]);
   }
-  S.f.a5_phase = 2; RP.setClock("SAT 9:40 PM"); RP.relight();
+  if (!S.f.a5_soundDone) RP.setClock("SAT 6:20 PM");
+  const dark = A5.nightfall(S);
   await RP.lines(["@axl Out. And take the empty cup. I mean it."]);
+  if (!dark) await RP.say("Axl's done. The soundcheck's still waiting for me at the main stage, and the afternoon is running out.");
   await RP.goto("a5_backstage", 462, 234, "back");
 }
 

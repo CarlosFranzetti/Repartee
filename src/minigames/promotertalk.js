@@ -1,6 +1,6 @@
 /* promoter.Talk — a dialogue duel in the promoter's back office. Insult-sword-fighting, but
    about getting booked. Each turn the promoter pushes back; you pick a line from a hand.
-   Params (all optional): { promoter: "Vic", charId: <character id to draw>, ask: "a monthly" | "your fee",
+   Params (all optional): { promoter: "Vic", promoterPronoun: "they" | "he" | "she" (default "they"; "he" for Vic), charId: <character id to draw>, ask: "a monthly" | "your fee",
      patience (turns of goodwill), difficulty 1..5, arcade }
    ask "your fee" (or anything with fee/negotiate/book) switches to NEGOTIATION mode: fee, flights, hotel,
    rider. "Exposure" offers must be refused.
@@ -126,7 +126,7 @@ const OPENERS = {
     desp: ["Take your time! I have nowhere to be! Ever! Forever!", "No rush! I'll wait! I'll sit on the floor! Do you have water?"],
     name: ["Is that {who}? Tell them I said hi. They'll say 'who.' But hi.", "If it's {who}, tell them I'm here. They'll pretend not to know me."],
     joke: ["Take your time. I'll just stand here and become furniture.", "Is it a gig? A better gig? A gig for me? (It never is. I'm just asking.)"],
-    num: ["[Silently hold up your phone: {fol} followers. Let him look.]", "R|[Tap your bag. {rec} records. Clink. He'll look.]"] },
+    num: ["[Silently hold up your phone: {fol} followers. Let {him} look.]", "R|[Tap your bag. {rec} records. Clink. {He} {will} look.]"] },
   nextweek: { q: { conf: 4, desp: -3, name: 0, joke: 1, know: 1, num: 1 }, counter: true,
     pro: ["I like you. Check back next week.", "Love it. Let's circle back next week.", "Tell you what. Hit me up next week. Seriously. Next week."],
     conf: ["Next week? Perfect. Put me on next week's bill. I'll check back with my fee.", "Great. Next week works. I play next week, you pay me next week. Shake on it.", "'Next week.' Sure. Then next week I'm on your stage and you owe me next week's fee."],
@@ -281,6 +281,8 @@ async function run(host, p, SK) {
   try { host.ov.classList.add("sk-g"); } catch (e) { /* ignore */ }
   const diff = clamp(Math.round(p.difficulty || 2), 1, 5);
   const pname = String(p.promoter || "Vic");
+  /* the promoter's pronoun: "they" unless the act says otherwise (promoterPronoun: "he" | "she" | "they") */
+  const PR = ({ he: { he: "he", He: "He", him: "him", will: "will", want: "wants", take: "takes", say: "says", mean: "means" }, she: { he: "she", He: "She", him: "her", will: "will", want: "wants", take: "takes", say: "says", mean: "means" } })[p.promoterPronoun || (/^vic$/i.test(pname) ? "he" : "")] || { he: "they", He: "They", him: "them", will: "will", want: "want", take: "take", say: "say", mean: "mean" };
   const ask = String(p.ask || "a monthly");
   const neg = /fee|negotiat|rider|book/i.test(ask);
   const rnd = Math.random;
@@ -305,7 +307,7 @@ async function run(host, p, SK) {
   const recCount = (RP.state && RP.state.records && RP.state.records.length) || (p.arcade ? 24 : 0);
   const recN = recCount || (p.arcade ? 24 : 3);
   const cur = String(p.currency || (neg ? "€" : "$"));
-  const V = { name: myName, fol: SK.fmtNum(fol), rec: recN, party, pro: pname, dog: prof.dog, c: cur, ask, mangled: SK.mangle(myName, rnd) };
+  const V = { name: myName, fol: SK.fmtNum(fol), rec: recN, party, pro: pname, dog: prof.dog, c: cur, ask, mangled: SK.mangle(myName, rnd), he: PR.he, He: PR.He, him: PR.him, will: PR.will };
   const fmt = s => SK.fmt(s, V);
 
   // ---- dossier
@@ -327,17 +329,17 @@ async function run(host, p, SK) {
   await SK.intro(S, wrap, {
     kicker: neg ? "ACT IV \u00B7 THE BOOKING" : "THE BACK OFFICE",
     title: neg ? "Don't get lowballed" : "Get booked. Don't beg.",
-    lead: neg ? pname + " at " + party + " has an offer. It is, to put it kindly, insulting." : pname + " runs " + party + ". You want " + ask + ". He wants you to go away.",
+    lead: neg ? pname + " at " + party + " has an offer. It is, to put it kindly, insulting." : pname + " runs " + party + ". You want " + ask + ". " + PR.He + " " + PR.want + " you to go away.",
     steps: neg ? [
       "Four terms are on the table: <b>FEE, FLIGHTS, HOTEL, RIDER</b>. Push each one up, or <b>LOCK IT</b> to take the offer.",
       "<b>Exposure is not a fee.</b> Never accept it. The fee counts most.",
       "<b>LEVERAGE</b> is how much they want you: confident pushes work when it is high. Jokes and homework raise it; begging ruins it.",
-      "Every turn costs <b>PATIENCE</b>. When it runs out, he takes what is left on the table."
+      "Every turn costs <b>PATIENCE</b>. When it runs out, " + PR.he + " " + PR.take + " what is left on the table."
     ] : [
       "Each turn " + pname + " pushes back. Pick a line (click, or press <b>1</b>\u2013<b>5</b>). Different pushbacks need different lines.",
       "Fill <b>INTEREST</b> to 100 for the deal. Every turn costs <b>PATIENCE</b>; bad lines cost more.",
       "<b>DESPERATE</b> lines tank interest. <b>HOMEWORK</b> lines win, but only if they match your notes. A mix-up is a disaster.",
-      "Don't name-drop the wrong person. And if he says <b>next week</b>... flip it."
+      "Don't name-drop the wrong person. And if " + PR.he + " " + PR.say + " <b>next week</b>... flip it."
     ],
     pill: "DIFFICULTY " + diff,
     extra: box => { const n = el("div", { cls: "sk-note" }, box); el("h3", { text: neg ? "WHAT MARCUS DUG UP ABOUT " + party.toUpperCase() : "YOUR HOMEWORK ON " + party.toUpperCase() }, n); const ul = el("ul", {}, n); notes.forEach(t => el("li", { text: t }, ul)); },
@@ -412,7 +414,8 @@ async function run(host, p, SK) {
   const setExpr = (e, act) => { st.expr = e || ""; st.act = act || "stand"; };
   const flash = (text, col, o = {}) => { st.flash = { text, col, x: o.x || 160, y: o.y || 8, life: o.life || 1.3, blink: o.blink !== false }; st.flashT = 0; };
   const pickReact = (q) => SK.pick(q >= 3 ? REACT.great : q === 2 ? REACT.good : q === 1 ? REACT.ok : q === 0 ? REACT.meh : q >= -2 ? REACT.bad : REACT.awful, rnd);
-  const proSay = (text, o = {}) => { st.talking = true; return say.say(pname, fmt(text), Object.assign({ color: voice, pitch: 300 + (hashStr(pname) % 120) }, o)).then(() => { st.talking = false; }); };
+  const cap = t => String(t).replace(/(^|[.!?…]["')\]]*\s+)(["'(\[]*)([a-z])/g, (m, a, q, c) => a + q + c.toUpperCase());   /* composed replies start each sentence in capitals */
+  const proSay = (text, o = {}) => { st.talking = true; return say.say(pname, cap(fmt(text)), Object.assign({ color: voice, pitch: 300 + (hashStr(pname) % 120) }, o)).then(() => { st.talking = false; }); };
   const youSay = (text) => { st.talking = false; return say.say(myName, text, { color: "#62e6ff", you: true, speed: 90, pitch: 640 }); };
   const feedback = (dInt, dPat, q) => {
     const hx = 196;
@@ -664,7 +667,7 @@ async function run(host, p, SK) {
     else if (trial) { setExpr("", "stand"); RP.sfx("ping"); await proSay("Okay. One night. A trial. " + cur + fee + " and a drink ticket. Don't make me regret it. I'll confirm it next week."); }
     else if (interest <= 0) { setExpr("angry", "stand"); RP.sfx("boo"); await proSay("We're done. Door's that way. Mind the plant."); }
     else { setExpr("angry", "stand"); RP.sfx("boo"); await proSay(SK.pick(["I have to go. I have a call. I'll... let you know. Next week.", "That's my time. Send me a link. Next week. Goodbye."], rnd)); }
-    lines = [won ? "A monthly at " + party + ". At " + cur + fee + " a night, it's a start." : trial ? "A one-night trial at " + party + ". Don't blow it." : "No deal. Next week, maybe. (He means never.)"];
+    lines = [won ? "A monthly at " + party + ". At " + cur + fee + " a night, it's a start." : trial ? "A one-night trial at " + party + ". Don't blow it." : "No deal. Next week, maybe. (" + PR.He + " " + PR.mean + " never.)"];
     stats.push(["INTEREST", interest], ["PATIENCE", patience + "/" + startPat], ["SHARP LINES", hits], ["BEGGING", desperate, desperate ? "bad" : "ok"]);
   } else {
     const fr = T.fee.rung, expo = achieved === "exposure";

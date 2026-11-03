@@ -111,7 +111,7 @@ function draw(c, S, t) {
   c.save(); c.globalAlpha = 0.5;
   for (let i = 0; i < 26; i++) {
     const h = Math.round(6 + (Math.sin(t / 260 + i * 0.7) + Math.sin(t / 410 + i * 1.3) + 2) * 10);
-    c.fillStyle = ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff"][(i + Math.floor(t / 900)) % 4];
+    c.fillStyle = ["#ff3fa4", "#39d0ff", "#ffd23f", "#a05cff"][(i + Math.floor(Math.max(0, t) / 900)) % 4];
     c.fillRect(260 + i * 8, Math.min(68, 70 - h * 0.7), 6, Math.max(2, h * 0.7));
   }
   c.restore();

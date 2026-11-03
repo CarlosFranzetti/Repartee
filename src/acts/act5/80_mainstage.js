@@ -1,6 +1,6 @@
 /* Act 5 — a5_mainstage: the Harbor Lights main stage (scrolling, 960 wide), seen from the field.
    Two looks: the afternoon SOUNDCHECK (work lights, empty field, soundCheck mini-game) and the night SHOW (LED wall, beams, a sea of crowd).
-   The headline set is a chain: playlistOrder -> crowdRead -> Lou comes on for "NYC 93" -> beatMatch finale -> Kosmo says your name right. */
+   The headline set is a chain: opener + closer picks (a choice each) -> crowdRead -> Lou comes on for "NYC 93" -> beatMatch finale -> Kosmo says your name right. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -92,6 +92,7 @@ function drawFloor(c, S) {
   art.roadCase(c, 130, 156, 30, 22, { label: "MON", wheels: true }); art.roadCase(c, 780, 156, 30, 22, { label: "MON", wheels: true });
 }
 function draw(c, S, t) {
+  t = Math.max(0, t || 0); /* the first frame can arrive with t < 0 */
   const sh = show(S);
   if (sh) {
     const fr = makeLedFrames(S), reduced = RP.fx && RP.fx.reduced, idx = reduced ? 0 : Math.floor(t / 520) % fr.length;
@@ -127,19 +128,30 @@ async function soundcheck(S) {
   RP.place("kid", 478, 166, "front");
   await RP.lines([
     "@a5_foh Okay, I'm Mo. Front of house. I'm three hundred feet behind you. Don't wave. I can see you.",
-    "@a5_foh Four decks of faults on the sheet. Ground hum, a dead channel, feedback, and somebody patched a deck into the wrong input.",
+    "@a5_foh Four faults on the sheet. Ground hum, a dead channel, feedback, and somebody patched a deck into the wrong input.",
     "@a5_foh Fix them. You have the sheet, the cables and one hand on the mixer. I'll be shouting suggestions. They're unhelpful."
   ]);
-  const res = await A5.play("soundCheck", { faults: ["ground-hum", "dead-channel", "feedback", "wrong-input"], stage: "festival", difficulty: 3 }, { skipLabel: "Hand it to Mo" });
+  const rig = A5.rig(S);
+  const res = await A5.play("soundCheck", { faults: ["ground-hum", "dead-channel", "feedback", "wrong-input"], stage: "festival", tech: "Mo (FOH)", difficulty: rig.core ? 2 : 3 }, { skipLabel: "Hand it to Mo" });
   S.f.a5_soundDone = true; S.f.a5_soundFixed = res.fixed != null ? res.fixed : (res.ok ? 4 : 2);
   const good = res.ok && !res.skipped;
   RP.sfx(good ? "success" : "buzz");
-  RP.setClock("SAT 5:20 PM"); S.f.a5_phase = Math.max(S.f.a5_phase || 0, 1);
-  if (good) await RP.lines(["@a5_foh ...That's clean. That's the cleanest check I've heard all weekend. I'm not smiling. It's a facial thing.", "@a5_foh You're good. The Taula goes to the mixer; the monitors are a dream. Go eat something. Doors at six."]);
-  else await RP.lines(["@a5_foh It's... fine. There's a little hum on channel four. I'll hide it. Tonight we ride the faders.", "@a5_foh You're good enough. Go eat something. Doors at six."]);
+  if (!S.f.a5_axlDone) RP.setClock("SAT 5:20 PM");
+  if (good) await RP.lines(["@a5_foh ...That's clean. That's the cleanest check I've heard all weekend. I'm not smiling. It's a facial thing.", rig.taula ? "@a5_foh The Taula's a joy to patch. No sync, no screens, nothing to lie to me." : "@a5_foh You're good."]);
+  else await RP.lines(["@a5_foh It's... fine. There's a little hum on channel four. I'll hide it. Tonight we ride the faders.", "@a5_foh You're good enough."]);
+  await RP.lines([
+    rig.core ? "@a5_foh Those Core 47s in your wedge mix are the cleanest feed I've had all year. You'll hear everything. Including your mistakes." : rig.honestMon ? "@a5_foh Your wedges are Rokits. Bright up top, thin underneath. I'll ride the sub for you. Don't count on a miracle." : "@a5_foh Your monitors are BM5s? Lovely in a bedroom. On this stage the low end gets thin. I'll compensate where I can.",
+    rig.cdj3 ? "@a5_foh And the CDJ-3000s read clean from the back. Nice touch." : "@a5_foh And the deck pair's older. The pitch fader on the left one has a dead spot. Mind it."
+  ]);
   RP.relight();
-  await RP.say("Doors at six. Axl at ten-fifteen. Me at eleven forty-five. Plenty of time to be quietly terrified.");
-  RP.text("PRIYA (MGR)", "Soundcheck: " + (good ? "great" : "ok") + ". Now: Axl wants your slot. Roz has the details. Backstage. Go.", true);
+  const dark = A5.nightfall(S);
+  if (dark) {
+    await RP.lines(["The sun is going down behind the stage. The gates have opened. I can hear the field filling up like a bath.", "Axl at ten-fifteen. Me at eleven forty-five. Plenty of time to be quietly terrified."]);
+    RP.text("MARGO (MGR)", "Soundcheck: " + (good ? "great" : "ok") + ". Gates are open. Backstage. Lou and Marcus are on their way in.", true);
+  } else {
+    await RP.say("Doors at six. Axl at ten-fifteen. Me at eleven forty-five. Plenty of time to be quietly terrified.");
+    RP.text("MARGO (MGR)", "Soundcheck: " + (good ? "great" : "ok") + ". Now: Axl wants your slot. Roz has the details. Backstage. Go.", true);
+  }
 }
 
 async function boothUse(S) {
@@ -158,21 +170,29 @@ async function headlineSet(S) {
     "A thousand faces in the dark, and one white label in my coat.",
     "Okay. Let's build a set."
   ]);
-  /* 1. playlist.Order: build the arc */
-  const pl = await A5.play("playlistOrder", { records: A5.SET_POOL.slice(), slots: 8, arc: "peak", difficulty: 3 }, { skipLabel: "Trust my gut" });
-  const order = (pl.order && pl.order.length ? pl.order : A5.DEFAULT_ORDER).filter(id => RP.rec(id));
-  S.f.a5_setPlaylist = pl.score != null ? pl.score : 70;
+  /* 1. the running order: you pick the opener and the closer; the middle is the crate you packed */
+  await RP.lines(["The crate is open on the booth. Ray's white label is in my coat, and a thousand people are waiting on the first record.", "Open first. Then decide how it ends."]);
+  const OPEN = ["mr_fingers_washing_machine_can_you_feel_it", "kerri_chandler_atmosphere_ep_vol_1", "frankie_knuckles_your_love"];
+  const oi = await RP.choose(["Open low: Mr. Fingers, \"Can You Feel It\". Let the field lean in.", "Open on the groove: Kerri Chandler, \"Atmosphere\".", "Open on the voice: Frankie Knuckles, \"Your Love\"."]);
+  const CLOSE = ["mood_ii_swing_closer", "robin_s_show_me_love", "donna_summer_i_feel_love"];
+  const ci = await RP.choose(["Close it down: Mood II Swing, \"Closer\".", "Close with hands in the air: Robin S, \"Show Me Love\".", "Close on the synth: Donna Summer, \"I Feel Love\"."]);
+  S.f.a5_setOpener = OPEN[oi]; S.f.a5_setCloser = CLOSE[ci];
   await RP.lines([
-    pl.score >= 75 ? "The arc is there. Slow burn, a climb, a peak around the middle. It looks right on paper." : "The order's a little wonky. I'll make it up on the fly. That's what the crowd's for.",
+    ["Slow first record. They'll lean in or they'll check their phones. I'm betting on leaning.", "A groove first. Nobody has to decide anything yet.", "A voice first. Everyone in a field knows what a voice is."][oi],
+    ["I'll land them with \"Closer\". You don't drop a field from a height.", "Ending on \"Show Me Love\" means the hour before it has to earn it.", "A 1977 synth to end a night in Brooklyn. Nobody will mind."][ci],
     "@a5_foh (talkback) Nice. Start, whenever."
   ]);
   /* 2. crowd.Read: play the room */
   RP.audio && RP.audio.loop && RP.setMusic && RP.setMusic({ genre: "house", bpm: 122, volume: 0.32 });
-  const cr = await A5.play("crowdRead", { records: order.slice(), crowd: "festival", rounds: 5, goal: 4, difficulty: 3, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
+  /* the crate: your opener and closer, the middle of the pool, a closer always on hand, and Ray's white label */
+  const crate = [OPEN[oi], "peech_boys_dont_make_me_wait", "nuyorican_soul_runaway", "masters_at_work_blood_vibes_the_ha_dance", "marshall_jefferson_move_your_body", "bucketheads_the_bomb", "david_morales_presents_the_face_needin_u", CLOSE[ci], "mood_ii_swing_closer", "white_nyc93"];
+  const crateIds = crate.filter((id, k) => crate.indexOf(id) === k && (id === "white_nyc93" || RP.rec(id)));
+  const cr = await A5.play("crowdRead", { records: crateIds, crowd: "festival", rounds: 5, goal: 4, difficulty: A5.rig(S).cdj3 ? 3 : 4, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
   S.f.a5_setCrowd = cr.score != null ? cr.score : 70;
   S.f.a5_pyro = true; RP.flash("#ffffff", 220); RP.sfx("cheer");
   await RP.lines([
     cr.ok && !cr.skipped ? "The field's moving like one animal. The whole crowd's one big pulse. This is it. This is the thing." : "It wasn't perfect. The crowd's a patient animal, and they forgave me. Mostly.",
+    A5.rig(S).cdj3 ? "The CDJ-3000 waveform shows me the drop a bar early. Nobody in the field knows I'm cheating." : "No waveform to lean on. I mix by ear and by the dead spot in the left pitch fader. The field forgives, mostly.",
     "@a5_crowd (roaring) " + nm + "! " + nm + "! " + nm + "!",
     "They know my name. They actually know my name."
   ]);
@@ -208,6 +228,7 @@ async function headlineSet(S) {
     "@lou Kid. Thank you."
   ]);
   if (S.f.a5_whiskersShout) await RP.lines(["And Mr. Whiskers: this one's for you. Slow blink, buddy.", "(Somewhere in the crowd, a bubble carrier is lifted over the barricade. Mr. Whiskers blinks. Slowly.)"]);
+  if (S.f.a5_radioPlug) await RP.lines(["(Near the barricade, a bottle goes up in the lights. SPIRIT WATER. Eddie has his own banner. It says: AS HEARD ON THE RADIO.)"]);
   await RP.lines(["Thank you, Harbor Lights. I'm " + nm + ". I started in a bedroom. I'm still in a bedroom. It just got a lot of people."]);
   /* 5. Kosmo, finally */
   const kos = RP.actor("kosmo");
@@ -215,7 +236,8 @@ async function headlineSet(S) {
   await RP.npcWalk("kosmo", 560, 177, "left");
   await RP.lines([
     "@kosmo ...Kid.",
-    "@kosmo No. I've been doing that for years. ...",
+    "Yes, Kosmo?",
+    "@kosmo I've been getting names wrong on purpose for years. It's a bit. I'm retiring it.",
     "@kosmo " + nm + ".",
     "Kosmo. You know my name.",
     "@kosmo I always knew it. The wrong names were a bit. A bit I committed to.",
@@ -281,15 +303,15 @@ RP.room({
     { id: "a5_mcrowd", name: "the crowd", r: [0, 214, 960, 42], z: 6, vis: S => show(S), walk: [480, 180, "back"], look: "A sea of people: heads, phones, raised hands, one cardboard sign that says +30. Thousands of them. Every one of them came to listen.", talk: "\"Hello, Brooklyn!\" is not for me. I'm in the sound; I'm not that person. I just raise a hand. They roar. That's enough." },
     { id: "a5_mfield", name: "the field", r: [0, 214, 960, 42], z: 6, vis: S => !show(S), walk: [480, 180, "back"], look: "An empty field, a long pavement, a line of barricades and a few cones. It's weird to see a place be this empty when it's about to be this full." },
     { id: "a5_mwater", name: "the harbor", r: [0, 60, 960, 66], z: 12, walk: [480, 180, "back"], look: S => show(S) ? "The harbor and the skyline behind the rig, from the stage. Ferries drift by with their lights on, like they're checking in." : "The harbor over the lip of the stage: a bridge, a ferry and the skyline. Someone's clearly picked the best seat in town for the sound guy.", talk: "I give the harbor a nod. A ferry honks. Is that a review?" },
-    { id: "a5_mtech1", name: "stagehand", talk: "Stagehand: \"Don't step on tape. The tape knows.\"", look: "A stagehand with a headset and a roll of gaffer tape, constantly adding more. If there's a heaven, it's made of gaffer.", give: "Stagehand: \"Not now. I'm busy being invisible.\"", pickup: "No.", clickable: false },
-    { id: "a5_mtech2", name: "stagehand", talk: "Stagehand: \"Mo's yelling. Don't listen to Mo. Listen to the sound.\"", look: "A stagehand in a black cap, checking a line. They're the ones who make the magic and never get thanked.", give: "No.", pickup: "No.", clickable: false },
+    { id: "a5_tech1", name: "stagehand", talk: S => RP.lines(["@a5_tech1 Don't step on the tape. The tape knows.", "What does the tape know?", "@a5_tech1 Where everything goes. Including you."]), look: "A stagehand with a headset and a roll of gaffer tape, constantly adding more. If there's a heaven, it's made of gaffer.", give: "\"Not now. I'm busy being invisible.\"", pickup: "No." },
+    { id: "a5_tech2", name: "stagehand", talk: S => RP.lines(["@a5_tech2 Mo's yelling. Don't listen to Mo. Listen to the sound.", "Is the sound yelling?", "@a5_tech2 Not yet. That's your job."]), look: "A stagehand in a black cap, checking a line. They're the ones who make the magic and never get thanked.", give: "No.", pickup: "No." },
     { id: "lou", name: "Lou", talk: S => RP.lines(["@lou Don't look at me. Look at the people. They're looking at you.", "I'm looking at you, Lou.", "@lou Don't."]), look: "Lou, in the good navy cardigan, on the biggest stage in Brooklyn, with the expression of a man who is going to complain about this for twenty years, with joy.", give: "He's holding the sleeve. Don't mess with that.", pickup: "Absolutely not." },
     { id: "kosmo", name: "Kosmo Delacroix", talk: S => RP.say("Say it again.", "kosmo"), look: "Kosmo Delacroix, coat and shades, walking onto the stage like it's a hotel lobby. The only man who could make me feel eight and eighty.", give: "I give nothing to Kosmo. He's in the middle of my favorite moment.", pickup: "I'm not carrying a legend." }
   ],
   combos: [
     ["a5_pass", "a5_mbooth", "My pass is for people who can't get in. I'm in."],
     ["a5_marker", "a5_mbooth", "I could write something on the scrim. Whit would call it \"a brand moment.\" I leave it clean."],
-    ["phone", "a5_mbooth", "No phone while I'm playing. Priya would murder me and then invoice the murder."]
+    ["phone", "a5_mbooth", "No phone while I'm playing. Margo would murder me and then invoice the murder."]
   ],
   enter: async (S, from) => {
     if (show(S)) {

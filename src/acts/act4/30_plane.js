@@ -56,7 +56,8 @@ function paint(c, S) {
   for (let x = 40; x < W; x += 90) { ell(c, x, 63, 2, 2, "#ffe8b0"); em.push([x - 2, 61, 5, 5]); R(c, x + 12, 61, 4, 4, "#39d0ff"); R(c, x + 20, 61, 6, 4, "#ffd23f"); PK.glow(c, x, 63, 8, "#ffe8b0", { strength: 0.6 }); }
   R(c, 300, 60, 40, 6, "#0a2a3a"); txt(c, "FASTEN", 304, 61, "#5cff9a"); em.push([300, 60, 40, 6]);
   // windows aligned behind each seat row (night sky and wing)
-  wins.forEach((x, i) => E(PK.planeWindow(c, x, 76, { view: i === 2 ? "night" : (i === 4 ? "wing" : "night"), seed: i * 7, shade: i === 0 ? 0.4 : 0 })));
+  const nt = !!S.f.a4_flown;
+  wins.forEach((x, i) => E(PK.planeWindow(c, x, 76, { view: i === 4 ? (nt ? "night" : "wing") : (nt ? "night" : (i % 2 ? "runway" : "clouds")), seed: i * 7, shade: i === 0 ? 0.4 : 0 })));
   // floor
   R(c, 0, 222, W, 34, "#1f3a4a"); PK.carpet(c, 0, 222, W, 34, { pattern: "stripes", base: "#26455a", seed: 3 });
   R(c, 0, 222, W, 2, "#14202c");
@@ -70,7 +71,7 @@ function paint(c, S) {
 let tvT = 0;
 function draw(c, S, t) {
   // night motion through the windows: slow lights drifting by
-  wins.forEach((x, i) => { const bx = x + 5 + ((t / 90 + i * 40) % 18), by = 76 + 28 + ((i * 5) % 7); P(c, bx % (x + 23) < x + 5 ? x + 5 : bx, by, "#ffd27a"); });
+  if (S.f.a4_flown) wins.forEach((x, i) => { const bx = x + 5 + ((t / 90 + i * 40) % 18), by = 76 + 28 + ((i * 5) % 7); P(c, bx % (x + 23) < x + 5 ? x + 5 : bx, by, "#ffd27a"); });
   // wing light blinking on the right window
   if (Math.floor(t / 700) % 2) { R(c, 434 + 21, 76 + 14, 2, 2, "#ff3a3a"); }
 }
@@ -106,10 +107,44 @@ async function kosmoTalk(S) {
         "Basic Channel. Ben Klock. Some Chicago. A little Detroit.", "@a4_kosmo ...Place it. Gently. Brenton: gently."]);
       await giveBag(S);
     } },
-    { text: "Great set last month, Kosmo.", when: S => !S.f.a4_kosmoPraise, run: async () => { S.f.a4_kosmoPraise = true; await RP.lines(["@a4_kosmo Of course it was. I remember it fondly. It was in a... a basement? A club? A large place. With... acoustics.", "It was the Halcyon.", "@a4_kosmo Yes. That. Wonderful people. Who are you, again?"]); } },
-    { text: "Where are you headed?", run: () => RP.lines(["@a4_kosmo Berlin. They hold me in a different kind of reverence there. They're mostly quiet about it.", "@a4_kosmo And you, Brenton? What brings you?", "A booking. Halle Neun.", "@a4_kosmo (pause) I... don't know it. How lovely."]) },
+    { text: "Great set at the Halcyon, Kosmo.", when: S => !S.f.a4_kosmoPraise, run: async () => { S.f.a4_kosmoPraise = true; await RP.lines(["@a4_kosmo Of course it was. I remember it fondly. It was... last week? A basement? A large place. With... acoustics.", "Six months ago. I played after you.", "@a4_kosmo Yes. That. Wonderful people. Who are you, again?"]); } },
+    { text: "Kosmo, could you lend me a little cash?", when: S => !S.f.a4_kosmoLoan, run: () => kosmoLoan(S) },
+    { text: "Where are you headed?", run: () => RP.lines(["@a4_kosmo Berlin. They hold me in a different kind of reverence there. They're mostly quiet about it. A booker named Falk books me a Sunday brunch there every year, and she books my seat, which is why I'm on this plane and not a better one.", "@a4_kosmo And you, Brenton? What brings you?", "A booking. Halle Neun.", "@a4_kosmo (pause) I... don't know it. How lovely."]) },
     { text: "Never mind. Sleep well.", end: true }
   ]);
+}
+async function cartAsk(S) {
+  const i = await RP.choose(["A hot towel", "Tomato juice ($4)", "Pretzels ($3)", "Never mind"]);
+  if (i === 3) return;
+  if (i === 0) {
+    if (RP.has("a4_towel") || S.f.a4_rTowel) { await RP.lines(["@a4_marguerite One towel per passenger, sir. It's policy, and also a vow."]); return; }
+    RP.give("a4_towel");
+    await RP.lines(["@a4_marguerite Hot towel. Economy gets it lukewarm and with a look.", "She tongs one out of a steel tray. It steams like a small, clean ghost.", "The rider says towels. Plural. I'll take what the airline calls plural."]);
+    return;
+  }
+  const price = i === 1 ? 4 : 3;
+  if (!RP.canAfford(price)) { await RP.lines(["@a4_marguerite The card reader is resting, sir. Cash.", "I look at my cash. It looks back. We both feel bad."]); return; }
+  RP.money(-price); RP.sfx("coin");
+  if (i === 2) { await RP.lines(["Pretzels. A tiny bag of tiny knots. Salt for the soul, three dollars for the wallet."]); return; }
+  await RP.lines(["@a4_marguerite Tomato juice. Pepper? Celery?", "Celery. Definitely celery."]);
+  if (RP.has("a4_veg") || S.f.a4_rVeg) { await RP.say("I already hold a vegetable. I drink the juice with the dignity of a man who overbought."); return; }
+  RP.give("a4_veg"); S.f.a4_vegKind = "celery";
+  await RP.lines(["The celery stands in the cup like a tiny green flag. I drink the juice. I keep the flag.", "A vegetable that is not a pickle. That's one item off the rider and four dollars off the account."]);
+}
+async function kosmoLoan(S) {
+  if (S.f.a4_kosmoLoan) { await RP.lines(["@a4_kosmo Brenton. We have discussed money. It was beneath both of us. Go back to sleep."]); return; }
+  if (S.money >= 40) { await RP.lines(["@a4_kosmo (lifts the mask a centimetre) You have a wallet. I can hear it. People with a wallet do not borrow from a legend. They tip one."]); return; }
+  await RP.lines(["@a4_kosmo (a long sigh) Money. I do not carry money, Brenton. I carry people who carry money.", "@a4_kosmo But I have been woken, and a woken legend likes to be amused. Make me laugh and something may fall out of my robe."]);
+  for (;;) {
+    const j = await RP.choose(["How many Kosmos does it take to change a bulb? One. He holds it, and the world revolves around him.", "A DJ walks into a bar. The bartender says: \"Why the long fade?\"", "Lend it or I tell everyone you play the brunch gig.", "Never mind. Sleep well."]);
+    if (j === 3) { await RP.say("Some other time. Possibly after I've stopped being proud."); return; }
+    if (j === 0) {
+      S.f.a4_kosmoLoan = true; RP.money(60);
+      await RP.lines(["@a4_kosmo (a pause. A wheeze. The mask slips.) ...The world revolves. Hm. That is the first joke about me I have heard that is also accurate.", "@a4_kosmo (three crumpled twenties appear from the sleeve of his robe) This never happened. And it is not a loan. A loan has paperwork. This is a tip for the work of making me laugh.", "Sixty dollars, in a silk robe's worth of warm. Kosmo, patron saint of the bad month."]);
+      return;
+    }
+    await RP.lines(j === 1 ? ["@a4_kosmo I invented the long fade, Brenton. In a basement. You were a rumour.", "@a4_kosmo Next."] : ["@a4_kosmo That is blackmail. It is also accurate. I will not be paying it.", "@a4_kosmo Next."]);
+  }
 }
 async function giveBag(S) {
   if (!RP.has("a4_bag")) return;
@@ -124,14 +159,14 @@ async function takeSeat(S) {
   await RP.walkTo(358, 226, "back");
   RP.place("kid", 358, 196, "front"); RP.actor("kid").act = "sit";
   S.f.a4_flown = true;
-  await RP.say("23A. Window. A tiny oval of night with a wing in it. I could cry. Or sleep. Probably both.");
+  await RP.say("23A. Window. A tiny oval of morning with a wing in it. I could cry. Or sleep. Probably both.");
   await RP.fadeTo(1, 700);
-  RP.setClock("SAT 2:12 AM");
+  RP.setClock("SAT 11:52 PM");
   await RP.say("Many hours, one chicken-or-pasta and a stranger's elbow later.", "nar");
   await RP.fadeTo(0, 700);
-  await RP.lines(["@a4_pilot Ladies and gentlemen, this is your captain. We're beginning our descent into Berlin. Local time is eleven fifty-two p.m.",
-    "@a4_pilot We'll be a little late to the gate. We circled for an hour. A beagle was involved. I'm told. I don't know.",
-    "I keep doing the math. Landing 11:52. Gate by midnight. Passport control. The airport train.",
+  await RP.lines(["@a4_pilot Ladies and gentlemen, this is your captain. Welcome to Berlin. Local time is eleven fifty-two p.m.",
+    "@a4_pilot We're an hour late. We circled for an hour. A beagle was involved. I'm told. I don't know.",
+    "I keep doing the math. Landed 11:52. Gate by midnight. Passport control. The airport train.",
     "The last airport train leaves at 12:07. And my set at Halle Neun is at two."]);
   RP.actor("kid").act = "stand"; RP.place("kid", 330, 228, "front");
   RP.say("@a4_pa Doors to manual. Please remain seated. Please don't take pictures of the pilot.".replace("@a4_pa ", ""), "a4_pa");
@@ -148,7 +183,7 @@ async function takeSeat(S) {
 /* ------------------------------------------------------------------ the room */
 RP.room({
   id: "a4_plane", act: 4, name: "TransAtlantis 718",
-  paint, draw, light, ambience: "airport", music: null,
+  paint, draw, light, ambience: "airport", music: null, cacheKey: S => (S.f.a4_flown ? "n" : "d"),
   walk: [[8, 226], [630, 226], [630, 250], [8, 250]],
   start: { x: 70, y: 232, face: "right" },
   actors: [
@@ -181,8 +216,8 @@ RP.room({
     { id: "a4_myseat", name: "seat 23A", r: [326, 100, 64, 100], z: 40, walk: [358, 232, "back"], look: "23A. A window seat. My knees are about to have a very personal relationship with the seat in front.",
       use: S => takeSeat(S), open: S => takeSeat(S), pickup: "It's an airplane seat. They're attached to the plane. And the plane is attached to the sky." },
     { id: "a4_bin", name: "overhead bin", r: [270, 8, 180, 50], z: 20, walk: [358, 232, "back"], look: "The overhead bin above 23A. Stuffed with duty-free bags, a guitar, a pillow and someone's emotional baggage. It will not take my bag.", open: "Full. It opens, takes one look at me and slams shut.", pickup: "It's the bin. I'm not carrying the bin.", push: "It's wedged. It'd take a crowbar and a sense of shame." },
-    { id: "a4_windows", name: "windows", rects: [[72, 74, 32, 42], [162, 74, 32, 42], [252, 74, 32, 42], [342, 74, 32, 42], [432, 74, 32, 42], [522, 74, 32, 42]], z: 20, walk: [358, 232, "back"], look: "Oval windows with a view of... night. And on the right, a wing. It's blinking red, like it knows something.", open: "It doesn't open. Which is good. We're up here." },
-    { id: "a4_cart", name: "service cart", r: [560, 190, 62, 64], z: 60, walk: [540, 238, "right"], look: "The drinks cart. A rolling bar of tiny bottles and tiny dreams. Marguerite pushes it like it owes her money.", use: "\"Tomato juice?\" Nobody asks for it on the ground. In the air, it's wine.", pickup: "It's the airline's. And I don't want those pretzels that badly." },
+    { id: "a4_windows", name: "windows", rects: [[72, 74, 32, 42], [162, 74, 32, 42], [252, 74, 32, 42], [342, 74, 32, 42], [432, 74, 32, 42], [522, 74, 32, 42]], z: 20, walk: [358, 232, "back"], look: S => S.f.a4_flown ? "Oval windows full of night. And on the right, a wing, blinking red, like it knows something." : "Oval windows: tarmac, a morning sky, a man waving two orange sticks. On the right, a wing. It's blinking red, like it knows something.", open: "It doesn't open. In an hour, that will be a relief." },
+    { id: "a4_cart", name: "service cart", r: [560, 190, 62, 64], z: 60, walk: [540, 238, "right"], look: "The drinks cart. Tiny bottles, tiny dreams, a steel tray of hot towels and a tomato juice with a celery stick standing in it like a flag. Marguerite pushes it like it owes her money.", use: S => cartAsk(S), talk: S => cartAsk(S),  pickup: "It's the airline's. And I don't want those pretzels that badly." },
     { id: "a4_door", name: "exit door", r: [4, 62, 46, 156], z: 20, walk: [58, 232, "left"], look: "The cabin door. Through it, the jet bridge. Behind me, New York. Ahead of me, a bag with a seatbelt.", exit: "No going back. Not until Berlin. Possibly not even then." },
     { id: "a4_floor", name: "aisle", r: [8, 224, 620, 28], z: 5, floor: true, look: "The aisle. A strip of carpet with the dignity of a thousand rolling suitcases." }
   ],
@@ -197,7 +232,7 @@ RP.room({
   ],
   enter: async (S, from) => {
     if (!S.f.a4_planeIntro) {
-      S.f.a4_planeIntro = true; RP.setClock("FRI 4:55 PM");
+      S.f.a4_planeIntro = true; RP.setClock("SAT 8:55 AM");
       await RP.lines(["TransAtlantis 718. A window seat, a bag under my arm, and a nervous feeling that I've forgotten something.", "Okay. The bag goes in the bin. Everything's going to go in the bin. It's a simple plan. That's how you know."]);
     }
   }

@@ -95,19 +95,31 @@ const QUIZ = [
   { flag: "a4_q3", q: id => "Ben Klock. \"" + rec(id).title + ".\" 2009. Which label?", rec: "ben_klock_one", opts: ["Playhouse", "Mille Plateaux", "Ostgut Ton"], ok: 2,
     right: "@a4_sven Ostgut Ton. A double LP. Hm. You read.", wrong: "@a4_sven Nein. Ostgut Ton. Is it so hard? Read your sleeves." }
 ];
+const CHECK = "Let me check my crate.";
+/* returns true when all three are answered; false if I step away to read (answered ones stay answered) */
 async function runQuiz(S) {
   for (const Q of QUIZ) {
-    if (S[Q.flag] || S.f[Q.flag]) continue;
+    if (S.f[Q.flag]) continue;
     for (;;) {
-      const text = Q.q(Q.rec);
-      await RP.say(text, "a4_sven");
-      const i = await RP.choose(Q.opts);
+      await RP.say(Q.q(Q.rec), "a4_sven");
+      const i = await RP.choose(Q.opts.concat([CHECK]));
+      if (i === Q.opts.length) {
+        await RP.lines([CHECK, "@a4_sven Check. The question waits. I am a door. Doors wait.", "(MENU, then my crate. Every record has a fact. Then back to Sven.)"]);
+        return false;
+      }
       if (i === Q.ok) { S.f[Q.flag] = true; await RP.lines([Q.opts[i] + ".", Q.right]); break; }
       await RP.lines([Q.opts[i] + "?", Q.wrong]);
       S.f.a4_wrongs = (S.f.a4_wrongs || 0) + 1;
-      if (S.f.a4_wrongs >= 3 && S.f.a4_wrongs % 3 === 0) await RP.say("(The crate in my phone has a fact for every record. I should read the sleeve.)");
+      if (S.f.a4_wrongs >= 3 && S.f.a4_wrongs % 3 === 0) await RP.say("(I'm guessing. I could step back, open my crate in the MENU and read the facts on the sleeves.)");
     }
   }
+  return true;
+}
+async function giveMate(S) {
+  if (S.f.a4_quizDone) return "He's already let me in. He looks at the bottle, then at me. \"Later,\" he says, which in Sven is a warm gesture.";
+  if (S.f.a4_mateGiven) return "He has the bottle. Anything more would be a bribe, and he's very sure he's above those.";
+  S.f.a4_mateGiven = true; RP.take("a4_mate"); S.f.a4_q1 = true;
+  await RP.lines(["I hold out the Club-Mate. Sven looks at it for four full seconds, the way a cliff looks at a rowing boat.", "@a4_sven ...Nobody brings the door a drink. In nineteen years.", "@a4_sven (he opens it with a thumb) Question one, you have answered. Do not make me regret it."]);
 }
 async function svenTalk(S) {
   if (S.f.a4_quizDone) { await RP.lines(["@a4_sven (a single nod toward the door) Go.", "@a4_sven And you: don't smile. It scares the regulars."]); return; }
@@ -120,9 +132,9 @@ async function svenTalk(S) {
     await RP.lines(["@a4_sven Bag. Open. ...Records. Real ones.", "@a4_sven Fine. I'll ask three questions. If you know the records, you go in. If you don't, you stand here and think about it.", "@a4_sven Sticker on the phone."]);
     await RP.say("(He puts a sticker over my camera lens with the surgical calm of a man who's done it ten thousand times.)");
   } else {
-    await RP.lines(["@a4_sven (he doesn't blink) Again?", "I'd like to try again."]);
+    await RP.lines(["@a4_sven (he doesn't blink) Again?", "I'd like to try again."].concat(S.f.a4_q1 ? ["@a4_sven We continue where you stopped. I'm a door, not a monster."] : []));
   }
-  await runQuiz(S);
+  if (!await runQuiz(S)) return;
   if (S.f.a4_q1 && S.f.a4_q2 && S.f.a4_q3) {
     S.f.a4_quizDone = true; RP.give("a4_band"); RP.sfx("success");
     await RP.lines(["@a4_sven ...Fine. You know records.", "@a4_sven Wristband. Left wrist. Not the right. The right is for people who ask for the bathroom.",
@@ -152,7 +164,7 @@ RP.room({
   hotspots: [
     { id: "a4_sven", name: "Sven", look: "Sven, the door. Shaved head, grey beard, long black coat, sunglasses at 2 a.m. He looks at you the way a cliff looks at the sea.",
       talk: S => svenTalk(S),
-      give: (S, item) => item === "a4_bag" ? "Sven's eyes narrow at the bag. \"Open.\" Talking to him would be faster." : item === "a4_band" ? "He's the one who gave it. He'd know it if I wore it wrong." : "\"Nein,\" says Sven. He's said it so many times it's a state of being.",
+      give: (S, item) => item === "a4_mate" ? giveMate(S) : item === "a4_bag" ? "Sven's eyes narrow at the bag. \"Open.\" Talking to him would be faster." : item === "a4_band" ? "He's the one who gave it. He'd know it if I wore it wrong." : "\"Nein,\" says Sven. He's said it so many times it's a state of being.",
       pickup: "I'd like to keep my arms. And my plans.", push: "He's roughly the size of the building. I'm roughly the size of the problem.", pull: "I'm not pulling Sven. Sven pulls you." },
     { id: "a4_door", name: "steel door", r: [430, 66, 120, 114], z: 25, walk: [490, 214, "back"],
       look: "A heavy steel door with a red cage lamp over it and a stenciled \"H9.\" Behind it, a bass drum so deep I feel it in my fillings.",
@@ -178,6 +190,7 @@ RP.room({
     ["phone", "a4_door", "The sticker on my camera says it all. KEINE FOTOS. I can't even photograph my own shame."],
     ["a4_passport", "a4_sven", "\"I don't need a passport,\" Sven says. \"I need records.\""],
     ["a4_white", "a4_sven", "Sven stares at the white label. \"No label. No name. No.\" He's probably right. He's also a bouncer, not a critic."],
+    ["a4_mate", "a4_sven", S => giveMate(RP.state)],
     ["a4_jerky", "a4_sven", "Sven looks at the jerky. Then at me. Nobody's ever tried to bribe him with jerky and lived to tell it."]
   ],
   enter: async (S, from) => {

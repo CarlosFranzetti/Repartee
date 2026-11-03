@@ -1,5 +1,5 @@
-/* Act 3 — Delancey St platform, 4 AM. The way home after the anniversary night: a bag of records, zero dollars,
-   a phone at 3%. last.Train mini-game, then the J pulls in. Flags: a3_trainTry, a3_train. */
+/* Act 3 — Delancey St platform, half past one. The way home after the anniversary night: a bag of records, rent money only,
+   a phone at 3%. A stranger with oranges, then the last train pulls in. Flag: a3_train. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -29,7 +29,7 @@ function paint(c, S) {
   const lines = [["#ee352e", [[174, 90], [184, 72], [200, 70], [212, 66]]], ["#2850ad", [[174, 66], [188, 78], [198, 86], [214, 92]]], ["#996633", [[170, 80], [190, 80], [210, 78]]]];
   lines.forEach(([col, pts]) => { for (let i = 0; i + 1 < pts.length; i++) U.line(c, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], col); pts.forEach(p => P(c, p[0], p[1], "#17101e")); });
   txtC(c, "J", 194, 63, "#996633", 1, 1);
-  PK.clock(c, 300, 18, { d: 20, hour: 4, min: 7 });
+  PK.clock(c, 300, 18, { d: 20, hour: 1, min: 35 });
   // an LED "next train" board, drawn dynamically in draw()
   R(c, 420, 20, 96, 20, "#0a0a0e"); R(c, 420, 20, 96, 1, "#4a4658"); R(c, 420, 39, 96, 1, "#1a1822");
   // wet floor sign and chewing-gum constellations
@@ -44,7 +44,7 @@ function light(S) {
 function draw(c, S, t) {
   // next-train board
   const mins = trainState ? 0 : 11 - Math.floor((t / 9000) % 3);
-  txt(c, "J  BROAD ST", 424, 24, "#ff9a3f", 1, 1);
+  txt(c, "NIGHT SVC", 424, 24, "#ff9a3f", 1, 1);
   txt(c, trainState ? "ARRIVING" : mins + " MIN", 424, 32, "#ff9a3f", 1, 1);
   // a rat on the track bed
   const rx = ((t / 28) % 720) - 40;
@@ -61,16 +61,30 @@ function update(dt, S, t) {
 }
 
 async function runTrain(S) {
-  const res = await A3.mg("lastTrain", { from: "Delancey St (Lower East Side)", to: "Bushwick (Apt 4C)", battery: 3, money: 0, carrying: "records", mode: "subway", difficulty: 2 }, {
-    giveUp: "Wait on the bench", onFail: async () => { await RP.lines(["I missed it by four seconds. Four seconds, and the J takes my dignity with it.", "The next one's in eleven minutes."]); },
-    assist: async () => { await RP.lines(["A stranger with oranges swipes me through at the turnstile. 'Pay it forward,' he says. 'In oranges.'"]); } });
-  if (res.giveUp) { await RP.say("I'm not ready. Let me sit with it. Everything hurts."); return false; }
+  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard.", "Two minutes ago a girl in a hoodie got a swipe out of him, and he took payment in a segment. Rico was right. The J has a guy."]);
+  const i = await RP.choose(["Jump the turnstile with a bag of records on my shoulder", "Order a car on my phone", "Ask the man with the oranges for a swipe"]);
+  if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); }
+  else if (i === 0) {
+    const fine = Math.min(S.money, 50);
+    await RP.lines(["I get one leg over. The bag, forty pounds of vinyl, does not. A transit cop at the far end of the platform lifts one eyebrow, then walks the whole platform to make a point of it.",
+      fine ? "@nar 'Fifty dollars or a summons, your call.' I pay " + U.fmtMoney(fine) + ", which is the rent's first bite, and he writes the receipt in the tiniest handwriting." : "@nar 'Fifty dollars or a summons.' I turn out my pockets. There is nothing in them but lint and three percent. He sighs and writes 'warning' in the box.",
+      "The man with the oranges has watched all of it. He walks over, swipes me through, and says nothing. Then, 'In oranges.'", "I take the orange."]);
+    if (fine) { RP.money(-fine); S.f.a3_ticket = fine; }
+  } else {
+    const fee = Math.min(S.money, 6);
+    await RP.lines(["The app takes forty seconds to open. It quotes $61 for Bushwick at this hour. At the word 'confirm,' the phone gives up and goes black.", "Three percent was optimistic. " + (fee ? "The app has already charged me " + U.fmtMoney(fee) + " for the privilege of failing to confirm." : "It would have charged me for the privilege, if I'd had it."),
+      "The J pulls in, opens its doors, shuts them, and leaves while I'm shaking the phone. The next is a rumor. Seventeen minutes, a bench, and a sleeping man's snore like a bad subwoofer.",
+      "The man with the oranges walks over, swipes me through for the next one, and says nothing. Then, 'In oranges.'", "I take the orange."]);
+    if (fee) RP.money(-fee);
+    S.f.a3_missedJ = true;
+  }
   S.f.a3_train = true;
-  await RP.lines(["The turnstile swallows my last quarter. ...Oh no, I have no quarter. A guy slips me a swipe. A real hero. A hero with oranges.", "Down the platform, the J's headlights come round the curve like a promise."]);
+  await RP.lines([S.f.a3_ticket || S.f.a3_missedJ ? "I'm through the turnstile, a little poorer and a lot more humble." : "I'm through the turnstile. The rent money never left my pocket.", "Down the platform, the headlights come round the curve like a promise."]);
   trainState = 1; trainT = 0; doorsOpen = false;
   await RP.wait(3800);
   await RP.walkTo(330, 214, "back");
-  await RP.lines(["I get on. The car's empty, except for a man asleep with a bag of oranges and a woman reading a paperback about a vampire.", "Phone: 2%. Bag: all records. Money: zero. I made it.", "@nar The J train, Friday morning. Somewhere under the East River, the bass is still going."]);
+  await RP.lines(["I get on. The car's empty, except for the man with the oranges, asleep now with the bag in his lap, and a woman reading a paperback about a vampire.", "Phone: running on fumes. Bag: all records. " + (S.f.a3_ticket || S.f.a3_missedJ ? "Rent money: dented." : "Rent money: untouched.") + " I made it.", "@nar The last train, Friday morning, over the Williamsburg Bridge. The river's black, and the bass is still going."]);
+  A3.clockTo(S, S.f.a3_missedJ ? "FRI 2:55 AM" : "FRI 2:20 AM");
   await RP.fadeTo(1, 1200);
   trainState = 0; doorsOpen = false;
   await RP.goto("a3_apartment", 560, 232, "left");
@@ -102,9 +116,9 @@ RP.room({
   enter: async (S, from) => {
     if (S.f.a3_train) return;
     if (!S.f.a3_platSeen) {
-      S.f.a3_platSeen = true; RP.setClock("FRI 4:07 AM");
-      await RP.lines(["@nar Friday. 4:07 AM. Delancey Street.", "A bag of records on my shoulder. Zero dollars in my pocket. My phone at 3%.",
-        "Odessa pays by check on Fridays. 'By check.' At four in the morning. My MetroCard expired at midnight, and I was going to renew it with the first paycheck. That's tomorrow's problem. Tonight's is the J train."]);
+      S.f.a3_platSeen = true; RP.setClock("FRI 1:35 AM");
+      await RP.lines(["@nar Friday. Half past one. Delancey Street.", "A bag of records on my shoulder. My phone at 3%. " + (S.money > 0 ? "After the tab, $" + Math.round(S.money) + " is left in my wallet, and every dollar of it is the landlord's." : "After the tab, nothing is left in my pocket."),
+        "My MetroCard expired at midnight. The machine's out of service, and the turnstile doesn't take cash, or sympathy, and I'm not breaking the rent for a swipe. Tonight's problem is the last train home."]);
     }
     await runTrain(S);
   },
@@ -112,19 +126,19 @@ RP.room({
     { id: "a3_p_edge", name: "platform edge", r: [0, 166, 640, 34], z: 4, floor: true, walk: [320, 210, "front"],
       look: "The platform edge, a yellow line and a lot of ambition. Don't stand behind it. Don't stand ON it. Stand wherever the train isn't.",
       use: S => runTrain(S), talk: "Hello, track. You're what's between me and bed." },
-    { id: "a3_p_sleeper", name: "sleeping guy", r: [250, 146, 60, 80], z: 30, walk: [330, 220, "left"], look: "A man asleep on the bench with his coat pulled over his head. The universal posture of the J train at 4 AM.", talk: "Hey. ...He's out. Respect.", pickup: "Absolutely not." },
+    { id: "a3_sleeper", name: "sleeping guy", z: 80, walk: [330, 220, "left"], look: "A man asleep on the bench with his coat pulled over his head. The universal posture of the last train.", talk: "Hey. ...He's out. Respect.", pickup: "Absolutely not." },
     { id: "a3_p_bench", name: "bench", r: [232, 186, 106, 44], z: 20, walk: [260, 236, "back"], look: "A wooden bench with a lot of carved initials and one very fresh 'JAY + KELLY 4EVR.' The 'EVR' is almost legible.", use: "I'm not sitting next to him. He's got the whole bench." },
-    { id: "a3_p_vend", name: "vending machine", r: [540, 144, 50, 80], z: 25, walk: [564, 236, "back"], look: "A vending machine with a sign: OUT OF ORDER. In front of it, a half-eaten pretzel nobody's going to claim.", use: "It takes dollars. I have zero. It takes my hope, too.", pickup: "It's bolted down. By the same people who bolted down the sign." },
-    { id: "a3_p_kiosk", name: "MetroCard machine", r: [82, 148, 54, 80], z: 25, walk: [112, 236, "back"], look: "A MetroCard machine: OUT OF SERVICE. TRY NEXT MACHINE. There's no next machine. There never is.", use: "It accepts cash and cards. I have neither. It accepts hope. No.", push: "Pushing it won't make it work. Yelling won't either. I try both." },
+    { id: "a3_p_vend", name: "vending machine", r: [540, 144, 50, 80], z: 25, walk: [564, 236, "back"], look: "A vending machine with a sign: OUT OF ORDER. In front of it, a half-eaten pretzel nobody's going to claim.", use: "Out of order. Which saves my rent money from a bag of chips at four in the morning.", pickup: "It's bolted down. By the same people who bolted down the sign." },
+    { id: "a3_p_kiosk", name: "MetroCard machine", r: [82, 148, 54, 80], z: 25, walk: [112, 236, "back"], look: "A MetroCard machine: OUT OF SERVICE. TRY NEXT MACHINE. There's no next machine. There never is.", use: "It's out of service. It takes my hope instead. No, it doesn't even take that.", push: "Pushing it won't make it work. Yelling won't either. I try both." },
     { id: "a3_p_map", name: "subway map", r: [166, 58, 56, 42], z: 20, look: "The subway map: a bowl of colored spaghetti with a few dots called 'stations.' Somewhere on there is my bed." },
-    { id: "a3_p_clock", name: "clock", r: [298, 16, 24, 24], z: 20, look: "4:07 AM. Every clock on the platform has a different time. This one at least looks sure of itself." },
-    { id: "a3_p_board", name: "next-train board", r: [418, 18, 100, 24], z: 20, look: "J to Broad St: eleven minutes. Which is what it says. Which is what it said six minutes ago." },
+    { id: "a3_p_clock", name: "clock", r: [298, 16, 24, 24], z: 20, look: "1:35 AM. Every clock on the platform has a different time. This one at least looks sure of itself." },
+    { id: "a3_p_board", name: "next-train board", r: [418, 18, 100, 24], z: 20, look: "Night service, eleven minutes. Which is what it said six minutes ago." },
     { id: "a3_p_slice", name: "pizza slice", r: [418, 232, 26, 14], z: 20, floor: true, look: "A slice of pizza on the platform floor. A tragedy and a metaphor.", pickup: "No. NO. I'm broke, not that broke." },
     { id: "a3_p_rat", name: "rat", r: [0, 150, 640, 16], z: 3, look: "A rat on the track bed, strolling like it's the mayor. New York's real landlord." }
   ],
   combos: [
     ["a3_bag", "a3_p_edge", "I take a breath. The bag's heavier than it was at midnight. So am I."],
-    ["a3_chips", "a3_p_sleeper", "I leave the chips on the bench next to him. He can have them. It's the smallest thing I can do for the J-train brotherhood."]
+    ["a3_chips", "a3_sleeper", "I leave the chips on the bench next to him. He can have them. It's the smallest thing I can do for the J-train brotherhood."]
   ],
   self: { look: "Tired, jacket askew, a bag of records and a phone at three percent. The classic last-train look.", talk: "Hello, subway. It's me. The one who always comes at four." }
 });

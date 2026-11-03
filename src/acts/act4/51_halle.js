@@ -65,18 +65,43 @@ function light(S) {
 }
 
 /* ------------------------------------------------------------------ the set */
-const techno = S => A4.TECHNO.filter(id => S.records.includes(id));
+const techno = S => A4.TECHNO.filter(id => S.records.includes(id)).concat(S.records.includes("white_nyc93") ? ["white_nyc93"] : []);
+/* the rider: water, towels, a vegetable that is not a pickle. Katja counts it; every miss comes off the fee, a complete rider earns a bonus */
+const RIDER = [["a4_rWater", "a4_water"], ["a4_rTowel", "a4_towel"], ["a4_rVeg", "a4_veg"]];
+const RIDER_LINES = {
+  a4_water: S => ["@a4_katja Water. Still. Sealed. ...Good.", "She ticks the first line of the clipboard without looking at me."],
+  a4_towel: S => S.f.a4_towelKind === "dish" ? ["@a4_katja A dish towel. With a bear.", "@a4_katja It dries. Accepted. Nobody has ever brought a bear."] : ["@a4_katja A towel. Warm. From an airplane?", "@a4_katja (a very small nod) Nobody brings warm."],
+  a4_veg: S => ["@a4_katja " + (S.f.a4_vegKind === "carrot" ? "A carrot." : "Celery.") + " A vegetable, and not a pickle.", "@a4_katja You read the rider. That alone puts you in the top three percent of the people who have been on this floor."]
+};
+async function riderHand(S, only) {
+  let any = false;
+  for (const [fl, id] of RIDER) {
+    if (S.f[fl] || !RP.has(id) || (only && only !== id)) continue;
+    any = true; RP.take(id); S.f[fl] = true; await RP.lines(RIDER_LINES[id](S));
+  }
+  if (RP.has("a4_pickle") && (!only || only === "a4_pickle")) {
+    any = true;
+    await RP.lines(["@a4_katja (holds the pickle up between two fingers, like a verdict) The rider says: not a pickle.", "I read it. I just... didn't absorb it.", "@a4_katja (hands the pickle back) Keep it. It is the only thing on this floor that is exactly what it says it is."]);
+  }
+  if (!any && only) await RP.say("She already has that. A second water is not a second chance.");
+  return any;
+}
 async function katjaTalk(S) {
   if (S.f.a4_setDone) { await RP.lines(["@a4_katja You played. They stayed. That's all I ask.", "@a4_katja Come back next year. Maybe sooner. I'll pretend I never said that."]); return; }
   S.f.a4_katjaTalked = true;
   if (!S.f.a4_katjaIntro) {
     S.f.a4_katjaIntro = true;
     await RP.lines(["@a4_katja You are the American. " + (S.f.a4_late > 0 ? "You are late. Forty minutes of tension." : "You are on time. Almost no one is on time."), "@a4_katja Katja. I run the room. Sven passed you. He passes nobody. I'm not sure whether to be impressed or worried.",
-      "@a4_katja The CDJs are 3000s. There's one Technics for the vinyl people. No sync. Sven's rule.", "@a4_katja Jeff hands over to you in about six minutes."]);
+      "@a4_katja The CDJs are 3000s. There's one Technics for the vinyl people. No sync. Sven's rule.", "@a4_katja Jeff hands over to you in about six minutes.", "@a4_katja And the rider. Water, towels, one vegetable that is not a pickle. I count. I have a spreadsheet about it."]);
   }
   await RP.convo([
     { text: "What's the crowd like?", when: S => !S.f.a4_katjaCrowd, run: async () => { S.f.a4_katjaCrowd = true; await RP.lines(["@a4_katja Four hours of mild suffering. They're standing, they're dressed in black, they're not here to hear a hit.", "@a4_katja Build. Don't peak early. Start low, climb, and when you drop the big one, make them forget they ever wanted it."]); } },
     { text: "Any rules?", when: S => !S.f.a4_katjaRules, run: async () => { S.f.a4_katjaRules = true; await RP.lines(["@a4_katja No phones. No sync. No smiling at the crowd. No \"Where's the bathroom?\" (it's on the left.)", "@a4_katja And if you play something they know, they'll hate it. If you play something they don't, they'll worship it. That's Berlin."]); } },
+    { text: "About the rider.", when: S => A4.riderHave(S) < 3, run: async () => {
+      const held = RIDER.some(([fl, id]) => !S.f[fl] && RP.has(id)) || RP.has("a4_pickle");
+      if (held) { await riderHand(S); return; }
+      await RP.lines(["@a4_katja Water. Towels. One vegetable, not a pickle. " + (A4.riderHave(S) ? "So far you've brought " + A4.riderHave(S) + " of three." : "So far you've brought nothing."), "@a4_katja Every miss comes off your fee: forty dollars, the house price. The Späti is two minutes from the arch, and he sells all of it. He has a bear."]);
+    } },
     { text: "I'm ready.", run: async () => { await startSet(S); return "end"; } },
     { text: "Give me a minute.", end: true }
   ]);
@@ -113,11 +138,18 @@ async function startSet(S) {
   RP.sfx("cheer");
   await RP.lines([sc >= 70 ? "The room doesn't scream. It exhales. Eight hundred people in black let out one breath at the same time, and that's applause." : "It's... fine. The room nods. In Berlin, \"fine\" is a standing ovation with the sound off.",
     "@a4_katja (arms crossed, a tiny smile that she'll deny) Good.", "@a4_jeff (from the side of the booth, one nod)"]);
+  if (S.f.a4_played.includes("white_nyc93")) {
+    S.f.a4_whitePlayed = true; RP.followers(600);
+    await RP.lines(["@a4_katja The unknown one. No label, no name, a house kick from 1993. Sven asked me who it was. Sven has never asked me anything.", "@a4_katja Eight hundred people just Shazamed a record that does not exist. That is the best thing that can happen in this building.", "Berlin asked for Lou's record by its marker pen. I am telling him tonight."]);
+  }
   RP.actor("kid").act = "stand"; RP.place("kid", 380, 214, "front"); RP.actor("a4_jeff").act = "stand";
   S.f.a4_setDone = true;
   RP.followers(sc >= 70 ? 4200 : 1800);
-  const fee = Math.max(0, (S.f.a4_fee || 600) - (S.f.a4_late > 0 ? 100 : 0));
-  await RP.lines(["@a4_katja Your fee. Cash. Count it. We count everything here.", S.f.a4_late > 0 ? "(Minus $100 for being late. It's in a footnote. Germans love a footnote.)" : "It's all there. Every note. Crisp as a pretzel."]);
+  await riderHand(S);
+  const miss = 3 - A4.riderHave(S);
+  const fee = Math.max(0, (S.f.a4_fee || 600) - (S.f.a4_late > 0 ? 100 : 0) - miss * 40 + (miss ? 0 : 100));
+  await RP.lines(["@a4_katja Your fee. Cash. Count it. We count everything here.", S.f.a4_late > 0 ? "(Minus $100 for being late. It's in a footnote. Germans love a footnote.)" : "It's all there. Every note. Crisp as a pretzel.",
+    miss ? "(Minus $" + miss * 40 + ": " + miss + " item" + (miss > 1 ? "s" : "") + " short on the rider, bought by the house at house prices. The footnote has a footnote.)" : "@a4_katja And the rider was complete. Water, towel, vegetable. Not a pickle. A hundred more. I don't know who raised you, but I want to shake their hand."]);
   RP.money(fee); S.f.a4_paid = true;
   RP.setClock("SUN 4:05 AM");
   A4.setHaleMusic(true);
@@ -154,7 +186,7 @@ RP.room({
       talk: S => S.f.a4_setDone ? "He nods once, eyes on the room. That's the whole conversation. I'm okay with it." : RP.lines(["I'm a big fan. I... really...", "(He glances over, nods once, and goes back to the decks.)", "That counts as a full conversation. I'm putting it on my résumé."]),
       give: "He's mid-set. Nobody hands a DJ a record mid-set. Unless it's love.", pickup: "I'd like to keep my arms. And his headphones.", push: "No. Never push a DJ mid-set." },
     { id: "a4_katja", name: "Katja", look: "Katja, who runs the room. Black jacket, ponytail, a clipboard and a headset she doesn't use. She looks at me like she's computing a very small, very exact number.",
-      talk: S => katjaTalk(S), give: "She doesn't take things. She hands them out.", pickup: "She'd have me escorted out. By Sven.", push: "I'd rather push my luck. And I'm about to." },
+      talk: S => katjaTalk(S), give: (S, item) => S.f.a4_setDone ? "The set's done. She doesn't take things. She hands them out." : ["a4_water", "a4_towel", "a4_veg", "a4_pickle"].includes(item) ? riderHand(S, item) : "She doesn't take things. She hands them out.", pickup: "She'd have me escorted out. By Sven.", push: "I'd rather push my luck. And I'm about to." },
     { id: "a4_booth", name: "DJ booth", r: [183, 94, 274, 92], z: 40, walk: [330, 218, "back"],
       look: "A raised booth: two Pioneer DJ CDJ-3000s and a four-channel mixer, a Technics for the vinyl people. A red scrim says H9. I'm about to stand behind that.",
       use: S => startSet(S), open: S => startSet(S), push: "I'd rather push a button than the booth.", pickup: "It's bolted to the concrete. Or the concrete's bolted to it." },

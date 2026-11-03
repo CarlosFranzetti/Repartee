@@ -118,6 +118,23 @@ async function ampTicket() {
   await letIn(RP.state);
 }
 
+// a fourth way in, from Toby's bathroom: Fitz is wound tight, and Calm No. 9 is his brand
+async function sachetTicket() {
+  const S = RP.state;
+  if (S.f.a2_inLoft) { await RP.say("I'm already in. Fitz is smelling his own pocket, which has a sachet in it. It's a good day for him."); return; }
+  RP.take("a2_sachet");
+  await RP.lines([
+    "I hold out the sachet. Calm No. 9, hand-stitched, \"FOR THE CLIPBOARD-ADJACENT.\"",
+    "@a2_fitz ...That's. Where did you. That's Toby's.",
+    "He says it was for the stressed. He said you'd bought nine.",
+    "@a2_fitz Nine and a half. One is my pillow. ...Toby sent you?",
+    "Toby's kitchen. Toby's Linda. It's a long story.",
+    "@a2_fitz I don't want it to be a short one. Breathe in. That's the first time my shoulders have been down since March.",
+    "@a2_fitz You're not on the list. You're not on any list. ...In. Go. Tell Toby I've never been calmer. He'll say it's the sachet. It's the sachet."
+  ]);
+  await letIn(S);
+}
+
 async function pushDumpster(S) {
   if (S.f.a2_dumpster) { await RP.say("It's under the ladder already. A dumpster, parked like a getaway car."); return; }
   RP.sfx("thump");
@@ -187,13 +204,15 @@ RP.room({
     { id: "a2_flyers", name: "flyers", rects: [[224, 118, 44, 34], [450, 122, 44, 38]], z: 20, walk: [300, 208, "back"], look: "Pasted-on flyers: \"MESEROLE LOFT SESSIONS,\" \"BASEMENT TAPES — LAST SAT — VINYL ONLY.\" Basement Tapes is on every wall in Brooklyn, like a rumor with a deposit.", pickup: "There are four. I can't take them all. Or any." },
     { id: "a2_lamp", name: "streetlamp", r: [528, 86, 40, 124], z: 20, walk: [552, 210, "back"], look: "A streetlamp, buzzing orange. It's lit the whole line of the party and has seen things.", use: "I'd climb it. Then I'd be sad on a streetlamp.", pickup: "It belongs to the city. The city has a long reach." },
     { id: "a2_bags", name: "trash bags", r: [584, 186, 48, 36], z: 20, walk: [608, 208, "back"], look: "A pile of trash bags with a disco ball inside one of them. I can see it sparkle. Somebody threw out a disco ball. New York is a deep place.", pickup: "I'm not taking the disco ball. I have standards. Low, but standards." },
-    { id: "a2_fitz", name: "Fitz", z: 80, look: "Fitz: beanie, hoodie, clipboard, the zen calm of a man who's said \"no\" a thousand times and enjoyed each one.", talk: S => S.f.a2_inLoft ? "Fitz nods. I'm already in his head: \"Not on the list, but inside.\"" : talkFitz(S),
-      give: async (S, item) => { if (item === "a2_flyer") return ["@a2_fitz Basement Tapes? Vic's party. I don't do vinyl. I do doors."]; if (item === "a2_card") return ["@a2_fitz I don't take cards. I take names."]; return ["@a2_fitz I'm on the clock. And I don't want that."]; } }
+    { id: "a2_fitz", name: "Fitz", z: 80, look: "Fitz: beanie, hoodie, clipboard, the zen calm of a man who's said \"no\" a thousand times and enjoyed each one. His shoulders are somewhere near his ears. There's a faint smell of lavender on him, the only thing about him that says yes.", talk: S => S.f.a2_inLoft ? "Fitz nods. I'm already in his head: \"Not on the list, but inside.\"" : talkFitz(S),
+      give: async (S, item) => { if (item === "a2_sachet") return sachetTicket(); if (item === "a2_flyer") return ["@a2_fitz Basement Tapes? Vic's party. I don't do vinyl. I do doors."]; if (item === "a2_card") return ["@a2_fitz I don't take cards. I take names."]; return ["@a2_fitz I'm on the clock. And I don't want that."]; } }
   ],
   combos: [
     ["a2_flyer", "a2_fitz", ["@a2_fitz Basement Tapes? Vic's party. I don't do vinyl. I do doors."]],
     ["phone", "a2_fitz", "I could text Dani and ask her to tell Fitz. But she's busy and Fitz can see me typing."],
     ["usb_cat", "a2_fitz", "Fitz looks at the USB, the cat on it and me. He says nothing. I put it away."],
+    ["a2_sachet", "a2_fitz", sachetTicket],
+    ["a2_sachet", "a2_loftdoor", sachetTicket],
     ["a2_amp", "a2_fitz", ampTicket],
     ["a2_amp", "a2_loftdoor", ampTicket]
   ]

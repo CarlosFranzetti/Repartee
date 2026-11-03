@@ -1,5 +1,5 @@
 /* Act 2 — Marcus's apartment (Bed-Stuy). The kid's couch by day (ch1), the birthday party at night (ch2:
-   guest.List mini-game, Jess + the amp, Twinkie), and the Saturday morning after (ch3).
+   the door, Jess + the amp, Twinkie), and the Saturday morning after (ch3).
    Flags: a2_plan, a2_knock, a2_tvOn, a2_flyerGot, a2_daniText, a2_partyStarted, a2_partyDone, a2_ampGot, a2_usbBack,
    a2_twinkieMet, a2_jar, a2_envelope, a2_satBrief */
 (function () {
@@ -157,23 +157,29 @@ function light(S) {
 function nextHint(S, voice) {
   const m = voice === "marcus";
   if (!S.f.a2_plan) return m ? "Ask me about the plan. I've been dying to tell you the plan." : "Marcus has been trying to tell me a plan since I woke up.";
-  if (!S.f.a2_plasma) return m ? "Money first. LifeDrop on Atlantic Ave. They want ID, proof of address and a form. Lou in 4B has been collecting your mail." : "Money: the LifeDrop plasma center. They'll want ID, proof of address and a form. Lou in 4B has been collecting my mail.";
-  if (!S.f.a2_showered) return m ? "You smell like a hot dog. Dani. Seven settings. Text her." : "I smell like a hot dog. Dani has a shower with seven settings.";
-  if (!S.f.a2_cashed && RP.has("a2_card")) return m ? "That LifeDrop card isn't cash. The bodega ATM on the corner turns it into cash. With a fee. And an asterisk." : "The card isn't cash. The corner bodega's ATM turns it into cash, with a fee and an asterisk.";
-  if (!S.f.a2_metEddie) return m ? "Go see Eddie before the party. Window-shop. Eddie loves a window-shopper." : "I should visit Eddie in Williamsburg before the party and see what the damage is.";
-  return m ? "You're set. Sleep on the couch and I'll wake you for Friday. Birthday. Twenty-eight. Plus three." : "I think I'm ready. Rent's due Friday and so is Marcus's party. Sleep on it. Literally.";
+  if (!S.f.a2_plasma) return m ? "Money first. You're broke in a way a flyer could fix. Look at the pole outside." : "Money. Something on the pole outside promised a hundred dollars, and I have a body.";
+  if (!S.f.a2_showered) return m ? "You smell like a hot dog. Toby has my bathroom until step twelve. Who else owns a shower? Or what does Toby love more than a shower?" : "I smell like a hot dog. Toby has the bathroom until step twelve. Somebody else owns a shower, or Toby loves something more than his.";
+  if (!S.f.a2_cashed && RP.has("a2_card")) return m ? "That card isn't cash. Somewhere on this block plastic becomes paper. At a price." : "A card isn't cash. Somewhere on this block plastic becomes paper. At a price.";
+  if (!S.f.a2_metEddie) return m ? "You have money and no turntables. I mentioned a van. Window-shop before Friday." : "Money, no turntables. Marcus mentioned a van. Window-shop before Friday.";
+  const left = A2.leads(S);
+  if (left.length) return m ? "You're set for Friday. But it's Tuesday, and you've got three days: " + left.join(", ") + ". Or sleep. I won't judge. I'll judge a little." : "I'm set for Friday. But there's a long stretch before it: " + left.join(", ") + ". Or I sleep. Both are on the menu.";
+  return m ? "You're set. Sleep on the couch and I'll wake you for Friday. Birthday. Twenty-eight. Plus three." : "I think I'm ready. Rent's due Tuesday and the party's Friday. Sleep on it. Literally.";
 }
 A2.hint = nextHint;
 
 function readyToSleep(S) { return S.f.a2_plasma && S.f.a2_showered; }
+// the optional goals still open on the long Tuesday-to-Thursday stretch
+A2.leads = S => { const l = []; if (!S.f.a2_tobyDeal) l.push("Toby's bathroom"); if (!S.f.a2_loot4c) l.push("whatever's still in 4C"); if (!S.f.a2_kowDone) l.push("Kowalski's office hour"); return l; };
 
 // signpost the couch: the moment plasma + shower are both done (whichever lands last), once
 A2.dayCheck = async S => {
   if (S.f.a2_dayDone || ch(S) !== 1 || !readyToSleep(S)) return;
   S.f.a2_dayDone = true;
-  await RP.say("That's the day done. I've got money, I'm clean, and nobody expects me anywhere until Friday.");
-  RP.text("MARCUS", "u set. crash on the couch, party's friday. wear pants");
-  await RP.say("Marcus has scheduled my whole week from a couch I'm sleeping on. Fine. Couch, then, and I'll wake up on Friday.");
+  S.f.a2_beats = Math.max(S.f.a2_beats || 0, 4);
+  RP.setClock("TUE 1:40 PM");
+  await RP.say("Money, check. Clean, check. It's Tuesday afternoon and nobody expects me anywhere until Marcus's party on Friday.");
+  RP.text("MARCUS", "u set. party's friday. wear pants");
+  await RP.lines(["Three days. Kowalski holds office hours at two, on my floor. 4C still has my stuff in it. Toby is still, as far as I know, in the bathroom.", "I can sleep through it from the couch. Or I can do something with it. Nobody's making me."]);
 };
 
 /* ------------------------------------------------------------------ cutscenes */
@@ -229,15 +235,13 @@ async function workDoor(S) {
   await RP.walkTo(70, 226, "left");
   await RP.say("Okay. Clipboard. Pen. Resting face.");
   RP.sfx("knock");
-  const res = await A2.mg("guestList", { capacity: 14, requests: 18, vip: ["Aunt Denise", "Twinkie", "Jess", "Marcus's boss"], difficulty: 2 }, async () => {
-    const i = await RP.choose(["Let in everyone with a casserole", "Let in anyone who says \"plus three\"", "Stick to the list, with a tiny bit of mercy"]);
-    return { ok: i === 2 || i === 0, score: i === 2 ? 85 : 60, admitted: i === 2 ? 12 : 16, angry: i === 1 ? 6 : 1, fallback: true };
-  });
-  const ok = res && res.ok !== false;
-  const adm = res && res.admitted != null ? res.admitted : 12;
+  await RP.lines(["Eleven minutes in, the line is down the stoop. Aunt Denise is at the front, holding a casserole like a badge.", "@marcus Capacity is fourteen. Eighteen people have said \"plus three.\" Do the math, door guy."]);
+  const i = await RP.choose(["Let in everyone with a casserole", "Let in anyone who says \"plus three\"", "Stick to the list, with a tiny bit of mercy"]);
+  let ok = true, adm = 12;
+  if (i === 0) { adm = 14; await RP.lines(["Casserole policy. Six foil trays, one lasagna, a flan nobody can explain. The fridge will never be empty again.", "The line is a mood, but it's moving."]); }
+  else if (i === 1) { ok = false; adm = 17; await RP.lines(["\"Plus three\" works once. Then it works six more times. Somebody's cousin gets in by hitting somebody with a casserole.", "@marcus Eh. We'll call it \"cozy.\" Everyone's close tonight."]); }
+  else await RP.lines(["Aunt Denise, Twinkie, Jess's name in pencil. Everyone else gets a look and a verdict. Two get mercy, and one of them is a mime.", "@marcus Nobody's mad? Nobody's mad. You're a natural. A tyrant, but a natural."]);
   S.f.a2_adm = adm;
-  if (ok) await RP.lines(["The door's under control. The line is a mood, but it's moving.", "@marcus Nobody's mad? Nobody's mad. You're a natural. A tyrant, but a natural."]);
-  else await RP.lines(["The door was chaos. Somebody's cousin got in by hitting somebody with a casserole.", "@marcus Eh. We'll call it \"cozy.\" Everyone's close tonight."]);
   const jar = Math.max(40, Math.min(110, 45 + adm * 4 + (ok ? 15 : 0)));
   S.f.a2_jar = jar;
   RP.followers(ok ? 18 : 8);
@@ -324,7 +328,7 @@ async function satBrief(S) {
   S.f.a2_satBrief = true;
   await RP.say("Saturday. Noon. The living room looks like a crime scene with balloons.", "nar");
   const have = S.money + (RP.has("a2_card") ? Math.round((S.f.a2_cardBal || 0) * 0.9) : 0);
-  const need = 215 - Math.round(have);
+  const need = 190 - Math.round(have);
   if (!S.f.a2_turntables && need > 0) {
     S.f.a2_envelope = true;
     await RP.lines([
@@ -353,6 +357,7 @@ async function talkMarcus(S) {
   if (ch(S) === 3) {
     await RP.convo([
       { text: "Where's Eddie again?", run: async () => { await RP.say("Under the BQE in Williamsburg. Look for the van with the \"CASH ONLY (TWO-TIME DEAL)\" sign. And the van.", "marcus"); } },
+      { text: "Know anywhere I can pick up a few bucks?", run: async () => { await RP.say("Rosa's. She still hurts her back once a day. Eighteen a run. Don't tell her you're a DJ, she'll make you play the radio.", "marcus"); } },
       { text: "What's the plan?", run: async () => { await RP.say(S.f.a2_turntables ? "Loft at ten. Then Twinkie's spot. Then glory." : "Turntables first. Eddie's van, cash in hand. Then the loft at ten.", "marcus"); } },
       { text: "Thanks for the couch, man.", run: async () => { await RP.lines(["@marcus You've been here two weeks. You're like a cat. A cat that pays no rent.", "@marcus But yeah. Anytime. Just... shower."]); } },
       { text: "Later.", end: true }
@@ -375,7 +380,7 @@ async function talkMarcus(S) {
       ]);
       await RP.lines([
         "I can't afford turntables. I can't afford a sandwich.",
-        "@marcus LifeDrop on Atlantic Ave. Plasma. New donors get a hundred bucks on a card. Mrs. Pearl on the third floor is a platinum member.",
+        "@marcus LifeDrop on Atlantic Ave. Plasma. New donors get a hundred bucks on a card. Mrs. Pearl on the stoop is a platinum member.",
         "@marcus And Eddie Two-Times has turntables in a van under the BQE. Audio-Technica. A two-time deal.",
         "What's a two-time deal?",
         "@marcus Nobody knows. It's always a two-time deal.",
@@ -403,8 +408,11 @@ async function talkMarcus(S) {
     { text: "Tell me about Vic.", when: S2 => S2.f.a2_plan, run: async () => {
       await RP.lines(["@marcus Vic. Tall. Sunglasses indoors. Counts money with a rubber band like it's a hobby.", "@marcus He pays cash, on time, which makes him the single most suspicious man in Brooklyn."]);
     } },
-    { text: "Landlord says rent's due Friday.", run: async () => {
-      await RP.lines(["@marcus Kowalski? He told me hot water was \"next week.\" In 2023.", "@marcus Your rent is a problem for future you. Future you has a hot shower and a monthly residency."]);
+    { text: "Know anywhere I can pick up a few bucks?", run: async () => {
+      await RP.lines(["@marcus Rosa's deli. The delivery guy drops crates at the door and she hurts her back about once a day. Eighteen bucks a run.", "@marcus It's honest, it's cash and it smells like pickles. That's three things, bro."]);
+    } },
+    { text: "Landlord says rent's due Tuesday.", run: async () => {
+      await RP.lines(["@marcus Kowalski? He told me hot water was \"next week.\" In 2023.", "@marcus Tuesday is a problem for future you. Future you has a hot shower and a monthly residency."]);
     } },
     { text: "What should I do next?", when: S2 => S2.f.a2_plan, run: async () => { await RP.say(A2.hint(S, "marcus"), "marcus"); } },
     { text: "Later.", end: true }
@@ -422,6 +430,8 @@ async function useCouch(S) {
     await RP.lines(["I could lie down and skip to Friday.", "But first I should " + left.join(" and ") + ". Otherwise Friday's just a longer version of today, with a smell."]);
     return;
   }
+  const left = A2.leads(S);
+  if (left.length) await RP.say("It's Tuesday. Three days to Friday, and some of them are free. I haven't done: " + left.join(", ") + ".");
   const i = await RP.choose(["Sleep until Friday (Marcus's party)", "Not yet"]);
   if (i === 0) await sleepToFriday(S).then(() => partyIntro(S));
 }
@@ -435,6 +445,7 @@ const actorsFn = S => {
   list.push({ id: "twinkie", char: "twinkie", x: 392, y: 238, face: "left", act: "stand", name: "Twinkie", vis: S2 => !!S2.f.a2_twinkieMet && ch(S2) === 2 });
   list.push({ id: "a2_aunt", char: "a2_aunt", x: 160, y: 242, face: "right", act: "stand", name: "Aunt Denise", vis: S2 => !!S2.f.a2_partyStarted && ch(S2) === 2 });
   list.push({ id: "a2_toby", char: "a2_toby", x: 470, y: 238, face: "left", act: "dance", name: "Toby", vis: S2 => !!S2.f.a2_partyFull && ch(S2) === 2 });
+  list.push({ id: "a2_tobyK", char: "a2_toby", x: 556, y: 232, face: "left", act: "stand", name: "Toby", vis: S2 => !!S2.f.a2_tobyDeal && ch(S2) === 1 });
   if (c3 === 2) {
     list.push({ crowd: { n: 4, rect: [92, 206, 80, 12], seed: 21, face: "front", act: "dance", scale: 0.95, vis: S2 => !!S2.f.a2_partyFull } });
     list.push({ crowd: { n: 7, rect: [452, 206, 130, 40], seed: 23, face: "front", act: "dance", scale: 0.95, vis: S2 => !!S2.f.a2_partyFull } });
@@ -502,8 +513,8 @@ RP.room({
       use: async S => { await RP.say("Let's see what I've got."); await RP.crateView(); }, open: async S => { await RP.crateView(); },
       pickup: "It's heavy. I'm leaving it where it is. It's a milk crate; it's not going anywhere.", push: "I'd spill my records. Not like I have many." },
     { id: "a2_bath", name: "bathroom door", r: [422, 42, 50, 122], z: 28, walk: [446, 214, "back"],
-      look: "The bathroom door. A sign: \"RITUAL IN PROGRESS.\" Steam slides out under it like a ghost with a skincare routine.",
-      use: S => knockBath(S), talk: S => knockBath(S), open: "It's locked. From inside I can hear a podcast about cold plunges.", push: "I'm not breaking down a door to use a shower I can't use.", pull: "Locked. Toby locks it the way other people say prayers." },
+      look: S => S.f.a2_tobyDeal ? "The bathroom door, open a hand's width. Steam, a candle called \"Unemployment\" and no Toby. He's at the counter, whispering to a jar." : "The bathroom door. A sign: \"RITUAL IN PROGRESS. NO ENTRY. NO CALLS. EMERGENCIES CONCERNING LINDA: KNOCK THREE TIMES.\" Steam slides out under it like a ghost with a skincare routine. I don't know a Linda.",
+      use: S => S.f.a2_tobyDeal ? "The bathroom's free but I've used it. Toby's at the counter re-homing Linda. Nobody bothers a man with a culture." : knockBath(S), talk: S => S.f.a2_tobyDeal ? "Toby's not in there. He's at the counter." : knockBath(S), open: S => S.f.a2_tobyDeal ? "It's open. I'm clean. I'm leaving it for Toby's second ritual." : "It's locked. From inside I can hear a podcast about cold plunges.", push: "I'm not breaking down a door to use a shower I can't use.", pull: "Locked. Toby locks it the way other people say prayers." },
     { id: "a2_poster", name: "Basement Tapes flyer", r: [274, 30, 50, 66], z: 24, walk: [300, 214, "back"],
       look: "BASEMENT TAPES. Last Saturday of the month, vinyl only. No cameras, no cover bands. Marcus taped it up there to \"manifest.\" He taped it crooked, which he says is \"vibes.\"",
       pickup: async S => { if (S.f.a2_flyerGot) return "I already have one in my pocket. Marcus has seventeen."; S.f.a2_flyerGot = true; RP.give("a2_flyer"); await RP.say("Marcus won't miss it. He has a box of them. He's a flyer hoarder with dreams."); } },
@@ -511,19 +522,33 @@ RP.room({
     { id: "a2_clock", name: "clock", r: [426, 20, 22, 22], z: 22, walk: [446, 214, "back"], look: "11:42. The clock is correct twice a day, and this is one of the times." },
     { id: "a2_plant", name: "plant", r: [466, 120, 52, 48], z: 24, walk: [496, 214, "back"], look: "Geraldine. Marcus says it's a ficus, a cousin of Gerald. I haven't had the heart to tell Gerald. Gerald is still in 4C with the lock.", talk: "Hang in there, Geraldine.", pickup: "Geraldine and I have a stable relationship. I won't mess with that.", use: "She's hydrated. A better-hydrated plant than any of us." },
     { id: "a2_fridge", name: "fridge", r: [592, 60, 46, 106], z: 28, walk: [572, 218, "right"],
-      look: "Marcus's fridge. Magnets, sticky notes and a LifeDrop flyer: \"DONATE PLASMA. NEW DONORS: $100.\" Someone wrote \"worth it\" in pen. Someone else wrote \"is it?\"",
-      open: async S => { await RP.say("Mustard, a lime, a jar labeled \"TOBY — DON'T,\" and one lonely egg. I close it gently, like a mortician."); },
+      look: "Marcus's fridge. Magnets, sticky notes and a LifeDrop flyer: \"DONATE PLASMA. NEW DONORS: $100.\" Someone wrote \"worth it\" in pen. Someone else wrote \"is it?\" A Post-it on the door: \"TOBY: LINDA IS ON THE BOTTOM SHELF. DO NOT BE NEAR HER.\"",
+      open: async S => {
+        if (S.f.a2_scobyGot) { await RP.say("Mustard, a lime, and one lonely egg. Where Linda was there's a clean circle in the condensation, like a crime scene."); return; }
+        S.f.a2_jarSeen = true;
+        await RP.lines(["Mustard, a lime, one lonely egg and, on the bottom shelf, a jar labeled \"TOBY — DON'T.\"", "Inside, a beige pancake floats in tea. A Post-it: \"LINDA. FED 6AM. TOBY'S ONLY CHILD. DO NOT FEED HER ANYTHING. DO NOT BE NEAR HER.\"", "Toby has a child. Her name is Linda. She lives in the fridge and she's a fungus."]);
+      },
       use: async S => { RP.unlock("a2_loc_plasma"); await RP.say("The flyer says LifeDrop is on Atlantic Ave, Downtown Brooklyn. $100 for new donors. And \"snacks.\""); },
-      pickup: "The flyer or the fridge? Neither's coming with me.", push: "It hums at me. We have an understanding." },
+      pickup: async S => {
+        if (S.f.a2_jarSeen && !S.f.a2_scobyGot) {
+          S.f.a2_scobyGot = true; RP.give("a2_scoby");
+          await RP.lines(["I take the jar. It's cold and it's alive and it's not mine.", "Marcus, from the couch, without turning: \"That's a custody case, bro.\""]);
+          return;
+        }
+        return "The flyer or the fridge? Neither's coming with me.";
+      }, push: "It hums at me. We have an understanding." },
     { id: "a2_counter", name: "kitchen counter", r: [522, 108, 72, 56], z: 26, walk: [550, 218, "back"], look: "A kitchen the size of a phone booth. A coffee maker, a microwave and thirty-one mismatched mugs. One mug says \"WORLD'S OKAYEST DJ.\" Marcus got it for me for Christmas. It's the best present I've gotten.",
       use: "Coffee needs a filter. Filters need money. Everything is money.", open: "The microwave. Not a chance; the last time, someone put foil in it and the apartment still smells like betrayal." },
-    { id: "a2_shelf", name: "cereal shelf", r: [522, 32, 70, 60], z: 22, walk: [550, 218, "back"], look: "Four cereals and an unspoken peace treaty. Marcus and Toby label theirs.", pickup: "That's Toby's. It's labeled. It's... an act of war." },
+    { id: "a2_shelf", name: "cereal shelf", r: [522, 32, 70, 60], z: 22, walk: [550, 218, "back"], look: "Four cereals and an unspoken peace treaty. Marcus and Toby label theirs. Toby's: \"TOBY'S. LINDA'S TOO. (SHE DOESN'T EAT. WE JUST LIKE TO SAY IT.)\"", pickup: "That's Toby's. It's labeled. It's... an act of war." },
     { id: "marcus", name: "Marcus", z: 80, hotZ: 80, look: S => ch(S) === 2 ? "Marcus in his birthday best: a yellow shirt with one extra button undone. Twenty-eight and ready." : "Marcus. My best friend, my landlord-by-default and the person who owns the only couch I currently have.",
       talk: S => talkMarcus(S), give: async (S, item) => { if (item === "a2_flyer") return ["@marcus You keep it, bro. It's for manifesting."]; return "Marcus doesn't want that. Marcus wants a plus three."; } },
     { id: "jess", name: "Jess", z: 80, look: "Jess. Ponytail, purple hoodie, that look she does when she's right. She's right.", talk: async S => { if (!S.f.a2_usbBack) { await RP.say("The USB. Mr. Whiskers. Hand it over.", "jess"); RP.toast("Give Jess the cat USB."); } else await RP.say("Bring the amp back Monday. I'm serious. I'm already telling the cat.", "jess"); },
       give: async (S, item) => { if (item === "usb_cat") return giveUsbToJess(S); return ["@jess I don't want that. I want my cat."]; } },
     { id: "twinkie", name: "Twinkie", z: 80, look: "Twinkie. Lavender bob, shades indoors. She looks like she's been awake since the Clinton administration.", talk: async S => { await RP.lines(["@twinkie Tomorrow night. The loft, then the spot. Bring decks. Don't be early, be \"fashionably alarming.\""]); } },
     { id: "a2_aunt", name: "Aunt Denise", z: 80, look: "Aunt Denise. Red dress, gold chain, casserole. She's the only person here who's never been on a list.", talk: async S => { await RP.say("Baby, are you eating? You look like a coat hanger with a haircut.", "a2_aunt"); } },
+    { id: "a2_tobyK", name: "Toby", z: 80, look: "Toby in a towel and a charcoal mask, cradling a jar and rocking it. Linda, in her new home on the counter, looks unbothered. She's a pancake.",
+      talk: async S => { await RP.lines(["@a2_tobyK Shh. She's settling.", S.f.a2_sachetGot ? "@a2_tobyK Fitz? The clipboard guy? He's on a door in Bushwick. He bought nine of the sachets. Nine. He needs them more than any man I know." : "@a2_tobyK Take the sachet from the shelf. Fitz bought nine at the retreat. It's for people who say no a lot."]); },
+      give: async (S, item) => { if (item === "a2_scoby") return ["@a2_tobyK She's HERE. She's home. Don't hand her back to me, I just got her to sleep."]; return ["@a2_tobyK Mm. Not now. We're bonding."]; } },
     { id: "a2_toby", name: "Toby", z: 80, look: "Toby. The ritual guy. He's actually out of the bathroom, which is a medical event. He's dancing. Badly. In a face mask.", talk: async S => { await RP.say("It's a charcoal mask. It's on step eleven. I'm celebrating by dancing.", "a2_toby"); } }
   ],
   combos: [
@@ -531,10 +556,54 @@ RP.room({
     ["usb_cat", "marcus", "Marcus doesn't need 4,000 cat photos. Jess does. Wrong friend."],
     ["a2_flyer", "a2_door", "I'm not taping a flyer to Marcus's door. His door has a dignity."],
     ["white", "a2_gear", "The white label goes in the crate. Lou's record, in a milk crate, with the rest of me."],
+    ["a2_scoby", "a2_bath", S => lindaDeal(RP.state)],
+    ["a2_scoby", "a2_tobyK", ["@a2_tobyK She's HERE. She's home. Don't hand her back to me, I just got her to sleep."]],
+    ["a2_scoby", "a2_fridge", "She's out. She's not going back until she's told me what she thinks of Toby's fridge."],
+    ["a2_scoby", "marcus", "Marcus looks at the jar and says, \"That's a custody case, bro.\" He doesn't want in."],
+    ["a2_pierogi", "a2_bath", "Pierogi through the keyhole? Even Toby's ritual has limits. Toby's limit is dairy."],
+    ["a2_sachet", "a2_bath", "It's Toby's own sachet. Returning it would be an insult. Using it on Toby would be a fire hazard."],
     ["phone", "a2_bath", "Texting Toby from three feet away isn't going to help. He's a phone-silent person. He has screen-time rules."],
-    ["a2_card", "a2_fridge", "The fridge doesn't take cards. Neither does the cereal. I checked."]
+    ["a2_card", "a2_fridge", "The fridge doesn't take cards. Neither does the cereal. I checked."],
+    ["a2_knife", "a2_bath", "I could pop the lock with a putty knife. And live with Toby. Both of those are worse than a shower."],
+    ["a2_knife", "a2_fridge", "I'm not spreading anything on anything in this apartment."]
   ]
 });
+
+async function lindaDeal(S) {
+  if (S.f.a2_tobyDeal) { await RP.say("Toby's at the counter with Linda. I'm not interrupting that."); return; }
+  await RP.walkTo(446, 214, "back");
+  RP.sfx("knock"); RP.sfx("knock"); RP.sfx("knock");
+  await RP.lines(["Three knocks. Emergency. It's about Linda.", "@a2_toby_door ......LINDA?", "I have her. She's cold. She's been in the fridge at four degrees."]);
+  RP.sfx("door");
+  RP.take("a2_scoby"); S.f.a2_tobyDeal = true;
+  await RP.lines([
+    "The door flies open. Toby, towel, charcoal mask, glasses fogged to the arms, a face like a man who's seen a ghost in his own fridge.",
+    "@a2_tobyK SEVENTY-FOUR DEGREES. SHE LIVES AT SEVENTY-FOUR. WHO PUT HER IN THE FRIDGE?",
+    "Marcus. I think. I'm only the messenger.",
+    "@a2_tobyK Give her. GIVE. HER. Okay. Okay okay okay. Re-homing takes twenty minutes. Don't talk to me.",
+    "@a2_tobyK ...The bathroom. It's yours. I'm not leaving the ritual, I'm pausing the ritual. Go. You smell like a hot dog."
+  ]);
+  RP.relight();
+  if (!S.f.a2_showered) {
+    await RP.fadeTo(1, 700); RP.sfx("shower"); await RP.wait(800);
+    S.f.a2_showered = true;
+    A2.beat(S);
+    await RP.fadeTo(0, 800);
+    RP.sfx("success");
+    await RP.lines([
+      "Toby's bathroom: a candle called \"Unemployment\", eleven bottles in order of a hierarchy I don't understand, and a rain shower that has been running for six days and is, impossibly, still hot.",
+      "Twelve minutes. I come out smelling like cedar and someone else's confidence."
+    ]);
+  } else await RP.say("I'm already clean. I stand in Toby's bathroom for a minute anyway, because he'll want to know I did.");
+  RP.give("a2_sachet"); S.f.a2_sachetGot = true;
+  await RP.lines([
+    "@a2_tobyK Shh. She's settling. ...You. Take a sachet from the shelf. Calm No. 9. You've earned it.",
+    "@a2_tobyK Fitz from the retreat bought nine. He's on a door somewhere in Bushwick holding a clipboard. Hasn't unclenched since.",
+    "I put the sachet in my pocket. A bribe for a stranger, from a roommate, for a fungus. This is how Brooklyn works."
+  ]);
+  RP.followers(3);
+  await A2.dayCheck(S);
+}
 
 async function knockBath(S) {
   const n = S.f.a2_knock = (S.f.a2_knock || 0) + 1;
@@ -548,6 +617,6 @@ async function knockBath(S) {
   ];
   const l = L[(n - 1) % L.length];
   await RP.lines(l);
-  if (n === 3) await RP.say("I need a plan B. A plan B that has a shower and doesn't have Toby in it.");
+  if (n === 3) await RP.lines(["@a2_toby_door WAIT. IS THIS ABOUT LINDA?", "...No.", "@a2_toby_door THEN IT'S NOT AN EMERGENCY. THREE KNOCKS ARE FOR EMERGENCIES.", "I need a plan B. A plan B that has a shower and doesn't have Toby in it. Or a Linda."]);
 }
 })();

@@ -39,7 +39,7 @@ def("a1_tank", { name: "Tank", height: 108, build: "big", skin: "#57331f", hair:
   top: { style: "bomber", color: "#0e0c14", color2: "#c0302c" }, bottom: { style: "pants", color: "#17131f" }, shoes: { style: "boots", color: "#17131f" },
   acc: ["shades", "earring", "watch"], voice: "#ff6a6a" });
 /* Nowhere bartenders + regulars */
-def("a1_mia", { name: "Mia", height: 92, build: "thin", figure: "curvy", skin: "#e8b48f", hair: { style: "mohawk", color: "#39d0ff" },
+def("a1_dani", { name: "Dani", height: 92, build: "thin", figure: "curvy", skin: "#e8b48f", hair: { style: "mohawk", color: "#39d0ff" },
   top: { style: "tank", color: "#17131f" }, bottom: { style: "jeans", color: "#17131f" }, shoes: { style: "boots", color: "#17131f" },
   acc: ["earring", "apron"], voice: "#39d0ff" });
 def("a1_rafa", { name: "Rafa", height: 97, build: "average", skin: "#c98a62", hair: { style: "curly", color: "#1c1418" }, facial: "beard", facialColor: "#1c1418",

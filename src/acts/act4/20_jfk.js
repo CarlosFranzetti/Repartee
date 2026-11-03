@@ -40,7 +40,7 @@ function paint(c, S) {
   for (let x = 0; x < W; x += 70) { R(c, x, 0, 3, 20, "#2a283a"); R(c, x + 1, 0, 1, 20, "#5a587a"); }
   [100, 240, 380, 520].forEach(x => E(PK.fluorescent(c, x, 12, 76, { on: true })));
   // glass wall with the apron, a parked plane and a baggage tractor
-  PK.sky(c, 330, 22, 310, 128, { time: "dusk", seed: 5, clouds: 3, sun: { x: 590, y: 126, r: 7 } });
+  PK.sky(c, 330, 22, 310, 128, { time: "dawn", seed: 5, clouds: 3, sun: { x: 590, y: 126, r: 7 } });
   R(c, 330, 118, 310, 32, "#3a3648"); PK.gradV(c, 330, 118, 310, 32, ["#4a4660", "#2e2a3c"], { dither: 1 }); R(c, 330, 118, 310, 1, "#6a6688");
   for (let x = 340; x < 640; x += 34) R(c, x, 134, 18, 1, "#e8c020"); for (let x = 332; x < 640; x += 42) R(c, x, 144, 2, 4, "#ffcf7a");
   planeTail(c, 548, 112);
@@ -70,7 +70,7 @@ function paint(c, S) {
   const bx = 292, by = 14, bw = 240, ry = by + 10 + 10 + 7;   // row 1
   const cols = [0.0, 0.17, 0.52, 0.68, 0.78].map(f => bx + 5 + Math.round(f * (bw - 10)));
   R(c, bx + 3, ry - 1, bw - 6, 8, "#14306a");
-  txt(c, "16:55", cols[0], ry, "#ffd23f"); txt(c, "BERLIN", cols[1], ry, "#ffffff"); txt(c, "TA718", cols[2], ry, "#ffffff"); txt(c, "B22", cols[3], ry, "#ffd23f"); txt(c, "BOARDING", cols[4], ry, "#5cff9a");
+  txt(c, "08:55", cols[0], ry, "#ffd23f"); txt(c, "BERLIN", cols[1], ry, "#ffffff"); txt(c, "TA718", cols[2], ry, "#ffffff"); txt(c, "B22", cols[3], ry, "#ffd23f"); txt(c, "ON TIME", cols[4], ry, "#5cff9a");
   R(c, 296, 6, 1, 8, "#2a2838"); R(c, 527, 6, 1, 8, "#2a2838");
   // pillar ad
   R(c, 290, 96, 36, 52, "#2a2c40"); R(c, 292, 98, 32, 40, "#c8325a"); txt(c, "NEW", 300, 102, "#ffffff"); txt(c, "YORK", 298, 110, "#ffd23f"); txt(c, "NOW", 300, 120, "#ffffff"); txt(c, "LEAVE", 296, 128, "#ffffff");
@@ -128,29 +128,37 @@ async function checkInPassport(S) {
   await RP.lines([
     "@a4_dolores Passport.", "@a4_dolores ...Berlin. Round trip. You look like a one-way.", "I'm a round trip with feelings.",
     "@a4_dolores The booking says \"" + tagName(S) + ".\" Passport says " + A4.dj(S) + ". I'll allow it. This once.",
-    "@a4_dolores Window seat, 23A. Bring snacks. Your bag?"
+    S.f.a4_cls === "business" ? "@a4_dolores Your fare says business. Business is oversold, so you're back here with the rest of us. Window seat, 23A. There's a voucher. The voucher is also oversold." : "@a4_dolores Window seat, 23A. Bring snacks.",
+    "@a4_dolores Your bag?"
   ]);
   RP.give("a4_boarding");
   RP.sfx("typing");
   await RP.say("Got a boarding pass. Seat 23A, a window. I'll be the one pressing my face against it.");
 }
+const BAGFEE = { business: 40, economy: 75, "economy-direct": 75 };
+const bagFee = S => BAGFEE[S.f.a4_cls] || 95;           /* a thin deal (no class named) pays the walk-up rate */
 async function checkInBag(S) {
   if (!S.f.a4_checkedPass) { await RP.say("Passport first, hon. I can't tag a bag with no person attached.", "a4_dolores"); return; }
   if (S.f.a4_bagChecked) return "She's already got the bag. I could feel it go. Somewhere a conveyor is doing the thing it does.";
-  await RP.lines(["@a4_dolores Up on the scale. ...Thirty-eight kilos.", "It's records.", "@a4_dolores It's thirty-eight kilos of records. Limit's twenty-three. Seventy-five dollars."]);
-  if (S.money >= 75) { RP.money(-75); await RP.say("Seventy-five dollars. For the privilege of being separated from my career."); }
-  else await RP.say("I... can't. I have a record. She sighs and waves me through. \"Because it's a Friday.\"", "a4_dolores");
+  const fee = bagFee(S), biz = S.f.a4_cls === "business";
+  await RP.lines(["@a4_dolores Up on the scale. ...Thirty-eight kilos.", "It's records.", "@a4_dolores It's thirty-eight kilos of records. Limit's twenty-three" + (biz ? ", but business gets thirty-two, so you're six over" : "") + ". " + (BAGFEE[S.f.a4_cls] ? "Overweight is $" + fee + "." : "Your fare has no bag in it at all, so that's the walk-up rate: $" + fee + ".")]);
+  if (!RP.canAfford(fee)) {
+    await RP.lines(["I check my wallet. $" + S.money + " is not $" + fee + ".", "@a4_dolores Cash or card, hon. I don't do charity and I don't do IOUs. Step aside, there's a line.",
+      "(The man in the Hawaiian shirt by the seats has been admiring my sleeves for ten minutes. A record or two would cover it.)"]);
+    return;
+  }
+  RP.money(-fee); await RP.say("$" + fee + ". For the privilege of being separated from my career.");
   await RP.lines(["@a4_dolores Berlin. BER. Sticker on, tag on. Claim tag's yours. Don't lose it.", "@a4_dolores Name on the tag: \"" + tagName(S) + ".\" It's how it's always been."]);
   RP.take("a4_bag"); RP.give("a4_claim");
   S.f.a4_bagChecked = true; S.f.noTravel = true; S.f.a4_beltT = performance.now(); S.f.a4_beltDone = false;
   RP.sfx("zip");
   await RP.wait(1900);
-  RP.setClock("FRI 3:48 PM");
+  RP.setClock("SAT 7:48 AM");
   await RP.lines(["The bag rides the belt and vanishes behind rubber flaps.", "I feel like I just dropped a kid at a daycare run by strangers."]);
   await RP.say("Will passenger " + tagName(S) + " please report to Baggage Services, Level 1. Passenger " + tagName(S) + ".", "a4_pa");
   RP.text("TRANSATLANTIS", "Bag BER-4471 requires your attention. See Baggage Services, Level 1. Reply STOP to stop. You can't stop.", false);
   S.f.a4_msgBag = true;
-  await RP.lines(["Of course. Of course the bag.", "I told Lou \"don't lose the bag\" in my head and now it's a prophecy.", "Baggage Services is the door on the far left. Let's go find out what an airline can do to a record bag."]);
+  await RP.lines(["Of course. Of course the bag.", "Lou said \"don't lose the bag\" and now it's a prophecy.", "Baggage Services is the door on the far left. Let's go find out what an airline can do to a record bag."]);
 }
 async function doloresTalk(S) {
   if (!S.f.a4_checkedPass) { await RP.lines(["Hi. Berlin, please.", "@a4_dolores Passport."]); return; }
@@ -161,15 +169,35 @@ async function doloresTalk(S) {
 
 /* ------------------------------------------------------------------ vending */
 async function vend(S) {
-  if (RP.has("a4_jerky")) { await RP.say("I've got my jerky. The machine and I are even."); return; }
-  const i = await RP.choose(["Potato chips ($3)", "Beef jerky ($4)", "Gum ($2)", "Never mind"]);
-  if (i === 3) return;
-  const price = [3, 4, 2][i];
+  const i = await RP.choose(["Potato chips ($3)", "Beef jerky ($4)", "Spring water ($3)", "Dill pickle ($3)", "Never mind"]);
+  if (i === 4) return;
+  const price = [3, 4, 3, 3][i];
+  if (i === 1 && S.f.a4_jerky) { await RP.say("I've already bought my jerky. The machine and I are even."); return; }
+  if (i === 2 && S.f.a4_waterBought) { await RP.say("I've got a bottle. One bottle of water is a plan. Two is a personality."); return; }
+  if (i === 3 && S.f.a4_pickleBought) { await RP.say("One pickle was a lesson. A second would be a hobby."); return; }
   if (!RP.canAfford(price)) { await RP.say("I can't afford it. A snack machine just rejected me. At an airport."); return; }
   RP.money(-price); RP.sfx("coin");
   if (i === 1) { RP.give("a4_jerky"); S.f.a4_jerky = true; await RP.lines(["Chewy Wowie jerky. It lands in the tray with a thud, the way a promise does.", "The bag says: \"Now with 22% real jerky.\""]); }
-  else if (i === 0) await RP.lines(["I eat the chips in four seconds. They tasted like a loophole.", "That's $3 I'll never see again. The money, I mean."]);
-  else await RP.lines(["Gum. It tastes like a pencil. I'm chewing it with confidence."]);
+  else if (i === 2) { RP.give("a4_water"); S.f.a4_waterBought = true; await RP.lines(["Spring water. Three dollars for something that falls from the sky for free. It comes with a mountain on the label, which is the part I paid for.", "The rider said water. This is water. Box ticked, pocket lighter."]); }
+  else if (i === 3) { RP.give("a4_pickle"); S.f.a4_pickleBought = true; await RP.lines(["A pickle in a pouch. \"100% pickle.\" It's the only honest label in the building.", "...Wait. \"A vegetable that is NOT a pickle.\" I read that sentence. Out loud. In a studio. Three dollars, spent with total confidence."]); }
+  else await RP.lines(["I eat the chips in four seconds. They tasted like a loophole.", "That's $3 I'll never see again. The money, I mean."]);
+}
+/* the man by the seats: a collector who buys records, at a price, when the wallet runs short */
+async function collectorTalk(S) {
+  if (!S.f.a4_gilMet) {
+    S.f.a4_gilMet = true;
+    await RP.lines(["@a4_gil (not looking up from his tote) That's a record bag. I can tell by how you carry it. Like it owes you money.", "It owes me a career.", "@a4_gil Gil. I collect. I'm flying to a wedding and I brought nothing for it but this tote. Anything in there you'd sell?"]);
+  }
+  await RP.convo([
+    { text: "I could sell you a record. ($40)", run: async () => {
+      const id = await A4.sellRecord(S, 40);
+      if (!id) return;
+      const r = RP.rec(id);
+      await RP.lines(["@a4_gil " + r.title + ". Hm. First pressing? No? ...Fine. Forty. Crisp, folded, a bit warm.", "It was a good record. It's now a good record in a tote bag in seat 14C. That's called a career move."]);
+      return "end";
+    } },
+    { text: "Just looking at your shirt.", end: true }
+  ]);
 }
 
 /* ------------------------------------------------------------------ the room */
@@ -181,7 +209,7 @@ RP.room({
   actors: [
     { id: "a4_dolores", char: "a4_dolores", x: 188, y: 186, face: "front", act: "stand", name: "Dolores", noTurn: true },
     { id: "a4_pax1", char: "a4_pax1", x: 306, y: 214, face: "left", act: "stand", clickable: false },
-    { id: "a4_pax2", char: "a4_pax2", x: 330, y: 220, face: "left", act: "stand", clickable: false },
+    { id: "a4_pax2", char: "a4_pax2", x: 330, y: 220, face: "left", act: "stand", name: "man in a Hawaiian shirt" },
     { id: "a4_pax3", char: "a4_pax3", x: 440, y: 208, face: "back", act: "stand", clickable: false }
   ],
   sprites: [
@@ -209,12 +237,14 @@ RP.room({
       give: async (S, item) => item === "a4_passport" ? checkInPassport(S) : item === "a4_bag" ? checkInBag(S) : "Hand it to Dolores. The counter doesn't have hands." },
     { id: "a4_belt", name: "bag drop belt", r: [52, 108, 52, 44], z: 35, walk: [120, 220, "back"], look: "The bag drop. A black conveyor into a hole lined with rubber flaps. It leads to the airport's inner life. None of it good.", use: "Don't ride it. I saw a guy try once. He works in Baggage Services now.", push: "Pushing it wouldn't make anything faster. That's the whole point of a belt.", pickup: "You can't pick up a conveyor. I've tried with the one at the grocery store." },
     { id: "a4_board", name: "departures board", r: [292, 14, 240, 72], z: 25, walk: [410, 214, "back"],
-      look: "BERLIN, TA 718, gate B22, 4:55 PM: BOARDING. Everything else is DELAYED. The board is very honest about its feelings.", use: "It's an electronic board. It doesn't take requests.", pickup: "It's bolted to the ceiling. The ceiling would have things to say." },
+      look: "BERLIN, TA 718, gate B22, 8:55 AM: ON TIME. Everything else is DELAYED. The board is very honest about its feelings.", use: "It's an electronic board. It doesn't take requests.", pickup: "It's bolted to the ceiling. The ceiling would have things to say." },
     { id: "a4_sign_bag", name: "Baggage Services sign", r: [4, 54, 82, 16], z: 40, walk: [34, 222, "back"], look: "BAGGAGE SERVICES, with an arrow pointing at the door next to it. Subtle." },
     { id: "a4_door_bag", name: "Baggage Services", r: [2, 76, 48, 76], z: 36, walk: [34, 222, "back"],
       look: "Frosted-glass door to Baggage Services. Where bags go to be reunited, or bureaucratized.",
       exit: S => S.f.a4_bagChecked ? { room: "a4_baggage", x: 560, y: 230, face: "left" } : "Why would I go to Baggage Services? I haven't lost anything. Yet." },
     { id: "a4_logo", name: "TransAtlantis sign", r: [92, 28, 188, 42], z: 30, walk: [188, 218, "back"], look: "\"We Get You There. Eventually.\" A branding department's most honest hour." },
+    { id: "a4_pax2", name: "man in a Hawaiian shirt", look: "A man in a Hawaiian shirt at seven a.m., with a canvas tote that is mostly vinyl. He keeps glancing at my record bag the way I glance at dessert menus.",
+      talk: S => collectorTalk(S), give: "He'd take anything I hand him. That's the problem with collectors: they're always ready.", pickup: "He's a person. And his tote is heavier than it looks.", push: "He's holding forty dollars' worth of opinion. I'll be nice." },
     { id: "a4_forms", name: "forms rack", r: [334, 100, 44, 62], z: 45, walk: [356, 218, "back"],
       look: S => S.f.a4_msgBag ? "A rack of forms. 7A: Sorry. 7B: Request for Release of a Detained Item. 7C: Complaint About Form 7B. 7D: Complaint About 7C." : "A rack of airline forms. 7A through 7D. Forms are like cats: they appear when you stop looking.",
       pickup: async S => {
@@ -225,13 +255,13 @@ RP.room({
       },
       use: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a4_forms").pickup) },
     { id: "a4_seats", name: "waiting seats", rects: [[396, 152, 146, 44]], z: 20, walk: [470, 212, "back"], look: "Chrome-and-vinyl airport seats. Built to be sat in for forty minutes and cursed afterwards.", use: "If I sit, I'll fall asleep and wake up in Baggage Services. There's a lesson there.", pickup: "Bolted down. Everything here is bolted down, except my bag." },
-    { id: "a4_vend", name: "snack machine", r: [548, 86, 44, 72], z: 40, walk: [570, 212, "back"], look: "\"SNAX.\" Chips, gum, and something called Chewy Wowie beef jerky \"now with 22% real jerky.\"", use: S => vend(S), pickup: "It's more bolted than my sanity.", push: "Shaking a vending machine at an airport is how you meet a security officer. Not today." },
+    { id: "a4_vend", name: "snack machine", r: [548, 86, 44, 72], z: 40, walk: [570, 212, "back"], look: "\"SNAX.\" Chips, Chewy Wowie beef jerky \"now with 22% real jerky,\" spring water, and a \"Dill Deal\" pickle in a pouch. Three dollars each, give or take a dollar of shame.", use: S => vend(S), pickup: "It's more bolted than my sanity.", push: "Shaking a vending machine at an airport is how you meet a security officer. Not today." },
     { id: "a4_coffee", name: "coffee kiosk", r: [596, 98, 44, 56], z: 42, walk: [610, 212, "back"], look: "\"BEANS & REGRET.\" A $9 coffee, with a menu that doesn't mention the regret. It's in the price.", use: "Nine dollars for hot water that has met coffee once. No.", talk: "Nobody's there. Even the barista has given up on the barista." },
     { id: "a4_gates", name: "Security & Gates", r: [588, 54, 50, 100], z: 18, walk: [606, 224, "right"],
       look: "The entrance to security, past a stanchion maze built for patience I don't have.",
-      exit: S => !RP.has("a4_boarding") ? "Security wants a boarding pass. Check-in first. Dolores is the one with the lanyard." : (!S.f.a4_bagChecked ? "Delgado would arrest this bag on sight. Thirty-eight kilos. Check it first." : { room: "a4_security", x: 80, y: 232, face: "right" }) },
+      exit: S => !RP.has("a4_boarding") ? "Security wants a boarding pass. Check-in first. Dolores is the one with the lanyard." : (!S.f.a4_bagChecked ? "Security would flag this bag on sight. Thirty-eight kilos. Check it first." : { room: "a4_security", x: 80, y: 232, face: "right" }) },
     { id: "a4_window", name: "terminal windows", r: [330, 94, 214, 56], z: 10, walk: [440, 214, "back"], look: "A parked TransAtlantis plane out there, with its tail dreaming of Berlin. A baggage train is crawling past. Mine is not on it. I think.", open: "It's glass. The only openings are for planes and people." },
-    { id: "a4_cart", name: "luggage cart", r: [36, 206, 42, 44], z: 60, walk: [88, 238, "left"], look: "Luggage carts, $7 a pop. They want a deposit. I put a $75 bag on a belt and they want $7 for a cart. It's a pyramid scheme.", pickup: "It's got a deposit lock. Seven dollars. For a cart. In 2026.", use: "I don't need a cart. I'm traveling light. Just 38 kilos, a career and a bad feeling." },
+    { id: "a4_cart", name: "luggage cart", r: [36, 206, 42, 44], z: 60, walk: [88, 238, "left"], look: "Luggage carts, $7 a pop. They want a deposit. I put a $95 bag on a belt and they want $7 for a cart. It's a pyramid scheme.", pickup: "It's got a deposit lock. Seven dollars. For a cart. In 2026.", use: "I don't need a cart. I'm traveling light. Just 38 kilos, a career and a bad feeling." },
     { id: "a4_wet", name: "wet floor sign", r: [370, 210, 22, 26], z: 62, walk: [380, 240, "right"], look: "CAUTION: WET FLOOR. The floor is bone dry. The sign is just worried.", pickup: "I'm not taking the sign. It's the only one here that cares.", use: "Everyone here is slipping already. Metaphorically." },
     { id: "a4_plant", name: "plant", r: [254, 128, 52, 54], z: 38, walk: [280, 222, "back"], look: "A potted plant in an airport. Fake or real, it's the only thing here with roots.", talk: "It's an airport plant. It hears things. It's seen too much." },
     { id: "a4_pillar", name: "NYC ad", r: [288, 96, 40, 54], z: 30, walk: [306, 218, "back"], look: "\"NEW YORK NOW LEAVE.\" It's a tourism ad in reverse. The city has no more love for you." },
@@ -253,8 +283,8 @@ RP.room({
   ],
   enter: async (S, from) => {
     if (!S.f.a4_firstJfk) {
-      S.f.a4_firstJfk = true; RP.setClock("FRI 3:05 PM");
-      await RP.lines(["JFK, Terminal 4. It smells like stress, floor wax and cinnamon.", "Check-in's on the left. Dolores is waiting. Bag, passport. The plan is simple. That's how you know it won't go to plan."]);
+      S.f.a4_firstJfk = true; RP.setClock("SAT 7:05 AM");
+      await RP.lines(["JFK, Terminal 4, seven a.m. Saturday. It smells like stress, floor wax and cinnamon.", "Check-in's on the left. Dolores is waiting. Bag, passport. The plan is simple. That's how you know it won't go to plan."]);
     }
   }
 });

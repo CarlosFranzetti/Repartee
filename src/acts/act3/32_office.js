@@ -120,7 +120,7 @@ async function dvr(S, key) {
   RP.take("a3_key_nico"); RP.take("a3_key_bex");
   RP.sfx("unlock"); await RP.wait(600);
   S.f.a3_footageGot = true; RP.give("a3_footage");
-  await RP.lines(["The DVR whirs. I scroll back to nine-fifty. Bar-cam, the booth in the corner of the shot...",
+  await RP.lines(["The DVR whirs. I scroll back to nine-thirty. Bar-cam, the booth in the corner of the shot...",
     "There. Brandon, with a friendly hug and a very unfriendly hand in my jacket. Then the USB. Then a blue USB back in. Then a fake yawn.",
     "He even checks the camera. He looks right at it. He THINKS the camera is the one by the register. Amazing.",
     "I burn the clip onto a thumb drive. A pink-sticker thumb drive. Evidence."]);
@@ -147,7 +147,7 @@ RP.room({
     { id: "a3_o_door", name: "door to the club", r: [4, 38, 50, 130], z: 20, walk: [60, 214, "left"], look: "The door back to the club. The bass comes through the steel like a heartbeat.", exit: S => ({ room: "a3_halcyon", x: 604, y: 220, face: "front" }) },
     { id: "a3_o_calendar", name: "wall calendar", r: [260, 28, 96, 74], z: 20, walk: [310, 214, "back"],
       look: S => S.f.a3_saturday ? ["The wall calendar. Saturday has a new name written in on it, in lipstick. It's mine. It's spelled right.", "Odessa crossed out BS. 'BS.' ...I wonder if that stands for Brandon Shine or what it also stands for."] : ["The wall calendar: every Thursday says YOU. Every Saturday says BS.", "BS. Brandon Shine. Or what everyone calls him when he's not in the room."], pickup: "It's Odessa's. She'd notice. She notices a crooked pen." },
-    { id: "a3_o_cork", name: "corkboard", r: [164, 26, 84, 66], z: 20, walk: [206, 214, "back"], look: "A corkboard of flyers from a decade of Thursdays. Fifty gigs, forty DJs, seven fire inspections.", pickup: "I'm not touching Odessa's corkboard. There are pins in it and a lot of history." },
+    { id: "a3_o_cork", name: "corkboard", r: [164, 26, 84, 66], z: 20, walk: [206, 214, "back"], look: "A corkboard of flyers from a decade of Thursdays. Fifty gigs, forty DJs, seven fire inspections. In the corner, a gold-edged card: BRANDON SHINE, 'ASK ABOUT MY THURSDAYS.' Under it, in Odessa's pen: 'He means yours.'", pickup: "I'm not touching Odessa's corkboard. There are pins in it and a lot of history." },
     { id: "a3_o_photos", name: "framed photos", r: [66, 44, 96, 46], z: 20, walk: [116, 214, "back"], look: "Framed photos of old Thursdays. Everyone is sweaty and happy. Nobody is looking at their phone because it's twenty years ago. Okay, maybe not that many. Ten.", pickup: "They're nailed to the wall. By someone who doesn't want them moved." },
     { id: "a3_o_thermo", name: "thermostat", r: [404, 60, 36, 50], z: 22, walk: [422, 214, "back"],
       look: "A thermostat set to 68, with a note: 'DO NOT TOUCH. -O.' The note is laminated. The note is older than some of the DJs.",

@@ -3,7 +3,8 @@
    decent condition), keep the best copy of a duplicate, don't feed the dealer garbage.
    Params (all optional):
      { records: [ids] (the collection, repeats = duplicates), budget: $ (what the lot cost you),
-       time: seconds, difficulty: 1..5, seed?, keepSlots? (default 6) }
+       time: seconds, difficulty: 1..5, seed?, keepSlots? (default 6),
+       owner?: "Hal" (whose records), seller?: "Tanya" (who sold the lot), place?: "Woodside, Queens" }
    Result: { ok, score (0..100), keep: [ids], sold: [ids], profit }
      profit = cash from the dealer minus the lot price (can be negative).
      Extra fields: cash, net (cash + 60% of the kept records' book value - lot), junked: [ids], undecided: n.
@@ -41,7 +42,7 @@ const CSS = `
 let cssDone = false;
 
 const MORT = {
-  intro: ["Gus's whole basement? Let's see what the old man hid.", "Don't touch the plastic sheet. That's the good gear. I mean, the dusty gear."],
+  intro: ["The whole house? Let's see what the old man hid.", "Don't touch the plastic sheet. That's the good gear. I mean, the dusty gear."],
   keep: ["Keeping that one. Fine taste. For a kid.", "Into the crate. Don't let it near the radiator.", "A keeper. Even I felt that."],
   keepGem: ["Wait. WAIT. Is that what I think it is?", "You're keeping THAT? ...Yeah. Yeah, I would too."],
   sell: ["Cash on the table.", "Now we're talking.", "I'll take it. I'll regret it. But I'll take it."],
@@ -52,8 +53,8 @@ const MORT = {
   junkSell: ["That's garbage. I'm not a landfill.", "More junk? My van has standards. Low ones."],
   dup: ["Two of those. Keep the clean one, sell the other.", "Duplicate. You don't need a second copy, do you?"],
   full: ["Crate's full. Something's gotta go.", "Six slots. You're a DJ, not a library."],
-  hurry: ["Clock's ticking. The nephew's coming back at six.", "Faster. The nephew wants the van moved."],
-  late: ["Time! The nephew's here. Everything else goes in a dumpster.", "That's the bell. The rest is mulch."],
+  hurry: ["Clock's ticking. $S wants the house empty.", "Faster. $S wants my van off the lawn."],
+  late: ["Time! $S is locking up. Everything else goes in a dumpster.", "That's the bell. The rest is mulch."],
   look: ["Looking it up. Guide book, page ... a lot.", "Don't trust my offer. Trust the book."],
   love: ["Today I'm paying extra for $G. Don't spend it all in one place."]
 };
@@ -85,6 +86,7 @@ RP.mg.register("crateDigging", {
     const diff = clamp(Math.round(p.difficulty || 2), 1, 5);
     const seed = p.seed != null ? p.seed : Math.floor(Math.random() * 1e9), rnd = mulberry(seed);
     const slots = p.keepSlots || 6;
+    const seller = p.seller || "The family", owner = p.owner || null, where = "Estate sale · " + (p.place || "Queens");
 
     /* ------------------------------------------------ the collection */
     const owned = new Set((host.S && host.S.records) || []);
@@ -118,7 +120,7 @@ RP.mg.register("crateDigging", {
 
     /* ------------------------------------------------ DOM */
     const root = host.root; root.classList.add("dk");
-    host.header("crate.Digging", "Estate sale · Ridgewood, Queens");
+    host.header("crate.Digging", where);
     const clock = el("div", { cls: "cd-clock" }, root);
     const barW = el("div", { cls: "dk-bar" }, clock); const barFill = el("i", {}, barW);
     const timeEl = el("b", { text: "" }, clock);
@@ -198,11 +200,13 @@ RP.mg.register("crateDigging", {
     /* ------------------------------------------------ speech */
     let cancelType = null;
     const say = text => { if (cancelType) cancelType(); S.say = text; S.sayT = performance.now(); cancelType = DK.typer(host, sayTxt, text, null, 14); };
-    const quip = k => say(DK.pick(MORT[k]).replace("$G", loveWord || "everything"));
+    const quip = k => say(DK.pick(MORT[k]).replace("$G", loveWord || "everything").replace("$S", seller));
 
     /* ------------------------------------------------ rendering the DOM bits */
+    let sure = 0;
     function render() {
       const c = cur();
+      if (sure) { sure = 0; bFinish.textContent = "DONE SORTING"; if (msg.dataset.sure) { msg.textContent = ""; delete msg.dataset.sure; } }
       lotEl.querySelector("b").textContent = money(budget);
       cashEl.querySelector("b").textContent = money(S.cash);
       const net = S.cash - budget; const nb = netEl.querySelector("b"); nb.textContent = (net >= 0 ? "+" : "−") + money(Math.abs(net)).replace("-", ""); nb.className = net >= 0 ? "ok" : "bad";
@@ -302,10 +306,10 @@ RP.mg.register("crateDigging", {
     }
     let finish = null, ended = false;
     function endCard(res, ev, why) {
-      root.innerHTML = ""; host.header("crate.Digging", "Estate sale · Ridgewood, Queens");
+      root.innerHTML = ""; host.header("crate.Digging", where);
       const ok = res.ok;
       const box = el("div", { cls: "dk-end mg-panel" }, root);
-      el("h2", { cls: ok ? "ok" : "bad", text: why === "time" ? (ok ? "TIME! BUT YOU MADE IT PAY." : "TIME! THE NEPHEW WANTS THE VAN.") : ok ? "THE LOT PAID OFF." : "YOU LOST MONEY ON GUS'S BOXES." }, box);
+      el("h2", { cls: ok ? "ok" : "bad", text: why === "time" ? (ok ? "TIME! BUT YOU MADE IT PAY." : "TIME! " + seller.toUpperCase() + " IS LOCKING UP.") : ok ? "THE LOT PAID OFF." : "YOU LOST MONEY ON " + (owner ? owner.toUpperCase() + "'S" : "THE") + " BOXES." }, box);
       el("div", { cls: "dk-score", html: res.score + "<small>/ 100</small>" }, box);
       const lines = el("div", { cls: "dk-lines" }, box);
       const ln = (a, b) => { const d = el("div", {}, lines); el("span", { text: a }, d); el("span", { text: b }, d); };
@@ -327,6 +331,16 @@ RP.mg.register("crateDigging", {
       setTimeout(() => { try { go.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }, 30);
       RP.sfx(ok ? "success" : "fail");
     }
+    function finishClick() {
+      if (!S.started || S.done) return;
+      const n = copies.filter(c => !c.decision).length;
+      if (n && sure !== n) {
+        sure = n; bFinish.textContent = "YES, DONE (" + n + " LEFT)"; RP.sfx("blip");
+        msg.textContent = n + " record" + (n > 1 ? "s" : "") + " still in the boxes, unsorted. They stay there. Press again to stop, or keep sorting."; msg.dataset.sure = "1";
+        return;
+      }
+      doFinish("done");
+    }
     function doFinish(why) {
       if (ended) return; ended = true; S.done = true;
       const ev = evaluate(), keepIds = ev.kept.map(c => c.id), soldIds = S.sold.map(c => c.id);
@@ -337,7 +351,7 @@ RP.mg.register("crateDigging", {
     /* ------------------------------------------------ input */
     const startGame = () => { if (S.started) return; S.started = true; intro.remove(); mainBits.forEach(n => { n.style.display = ""; }); RP.sfx("whoosh"); quip("intro"); render(); };
     bLook.addEventListener("click", lookUp); bJunk.addEventListener("click", () => decide_("junk")); bSell.addEventListener("click", () => decide_("sell")); bKeep.addEventListener("click", () => decide_("keep"));
-    bUndo.addEventListener("click", undo); bFinish.addEventListener("click", () => { if (S.started && !S.done) doFinish("done"); });
+    bUndo.addEventListener("click", undo); bFinish.addEventListener("click", finishClick);
     bLeave.addEventListener("click", () => { if (S.done) return; S.done = true; ended = true; finish && finish({ ok: false, score: 0, keep: [], sold: [], profit: 0 }); });
     host.onKey(e => {
       if (S.done || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -358,8 +372,8 @@ RP.mg.register("crateDigging", {
     const mainBits = [clock, hud, cols, msg];
     mainBits.forEach(n => { n.style.display = "none"; });
     const intro = el("div", { cls: "cd-intro mg-panel" }, root);
-    el("h2", { text: "GUS'S BASEMENT" }, intro);
-    el("div", { cls: "dk-meta", html: "His nephew sold you the whole collection for <b>" + money(budget) + "</b>. Mort the dealer is parking the van. You've got <b>" + timeTotal + " seconds</b> and <b>" + N + " records</b>." }, intro);
+    el("h2", { text: owner ? owner.toUpperCase() + "'S RECORDS" : "THE ESTATE SALE" }, intro);
+    el("div", { cls: "dk-meta", html: DK.ascii(seller) + " sold you the whole collection for <b>" + money(budget) + "</b>. Mort the dealer is parking the van. You've got <b>" + timeTotal + " seconds</b> and <b>" + N + " records</b>." }, intro);
     const ul = el("ul", {}, intro);
     el("li", { html: "<b class='k'>KEEP</b> the best: gems (rare + good condition) and your type of records. Your crate holds <b>" + slots + "</b>." }, ul);
     el("li", { html: "<b class='s'>SELL</b> to Mort for cash. He pays a share of the value, and he lowballs the rare stuff." }, ul);

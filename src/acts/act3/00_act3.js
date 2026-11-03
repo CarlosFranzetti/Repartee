@@ -2,12 +2,13 @@
    Everything in src/acts/act3 prefixes its ids with "a3_" (recurring cast from src/data/cast.js keeps its ids).
 
    STORY SHAPE (flags, all S.f.a3_*)
-     Night 1 (Thu)   a3_soundcheck (Gus + snack) -> a3_opener (set.Time "opener", paycheck)
-     The week        a3_cdj (Eddie, buy.Gear) · a3_dj350 (Gus, 2nd snack) · a3_rayTip/a3_clue* -> a3_hunt (record.Hunt)
-                     -> a3_estateDone (crate.Digging, Technics) · a3_promo (get.Followers) -> sleep -> Thursday
+     Night 1 (Thu, six months into the residency, a week before the anniversary)
+                     a3_soundcheck (Gus + snack) -> a3_opener (crowd.Read, the empty bar, paycheck)
+     The week        a3_cdj (Eddie, buy.Gear) · a3_dj350 (Gus, 2nd snack) · a3_rayTip/a3_clue* -> a3_hunt (the clues add up)
+                     -> a3_estateDone (sorting the boxes, Technics) · a3_promo (the posting week) -> sleep -> Thursday
      Night 3 (Thu)   a3_kosmoIn · a3_swap (USB swapped) · a3_feudOver (two bartenders) · a3_footage · a3_brandonDone
-                     (club.Drama) · a3_kosmoDone (set.Time "follow-legend") · a3_setDone (playlist.Order)
-     Aftermath       a3_saturday · a3_train (last.Train) · a3_email -> RP.completeAct */
+                     (the confrontation) · a3_kosmoDone (crowd.Read, the warm room) · a3_setDone (opener and closer picked)
+     Aftermath       a3_saturday · a3_train (the platform) · a3_email -> RP.completeAct */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -79,6 +80,8 @@ RP.chars.update("kosmo", { top: { style: "coat", color: "#2a1c3a", color2: "#c03
 RP.voice("a3_lou", { color: "#9be15d", prefix: "", anchor: [331, 118] });
 RP.voice("a3_odph", { color: "#ffc44d", prefix: "ODESSA (TEXT): ", anchor: S => [RP.actor("kid") ? RP.actor("kid").x : 320, 40] });
 RP.voice("a3_odoff", { color: "#ffc44d", prefix: "ODESSA (OFF): ", anchor: [320, 50] });
+RP.voice("a3_brandonoff", { color: "#ffe45c", prefix: "BRANDON (OFF): ", anchor: [320, 50] });
+RP.voice("a3_marcusoff", { color: "#ffd23f", prefix: "MARCUS (OFF): ", anchor: [320, 50] });
 RP.voice("a3_pa", { color: "#e8e4f0", prefix: "PA: ", anchor: [320, 34] });
 RP.voice("a3_mta", { color: "#ffd23f", prefix: "MTA: ", anchor: [320, 40] });
 RP.voice("a3_cell", { color: "#ffffff", prefix: "", anchor: S => [RP.actor("kid") ? RP.actor("kid").x : 320, 60] });
@@ -87,6 +90,7 @@ RP.voice("a3_cell", { color: "#ffffff", prefix: "", anchor: S => [RP.actor("kid"
    helpers shared by all act 3 files
    ====================================================================== */
 A3.KOSMO_NAME = "Wendell";
+A3.WEEK = 330;   // the week's money after the rent autopay: decks, mixer, estate, a coffee. Odessa's shifts and the fair add a little more.
 A3.misspell = function (name) {
   let n = String(name || "DJ NOBODY").replace(/^DJ\s+/i, "") || "NOBODY";
   const s = n.split("");
@@ -96,8 +100,13 @@ A3.misspell = function (name) {
 A3.billed = S => A3.misspell(S.name);
 A3.djName = S => (String(S.name || "DJ NOBODY").toUpperCase().startsWith("DJ ") ? S.name : "DJ " + (S.name || "NOBODY"));
 
-/* minutes-of-the-week clock labels (HUD text) */
+/* HUD clock for the week: only ever moves forward (visits happen in any order); the nights set it outright with RP.setClock */
 A3.clock = RP.setClock;
+A3.clockTo = function (S, label) {
+  const D = { THU: 0, FRI: 1, SAT: 2, SUN: 3, MON: 4, TUE: 5, WED: 6 };
+  const val = s => { const m = /^(\w{3}) (\d+):(\d+) (AM|PM)$/.exec(s || ""); return m ? D[m[1]] * 1440 + ((+m[2]) % 12 + (m[4] === "PM" ? 12 : 0)) * 60 + (+m[3]) : -1; };
+  if (val(label) >= val(S.clock)) RP.setClock(label);
+};
 
 /* run a mini-game and make sure the story can never dead-end on it:
    a missing module or a won game is ok; a lost game offers a retry and, after `tries` losses, a graceful assist. */
@@ -113,12 +122,19 @@ A3.mg = async function (id, params, opt = {}) {
   }
 };
 
-/* the pool of records offered to the set mini-games: whatever is in the crate, padded so there are always enough */
+/* the pool of records offered for the sets: whatever is in the crate, padded so there are always enough */
 A3.pool = function (S, min) {
   const pad = ["everything_but_the_girl_missing", "phuture_acid_tracks", "white_nyc93", "cece_peniston_finally", "mood_ii_swing_closer", "hardrive_deep_inside",
     "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "crystal_waters_gypsy_woman", "mr_fingers_washing_machine_can_you_feel_it", "francois_k_fk_ep", "kerri_chandler_the_mood_ep"];
   const out = (S.records || []).filter(id => id !== "grover_washington_jr_winelight" || true);
   for (const id of pad) { if (out.length >= (min || 8)) break; if (!out.includes(id)) out.push(id); }
+  return out;
+};
+
+/* a hand of up to n records for crowd.Read: the wanted ones first (if they are in the pool), then the rest; records without a tempo or energy are skipped */
+A3.hand = function (S, n, want) {
+  const pool = A3.pool(S, n), out = [];
+  (want || []).concat(pool).forEach(id => { const r = RP.rec(id); if (out.length < n && pool.includes(id) && r && r.bpm && r.energy && !out.includes(id)) out.push(id); });
   return out;
 };
 
@@ -128,16 +144,16 @@ A3.tasks = function (S) {
   return [
     [!!(f.a3_cdj && f.a3_dj350), "Gear that doesn't embarrass me. (Eddie knows a guy. Eddie is the guy.)"],
     [!!f.a3_estateDone, "A sound of my own. (Ray says: dig. Ray says it rudely.)"],
-    [!!f.a3_promo, "A crowd. (Phone. Fingers. Hashtags.)"],
+    [!!f.a3_promo, "A crowd. (Laptop. Fingers. Hashtags.)"],
     [!!f.a3_saturday, "Anniversary Thursday. Don't embarrass ME."]
   ];
 };
 A3.todoLeft = function (S) {
   const f = S.f, left = [];
   if (!f.a3_cdj) left.push("buy decks from Eddie");
-  if (!f.a3_dj350) left.push("see about a mixer (Gus has opinions and snacks)");
+  if (!f.a3_dj350) left.push(f.a3_mixerBox ? "a power brick for the mixer (Eddie has cable)" : "see about a mixer (Gus has opinions and snacks)");
   if (!f.a3_hunt) left.push("find that grail (Ray, the record fair)");
-  else if (!f.a3_estateDone) left.push("get out to the Queens estate sale");
+  else if (!f.a3_estateDone) left.push(f.a3_estatePaid ? "finish at the Pruitt house (the stars, the turntables, whatever Bernard keeps saying)" : "get out to the Queens estate sale");
   if (!f.a3_promo) left.push("promote (the laptop, a week of posting)");
   return left;
 };
@@ -175,7 +191,7 @@ RP.item("a3_bag", { name: "record bag", short: "Rec bag",
   look: S => "My record bag. " + S.records.length + " records, a spare slipmat and the smell of every club I've ever sweated in.",
   use: "The records stay in the bag until the booth. That's the rule." });
 RP.item("a3_usb", { name: "tracks USB", short: "USB", icon: c => { I.usb(c, "#39d0ff"); R(c, 8, 10, 6, 5, "#efeaf6"); R(c, 9, 12, 4, 1, "#1d1622"); },
-  look: S => S.f.a3_swap && !S.f.a3_usbBack ? "My USB. It looks exactly the same. That's what worries me." : "My tracks USB. Sixteen gigs, zero cats. I'm a changed person.",
+  look: S => S.f.a3_swap && !S.f.a3_usbBack ? "My USB. It looks exactly the same. That's what worries me." : S.f.a3_usbHidden ? "My tracks USB, tucked inside a sleeve in the record bag. Hugging distance is not bag distance." : S.f.a3_usbSticker ? "My tracks USB, wearing a gold smiley that isn't mine. Sixteen gigs, one grin." : "My tracks USB. Sixteen gigs, zero cats. I'm a changed person.",
   use: S => (S.f.a3_swap && !S.f.a3_usbBack) ? "It plugs into the CDJs. I'd rather not find out what's on it again." : "It goes in the CDJ. Not in my ear. We've been over this." });
 RP.item("a3_list", { name: "Odessa's napkin", short: "Napkin", icon: c => { R(c, 5, 4, 22, 17, "#f4efe4"); R(c, 5, 4, 22, 1, "#ffffff"); for (let y = 8; y < 19; y += 3) R(c, 8, y, 16, 1, "#c0302c"); P(c, 7, 8, "#c0302c"); },
   useAlone: true,
@@ -187,10 +203,19 @@ RP.item("a3_rinds", { name: "pork rinds", short: "Rinds", icon: c => { R(c, 8, 3
   look: "Pork rinds. Crunchy, loud, aggressively beige. Not for me.", use: "I'd eat them, but they're evidence of a bad idea." });
 RP.item("a3_pickle", { name: "bodega pickle", short: "Pickle", icon: c => { ell(c, 16, 13, 4, 9, "#4a8a2a"); ell(c, 15, 12, 2, 7, "#6ab84a"); R(c, 15, 3, 3, 2, "#2a5a1a"); P(c, 14, 8, "#9be15d"); P(c, 17, 16, "#2a5a1a"); },
   look: "A pickle. In a bag. With some of the brine. This is what New York has instead of a minibar.", use: "I'm not hungry. I'm... something. It's a mood." });
+RP.item("a3_usb_old", { name: "old USB", short: "Old USB", icon: c => { I.usb(c, "#b0b0c0"); R(c, 8, 10, 6, 5, "#f4d8a8"); R(c, 9, 11, 2, 2, "#17101e"); },
+  look: "My old USB: 4,212 photos of Mr. Whiskers, asleep, and nothing else. Jess made me promise not to wipe it. It has the shape, weight and colour of a USB, and none of the music.",
+  use: "It goes in a laptop and shows a cat. That's the whole feature set." });
+RP.item("a3_smiley", { name: "gold smiley sticker", short: "Smiley", icon: c => { ell(c, 16, 16, 8, 8, "#ffd23f"); ell(c, 16, 16, 6, 6, "#ffe45c"); P(c, 13, 14, "#17101e"); P(c, 19, 14, "#17101e"); R(c, 12, 19, 8, 1, "#17101e"); P(c, 12, 18, "#17101e"); P(c, 19, 18, "#17101e"); },
+  look: "A gold smiley, peeled off the Halcyon mixer. Brandon's. The man brands his stickers and the stickers brand the man. It grins at me with a peel-and-stick confidence I'll never have.",
+  use: "It's a sticker. It wants something to stick to. I have a few ideas, all petty." });
+RP.item("a3_flyer", { name: "estate-sale flyer", short: "Flyer", icon: c => { R(c, 7, 4, 18, 23, "#f4efe4"); R(c, 7, 4, 18, 1, "#ffffff"); R(c, 9, 7, 14, 3, "#c0302c"); for (let y = 12; y < 24; y += 2) R(c, 9, y, y > 20 ? 8 : 14, 1, "#7a7388"); },
+  look: ["ESTATE SALE. PRUITT. WOODSIDE. EVERYTHING MUST GO. A phone number, a photo of a basement full of crates.", "And below, in Tanya's biro: \"Uncle Hal's wish: the collection goes to someone who will PLAY it. No dealers please. One buyer, whole lot. Offers by 5.\""],
+  use: "It's the invitation. Also, it turns out, the terms." });
 RP.item("a3_key_nico", { name: "Nico's DVR key", short: "Nico key", icon: c => I.key(c, "#6ad0ff"), look: "A small brass key on a blue bar-towel tag. It says NICO, in a nervous hand." });
 RP.item("a3_key_bex", { name: "Bex's DVR key", short: "Bex key", icon: c => I.key(c, "#ff8a5a"), look: "A small brass key with a pink guitar-pick tag. It says BEX. It says it loudly." });
 RP.item("a3_footage", { name: "bar-cam clip", short: "Clip", icon: c => { I.usb(c, "#c0302c"); R(c, 8, 10, 6, 4, "#efeaf6"); P(c, 10, 11, "#c0302c"); },
-  look: "A thumb drive with last hour of the bar camera. Brandon, the booth, my USB, a fake yawn. Cinema.", use: "I'm not watching it again. I'm going to make a certain someone watch it." });
+  look: "A thumb drive with the last hour of the bar camera. Brandon, the booth, my USB, a fake yawn. Cinema.", use: "I'm not watching it again. I'm going to make a certain someone watch it." });
 
 /* ======================================================================
    locations (subway map pins on the 320x200 map)
@@ -243,7 +268,13 @@ RP.defineAct({
     await RP.lines(["Odessa's three house rules: be early, stay sober, bring Gus a snack. Nobody knows why the third one.", "Record bag, USB, jacket. Then the subway map. In that order."]);
   },
   doneTitle: "SATURDAY NIGHT",
-  doneText: S => "The Halcyon Room. Anniversary Thursday. You followed Kosmo Delacroix (he called you " + A3.KOSMO_NAME + "), beat Brandon Shine's USB, and Odessa gave you Saturday. A booking agent in Europe just emailed.",
-  combos: []
+  doneText: S => "The Halcyon Room. Anniversary Thursday. You followed Kosmo Delacroix (he called you " + A3.KOSMO_NAME + "), " + (S.f.a3_swap ? "got your USB back from Brandon Shine" : "saw Brandon Shine's USB trick coming") + ", and Odessa gave you Saturday. A booking agent in Berlin just emailed.",
+  combos: [
+    ["a3_usb", "a3_bag", S => A3.hideUsb(S)],
+    ["a3_usb", "a3_smiley", S => A3.stickUsb(S)],
+    ["a3_usb_old", "a3_bag", "The old stick can ride in the pocket. It's the decoy. It has never been anything else."],
+    ["a3_usb_old", "a3_usb", "Two USBs. One is sixteen gigs of tracks. One is 4,212 photos of a cat. I know which one I'm proud of."],
+    ["a3_smiley", "a3_bag", "A gold sticker on my record bag would say 'Brandon.' It's the last word I want on it."]
+  ]
 });
 })();

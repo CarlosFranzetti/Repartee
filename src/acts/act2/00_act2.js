@@ -7,7 +7,12 @@
      a2_plasma       donated plasma (card received)       a2_cashed   card cashed out
      a2_showered     showered at Dani's                   a2_louSecret Lou admitted NYC 93 is his
      a2_turntables   bought turntables                    a2_partyDone guest list night over
-     a2_ampGot       Jess lent the amp                    a2_loftFixed PA fixed, a2_vicMet, a2_afterDone, a2_slot (booked) */
+     a2_ampGot       Jess lent the amp                    a2_loftFixed PA fixed, a2_vicMet, a2_afterDone, a2_slot (booked)
+   The open Tuesday (after plasma + a shower, a2_dayDone), three optional goals in any order:
+     Toby's bathroom: a2_jarSeen, a2_scobyGot, a2_tobyDeal (Linda for the bathroom), a2_sachetGot (lets Fitz wave you in)
+     the fire escape / 4C: a2_knifeGot, a2_loot4c (cash + the demo tape; the tape gives Vic patience, a2_tapeGiven)
+     Kowalski: a2_pierogiGot (Dani), a2_kowSoft, a2_kowDone (key to 4C, a2_kowRef = Vic patience)
+     side job: a2_rosa1 / a2_rosa3 (jobs done at Rosa's, per chapter) */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -27,6 +32,9 @@ def("a2_toby", { name: "Toby", height: 96, build: "thin", skin: "#f1c7a5", hair:
 // Dani. Bartender at Nowhere (one of the ones who danced). Has a rain shower.
 def("a2_dani", { name: "Dani", height: 92, figure: "curvy", skin: "#8d5a3b", hair: { style: "curly", color: "#1c1418" },
   top: { style: "hoodie", color: "#e8a030" }, bottom: { style: "jeans", color: "#2a2836" }, shoes: { style: "sneakers", color: "#efeaf6" }, acc: ["earring"], voice: "#ffc9a0" });
+// Kowalski. Landlord. Office hours Tuesdays, 2:00-2:15.
+def("a2_kow", { name: "Mr. Kowalski", height: 94, build: "stocky", skin: "#e0b08a", hair: { style: "short", color: "#9a9aa6" }, facial: "mustache", facialColor: "#8a8a96",
+  top: { style: "shirt", color: "#d8d0b8", color2: "#6a4a3a" }, bottom: { style: "pants", color: "#3a3a46" }, shoes: { style: "shoes", color: "#2a1c14" }, acc: ["glasses", "lanyard"], voice: "#d8c8a8" });
 // plasma center
 def("a2_rhonda", { name: "Rhonda", height: 90, figure: "curvy", skin: "#c98a62", hair: { style: "bob", color: "#3a2014" },
   top: { style: "cardigan", color: "#8a6ab8", color2: "#efeaf6" }, bottom: { style: "pants", color: "#2a2836" }, shoes: { style: "shoes", color: "#3a2418" }, acc: ["glasses", "lanyard"], voice: "#ffe27a" });
@@ -75,6 +83,30 @@ RP.item("a2_tts", { name: "turntables (boxed pair)", short: "Decks",
   icon: c => { I.box(c, "#c8925a"); R(c, 8, 9, 16, 2, "#2a2838"); txt(c, "LP120", 9, 14, "#2a2838"); },
   look: "Two Audio-Technica AT-LP120-USB turntables in their boxes, tied with a bungee cord. My first real turntables. I am carrying them like a baby.",
   use: "I'll need somewhere to set them up. Somewhere with a booth." });
+RP.item("a2_scoby", { name: "Linda (jar)", short: "Linda",
+  icon: c => { R(c, 9, 4, 14, 3, "#8a869c"); R(c, 8, 7, 16, 18, "#cfe8ee"); R(c, 9, 8, 2, 16, "#f0fbff"); ell(c, 16, 15, 6, 2, "#d8c08a"); R(c, 10, 20, 12, 4, "#f4efe0"); R(c, 12, 21, 8, 1, "#c0302c"); },
+  look: "A jar from the bottom shelf with a Post-it: \"LINDA. FED 6AM. TOBY'S ONLY CHILD.\" Linda is a beige pancake of living kombucha culture. She floats. She's judging.",
+  use: "Linda isn't for using. Linda is for returning to her father with a request attached." });
+RP.item("a2_sachet", { name: "lavender sachet", short: "Sachet",
+  icon: c => { R(c, 8, 10, 16, 14, "#b79cf0"); R(c, 8, 10, 16, 2, "#d8c8ff"); R(c, 14, 7, 4, 4, "#efeaf6"); R(c, 11, 15, 2, 2, "#efeaf6"); R(c, 19, 18, 2, 2, "#efeaf6"); R(c, 15, 20, 2, 2, "#efeaf6"); },
+  look: "A lavender sachet from Toby's bathroom, hand-stitched, with a tag: \"CALM NO. 9. FOR THE CLIPBOARD-ADJACENT.\" It smells like a spa had a baby with a meadow.",
+  use: "I sniff it. I'm calmer. That's not the plan, though. It's meant for somebody more tense than me." });
+RP.item("a2_knife", { name: "putty knife", short: "Knife",
+  icon: c => { R(c, 5, 13, 15, 5, "#c8c4d8"); R(c, 5, 13, 15, 1, "#efeaf6"); R(c, 20, 12, 8, 7, "#c0302c"); R(c, 22, 14, 4, 1, "#ff8a7a"); },
+  look: "A four-dollar putty knife with a rubber grip, labeled \"MULTI-USE.\" Thin, flat and stiff. Designed for paint, plaster and, I suspect, problems.",
+  use: "I scrape the air. The air is unaffected. Paint, however, has reason to worry." });
+RP.item("a2_pierogi", { name: "Dani's pierogi (to go)", short: "Pierogi",
+  icon: c => { R(c, 5, 13, 22, 11, "#efeaf6"); R(c, 5, 13, 22, 2, "#c8c4d8"); ell(c, 11, 12, 5, 3, "#e8c890"); ell(c, 18, 11, 5, 3, "#e0b878"); ell(c, 23, 13, 4, 3, "#e8c890"); R(c, 8, 18, 16, 1, "#c0302c"); },
+  look: "A Tupperware of Dani's potato-and-cheese pierogi, still warm through the lid. Masking tape on top: \"RETURN CLEAN. I KNOW WHERE YOU SLEEP (NOWHERE).\"",
+  use: "I'm not eating them. I'm holding them like they're evidence. They are: of love, butter and a plan." });
+RP.item("a2_tape", { name: "demo cassette", short: "Tape",
+  icon: c => { R(c, 4, 9, 24, 15, "#2a2834"); R(c, 7, 11, 18, 7, "#d8c8a8"); ell(c, 11, 14, 2, 2, "#2a2834"); ell(c, 21, 14, 2, 2, "#2a2834"); R(c, 10, 20, 12, 3, "#5a5668"); },
+  look: "My own demo cassette, left in 4C: \"BED-STUY MIX VOL. 2 (DON'T JUDGE).\" Forty minutes of me trying to sound like I'm not trying.",
+  use: "I've got nothing to play it on. Except, possibly, a promoter." });
+RP.item("a2_key", { name: "key to 4C", short: "Key",
+  icon: c => { ell(c, 10, 12, 5, 5, "#e8c060"); ell(c, 10, 12, 2, 2, "#2a2630"); R(c, 14, 11, 14, 3, "#e8c060"); R(c, 22, 14, 2, 4, "#e8c060"); R(c, 26, 14, 2, 3, "#e8c060"); },
+  look: "A brass key on a paper tag: \"4C. TEMPORARY. -K.\" The temporary part is in his handwriting. The brass part is real.",
+  use: "It goes in a lock. A specific one, on the fourth floor." });
 RP.item("a2_flyer", { name: "Basement Tapes flyer", short: "Flyer",
   icon: c => I.flyer(c, "#14102e", "#39d0ff"),
   look: "BASEMENT TAPES. Last Saturday of the month. Vinyl only. Cash only. No cameras, no cover bands, no \"can you play something I know.\"",
@@ -226,7 +258,8 @@ RP.defineAct({
     ]);
     await RP.phone([
       { from: "DANTE (NOWHERE)", text: "killer set!! i'll pay u next week", hot: true },
-      { from: "MR. KOWALSKI (LANDLORD)", text: "Lock change is TEMPORARY. Rent due FRI. Hot water: next week." },
+      { from: "MR. KOWALSKI (LANDLORD)", text: "Lock change is TEMPORARY. Rent due TUE, office hours. Hot water: next week." },
+      { from: "STAFFRIGHT TEMPS", text: "Re: your Synergex shift. We found someone more punctual. Also 3 USB sticks are unaccounted for. We're not saying. We're saying." },
       { from: "MOM", text: "Did you eat. Is that couch clean" }
     ]);
     await RP.lines(["Everybody's paying me next week. Even the hot water.", "Okay. Think. I need cash, a shower, a gig, and a pair of turntables. In that order. Or any order."]);

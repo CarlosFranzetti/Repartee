@@ -49,6 +49,10 @@ function drawSign(c, S) {
   R(c, 596, 224, 30, 16, "#c8925a"); R(c, 596, 224, 30, 1, "#e0b078"); txt(c, "+30", 602, 229, "#17131f", 1, 1); R(c, 610, 238, 2, 4, "#8a6a4a");
 }
 
+function drawBiscuit(c, S) {
+  R(c, 484, 194, 18, 8, "#7c7a88"); R(c, 486, 192, 14, 3, "#94929e"); R(c, 498, 188, 8, 8, "#7c7a88"); R(c, 498, 186, 2, 3, "#7c7a88"); R(c, 504, 186, 2, 3, "#7c7a88");
+  P(c, 500, 191, "#f4d35e"); P(c, 504, 191, "#f4d35e"); R(c, 486, 195, 12, 1, "#5a5868"); R(c, 482, 199, 6, 2, "#94929e");
+}
 function lightMap(S) {
   return { ambient: "#c8a8c8", lights: [{ x: SUN.x, y: SUN.y, r: 600, color: "#ffc8a0", steps: 4, power: 0.7, rim: true }, { x: SUN.x, y: SUN.y, r: 240, color: "#fff0d0", steps: 3, power: 0.6 }],
     halos: [{ x: SUN.x, y: SUN.y, r: 60, color: "#ffb070", strength: 0.9 }], rims: [{ x: SUN.x, y: SUN.y, r: 700, color: "#ffc080" }], key: { x: SUN.x, y: SUN.y }, shadow: 0.55 };
@@ -66,11 +70,18 @@ async function louTalk(S) {
       "@lou Every Saturday, 1993, I'd stand at the back of a club and hear that bar in my head. And now it's...",
       "@lou ...It's out there. It's in other people's heads. Kid. I can stop worrying about the drawer.",
       "Every Saturday. From now on, Lou.",
-      "@lou Don't push it. Sundays are for sleeping."
+      "@lou Don't push it. Sundays are for sleeping.",
+      "There's a gray cat on the bench next to you, Lou.",
+      "@lou Don't look at him. He's not mine. He came through the pipe hole in March for a sandwich and didn't leave.",
+      "He has a name. It's on a poster in our hallway. Biscuit. Two floors of people are looking for him.",
+      "@lou I know. I took the poster down twice. Somebody keeps putting it back. ...He has a bed now. He has a window. I'm not ready.",
+      "Lou. He's allowed to be found by you.",
+      "@lou ...Then he's found. Write that on the poster. Also, your plant is fine. Gerald's on my sill. He gets more light than you do."
     ]);
+    S.f.a5_biscuit = true;
     return;
   }
-  await RP.lines(["@lou Go watch the sun. I'm done. My knees are on strike.", "@lou ...Thank you, kid. I mean it. Don't tell anyone I said so."]);
+  await RP.lines(["@lou Go watch the sun. My knees are on strike.", "@lou ...Thank you, kid. I mean it. Don't tell anyone I said so.", "(Biscuit opens one eye at me. It's the same speech, shorter.)"]);
 }
 async function danteTalk(S) {
   if (!S.f.a5_pDante) {
@@ -95,13 +106,13 @@ async function danteTalk(S) {
 }
 async function simpleTalk(S, who) {
   const L = {
-    marcus: ["@marcus I counted: twelve people got in. Twelve! And I got the rest of them to sing from outside. It counts.", "It counts, Marcus.", "@marcus PLUS THIRTY. It was a state of mind. It's always been a state of mind."],
-    ray: ["@ray Not bad. You didn't peak early. You peaked right. That's the whole job.", "@ray The white label thing was good. Keep it for the book you're going to write.", "Is that praise, Ray?", "@ray It's a medical observation. Don't tell anyone."],
-    twinkie: ["@twinkie Honey. You played it all. I remember everything, and I'm still going to remember that.", "@twinkie Sit. Watch the sun. It's the best part of the night. The rest is just the buildup."],
-    eddie: ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie It's an invoice for introductions. Two-time. Don't worry about it. I'll take it in spirit."],
-    jess: ["@jess Mr. Whiskers slept through the whole set. That's the highest compliment he gives.", S.f.a5_whiskersShout ? "@jess And you said his name. He heard. He blinked at me. Slowly." : "@jess He'd have loved a shout-out. Next time.", "@jess Thanks for letting me see this. You really did it."],
-    priya: ["@a5_priyaT The headline slot got four hundred thousand views before sunrise. I invoiced the sunrise.", "@a5_priyaT I'm proud of you. I'm going to say it once. Then back to being a manager.", "Priya, you sound like a person."],
-    kosmo: ["@kosmo " + nm(S) + ". I said it right. I'll say it right again. It's a good name. It's earned.", "Thanks, Kosmo.", "@kosmo Don't thank me. Thank the record you kept."]
+    marcus: [A5.guest(S).pier, "It counts, Marcus.", "@marcus PLUS THIRTY. It was a state of mind. It's always been a state of mind."],
+    ray: ["@ray You didn't peak early. You peaked right. That's the whole job.", "Is that praise, Ray?", "@ray It's a medical observation. Don't tell anyone."],
+    twinkie: ["@twinkie Honey, I remember everything. I'm going to remember the last bar for a while.", "@twinkie Sit. The sunrise is the best part. The rest was buildup."],
+    eddie: S.f.a5_soldRecs ? ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie An invoice for introductions. Two-time. I'll take it in spirit. Also: I'm keeping the " + (S.f.a5_soldTitle || "records") + ". It's in my van. It's happy. You can have it back at the Eddie price."] : ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie An invoice for introductions. Two-time. I'll take it in spirit."],
+    jess: S.f.a5_biscuit ? ["@jess Mr. Whiskers has been staring at that cat next to Lou for an hour.", "Biscuit's staring back.", "@jess Nobody's blinking. It's the loudest thing at this festival."] : ["@jess Mr. Whiskers slept through the whole set. That's the highest compliment he gives.", S.f.a5_whiskersShout ? "@jess And you said his name. He blinked at me. Slowly." : "@jess He'd have loved a shout-out. Next time."],
+    margo: S.f.a5_feeAdvance ? ["@a5_margoT The fee cleared. Less the fifteen hundred I advanced you, less ten percent handling, less the invoice for the sunrise. You are in the black. Barely. Spiritually, enormously.", "That's the most honest paycheck I've had."] : S.f.a5_axlAngry ? ["@a5_margoT The headline slot did four hundred thousand views by sunrise. The \"Axl who\" clip did two million.", "That was a bit, Margo.", "@a5_margoT It's also a merch line. I invoiced the sunrise and the clip. Don't stand near me, I'm a manager."] : ["@a5_margoT The headline slot did four hundred thousand views by sunrise. I invoiced the sunrise.", "@a5_margoT I'm proud of you. Once. Then back to being a manager."],
+    kosmo: ["@kosmo " + nm(S) + ". I said it right. I'll say it right again.", "Thanks, Kosmo.", "@kosmo Don't thank me. Thank the record you kept."]
   }[who];
   await RP.lines(L);
 }
@@ -113,16 +124,17 @@ async function finale(S) {
   await RP.walkTo(150, 224, "right");
   await RP.lines([
     "The sun's all the way up now. Gold across the harbor, the skyline lit from behind, the lighthouse on my poster doing its job at last.",
-    "I think about the bedroom. The crackling channel two. The bag of oregano. The phone at one percent.",
+    "I think about the bedroom. The crackling channel two. The phone at one percent.",
     "I used to say: \"I don't own turntables. I own records. It's a whole thing.\"",
     "Now I own turntables. A mixer from Barcelona. A trailer, for about nine hours.",
-    "It's still a whole thing.",
-    "@lou ...Kid. Sit. You're blocking the sunrise."
+    "@lou ...Kid. Sit. You're blocking the sunrise.",
+    "I sit. Biscuit steps over my knee, claims the middle of the bench, and takes the sun like a landlord.",
+    "It's still a whole thing."
   ]);
   const checks = [
-    [!!S.f.a5_gearDone, "Bought the rig: Taula 4 MR, Core 47s, CDJ-3000s, Technics MK7s"],
+    [!!S.f.a5_gearDone, "Built the rig: " + ["Taula 4 MR", A5.rig(S).core ? "Core 47s" : A5.rig(S).honestMon ? "scuffed Rokits" : "the old BM5s", A5.rig(S).cdj3 ? "CDJ-3000s" : A5.rig(S).honestDecks ? "used 900NXS" : "the old CDJ-900s"].join(", ")],
     [!!S.f.a5_interviewDone, "Radio Harbor interview (Dante: \"next week\", live)"],
-    [!!S.f.a5_guestDone, "Marcus's \"plus thirty\" handled (twelve got in)"],
+    [!!S.f.a5_guestDone, "Marcus's \"plus thirty\" handled (" + A5.guest(S).nw + " got in)"],
     [!!S.f.a5_soundDone, "Soundcheck on the main stage"],
     [!!S.f.a5_axlDone, "Faced down Axl Vanta"],
     [!!S.f.a5_overrunDone, "Got Axl off the stage"],
@@ -142,18 +154,18 @@ RP.room({
   start: { x: 90, y: 236, face: "right" },
   fx: [{ type: "dust", rect: [0, 100, 640, 100], count: 16, color: "#ffe0c0" }, { type: "confetti", count: 30, width: 640, floor: 250, on: () => true }],
   actors: S => [
-    { id: "lou", char: "lou", x: 478, y: 224, face: "left", act: "stand", name: "Lou" },
+    { id: "lou", char: "lou", x: 470, y: 216, face: "left", act: "sit", name: "Lou" },
     { id: "marcus", char: "marcus", x: 590, y: 244, face: "left", act: "stand", name: "Marcus" },
     { id: "ray", char: "ray", x: 360, y: 232, face: "front", act: "stand", name: "Ray" },
     { id: "twinkie", char: "twinkie", x: 290, y: 236, face: "right", act: "stand", name: "Twinkie" },
     { id: "jess", char: "jess", x: 196, y: 238, face: "right", act: "stand", name: "Jess" },
     { id: "eddie", char: "eddie", x: 400, y: 246, face: "left", act: "stand", name: "Eddie Two-Times" },
     { id: "dante", char: "dante", x: 540, y: 240, face: "left", act: "stand", name: "Dante" },
-    { id: "a5_priya", char: "a5_priya", x: 140, y: 250, face: "right", act: "phone", name: "Priya" },
+    { id: "a5_margo", char: "a5_margo", x: 140, y: 250, face: "right", act: "phone", name: "Margo" },
     { id: "kosmo", char: "kosmo", x: 250, y: 200, face: "right", act: "stand", name: "Kosmo Delacroix" }
   ],
   sprites: [
-    { y: 192, draw: art.sprite((c, S) => drawBench(c, S)) }, { y: 238, draw: art.sprite((c, S) => drawCooler(c, S)) }, { y: 242, draw: art.sprite((c, S) => drawSign(c, S)) }
+    { y: 192, draw: art.sprite((c, S) => drawBench(c, S)) }, { y: 238, draw: art.sprite((c, S) => drawCooler(c, S)) }, { y: 242, draw: art.sprite((c, S) => drawSign(c, S)) }, { y: 214, draw: art.sprite((c, S) => drawBiscuit(c, S), S => !!S.f.a5_pLou) }
   ],
   hotspots: [
     { id: "a5_psun", name: "the sunrise", r: [0, 0, 400, 180], z: 6, walk: [170, 226, "right"],
@@ -167,30 +179,32 @@ RP.room({
     { id: "a5_pcooler", name: "cooler", r: [128, 218, 32, 22], z: 22, walk: [144, 244, "back"], look: "A cooler of warm juice, a half-sandwich and a note: FOR LOU. Marcus's.", open: "Juice. Sandwich. The note. I don't touch it. It's sacred.", pickup: "It's Marcus's. It's the last of the plus-thirty supplies." },
     { id: "a5_psign", name: "\"+30\" sign", r: [594, 222, 34, 20], z: 24, walk: [610, 246, "back"], look: "A cardboard sign: +30. Abandoned on the planks. It's the funniest piece of litter I've ever seen. And the most loved.", pickup: "I think Marcus wants it back for his wedding." },
     { id: "lou", name: "Lou", talk: S => louTalk(S), look: "Lou, on a bench, in his good navy cardigan and his dancing shoes, watching the sunrise as though it were a rerun he'd forgotten he liked.", give: "Lou's holding a sleeve of a record I'd like him to keep.", pickup: "No. Lou would punish me with a lecture.", use: "Not Lou. Lou's the user." },
+    { id: "a5_biscuit", name: "Biscuit", r: [482, 186, 22, 18], z: 30, walk: [490, 242, "back"], vis: S2 => !!S2.f.a5_pLou, talk: "\"Biscuit.\" He blinks at me, slowly. He's heard that name on two floors of posters and has decided it's beneath him.", look: "A gray tabby on the bench next to Lou, loafed like a bread that retired. The poster in the hallway says LOST. He looks extremely found.", pickup: "Lou would take it personally. So would the cat.", use: "You don't use Biscuit. You get permitted near him." },
     { id: "dante", name: "Dante", talk: S => danteTalk(S), look: "Dante. Bomber jacket, goatee, the confidence of a man who has never once paid anyone on time and has never once been sorry.", give: (S, item) => "Dante: \"For me? You shouldn't have. I'll pay you for it. Next week.\"", pickup: "I'd rather get paid.", use: "I'd like to use Dante for a payment. That'd be new." },
     { id: "marcus", name: "Marcus", talk: S => simpleTalk(S, "marcus"), look: "Marcus, wearing a lanyard like a medal, and a tote bag. The \"+30\" sign is next to him. The man is a legend of optimism.", give: "He'd take it, and also bring thirty friends.", pickup: "No." },
     { id: "ray", name: "Ray", talk: S => simpleTalk(S, "ray"), look: "Ray, at dawn, with his arms crossed and a very small, very hidden smile. It's the closest to praise I'll ever get from him.", give: "No.", pickup: "No." },
     { id: "twinkie", name: "Twinkie", talk: S => simpleTalk(S, "twinkie"), look: "Twinkie. Still awake. Of course. She's watching the sun come up like she was told it would and is relieved it did.", give: "No.", pickup: "No." },
     { id: "eddie", name: "Eddie Two-Times", talk: S => simpleTalk(S, "eddie"), look: "Eddie Two-Times, with a receipt book in one hand and a hot dog in the other. It's a two-time hot dog.", give: "No.", pickup: "No." },
     { id: "jess", name: "Jess", talk: S => simpleTalk(S, "jess"), look: "Jess, with the bubble backpack, and a very sleepy orange cat in it. Mr. Whiskers has his shades on. The sun's up. He does not care.", give: "No.", pickup: "No." },
-    { id: "a5_priya", name: "Priya", talk: S => simpleTalk(S, "priya"), look: "Priya, on the phone, pacing in short lines like a metronome. She looks tired and happy. She's invoicing the sun.", give: "No.", pickup: "No." },
+    { id: "a5_margo", name: "Margo", talk: S => simpleTalk(S, "margo"), look: "Margo, on the phone, pacing in short lines like a metronome. She looks tired and happy. She's invoicing the sun.", give: "No.", pickup: "No." },
     { id: "kosmo", name: "Kosmo Delacroix", talk: S => simpleTalk(S, "kosmo"), look: "Kosmo Delacroix, at the end of the pier, in a long coat and shades, staring at the water. He said my name right. I'll never stop hearing it.", give: "No.", pickup: "No." }
   ],
   combos: [
     ["a5_tickets", "dante", "Dante: \"You're trying to give them BACK? They're a currency! You can't return a currency!\""],
-    ["a5_tickets", "lou", "Lou: \"Drink tickets? I don't drink anymore. I haven't since 1993.\""],
+    ["a5_tickets", "lou", "Lou: \"Drink tickets? I haven't had a drink since 1993. Give them to the cat.\" Biscuit does not want a drink either."],
     ["a5_tickets", "marcus", "Marcus: \"FOR ME? FOR THIRTY OF US? ...Wait, they're for you. Okay. But thanks.\""],
-    ["a5_tickets", "eddie", "Eddie: \"A two-time deal! I'll take half! Twice!\" I keep them."]
+    ["a5_tickets", "kosmo", "Kosmo takes one ticket, studies it, hands it back. \"Nowhere. Good room. Terrible currency.\""]
   ],
   enter: async (S, from) => {
     if (S.f.a5_pierArrived) return;
     S.f.a5_pierArrived = true;
+    RP.setClock("SUN 6:12 AM");
     await RP.fadeTo(0, 1200);
     await RP.lines([
       "@nar SUN 6:12 AM",
       "Twinkie's after-party. A pier at the end of the festival, the sun coming up behind the skyline and a dozen tired people who don't want to go home.",
       "@twinkie Honey. You came. I saved you the best spot. It's the one with the sun.",
-      "(Talk to everyone. Then, watch the sunrise.)"
+      "(Lou's on the bench. Dante owes me. The sun is nearly up.)"
     ]);
   },
   self: { look: "A DJ in a pink-lined coat on a pier at dawn. Tired. Done. Happy. All three.", talk: "I'm smiling at nobody in particular. It's a nice feeling. I'll write it down." }

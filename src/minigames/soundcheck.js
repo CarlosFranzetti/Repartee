@@ -3,7 +3,8 @@
    Params (all optional):
      { faults: ["ground-hum","dead-channel","feedback","blown-tweeter","wrong-input"],
        time: seconds until doors (default scales with faults and difficulty),
-       stage: "loft" | "festival", difficulty: 1..5 }
+       stage: "loft" | "festival", difficulty: 1..5,
+       tech: "Mo (FOH)" (the crew member who talks to you; default SKYE at the loft, NADIA (FOH) at the festival) }
    Result: { ok, score (0..100), fixed } — ok means every fault is fixed and nothing new is broken. */
 (function () {
 "use strict";
@@ -200,7 +201,9 @@ RP.mg.register("soundCheck", {
     const reduced = NK.reduced();
     const diff = clamp(Math.round(p.difficulty || 2), 1, 5);
     const stageId = p.stage === "festival" ? "festival" : "loft";
-    const ST = STAGES[stageId];
+    const ST = Object.assign({}, STAGES[stageId], p.tech ? { tech: String(p.tech).toUpperCase() } : {});
+    /* the wall outlets are named for the stage (WALL A/B at the loft, DISTRO 1/2 at the festival) everywhere they appear */
+    const jn = j => (j === "outA" ? ST.power[0] : j === "outB" ? ST.power[1] : JNAME[j]);
     const rnd = Math.random;
     let faults = Array.isArray(p.faults) ? [...new Set(p.faults.filter(f => FAULTS.includes(f)))] : [];
     if (!faults.length) faults = NK.shuffle(FAULTS).slice(0, [2, 2, 3, 3, 4][diff - 1]);
@@ -843,13 +846,13 @@ RP.mg.register("soundCheck", {
       if (cb.fam === "pwr") {
         if (S.pwr[id] === jid) return;
         S.pwr[id] = jid; RP.sfx("unlock");
-        setMsg(cb.label + " is now on " + JNAME[jid] + ".");
+        setMsg(cb.label + " is now on " + jn(jid) + ".");
       } else {
         const cur = S.jack[id]; if (cur === jid) return;
         const other = Object.keys(S.jack).find(k => k !== id && CABLES[k].fam === cb.fam && S.jack[k] === jid);
         if (other) S.jack[other] = cur;
         S.jack[id] = jid; RP.sfx("unlock");
-        setMsg(cb.label + " is now plugged into " + JNAME[jid] + (other ? " (swapped with " + CABLES[other].label + ")" : "") + ".");
+        setMsg(cb.label + " is now plugged into " + jn(jid) + (other ? " (swapped with " + CABLES[other].label + ")" : "") + ".");
         if (cb.fam === "in") { const ci = chIdx(jid); const di = id === "deckA" ? 0 : 1; const d = S.deck[di], ch = S.ch[ci]; if ((d.type === "tt" && ch.input !== "phono") || (d.type === "cdj" && ch.input !== "line")) techSay(d.type === "tt" ? "Turntable on a LINE channel? Check that input switch." : "CDJs are line level. Check that input switch."); }
       }
       checkFixes(); syncAll();
@@ -933,7 +936,7 @@ RP.mg.register("soundCheck", {
             const row = el("div", { cls: "row" }, card);
             const pb = el("button", { cls: "kbtn", type: "button", "aria-pressed": "false", text: "PLAY" }, row); pb.addEventListener("click", () => togglePlay(i));
             synced.push(() => { pb.setAttribute("aria-pressed", String(d.play)); pb.textContent = d.play ? "STOP" : "PLAY"; });
-            seg(card, "OUT CABLE", jackList(id).map(j => [j, JNAME[j]]), jid => doPlug(id, jid), () => S.jack[id]);
+            seg(card, "OUT CABLE", jackList(id).map(j => [j, jn(j)]), jid => doPlug(id, jid), () => S.jack[id]);
           });
         },
         mixer() {

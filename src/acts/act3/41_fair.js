@@ -1,5 +1,5 @@
 /* Act 3 — Sunday Record Fair in a Brooklyn school gym (fictional fair). Clues for the grail:
-   Ray (Deep Cuts) -> Mort (needs a coffee) -> the Pruitt flyer on the corkboard -> record.Hunt.
+   Ray (Deep Cuts) -> Mort (needs a coffee) -> the Pruitt flyer on the corkboard -> the three add up (checkHunt).
    Cameo: Danny Krivit, flipping through a bin. Flags: a3_fairSeen, a3_clue2 (Mort), a3_clue3 (flyer), a3_hunt, a3_dannyMet, a3_priyaMet. */
 (function () {
 "use strict";
@@ -73,21 +73,22 @@ function light(S) {
 async function checkHunt(S) {
   if (S.f.a3_hunt || !S.f.a3_clue1 || !S.f.a3_clue2 || !S.f.a3_clue3) return;
   await RP.lines(["Okay. A tip from Ray. A name from Mort. A flyer off the corkboard.", "I spread them over a folding table. This is how detectives do it. On TV, there's string."]);
-  const res = await A3.mg("recordHunt", {
-    target: "loose_joints_is_it_all_over_my_face",
-    clues: ["Ray: a clean copy of 'Is It All Over My Face?' has sat in a Queens collection for thirty years.", "Mort: the collector was Hal Pruitt. He passed in March. The family is emptying the house this week.", "A flyer: 'PRUITT ESTATE SALE. WOODSIDE. EVERYTHING MUST GO.'"],
-    places: [{ id: "deepcuts", label: "Deep Cuts, East Village", hint: "Ray remembers the pressing, not the buyer." }, { id: "fair", label: "Sunday Record Fair, Williamsburg", hint: "Mort knows every collector." }, { id: "estate", label: "The Pruitt house, Woodside, Queens", hint: "An estate sale this week.", found: true }, { id: "flea", label: "Weekend flea market", hint: "Mostly lamps." }],
-    difficulty: 2 }, { giveUp: "Not now", onFail: async () => { await RP.lines(["I lost the thread. Try again, deep breath, Ray's tip first."]); }, assist: async () => { await RP.say("It clicks, finally. It's in Queens. It's a house. It's Woodside."); } });
-  if (res.giveUp) return;
+  A3.clockTo(S, "SUN 10:00 AM");
+  await RP.lines(["Ray: a clean copy, thirty years in a Queens collection. Mort: Hal Pruitt, gone in March, the family emptying his house this week. The flyer: Woodside.",
+    "So not Deep Cuts and not the fair. A house, a sale this week, and a man who kept a clean copy 'for company.' The flyer had the address the whole time."]);
   S.f.a3_hunt = true;
   RP.unlock("a3_loc_estate");
-  RP.setClock("MON 9:00 AM");
+  A3.clockTo(S, "SUN 6:15 PM");
   RP.toast("New place on the map: The Pruitt house");
   await RP.lines(["The Pruitt house, Woodside, Queens. An estate sale. Everything must go.", "Everything includes the Loose Joints. Everything includes whatever else Hal kept for sixty years."]);
 }
 async function mortTalk(S) {
   if (!S.f.a3_rayTip) { await RP.lines(["@a3_mort Three dollars a record, two for five, none for free. Move along if you're lost."]); return; }
-  if (S.f.a3_clue2) { await RP.lines(["@a3_mort Pruitt. Woodside. Go. Don't bring a friend. Don't bring Priya. She'll be there. Everyone'll be there."]); return; }
+  if (S.f.a3_clue2) {
+    await RP.lines(["@a3_mort Pruitt. Woodside. Go. Don't bring a friend. Don't bring Priya. She'll be there. Everyone'll be there."]);
+    if ((S.f.a3_sold || 0) < 2 && (await RP.choose(["Mort, are you buying? I could part with a record.", "No, thanks"])) === 0) await sellToMort(S);
+    return;
+  }
   await RP.say("Mort? I'm looking for a record. Loose Joints. 'Is It All Over My Face?'");
   await RP.say("Mmph.", "a3_mort");
   await RP.say("Ray sent me.", "kid");
@@ -95,13 +96,26 @@ async function mortTalk(S) {
   if (!RP.has("a3_coffee")) { await RP.lines(["I... have a charming smile?", "@a3_mort Smile's free. Everybody has one. Come back with something worth the walk.", "He's not a talker. He's a grunter. Ray said to bring something. A coffee, maybe?"]); return; }
   await mortCoffee(S);
 }
+const NO_SELL = ["sylvester_you_make_me_feel_mighty_real", "white_nyc93", "everything_but_the_girl_missing", "loose_joints_is_it_all_over_my_face", "mood_ii_swing_closer"];
+async function sellToMort(S) {
+  const cands = S.records.filter(id => !NO_SELL.includes(id) && RP.rec(id).rarity !== "grail" && RP.rec(id).artist !== "Unknown Artist").slice(0, 4);
+  const price = id => Math.max(8, Math.min(30, Math.round((RP.rec(id).price || 14) * 0.6)));
+  if (!cands.length) { await RP.say("Nothing in the bag I'd part with. Which is a good problem and a bad one.", "kid"); return; }
+  await RP.lines(["@a3_mort Show me. Don't talk. Talk lowers the price."]);
+  const i = await RP.choose(cands.map(id => RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "") + ": " + RP.rec(id).title.replace(/ \(.*\)/, "") + " ($" + price(id) + ")").concat("Never mind"));
+  if (i >= cands.length) { await RP.say("Mort shrugs. It's the most generous thing he's done all day.", "nar"); return; }
+  const id = cands[i], p = price(id);
+  RP.removeRecord(id); RP.money(p); S.f.a3_sold = (S.f.a3_sold || 0) + 1;
+  await RP.lines(["@a3_mort " + ["Fine.", "Mmph. Fair.", "Sold. Never darken my table with it again."][Math.min(S.f.a3_sold - 1, 2)], "It hurts, a little. It's also the best money I've made without lifting a crate."]);
+}
 async function mortCoffee(S) {
   RP.take("a3_coffee");
   await RP.lines(["Here. A coffee. It's from the PTA table.", "@a3_mort ...Black?", "It's black. Like my future.", "@a3_mort *sips* ...Terrible. Thank you. Sit down, you look nervous.",
     "@a3_mort Pruitt. Hal Pruitt. Sixty years of records in a house in Woodside. He had a clean West End copy of that one. Wouldn't sell. Said it was 'for company.'",
     "@a3_mort He passed in March. The niece is emptying the house this week. Whole collection. Everything. She just wants it gone.",
-    "@a3_mort Priya's been bugging me for the address for a week. I told her I don't know it. I lied. Go. Quickly."]);
-  S.f.a3_clue2 = true;
+    "@a3_mort Priya's been bugging me for the address for a week. I told her I don't know it. I lied. Go. Quickly.",
+    "@a3_mort One more thing. Hal never sold a record to a dealer in his life. Threw one out of the house in '09 for pricing a sleeve while it was playing. He sold to people who'd play them. Say that to the niece.", "Noted."]);
+  S.f.a3_clue2 = true; S.f.a3_knowHal = true;
   await checkHunt(S);
 }
 async function priyaTalk(S) {
@@ -125,9 +139,9 @@ async function dannyTalk(S) {
 async function buyCoffee(S) {
   if (RP.has("a3_coffee")) { await RP.say("I already have one. Two coffees means I've made a bad decision."); return; }
   await RP.say("A coffee, please.", "kid");
-  await RP.say("Two dollars, hon. Black, cream or 'surprise'?", "a3_pta");
-  if (!RP.canAfford(2)) { await RP.say("I'm broke. Even PTA coffee wants cash."); return; }
-  RP.money(-2); RP.give("a3_coffee");
+  await RP.say("Five dollars, hon. It's for the gym floor. Black, cream or 'surprise'?", "a3_pta");
+  if (!RP.canAfford(5)) { await RP.say("I'm broke. Even PTA coffee wants five dollars."); return; }
+  RP.money(-5); RP.give("a3_coffee");
   await RP.say("Black. A strong coffee. For a strong... customer.");
   await RP.say("Don't flatter me, you'll get a bigger lemon bar.", "a3_pta");
 }
@@ -161,10 +175,10 @@ RP.room({
     { crowd: { n: 4, rect: [90, 208, 470, 12], seed: 41, face: "back", act: "stand", scale: 0.95 } }
   ],
   enter: async (S, from) => {
-    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; RP.setClock("SUN 11:40 AM"); await RP.lines(["The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
+    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; A3.clockTo(S, "SUN 10:00 AM"); await RP.lines(["The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "The kid on the three-dollar cash box sees my record bag, decides I'm a vendor and waves me in. I don't correct him.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
   },
   hotspots: [
-    { id: "a3_f_door", name: "door", r: [4, 38, 54, 114], z: 20, walk: [66, 214, "left"], look: "The gym door. A hand-lettered sign says 'RECORD FAIR: $3, CASH ONLY.' A second sign says 'NO RUNNING.' Nobody's running. Everyone's walking quickly.", exit: S => "travel" },
+    { id: "a3_f_door", name: "door", r: [4, 38, 54, 114], z: 20, walk: [66, 214, "left"], look: "The gym door. A hand-lettered sign says 'RECORD FAIR: $3, CASH ONLY.' A second sign says 'NO RUNNING.' Nobody's running. Everyone's walking quickly. The cash-box kid thinks I'm a vendor. The bag gets me in everywhere.", exit: S => "travel" },
     { id: "a3_mort", name: "Mort", z: 80, look: "Mort. Cap, suspenders, a gaze like a stylus coming down on a scratch. His table says 'MORT'S PLATTERS SINCE '79.'",
       talk: S => mortTalk(S), give: async (S, item) => { if (item === "a3_coffee") { if (!S.f.a3_rayTip) return "Mort doesn't know me yet. Coffee as a first impression? Weird."; if (S.f.a3_clue2) return "@a3_mort I've had one. It's enough."; await mortCoffee(S); return; } return "@a3_mort Nah."; } },
     { id: "a3_vendor", name: "vendor", z: 80, look: "A vendor behind the bargain bins. A sign: 'EVERYTHING $1. NOTHING IS A STEAL.'", talk: ["Hey. Anything good?", "@a3_vendor Everything's good. Some of it's also bad. That's what a dollar bin is.", "I like him."] },
@@ -176,7 +190,12 @@ RP.room({
     { id: "a3_f_bake", name: "PTA table", r: [504, 138, 134, 62], z: 25, walk: [570, 214, "back"], look: "The PTA bake sale table: a coffee urn, lemon bars, a donation jar. 'FOR THE NEW GYM FLOOR,' says the sign. The old one looks fine.", use: S => buyCoffee(S), pickup: S => buyCoffee(S) },
     { id: "a3_f_cork", name: "corkboard", r: [416, 88, 82, 68], z: 28, walk: [458, 212, "back"],
       look: S => { if (!S.f.a3_clue3) { S.f.a3_clue3 = true; return ["The corkboard: a rummage of flyers. 'SWAP,' 'WANTED,' 'LOST CAT, ANSWERS TO SHAME.'", "And one that reads: 'ESTATE SALE. PRUITT. WOODSIDE. EVERYTHING MUST GO.' The flyer's got a phone number and a photo of a basement full of crates.", "Pruitt. That's got to be Mort's collector.", async () => { await checkHunt(S); }]; } return "The corkboard's flyer: 'ESTATE SALE. PRUITT. WOODSIDE. EVERYTHING MUST GO.' And a crayon drawing of a cat that's, frankly, better than most album art."; },
-      pickup: "I take a flyer. I'll find a use for it. Probably in my bag as a very expensive bookmark.", use: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a3_f_cork").look) },
+      pickup: async S => {
+        if (!S.f.a3_clue3) { await RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a3_f_cork").look); return; }
+        if (RP.has("a3_flyer") || S.f.a3_flyerTaken) { await RP.say("I've got one. Two flyers would be a campaign."); return; }
+        S.f.a3_flyerTaken = true; RP.give("a3_flyer");
+        await RP.lines(["I unpin the Pruitt flyer. The tear-off tabs are all gone but one. Under the address, in biro, small: 'Uncle Hal's wish: the collection goes to someone who will PLAY it. No dealers please.'", "Small print. The best kind. I fold it into the bag, an estate sale in one page."]);
+      }, use: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a3_f_cork").look) },
     { id: "a3_f_hoop", name: "basketball hoop", r: [564, 30, 62, 56], z: 10, look: "A basketball hoop, folded up against the wall like a very patient visitor.", use: "I'm in a gym. I'm not going to shoot. I've got a bag of vinyl on my shoulder; I could break something.", pickup: "It's bolted to the wall. And the wall is bolted to a school." },
     { id: "a3_f_banner", name: "banner", r: [118, 50, 404, 30], z: 18, look: "SUNDAY RECORD FAIR. 10 TO 4. $3 AT THE DOOR. CASH ONLY. The banner's been used for twenty Sundays and one wedding." },
     { id: "a3_f_score", name: "scoreboard", r: [60, 58, 56, 40], z: 18, look: "A scoreboard that reads HOME 00, GUEST 00. Tonight's game is between 'Sellers' and 'Buyers.' Nobody's winning.", pickup: "It's bolted to a gym wall. It's also a score I'd rather not keep." },

@@ -112,38 +112,35 @@ async function rozTalk(S) {
   const p = ph(S);
   if (!S.f.a5_rozMet) {
     S.f.a5_rozMet = true;
-    RP.setClock("SAT 3:40 PM");
+    if (!S.f.a5_soundDone && !S.f.a5_axlDone) RP.setClock("SAT 3:40 PM");
     await RP.lines([
       "@a5_roz You're the headliner. Roz. Stage manager. I run everything that isn't on fire. Don't make me add fire.",
-      "@a5_roz Soundcheck's at four, main stage. Wings are east, past the steps. Mo's on the desk. He talks through the talkback. Don't be rude to Mo.",
-      "@a5_roz And you're on my board as \"DJ " + A5.mangle(A5.pName(S)).replace(/^DJ /, "") + "\". Is that right?",
-      "It's... close.",
-      "@a5_roz Close. Fine. I'm calling you \"Headliner.\" It's easier."
+      "@a5_roz Soundcheck's the main stage booth. Wings are east, past the steps. Mo's on the desk. He talks through the talkback. Don't be rude to Mo.",
+      "@a5_roz Your name's on my board right. I reprinted it. Brian did the first batch.",
+      "Brian's been busy.",
+      "@a5_roz Brian's been told. I'm calling you \"Headliner\" anyway. It's easier."
     ]);
+  }
+  if (p >= 3) { await RP.lines(["@a5_roz Wings. Now. I'll explain on the way."]); return; }
+  if (p === 2) { await RP.lines(["@a5_roz Axl's on at ten-fifteen. You've got the wings at eleven-fifteen. Stay warm. Stay hydrated. Stay out of my way."]); return; }
+  if (!S.f.a5_axlAsked) {
+    S.f.a5_axlAsked = true;
+    await RP.lines([
+      "@a5_roz Axl's agent emailed. They want a swap: you at nine, him at midnight. \"Streaming numbers.\"",
+      "@a5_roz I said it's not my call. Whit said \"synergy.\" That's the entire conversation we've had in the last hour.",
+      "@a5_roz He's in the gold trailer. He doesn't open the door without a green smoothie. It's in catering. Soundcheck with Mo can go before or after, as long as it's before dark."
+    ]);
+    RP.text("MARGO (MGR)", "Axl wants to swap slots. DON'T agree. Go see him. Bring his smoothie (catering). Be kind, be firm, be fast. Soundcheck whenever.", false);
     return;
   }
-  if (p === 0) { await RP.lines(["@a5_roz Four o'clock. Main stage. Through the wings. Don't touch anything that has a cable. Everything has a cable."]); return; }
-  if (p === 1) {
-    if (!S.f.a5_axlAsked) {
-      S.f.a5_axlAsked = true;
-      await RP.lines([
-        "@a5_roz Soundcheck went fine. Mo's smiling, which is weather. Anyway.",
-        "@a5_roz Axl's agent emailed. They want a swap: you at nine, him at midnight. \"Streaming numbers.\"",
-        "@a5_roz I said it's not my call. Whit said \"synergy.\" That's the entire conversation we've had in the last hour.",
-        "@a5_roz He's in the gold trailer. Don't go in empty-handed. He doesn't open the door without a green smoothie. It's in catering."
-      ]);
-      RP.text("PRIYA (MGR)", "Axl wants to swap slots. DON'T agree. Go see him. Bring his smoothie (catering). Be kind, be firm, be fast.", false);
-      return;
-    }
-    await RP.lines(["@a5_roz Gold trailer. Smoothie from catering. The door doesn't open without it. And it doesn't open twice."]); return;
-  }
-  if (p === 2) { await RP.lines(["@a5_roz Axl's on at ten-fifteen. You've got the wings at eleven-fifteen. Stay warm. Stay hydrated. Stay out of my way."]); return; }
-  await RP.lines(["@a5_roz Wings. Now. I'll explain on the way."]);
+  const sd = !!S.f.a5_soundDone, ad = !!S.f.a5_axlDone;
+  if (!sd && !ad) await RP.lines(["@a5_roz Two things before dark: soundcheck with Mo, and Axl. Either first. The gold door doesn't open without the smoothie, and it doesn't open twice."]);
+  else if (sd) await RP.lines(["@a5_roz Soundcheck's done. Mo's pleased, so don't touch anything. Axl's still sitting on your slot. Gold trailer. Smoothie from catering."]);
+  else await RP.lines(["@a5_roz Axl's handled. Mo's waiting at the booth. Go before the doors open and the field fills."]);
 }
 async function catererTalk(S) {
   if (!S.f.a5_smoothie) {
-    if (!S.f.a5_axlAsked) { await RP.lines(["@a5_caterer Help yourself. Pasta, sandwiches, fruit. Artists eat free. It's the one time in your life.", "(There's a green smoothie at the end with a label. I don't want to touch it. It's labeled AXL.)"]); return; }
-    await RP.lines(["@a5_caterer That's his. Axl's. Green, no ice, no seeds. He's rung the bell nine times. Take it, please, and go.", "@a5_caterer Tell him it's \"fresh.\" It's not. It's from yesterday, but with a different label."]);
+    await RP.lines(["@a5_caterer That's his. Axl's. Green, no ice, no seeds. He's rung the bell nine times. He won't open the gold door without it. Take it, please, and go.", "@a5_caterer Tell him it's \"fresh.\" It's not. It's from yesterday, but with a different label."]);
     RP.give("a5_smoothie"); S.f.a5_smoothie = true; RP.sfx("pickup"); RP.refreshInv();
     await RP.say("The caterer pushes the smoothie into my hands. It's cold. It's green. It's judging me.");
     return;
@@ -152,14 +149,13 @@ async function catererTalk(S) {
 }
 async function axlDoor(S) {
   if (S.f.a5_axlDone) { await RP.say("The gold door's closed. Axl's in there, being himself in private."); return; }
-  if (!S.f.a5_axlAsked) { await RP.lines(["A gold door with a plaque that says AXL VANTA — DO NOT KNOCK.", "(I should talk to Roz first. And bring something.)"]); return; }
   if (!RP.has("a5_smoothie")) {
     RP.sfx("knock");
-    await RP.lines(["I knock.", "@axl IS THAT MY SMOOTHIE?", "Not yet.", "@axl THEN WHY ARE YOU KNOCKING?", "(Fair. I need the smoothie. Catering.)"]);
+    await RP.lines(["I knock.", "@a5_axlDoor IS THAT MY SMOOTHIE?", "Not yet.", "@a5_axlDoor THEN WHY ARE YOU KNOCKING?", "(Fair. I need the smoothie. Catering.)"]);
     return;
   }
   RP.sfx("knock");
-  await RP.lines(["I knock, with the smoothie in view of the peephole.", "@axl ...Smoothie?", "Green. No ice, no seeds.", "@axl Enter. Don't make eye contact."]);
+  await RP.lines(["I knock, with the smoothie in view of the peephole.", "@a5_axlDoor ...Smoothie?", "Green. No ice, no seeds.", "@a5_axlDoor Enter. Don't make eye contact."]);
   await RP.goto("a5_axl", 120, 232, "right");
 }
 async function ownTrailer(S) {
@@ -183,13 +179,13 @@ async function louArrives(S) {
     "@a5_lou I said I'd consider. I considered. Here I am. Don't make it a thing.",
     "@a5_lou ...The cardigan's navy. Do you like it?",
     "It's perfect.",
-    "@a5_lou Where do I sit? I don't stand. I'm seventy... some.",
+    "@a5_lou Where do I sit? I don't stand. I'm sixty... some.",
     "@marcus Lou's with me. We got the best chair in the VIP lounge. It has a cushion. He asked for a cushion.",
     "@a5_roz Lou, you can watch from the wings. Stage left. There's a stool. It's the best seat in the house.",
     "@a5_lou In the wings. With a stool. All right.",
-    "@marcus I counted: twelve people came in. TWELVE. Plus thirty is just a state of mind."
+    A5.guest(S).back
   ]);
-  RP.text("PRIYA (MGR)", "Lou's in. Marcus is a hero. Axl's still on stage. Roz will cue you in the wings. Breathe.", false);
+  RP.text("MARGO (MGR)", "Lou's in. Marcus is a hero. Axl's still on stage. Roz will cue you in the wings. Breathe.", false);
 }
 
 /* ---------------------------------------------------------------------------------------- room */
@@ -210,6 +206,7 @@ RP.room({
     { id: "a5_dj_francois_k", char: "a5_dj_francois_k", x: 808, y: 207, face: "left", act: "stand", name: "Francois K" },
     { id: "a5_tech1", char: "a5_tech1", x: 300, y: 242, face: "right", act: "stand", name: "Roadie" },
     { id: "a5_tech2", char: "a5_tech2", x: 560, y: 240, face: "left", act: "stand", name: "Crew" },
+    { id: "kosmo", char: "kosmo", x: 400, y: 238, face: "left", act: "stand", name: "Kosmo Delacroix", vis: S2 => night(S2) },
     { id: "lou", char: "lou", x: 700, y: 232, face: "front", act: "stand", name: "Lou", vis: S2 => !!S2.f.a5_louArrived },
     { id: "marcus", char: "marcus", x: 626, y: 240, face: "left", act: "stand", name: "Marcus", vis: S2 => !!S2.f.a5_louArrived }
   ],
@@ -225,21 +222,24 @@ RP.room({
     { id: "a5_bcater", name: "catering tent", r: [26, 120, 154, 92], z: 15, walk: [100, 236, "back"], look: "CATERING. A tent with trays of pasta, sandwiches and a coffee urn the size of a person. Artists eat free. I intend to take advantage until it hurts.", pickup: "I load a plate in my head. In real life my hands are shaking.", use: "I can't eat. My stomach has become a subwoofer." },
     { id: "a5_btable", name: "catering table", r: [42, 150, 128, 66], z: 30, walk: [100, 232, "back"], look: S => S.f.a5_smoothie ? "A table full of trays and a coffee urn. One empty spot where Axl's smoothie used to be." : "A long table: pasta, wraps, fruit, a coffee urn. At the end, a lone green smoothie, labeled AXL. It seems to be glaring at me.", pickup: S => catererTalk(S), use: S => catererTalk(S) },
     { id: "a5_bsmoothie", name: "green smoothie", r: [36, 150, 14, 28], z: 50, vis: S => !S.f.a5_smoothie, walk: [60, 232, "back"], look: "A tall green smoothie labeled AXL V. — NO ICE, NO SEEDS, NO EYE CONTACT. It's the angriest beverage I've ever seen.", pickup: S => catererTalk(S), use: S => catererTalk(S) },
-    { id: "a5_bcaterer", name: "caterer", talk: S => catererTalk(S), look: "The caterer, in an apron and a cap, with an expression that says \"I'm going to retire in March.\"", give: "\"I don't take anything. Everything's free.\"", pickup: "I'm not lifting the caterer." },
-    { id: "a5_btrailer", name: "your trailer", r: [196, 128, 142, 78], z: 20, walk: [262, 226, "back"], look: S => "A white trailer: ARTIST 1. A gold star on the door. The sign says \"DJ " + A5.mangle(A5.pName(S)).replace(/^DJ /, "") + ".\" It's my trailer. I'm someone who has a trailer.", open: S => ownTrailer(S), use: S => ownTrailer(S), push: "It weighs a lot. It's got a bathroom. Wow.", pickup: "It's got wheels, a hitch and a sense of occasion.", talk: "\"Hello, trailer.\" It says nothing. It's a trailer. It doesn't have to." },
+    { id: "a5_caterer", name: "caterer", talk: S => catererTalk(S), look: "The caterer, in an apron and a cap, with an expression that says \"I'm going to retire in March.\"", give: "\"I don't take anything. Everything's free.\"", pickup: "I'm not lifting the caterer." },
+    { id: "kosmo", name: "Kosmo Delacroix", vis: S2 => night(S2), talk: S => RP.lines(S.f.a5_kosmoB ? ["@kosmo Quiet, Dennis. I'm listening to the building."] : (S.f.a5_kosmoB = true, ["@kosmo Dennis. Nervous? Good. The ones who aren't, I walk away from.", "It's not Dennis, Kosmo.", "@kosmo Go on up. Everybody remembers the first record. Make it the right one."])), look: "Kosmo Delacroix, leaning on a flight case beside the stage door like he's holding it up. He hasn't taken the shades off since I've known him. I think they're load-bearing.", give: "Kosmo: \"Not now, Dennis.\"", pickup: "No." },
+    { id: "a5_tech1", name: "roadie", talk: S => RP.lines(["@a5_tech1 Headliner? Cool. Mind the cable. Not that one. That one.", "There are four hundred cables.", "@a5_tech1 Then mind all of them."]), look: "A roadie in a headset, a roll of gaffer tape on his wrist like a bracelet. He hasn't sat down since Thursday.", give: "\"Hands full, boss. Hands are always full.\"", pickup: "He carries cable all day. He's not also carrying me." },
+    { id: "a5_tech2", name: "crew", talk: S => RP.lines(["@a5_tech2 If Roz asks, I'm on lights.", "Are you on lights?", "@a5_tech2 I'm on a break that looks like lights."]), look: "A crew member in a black cap, a red bun out the back, a lanyard heavy with laminates. She has the calm of someone who's seen a stage fall down. Twice.", give: "\"Unless it's a fuse, I don't want it.\"", pickup: "No. She'd log it as an incident." },
+    { id: "a5_btrailer", name: "your trailer", r: [196, 128, 142, 78], z: 20, walk: [262, 226, "back"], look: "A white trailer: ARTIST 1. A gold star on the door and a laminated sign. It's my trailer. I'm someone who has a trailer.", open: S => ownTrailer(S), use: S => ownTrailer(S), push: "It weighs a lot. It's got a bathroom. Wow.", pickup: "It's got wheels, a hitch and a sense of occasion.", talk: "\"Hello, trailer.\" It says nothing. It's a trailer. It doesn't have to." },
     { id: "a5_baxl", name: "Axl's trailer", r: [352, 100, 216, 108], z: 20, walk: [470, 232, "back"], look: "A gold trailer the size of a house. AXL in a giant neon sign on the roof, a red carpet, velvet ropes, two potted palms. The plaque on the door: AXL VANTA — DO NOT KNOCK. It's the trailer of a man who's never been told no.", use: S => axlDoor(S), open: S => axlDoor(S), pickup: "It's a trailer. It's golden. It's not mine.", push: "It's very gold and very solid. I push. It pushes back by existing.", talk: S => axlDoor(S), give: (S, item) => item === "a5_smoothie" ? axlDoor(S) : "I'm not giving Axl's trailer anything. It already has everything." },
     { id: "a5_bcarpet", name: "red carpet", r: [428, 206, 82, 32], z: 8, floor: true, look: "A red carpet leading nowhere in particular. Straight from the trailer door to a tiny velvet rope. Axl's walk of fame." },
     { id: "a5_bpalm", name: "potted palms", rects: [[388, 150, 56, 70], [518, 150, 56, 70]], z: 25, walk: [455, 236, "back"], look: "Two enormous potted palms flank the red carpet. They're in black plastic pots with GOLD spray paint. Even Axl's plants have an entourage.", pickup: "The palms weigh more than my gear. Don't ask.", use: "I can't use plants. I can only compliment them. Nice palm." },
     { id: "a5_bprod", name: "production office", r: [586, 120, 112, 86], z: 18, walk: [642, 232, "back"], look: "PRODUCTION. A trailer full of radios, laptops and a person with a headset yelling \"copy.\" The beating heart of a festival.", open: "Locked. Roz has the key. Roz has all the keys.", use: "Roz's domain. I'm a visitor.", pickup: "No." },
     { id: "a5_bboard", name: "running order", r: [614, 130, 80, 74], z: 40, walk: [654, 234, "back"], look: S => ["MAIN STAGE running order, in marker: 6:00 DOORS. 7:00 THE BILL (see poster). 10:15 AXL VANTA. 11:45 ... and then my name.", RP.has("a5_pass") && !S.f.a5_passFixed ? "It's the typo'd version. Brian strikes again." : "It's right. Someone fixed it. Roz, I bet."], pickup: "The whiteboard stays. The running order stays. The kid is just passing through.", pull: "It's on an easel. Easels fall. Not today." },
-    { id: "a5_roz", name: "Roz", talk: S => rozTalk(S), look: "Roz Delgado, stage manager. Headset, hi-vis vest, a ponytail that says \"I've had no time to sit down since February.\" She looks like she's holding up the festival by herself. Probably true.", give: (S, item) => "Roz: \"Not now. Hands full. Brain full. Headset full.\"", pickup: "No. I like having ankles.", push: "I'm not pushing Roz. Roz would push BACK, and she has a walkie-talkie." },
+    { id: "a5_roz", name: "Roz", talk: S => rozTalk(S), look: "Roz Kessler, stage manager. Headset, hi-vis vest, a ponytail that says \"I've had no time to sit down since February.\" She looks like she's holding up the festival by herself. Probably true.", give: (S, item) => "Roz: \"Not now. Hands full. Brain full. Headset full.\"", pickup: "No. I like having ankles.", push: "I'm not pushing Roz. Roz would push BACK, and she has a walkie-talkie." },
     { id: "a5_blounge", name: "artist lounge", r: [704, 126, 122, 94], z: 15, walk: [770, 236, "back"], look: "The artist lounge: a white tent, a couch, a coffee table with cups, a string of lights. The most civilized place I've ever been backstage.", use: "Sit on the couch? Not before my set. If I sit down, I'll be there till Tuesday.", pickup: "No." },
     { id: "a5_bcouch", name: "lounge couch", r: [710, 160, 110, 64], z: 29, walk: [770, 236, "back"], look: "A purple couch with two throw pillows, neon pink and cyan. It looks like it's seen things. Mostly sound check tantrums.", use: "I'd sit, but I'm afraid I'd never get up. And I need my dignity.", pickup: "I can't lift a couch. I'd throw out my back before the set." },
     { id: "a5_dj_louie_vega", name: "Louie Vega", talk: S => cameo(S, "vega"), look: "Louie Vega. Co-founded Masters At Work with Kenny \"Dope\" Gonzalez. Standing by the lounge, calm as a house record. He gives me a nod.", give: "I won't. That'd be weird.", pickup: "No. Absolutely not. He's a person.", use: "I'd like to use the opportunity to say hi.", push: "I'm not touching a legend." },
     { id: "a5_dj_spinna", name: "DJ Spinna", talk: S => cameo(S, "spinna"), look: "DJ Spinna. He runs the Spinnafest event, and he's on the bill. He's wearing a cap and a calm expression. He gives me a thumbs up.", give: "I won't.", pickup: "No.", use: "I'd like to say hi. I'm going to do it with a wave.", push: "Not touching a legend." },
     { id: "a5_dj_francois_k", name: "Francois K", talk: S => cameo(S, "k"), look: "Francois Kevorkian. Co-founded the Body & Soul party with Danny Krivit and Joe Claussell. He's reading the running order, and he glances up at me.", give: "I won't.", pickup: "No.", use: "I'd like to say hi. I'll mime it.", push: "Not touching a legend." },
     { id: "lou", name: "Lou", talk: S => RP.lines(["@lou It's loud. I like it. Don't tell anyone.", "I won't, Lou.", "@lou Don't touch the stool. It's mine."]), look: "Lou, in the good navy cardigan and his dancing shoes. He's sitting on a stool as if it were a throne. He looks about ten years younger and fifteen years more irritated.", give: "Lou doesn't take things. Lou gives them. Mostly pipe-hole advice.", pickup: "Lou would break me.", use: "Not Lou. Lou's the user." },
-    { id: "marcus", name: "Marcus", talk: S => RP.lines(["@marcus I counted: TWELVE. Twelve in. And a hundred outside. I'm a hero.", "You're a hero, Marcus."]), look: "Marcus, wearing a Harbor Lights lanyard like a medal, a tote bag with a picture of himself on it, and an expression of pure triumph.", give: "He'd take it, and also thirty friends.", pickup: "No." },
+    { id: "marcus", name: "Marcus", talk: S => RP.lines(A5.guest(S).hot), look: "Marcus, wearing a Harbor Lights lanyard like a medal, a tote bag with a picture of himself on it, and an expression of pure triumph.", give: "He'd take it, and also thirty friends.", pickup: "No." },
     { id: "a5_bcases", name: "road cases", rects: [[332, 160, 40, 76], [568, 194, 34, 28], [702, 198, 30, 26]], z: 35, walk: [350, 240, "back"], look: "Flight cases stenciled FOH, CABLES, LIGHTS, BACKLINE. A festival is a pile of black boxes with wheels, held together by tape and Roz.", open: "Locked. These are all professional boxes. Professionals lock their boxes.", pickup: "Crew rule: if it's on wheels, it's theirs." },
     { id: "a5_bwings", name: "stairs to the stage", r: [804, 12, 156, 150], z: 20, walk: [880, 236, "back"], look: "A set of black steel steps up to the side of the stage, a sign: STAGE LEFT, CREW + ARTISTS. It's the beginning of the best day of my life. Or the most embarrassing.",
       exit: S => ({ room: "a5_wings", x: 60, y: 232, face: "right" }) },

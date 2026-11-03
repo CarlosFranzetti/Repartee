@@ -1,7 +1,7 @@
 /* beat.Match — match the tempo and phase of two decks by ear and by eye, then bring
    deck B in with the crossfader. Params:
    { a: recordId, b: recordId, caller: "DANTE" (optional phone call framing), difficulty: 1..5,
-     tolerance (BPM), story: bool }
+     tolerance (BPM), story: bool, offset (BPM deck B starts off deck A; default: B starts at its own record's BPM when that is within reach of the pitch fader) }
    Result: { ok, score (0..100), time } */
 (function () {
 "use strict";
@@ -16,7 +16,7 @@ const CSS = `
 .dl { font-family: var(--logo); font-size: 14px; padding: 3px 6px; color: #12061a; }
 .a .dl { background: var(--pink); } .b .dl { background: var(--cyan); }
 .dt { font-size: 20px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dsub { font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dsub { font-size: 15px; color: var(--muted); line-height: 1.05; overflow-wrap: anywhere; }
 .bpm { font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
 .a .bpm { color: var(--pink); } .b .bpm { color: var(--cyan); }
 .bpm small { font-size: 18px; color: var(--muted); margin-left: 4px; }
@@ -53,7 +53,9 @@ RP.mg.register("beatMatch", {
     const diff = clamp(p.difficulty || 2, 1, 5);
     const BPM_A = recA.bpm || 122;
     const startOff = (p.offset != null ? p.offset : (2.2 + diff * 0.9)) * (Math.random() < 0.5 ? -1 : 1);
-    const BASE_B = BPM_A + startOff;
+    /* deck B plays at its own record's tempo when that is within reach of the pitch fader (8%); otherwise it starts a few BPM off deck A */
+    const gapB = recB.bpm ? recB.bpm - BPM_A : 0;
+    const BASE_B = p.offset == null && Math.abs(gapB) >= 1 && Math.abs(gapB) <= BPM_A * 0.075 ? recB.bpm : BPM_A + startOff;
     const tolT = p.tolerance || [0.08, 0.06, 0.05, 0.04, 0.03][diff - 1];
     const tolP = [16, 12, 10, 8, 7][diff - 1];
     const root = host.root;

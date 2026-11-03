@@ -4,7 +4,9 @@
      { from, to: labels (a station name, or a venue label that gets pinned to a station), mode: "subway" | "airport",
        battery: phone % (default by difficulty), money: dollars (default by difficulty),
        carrying: "records" | "turntables" | "suitcase", difficulty: 1..5,
-       start: minutes after midnight (default ~1:35 AM), deadline: minutes after midnight, cab: cab price }
+       start: minutes after midnight (default ~1:35 AM; the lines' last trains move with it), deadline: minutes after midnight, cab: cab price,
+       fromStation, toStation: the map station a label stands for ("Halsey St" for "Bushwick (Apt 4C)"); lineNames: { amber: "J" } renames lines on screen;
+       carryName: "a bag of records" (what you carry, in words; `carrying` still sets the weight); intro: the first line of the opening card }
    Result: { ok, score (0..100), minutesLate } — ok means you got to the destination (a cab or a long walk counts).
    The stations and lines are fictional; real-sounding names are just names. */
 (function () {
@@ -70,7 +72,7 @@ const MAPS = {
     stations: [
       S("gre", "Greenpoint Ave", "Greenpoint", 30, 45, 2, 0, true, "b"), S("crt", "Court Sq", "Court Sq", 100, 45, 3, 3, true, "t"), S("qbp", "Queensboro Plz", "Queensboro", 180, 45, 3, 3, false, "t"),
       S("jkh", "Jackson Hts", "Jackson Hts", 245, 45, 2, 0, true, "t"), S("fls", "Flushing–Main St", "Flushing", 295, 45, 3, 0, true, "bl"),
-      S("nvy", "Navy Yard", "Navy Yard", 20, 100, 1, 0, false, "b"), S("lor", "Lorimer St", "Lorimer", 58, 100, 2, 0, false, "b"), S("met", "Metropolitan Av", "Metropolitan", 100, 100, 3, 2, true, "tl"),
+      S("nvy", "Delancey St", "Delancey St", 20, 100, 1, 0, false, "b"), S("lor", "Lorimer St", "Lorimer", 58, 100, 2, 0, false, "b"), S("met", "Metropolitan Av", "Metropolitan", 100, 100, 3, 2, true, "tl"),
       S("hal", "Halsey St", "Halsey", 140, 100, 2, 0, false, "b"), S("myr", "Myrtle–Wyckoff", "Myrtle–Wyck.", 180, 100, 3, 2, true, "br"), S("brj", "Broadway Jct", "Broadway Jct", 250, 100, 3, 3, false, "t"),
       S("jam", "Jamaica Av", "Jamaica Av", 295, 100, 2, 0, true, "b"),
       S("hew", "Hewes St", "Hewes St", 100, 150, 3, 2, false, "l"), S("atl", "Atlantic Av", "Atlantic Av", 100, 185, 3, 0, true, "r"),
@@ -209,13 +211,15 @@ RP.mg.register("lastTrain", {
     const rnd = Math.random;
     const mode = p.mode === "airport" ? "airport" : "subway";
     const MAP = prep(MAPS[mode]);
-    const GE = GEAR[p.carrying] || GEAR.records;
+    const GE = Object.assign({}, GEAR[p.carrying] || GEAR.records);
+    if (p.carryName) GE.name = String(p.carryName);
+    MAP.lines.forEach(L => { if (L.n0 == null) L.n0 = L.n; L.n = p.lineNames && p.lineNames[L.id] ? String(p.lineNames[L.id]).toUpperCase() : L.n0; });
     const FARE = MAP.fare;
 
     /* ---------------- from / to ---------------- */
     const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
     const findSt = label => { const q = norm(label); if (!q) return null; return MAP.stations.find(s => norm(s.n) === q || norm(s.s) === q) || MAP.stations.find(s => norm(s.n).includes(q) || q.includes(norm(s.n)) || norm(s.s).includes(q)); };
-    let A = findSt(p.from), B = findSt(p.to);
+    let A = findSt(p.fromStation) || findSt(p.from), B = findSt(p.toStation) || findSt(p.to);
     const pairOK = (a, b) => a && b && a.id !== b.id;
     if (!pairOK(A, B)) {
       const seed = hN(norm((p.from || "") + (p.to || "")).length + 7, norm(p.to || "x").length + 3);
@@ -225,10 +229,13 @@ RP.mg.register("lastTrain", {
       if (!A) A = a2; if (!B || B.id === A.id) B = b2.id === A.id ? a2 : b2;
       if (A.id === B.id) B = MAP.stations.find(s => s.id !== A.id);
     }
+    const named = (label, st) => norm(label).startsWith(norm(st.n)) ? label : label + " (" + st.n + ")";
     const fromLabel = p.from ? String(p.from) : A.n, toLabel = p.to ? String(p.to) : B.n;
 
     /* ---------------- world: trains, changes, deadline ---------------- */
     const t0 = Math.round(Number(p.start) > 0 ? Number(p.start) : MAP.startMin + Math.floor(rnd() * 12) - 4);
+    const lastShift = Number(p.start) > 0 ? t0 - MAP.startMin : 0;     /* a later night means later last trains */
+    MAP.lines.forEach(L => { if (L.last0 == null) L.last0 = L.last; L.last = L.last0 + lastShift; });
     let world = null;
     const stName = id => MAP.by[id].n;
     for (let attempt = 0; attempt < 30 && !world; attempt++) {
@@ -553,7 +560,7 @@ RP.mg.register("lastTrain", {
       const c = el("div", { cls: "lt-card" }, panel);
       if (Pl.loc === "street") {
         el("h3", { html: "<span>ON THE STREET</span><small>" + stn.n + "</small>" }, c);
-        el("p", { text: Pl.st === A.id && Pl.log.length <= 1 ? "The gig is over. You are carrying " + GE.name + ". Pick a line and go down." : "Pick a line and go down." }, c);
+        el("p", { text: Pl.st === A.id && Pl.log.length <= 1 ? (p.intro ? String(p.intro) : p.from ? "You are at " + fromLabel + ", carrying " + GE.name + ". Pick a line and go down." : "The gig is over. You are carrying " + GE.name + ". Pick a line and go down.") : "Pick a line and go down." }, c);
         stn.lines.forEach(lid => {
           const L = lineOf(lid), pay = L.fare > 0 && !Pl.paid;
           const card = el("div", { cls: "lt-card", style: "padding:6px 8px;border-style:dashed" }, c);
@@ -709,7 +716,7 @@ RP.mg.register("lastTrain", {
       }
       layout();
       logAdd("Left " + fromLabel + " for " + A.n);
-      setInfoNote(GE.name.charAt(0).toUpperCase() + GE.name.slice(1) + " (" + GE.desc + "). " + (Pl.bat < 20 ? "Phone at " + Math.round(Pl.bat) + "%. " : "") + "Get from " + (fromLabel !== A.n ? fromLabel + " (" + A.n + ")" : A.n) + " to " + (toLabel !== B.n ? toLabel + " (" + B.n + ")" : B.n) + " by " + clk(world.deadline) + ".");
+      setInfoNote(GE.name.charAt(0).toUpperCase() + GE.name.slice(1) + " (" + GE.desc + "). " + (Pl.bat < 20 ? "Phone at " + Math.round(Pl.bat) + "%. " : "") + "Get from " + named(fromLabel, A) + " to " + named(toLabel, B) + " by " + clk(world.deadline) + ".");
       renderAll();
       let last = null;
       host.raf(tm2 => {

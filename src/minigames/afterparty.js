@@ -113,7 +113,7 @@ const fill = q => q * 6;   /* guests a sound covers before the score starts to d
 const NAME_LOC = { gus: "roof", luz: "laundromat", mina: "loft", hamid: "bodega" };
 
 const LOOKS = {
-  priya: { id: "ap_priya", name: "Priya", hair: { style: "ponytail", color: "#1c1418" }, top: { style: "vest", color: "#17131f", color2: "#efeaf6" }, acc: ["lanyard"], skin: "#b07650", figure: "curvy" },
+  petra: { id: "ap_petra", name: "Petra", hair: { style: "ponytail", color: "#1c1418" }, top: { style: "vest", color: "#17131f", color2: "#efeaf6" }, acc: ["lanyard"], skin: "#b07650", figure: "curvy" },
   devanya: { id: "ap_anya", name: "Dev & Anya", hair: { style: "bun", color: "#c0302c" }, top: { style: "cardigan", color: "#3a5a8a", color2: "#efe6d0" }, acc: ["glasses"], skin: "#e8b48f", figure: "curvy" },
   biscuit: { id: "ap_biscuit", name: "Biscuit", hair: { style: "mohawk", color: "#ff6cbb" }, top: { style: "hoodie", color: "#7a3fb0" }, acc: ["earring"], skin: "#f1c7a5", figure: null },
   cal: { id: "ap_cal", name: "Cal", hair: { style: "short", color: "#3a2014" }, top: { style: "tee", color: "#2f62b8" }, acc: ["cap"], skin: "#c98a62", figure: null },
@@ -155,7 +155,7 @@ RP.mg.register("afterParty", {
     /* ---------------- contacts ---------------- */
     const rndDef = (key, seed) => RP.chars.random(seed, { name: LOOKS[key] ? LOOKS[key].name : key, override: LOOKS[key] || {} });
     const defs = {};
-    ["priya", "devanya", "biscuit", "cal", "rafa", "gus", "luz", "mina", "hamid"].forEach((k, i) => { defs[k] = rndDef(k, 40 + i * 7); });
+    ["petra", "devanya", "biscuit", "cal", "rafa", "gus", "luz", "mina", "hamid"].forEach((k, i) => { defs[k] = rndDef(k, 40 + i * 7); });
     const CAST = { twinkie: "twinkie", marcus: "marcus", lou: "lou", dante: "dante", eddie: "eddie", jess: "jess" };
     const addPeople = n => { if (G.place) G.sure += n; else G.maybe += n; return G.place ? "+" + n + " guests" : "+" + n + " maybes"; };
     /* a place or a sound can be swapped for another one; whatever came attached to the old one goes with it */
@@ -169,7 +169,7 @@ RP.mg.register("afterParty", {
 
     reg("twinkie", { name: "Twinkie", tag: "knows everyone", def: "twinkie", vis: true, greet: "Hey, hon. It's four in the morning. You want something. I can tell.", opts: [
       { id: "ppl", label: "Who's still up?", cost: { min: 6, bat: 3 }, max: 2, run(n) {
-        if (n === 0) { reveal("priya"); reveal("devanya"); return { say: "Priya's off the clock at four. Dev and Anya are still at the gallery. Also: I'll text a few people.", chips: [addPeople(6), "Priya + Dev & Anya added"] }; }
+        if (n === 0) { reveal("petra"); reveal("devanya"); return { say: "Petra's off the clock at four. Dev and Anya are still at the gallery. Also: I'll text a few people.", chips: [addPeople(6), "Petra + Dev & Anya added"] }; }
         reveal("biscuit"); return { say: "Okay, okay. Biscuit never sleeps. And my cousin's friends are on their way to nowhere.", chips: [addPeople(3), "Biscuit added"] };
       } },
       { id: "spot", label: "I need a spot.", cost: { min: 6, bat: 3 }, max: 2, when: () => hiddenOf(["gus", "luz", "mina"]).length > 0, run() {
@@ -190,7 +190,7 @@ RP.mg.register("afterParty", {
       { id: "come", label: "Come out. Bring people.", cost: { min: 5, bat: 2 }, max: 1, run() { return { say: "I'm bringing plus three! ...Okay, plus six. Some of them are mine.", chips: [addPeople(6)] }; } },
       { id: "roof", label: "Know anyone with a roof?", cost: { min: 4, bat: 2 }, max: 1, when: () => !C.gus.vis, run() { reveal("gus"); return { say: "My cousin's guy Gus is a super on Dekalb. He has keys to everything. Mostly.", chips: ["Gus added"] }; } }
     ] });
-    reg("priya", { name: "Priya", tag: "bartender, off at four", def: "priya", greet: "I just closed out forty tabs. Make it worth it.", opts: [
+    reg("petra", { name: "Petra", tag: "bartender, off at four", def: "petra", greet: "I just closed out forty tabs. Make it worth it.", opts: [
       { id: "crew", label: "Bring the bar crew?", cost: { min: 6, bat: 3 }, max: 1, run() { return { say: "Last call was an hour ago. We are free and a little dangerous. Where?", chips: [addPeople(5)] }; } }
     ] });
     reg("devanya", { name: "Dev & Anya", tag: "gallery people", def: "devanya", greet: "We're holding wine in plastic cups. Please rescue us.", opts: [
@@ -250,7 +250,7 @@ RP.mg.register("afterParty", {
     const LOCCON = { roof: "gus", laundromat: "luz", loft: "mina", bodega: "hamid" }, SNDCON = { speaker: "cal", boombox: "lou", car: "rafa", pa: "eddie" };
     if (wantLoc && LOCCON[wantLoc]) reveal(LOCCON[wantLoc]);
     if (wantSnd && SNDCON[wantSnd]) reveal(SNDCON[wantSnd]);
-    const order = ["twinkie", "marcus", "cal", "hamid", "priya", "devanya", "biscuit", "gus", "luz", "mina", "lou", "eddie", "rafa", "dante", "jess"];
+    const order = ["twinkie", "marcus", "cal", "hamid", "petra", "devanya", "biscuit", "gus", "luz", "mina", "lou", "eddie", "rafa", "dante", "jess"];
     Object.keys(C).filter(k => !order.includes(k)).forEach(k => order.splice(4, 0, k));
     const portrait = key => {
       const d = CAST[C[key].def] ? C[key].def : defs[C[key].def];

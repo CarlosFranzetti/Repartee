@@ -1,6 +1,6 @@
 /* Act 5 — a5_gate: the Harbor Lights main gate on the waterfront.
-   Friday dusk: artist check-in (Whit, the typo'd pass) and Marcus's "plus thirty" guest list (guest.List).
-   Saturday afternoon: arrival, Priya in person, the queue, noTravel on. East exit leads into the grounds. */
+   Friday dusk: artist check-in (Whit, the typo'd pass) and Marcus's "plus thirty" guest list (a scene with Whit's twelve comps and a choice).
+   Saturday afternoon: arrival, Margo in person, the queue, noTravel on. East exit leads into the grounds. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -104,21 +104,21 @@ async function whitTalk(S) {
     S.f.a5_gateMet = true;
     RP.give("a5_pass"); S.f.a5_passName = A5.mangle(S.name);
     await RP.lines([
-      "@a5_whit THERE he is! The headliner! Bernard Whitlock. Whit. Harbor Lights. We're going to have so much synergy.",
+      "@a5_whit THERE he is! The headliner! Preston Whitlock. Whit. Harbor Lights. We're going to have so much synergy.",
       "Hi, Whit. I'm...",
       "@a5_whit I know EXACTLY who you are. I put you on every wall in Brooklyn. Your name's on a thousand posters!",
       "@a5_whit And here's your all-access pass. Hand-laminated. By an intern.",
       "It says \"DJ " + A5.mangle(A5.pName(S)).replace(/^DJ /, "") + "\".",
       "@a5_whit That's... a stylistic choice. It's our brand voice.",
       "It's wrong. It's close, but it's wrong.",
-      "@a5_whit Close is collaboration! Look: twelve guest comps for artists. Names by eight tonight. Your friend with the tent says he needs thirty-one.",
+      "@a5_whit Close is collaboration! Look: twelve guest comps for artists. Names by eight tonight. Your friend with the tent says he's bringing thirty. Plus himself.",
       "He's not wrong. He's just... ambitious."
     ]);
     return;
   }
   await RP.convo([
     { text: "What's the running order?", once: true, run: async () => {
-      await RP.lines(["@a5_whit Saturday. Soundcheck at four. Doors at six. Axl Vanta closes the main stage at... well, he plays at ten-fifteen.", "@a5_whit You're on at eleven forty-five. You close the whole festival. The sunrise slot, if you want to be poetic. Which I do.", "Eleven forty-five. Okay. And Axl?", "@a5_whit Axl's team is... flexible. About the word \"schedule.\" It's a living document."] );
+      await RP.lines(["@a5_whit Saturday. Soundcheck at four. Doors at six. Axl Vanta closes the main stage at... well, he plays at ten-fifteen.", "@a5_whit You're on at eleven forty-five. You close the whole festival. The last slot of the night, if you want to be poetic. Which I do.", "Eleven forty-five. Okay. And Axl?", "@a5_whit Axl's team is... flexible. About the word \"schedule.\" It's a living document."] );
     } },
     { text: "About the guest list...", when: S2 => !S2.f.a5_guestDone, run: async () => { await RP.say("Right. Marcus has the... situation. I'll go talk to him.", "kid"); return "end"; } },
     { text: "Thanks, Whit.", end: true, run: async () => { await RP.say("Don't thank me! Thank synergy!", "a5_whit"); } }
@@ -127,57 +127,62 @@ async function whitTalk(S) {
 
 async function marcusTalk(S) {
   if (!fri(S)) { await RP.say("Marcus is in the guest line somewhere, being loudly himself.", "kid"); return; }
-  if (S.f.a5_guestDone) { await RP.lines(["@marcus I'M ON THE LIST. I'M ON THE LIST. I'M ON THE LIST.", "Yes, Marcus. All of you."]); return; }
+  if (S.f.a5_guestDone) { await RP.lines(A5.guest(S).again); return; }
   if (!S.f.a5_gateMet) { await RP.lines(["@marcus There he is! The man! The legend!", "Hey, Marcus. Is that a tent?", "@marcus I got here at noon. Whit's the guy with the clipboard. Talk to him first. He's the gatekeeper."]); return; }
   await RP.lines([
     "@marcus You said I could bring a few people.",
     "I said \"a few,\" Marcus. A few is not thirty.",
-    "@marcus I counted it. It's thirty-one. I'm very specific.",
-    "That's thirty-one people. There's capacity for twelve.",
+    "@marcus I counted it. Thirty guests, plus me. That's thirty-one. I'm very specific.",
+    "Thirty-one people. There's room for twelve.",
     "@marcus Okay, so we'll fit twelve. The rest of us will wait outside, like it's 1993. Lou would understand."
   ]);
-  const res = await A5.play("guestList", { capacity: 12, requests: 31, vip: ["Lou", "Ray", "Twinkie", "Jess", "Eddie Two-Times"], difficulty: 2 }, { skipLabel: "Just hand over the list" });
-  S.f.a5_guestDone = true;
-  const admitted = res.admitted != null ? res.admitted : 12, angry = res.angry != null ? res.angry : 3;
+  await RP.lines([
+    "@a5_whit (from the tent, waving the clipboard) Twelve comps, total. Five names are already on it: Marcus, Jess, Ray, Twinkie, Eddie. That leaves seven.",
+    "@marcus Seven! Seven is a start. I have a spreadsheet. It has colors."
+  ]);
+  const gi = await RP.choose(["Give him all seven. Twelve on the list, Whit can explain it to the fire marshal.", "Marcus picks four. Nine on the list, and Whit keeps three comps for the walk-ups.", "Just the five of us. Nobody gets picked, nobody gets insulted."]);
+  const G = A5.GUEST[gi];
+  S.f.a5_guestDone = true; S.f.a5_guestPick = gi; S.f.a5_guestIn = G.n;
+  const angry = G.angry;
   S.f.a5_guestAngry = angry;
-  RP.sfx(res.ok && angry <= 3 ? "success" : "buzz");
-  if (angry <= 3) await RP.lines(["@a5_whit Twelve in. Nineteen out. Four slightly grumpy. That's the best list we've seen all week.", "@marcus I'm not mad. I'm... I'm fine. I've been betrayed, but I'm fine."]);
-  else await RP.lines(["@a5_whit Twelve in. A lot of people very, very loud about it. That was an experience.", "@marcus I WANT A RECOUNT. I WANT TO SPEAK TO A MANAGER.", "@a5_whit I'm the manager. The answer is no. But with synergy."]);
+  RP.sfx(angry <= 3 ? "success" : "buzz");
+  await RP.lines(G.scene);
   S.f.a5_louPass = true; RP.give("a5_loupass"); RP.sfx("pickup");
   await RP.lines([
     "@a5_whit And one more thing: an envelope for \"Lou, 4B\"? A man phoned the office eighteen times. Each time he said, and I quote, \"Keep it DOWN.\"",
     "That's him. That's Lou.",
     "@a5_whit Okay, it's his. It's got a pass in it. No plus-one. He was very clear.",
     "He doesn't do plus-ones.",
-    "Marcus, you have a spot. Twelve people. Jess, Ray, Twinkie, Eddie. And Lou's pass is going through the pipe hole."
+    "Marcus is on the list, with Jess, Ray, Twinkie and Eddie. And Lou's pass is going through the pipe hole."
   ]);
   RP.setClock("FRI 8:20 PM"); RP.followers(Math.max(0, 600 - angry * 100));
   A5.setDay(S, 2, "FRI 8:40 PM", "night");
   await RP.lines([
     "Done. The list's in. Time to go home and slide this under a pipe.",
-    "@a5_priyaT (text) Whit says the list is in. I said \"synergy\" and he said \"synergy.\" We're basically a family now. Sleep."
+    "@a5_margoT (text) Whit says the list is in. I said \"synergy\" and he said \"synergy.\" We're basically a family now. Sleep."
   ]);
 }
 
-async function priyaTalk(S) {
+async function margoTalk(S) {
   await RP.lines([
-    "@a5_priyaT Eleven forty-five. Soundcheck at four. Axl has a trailer the size of Delaware.",
-    "@a5_priyaT Your pass is wrong. The printer was run by an intern named Brian. Don't let Gloria see it.",
-    "@a5_priyaT If there's a problem, call me. If there's a disaster, text me. If there's a miracle, don't tell me. I'll jinx it."
+    "@a5_margoT Eleven forty-five. Soundcheck at four, whenever you fit it in. Axl has a trailer the size of Delaware.",
+    "@a5_margoT Your pass is wrong. The printer was run by an intern named Brian. Don't let Gloria see it.",
+    "@a5_margoT If there's a problem, call me. If there's a disaster, text me. If there's a miracle, don't tell me. I'll jinx it."
   ]);
+  if (S.f.a5_feeAdvance) await RP.lines(["@a5_margoT And the advance I gave you is on tonight's invoice, with ten percent. I'm not a charity. I'm a firm."]);
 }
-async function priyaIntro(S) {
-  S.f.a5_metPriya = true; S.f.noTravel = true;
+async function margoIntro(S) {
+  S.f.a5_metMargo = true; S.f.noTravel = true;
   await RP.lines([
-    "@a5_priyaT You're two hours early. Good. Early people get hired. Late people get anecdotes.",
+    "@a5_margoT You're two hours early. Good. Early people get hired. Late people get anecdotes.",
     "I didn't sleep. Is that good or bad?",
-    "@a5_priyaT It's content. Here's the day: soundcheck at four, main stage, Roz is the stage manager. Doors at six.",
-    "@a5_priyaT Axl plays ten-fifteen to eleven-thirty. You're eleven forty-five. Headline. Closer. The only slot that matters.",
-    "@a5_priyaT Backstage is east, past the lawn. Gloria guards the fence. Your pass has a typo. Brian did it.",
+    "@a5_margoT It's content. Here's the day: soundcheck at four, main stage, Roz is the stage manager. Doors at six.",
+    "@a5_margoT Axl plays ten-fifteen to eleven-thirty. You're eleven forty-five. Headline. Closer. The only slot that matters.",
+    "@a5_margoT Backstage is east, past the lawn. Gloria guards the fence. Your pass has a typo. Brian did it.",
     "Brian?",
-    "@a5_priyaT The intern. It's a whole thing. Fix it before Gloria sees. Ray might have a Sharpie. Ray has everything."
+    "@a5_margoT The intern. It's a whole thing. Fix it before Gloria sees. It's laminated, so it needs permanent ink. Find whoever prices things by hand. Ray, probably. Ray has everything."
   ]);
-  RP.text("PRIYA (MGR)", "SAT: you're in. Backstage via the east gate. Pass: fix the typo (Sharpie, Ray). 4 PM soundcheck, main stage. 11:45 PM you headline. Breathe.", true);
+  RP.text("MARGO (MGR)", "SAT: you're in. Backstage via the east gate. Pass: fix the typo (laminate: permanent ink, Ray prices by hand). Then backstage: soundcheck, Axl's smoothie, Axl. Any order. 11:45 PM you headline. Breathe.", true);
 }
 
 /* ---------------------------------------------------------------------------------------- room */
@@ -195,7 +200,7 @@ RP.room({
   actors: S => [
     { id: "a5_whit", char: "a5_whit", x: 262, y: 207, face: "front", act: "stand", name: "Whit" },
     { id: "marcus", char: "marcus", x: 106, y: 232, face: "right", act: "stand", name: "Marcus", vis: S2 => fri(S2) },
-    { id: "a5_priya", char: "a5_priya", x: 300, y: 232, face: "left", act: "stand", name: "Priya", vis: S2 => A5.day(S2) === 3 },
+    { id: "a5_margo", char: "a5_margo", x: 300, y: 232, face: "left", act: "stand", name: "Margo", vis: S2 => A5.day(S2) === 3 },
     { crowd: { n: 4, rect: [20, 232, 100, 16], seed: 21, face: "front", act: "stand", scale: 0.95, vis: S2 => fri(S2) } },
     { crowd: { n: 22, rect: [330, 232, 270, 18], seed: 33, face: "back", act: "dance", scale: 0.9, vis: S2 => A5.day(S2) === 3 } }
   ],
@@ -205,7 +210,7 @@ RP.room({
     { y: 222, draw: art.sprite((c, S) => drawLamps(c, S), S => dusk(S)) }
   ],
   hotspots: [
-    { id: "a5_gsub", name: "subway stairs", r: [4, 160, 66, 54], z: 20, walk: [40, 232, "back"], look: "The subway stairs. It's where I come from and where I'll end up at 4 AM, probably.", exit: S => S.f.noTravel ? "Priya would murder me. The festival's all I've got today." : "travel" },
+    { id: "a5_gsub", name: "subway stairs", r: [4, 160, 66, 54], z: 20, walk: [40, 232, "back"], look: "The subway stairs. It's where I come from and where I'll end up at 4 AM, probably.", exit: S => S.f.noTravel ? "Margo would murder me. The festival's all I've got today." : "travel" },
     { id: "a5_gexit", name: "to the festival grounds", r: [600, 150, 40, 102], z: 25, walk: [622, 232, "right"], look: "East. The grounds, the lawn, the stages, and way back, a very big white fence with a very big woman in front of it.",
       exit: S => A5.day(S) === 3 ? { room: "a5_grounds", x: 40, y: 232, face: "right" } : "The grounds are closed tonight. Tomorrow. Today is for wristbands, lists and nerves." },
     { id: "a5_garch", name: "Harbor Lights arch", rects: [[340, 40, 244, 170]], z: 10, walk: [460, 224, "back"], look: "The Harbor Lights arch. A truss tower on each side, a giant LED screen with my name... well, the festival's. A lighthouse on top. It's the best thing I've ever walked under.", use: "I walk under it. It feels like a pass to something. It is, technically.", pickup: "It's an arch. It's four tonnes. I stretch my back anyway." },
@@ -218,9 +223,9 @@ RP.room({
     { id: "a5_glamp", name: "street lamp", r: [100, 100, 40, 126], z: 26, walk: [120, 236, "back"], look: "A sodium lamp. The color of every bad decision I ever made at 3 AM.", use: "Nothing to use. It's lit already.", pickup: "It's bolted to the pavement. The pavement is bolted to Brooklyn." },
     { id: "a5_gwater", name: "the harbor", r: [0, 60, 330, 84], z: 12, walk: [160, 232, "back"], look: S => dusk(S) ? "The harbor at sunset. Manhattan on the other side, pink and gold and lit like a pinball machine. And a bridge. It's so beautiful it feels like a trap." : "The harbor in the sun. Manhattan's skyline across the water, a bridge, a tugboat. Somebody should put a stage here. Oh. They did.", talk: "The harbor doesn't answer. It's busy being gorgeous.", pickup: "I can't pick up a harbor. I've tried a lot of things in this game." },
     { id: "a5_gwheel", name: "Ferris wheel", r: [526, 40, 80, 90], z: 11, walk: [560, 232, "back"], look: "A Ferris wheel past the arch, spinning slowly in pink and yellow lights. Every festival has one. It's a rule. A beautiful, wobbly, overpriced rule.", use: "I'll ride it after the set. With one of the thousand people who'll hug me.", pickup: "Ferris wheel. Very big. No." },
-    { id: "a5_whit", name: "Whit", talk: S => whitTalk(S), look: "Bernard \"Whit\" Whitlock, Harbor Lights promoter. Linen suit, shades on his head, lanyard, a clipboard like a shield. The man who says \"synergy\" like other people breathe.", give: (S, item) => item === "a5_pass" ? "Whit: \"Don't give it back! It's authentic! Brian laminated it!\"" : "Whit: \"For me? A gift! I accept it on behalf of the synergy.\"", pickup: "I'm not carrying Whit. He'd see it as a networking opportunity." },
-    { id: "marcus", name: "Marcus", talk: S => marcusTalk(S), look: "Marcus. My best friend. He has a tent, a cooler, thirty-one friends and no regrets.", give: (S, item) => "Marcus: \"For ME? Thanks! Wait, what is it? Okay, I'll hold on to it, and I'm also on the list.\"", pickup: "Not even a little. He'd bring thirty friends." },
-    { id: "a5_priya", name: "Priya", talk: S => priyaTalk(S), look: "Priya Nair. My manager. Navy blazer, glasses, phone in one hand, clipboard in the other, expression of a woman who's seen the invoice and it was beautiful.", give: "Priya: \"Don't give me anything. Send me a PDF.\"", pickup: "No. She'd bill me for the lift." }
+    { id: "a5_whit", name: "Whit", talk: S => whitTalk(S), look: "Preston \"Whit\" Whitlock, Harbor Lights promoter. Linen suit, shades on his head, lanyard, a clipboard like a shield. The man who says \"synergy\" like other people breathe.", give: (S, item) => item === "a5_pass" ? "Whit: \"Don't give it back! It's authentic! Brian laminated it!\"" : "Whit: \"For me? A gift! I accept it on behalf of the synergy.\"", pickup: "I'm not carrying Whit. He'd see it as a networking opportunity." },
+    { id: "marcus", name: "Marcus", talk: S => marcusTalk(S), look: "Marcus. My best friend. He has a tent, a cooler, thirty friends and no regrets.", give: (S, item) => "Marcus: \"For ME? Thanks! Wait, what is it? Okay, I'll hold on to it, and I'm also on the list.\"", pickup: "Not even a little. He'd bring thirty friends." },
+    { id: "a5_margo", name: "Margo", talk: S => margoTalk(S), look: "Margo Quist. My manager. Navy blazer, glasses, phone in one hand, clipboard in the other, expression of a woman who's seen the invoice and it was beautiful.", give: "Margo: \"Don't give me anything. Send me a PDF.\"", pickup: "No. She'd bill me for the lift." }
   ],
   combos: [
     ["a5_pass", "a5_whit", "Whit: \"Beautiful, right? I'm so proud. Of the pass. Not of the spelling, but of the spirit.\""],
@@ -231,11 +236,11 @@ RP.room({
   enter: async (S, from) => {
     if (A5.day(S) === 3) {
       S.f.noTravel = true;
-      if (!S.f.a5_metPriya) await priyaIntro(S);
+      if (!S.f.a5_metMargo) await margoIntro(S);
       return;
     }
     if (!S.f.a5_gateEnter) {
-      S.f.a5_gateEnter = true;
+      S.f.a5_gateEnter = true; RP.setClock("FRI 7:05 PM");
       await RP.lines(["Harbor Lights at dusk. The arch, the lighthouse, the Ferris wheel and a thousand light bulbs.", "It's not even open yet. It looks like the inside of my head, on a good day."]);
     }
   },

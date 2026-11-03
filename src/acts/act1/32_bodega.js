@@ -255,7 +255,7 @@ RP.room({
     ["a1_popcorn", "a1_ali", "Ali looks at the \"Linda\" bag. \"Not mine. That's an office bag. You're a long way from Midtown.\""],
     ["a1_slice", "canmachine", "The machine takes cans. It does not take pizza. It's stricter than the health department."],
     ["a1_flyer", "a1_ali", "Ali reads the flyer. \"DJ... what? Spelling is a skill, my friend.\""],
-    ["a1_usb", "a1_ali", "\"No,\" Ali says. \"I'm not a computer store. I don't do USB.\""]
+    ["a1_usb", "a1_ali", "\"No,\" Ali says. \"I'm not a computer store. I don't do USB. Not since 2019. A man sold me a 'ten-terabyte' stick. It was a lighter.\" He taps the lighter on the register, still bitter."]
   ]
 });
 RP.rooms.a1_bodega.hotspots.push({ id: "a1_ali", name: "Ali", look: "Ali. He runs the bodega, the block, and most of the information on the block. Always a pencil behind the ear.",

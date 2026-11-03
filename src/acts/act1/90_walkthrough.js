@@ -52,7 +52,7 @@ RP.walkthroughs.act1 = [
   ["give", "hot:a1_tank", "a1_flyer"], ["give", "hot:a1_tank", "a1_slice"],
   ["expect", "S.f.a1_tankIn", "Tank lets me in"],
   ["walk", "hot:ndDoor"], ["expect", "S.room === 'a1_nowhere'", "inside Nowhere"],
-  ["talk", "hot:a1_mia"],
+  ["talk", "hot:a1_dani"],
   ["mg", { ok: true, score: 90, played: ["everything_but_the_girl_missing", "phuture_acid_tracks", "white_nyc93", "cece_peniston_finally"], peak: 92 }],
   ["use", "hot:booth"],
   ["expect", "S.f.a1_setGood", "the bartenders danced"],

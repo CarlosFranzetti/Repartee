@@ -17,6 +17,7 @@ const CSS = `
 @media (max-width: 959px) { .gl-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "meters" "say" "case" "acts" "clip"; } .gl-layout > .sk-side { display: contents; } .gl-layout .gl-meters { grid-area: meters; } .gl-layout .gl-case { grid-area: case; } .gl-layout .gl-clip { grid-area: clip; } }
 .gl-meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .gl-meters .sk-meter { min-width: 0; }
+.gl-room { grid-column: 1 / -1; font-size: 17px; line-height: 1.1; color: var(--muted); letter-spacing: .04em; } .gl-room b { font-weight: 400; color: var(--fg); } .gl-room .gold { color: var(--amber); } .gl-room .warn { color: #ff8a8a; }
 .gl-clip { background: #e8dcb8; color: #2a2030; border: 2px solid #8a7a52; border-top-width: 10px; border-top-color: #4a4660; border-radius: 3px; padding: 6px 10px 8px; font-size: 18px; line-height: 1.06; box-shadow: 3px 3px 0 #000; position: relative; }
 .gl-clip::before { content: ""; position: absolute; left: 50%; top: -12px; width: 38px; height: 10px; margin-left: -19px; background: #9a9ab8; border: 1px solid #2a2840; }
 .gl-clip h3 { margin: 0 0 3px; font-weight: 400; font-size: 17px; letter-spacing: .1em; color: #6a1a4a; }
@@ -56,23 +57,23 @@ const CSS = `
 let cssDone = false;
 
 /* ------------------------------------------------------------------------------------------ names & lines */
-const FIRST = ["Rosa", "Jamal", "Priya", "Tommy", "Mei", "Dev", "Sasha", "Luis", "Keisha", "Gus", "Noor", "Beth", "Marcel", "Yuki", "Femi", "Chloe", "Hank", "Imani", "Tariq", "Dolores", "Ines", "Walt", "Anya", "Cleo", "Raj", "Bao", "Nia", "Otis", "Lena", "Mo"];
-const LAST = ["Hernandez", "Pierce", "Nair", "Calloway", "Tanaka", "Kapoor", "Volkov", "Ortega", "Boyd", "Papadakis", "Haddad", "Kowalski", "Dubois", "Ito", "Adeyemi", "Park", "Muller", "Cole", "Rahman", "Quinn", "Moreno", "Frye", "Petrov", "Lopez", "Shah", "Tran", "Okafor", "Lindqvist", "Diaz", "Bell"];
+const FIRST = ["Greta", "Jamal", "Wren", "Tommy", "Mei", "Omar", "Sasha", "Luis", "Keisha", "Basil", "Noor", "Beth", "Marcel", "Esme", "Femi", "Chloe", "Farid", "Imani", "Tariq", "Odette", "Zora", "Walt", "Anya", "Cleo", "Raj", "Bao", "Nia", "Otis", "Lena", "Leon"];
+const LAST = ["Hernandez", "Pierce", "Novak", "Calloway", "Tanaka", "Kapoor", "Volkov", "Ortega", "Boyd", "Papadakis", "Haddad", "Sorensen", "Dubois", "Ito", "Adeyemi", "Park", "Muller", "Cole", "Rahman", "Quinn", "Moreno", "Frye", "Petrov", "Lopez", "Shah", "Tran", "Halloran", "Lindqvist", "Diaz", "Bell"];
 const VIP_DEFAULT = ["Kosmo Delacroix", "Twinkie", "Axl Vanta"];
 const VIP_CHAR = { kosmo: "kosmo", twinkie: "twinkie", axl: "axl", dante: "dante", eddie: "eddie", lou: "lou", ray: "ray", jess: "jess" };
 
 const CLAIMS = {
-  listed: ["Hi. {first} {last}. I'm on the list.", "{last}. {first} {last}. Should be on there.", "Name's {last}. Be gentle, I've been standing here since the first snow.", "{first} {last}. Yes, with the two Ns."],
+  listed: ["Hi. {first} {last}. I'm on the list.", "{last}. {first} {last}. Should be on there.", "Name's {last}. Be gentle, I've been standing here since the first snow.", "{first} {last}. Yes, with the two {dbl}s."],
   listedPlus: ["{first} {last}, plus {n}. We're all very normal.", "{last}, plus {n}. They're quiet. Mostly.", "It's {last} plus {n}. The {n} are my cousins. They're fine."],
   overplus: ["{first} {last}, plus {n}. That's what I was told.", "It's {last}, plus {n}. A guy said plus {n}. A confident guy."],
   stranger: ["I'm with the DJ.", "I know {dj}. Personally. From the thing.", "I'm on the list. Under... something. Check under 'cool'.", "The bartender said it's fine.", "Do I look like I need to be on a list?", "My cousin knows the guy who knows Dante. I'm basically on the list.", "I'm a friend of a friend of {dj}. Who? The friend. Of the friend.", "I'm with the DJ. The other DJ. The DJ's DJ."],
   strangerPlus: ["I'm with the DJ, plus {n}.", "I'm friends with {dj}. Me and {n} others. Same friend.", "It's a birthday! {n} friends! Mine! Birthday!"],
   imposter: ["{first} {last}. It's on the list. Right there. Under {last}.", "I'm {first} {last}, and I would never lie about that."],
   vip: ["{vip}. You know who I am.", "{vip}. I don't do lists. The list does me.", "{vip}. Obviously. Is there a problem?", "{vip}. Someone's meant to be holding the door."],
-  fakevip: ["I'm {vip}'s assistant. He sent me ahead. He's right behind me. Mostly.", "I'm {vip}'s guy. He's parking the jet.", "I'm a VIP. A very important... person. Check the wristband. It's gold. It's mine."],
+  fakevip: ["I'm {vip}'s assistant. They sent me ahead. They're right behind me. Mostly.", "I work for {vip}. {vip} is parking the car.", "I'm a VIP. A very important... person. Check the wristband. It's gold. It's mine."],
   reentry: ["I was just in there. I stepped out for air.", "I went to get a slice. Don't make me stand in line again.", "I was inside! Look at my wrist! Stamped!"],
   fakeband: ["I was just inside. I stepped out. Check my wrist.", "I've got the wristband. See the wristband? Wristband."],
-  press: ["Brooklyn Beat Weekly. Press. Plus {n}, my photographer.", "Press. Brooklyn Beat. I'm on assignment. It's a very small assignment."],
+  press: ["{first} {last}, Brooklyn Beat Weekly. Press. Plus {n}, my photographer.", "{first} {last}. Press. Brooklyn Beat. I'm on assignment. It's a very small assignment."],
   bribe: ["Here's twenty. That's a list, right? A twenty-list?", "Hey. Hey. What if I just... said thank you? In cash?"],
   marcus: ["{dj}! It's me! Marcus! Plus three.", "Hey {dj}! Marcus. Plus three. Don't make it weird.", "It's my birthday! Plus three! Just like we said!"],
   marcus5: ["{dj}! It's me! Marcus! Plus thirty.", "Plus thirty. It's a small thirty. Lightweight thirty.", "Marcus. Plus thirty. It was in the contract. Which I wrote on a napkin."]
@@ -82,6 +83,7 @@ const ADMIT_CRASH = ["Ha. Nice doing business.", "Wow, that actually worked.", "
 const DENY_REPLY = ["Wow. Okay.", "You'll hear about this.", "I'll tell everyone you suck.", "This place is overrated anyway.", "My lawyer will hear about this. My lawyer is also the guy behind me.", "Fine. I didn't want to come in. I wanted to be asked."];
 const DENY_FAKE = ["Eh. Worth a shot.", "Whatever. It was a long shot.", "...Is the line for the other door shorter?", "Okay okay. Have a nice night. Don't mention me."];
 const DENY_VIP = ["Do you know who I am? ...Never mind. I'll go somewhere else.", "Noted. I will remember this. I have a very good memory.", "Wow. Okay. Tell {dj} I said goodbye."];
+const FULL_REPLY = ["Full? Fine. I'll tell everyone I got in.", "Okay. Fair. The fire marshal has a face.", "Next time I'm writing my name on the list in pen.", "Full. Sure. I'll stand near it. Same thing."];
 const MARCUS_PART = ["It's my BIRTHDAY.", "It's not even my birthday. It's a spiritual birthday. Okay? Fine.", "You're making this weird. I'm being very normal."];
 
 /* ------------------------------------------------------------------------------------------ people */
@@ -123,7 +125,9 @@ function makeCrowd(p, diff, rnd, SK) {
     const n = nm();
     P0.first = n.first; P0.last = n.last; P0.full = n.full;
     const plusN = 1 + Math.floor(rnd() * 3);
-    const fillClaim = (key, extra) => SK.fmt(SK.pick(CLAIMS[key], rnd), Object.assign({ first: n.first, last: n.last, n: plusN, dj: SK.djName() }, extra || {}));
+    /* "with the two Ns" is only said by someone whose name has a doubled letter (that letter); everyone else gets another line */
+    const dbl = (/([a-z])\1/i.exec(n.last) || /([a-z])\1/i.exec(n.first) || [])[1];
+    const fillClaim = (key, extra) => { let t = SK.pick(CLAIMS[key], rnd); for (let k = 0; k < 8 && /\{dbl\}/.test(t) && !dbl; k++) t = SK.pick(CLAIMS[key], rnd); if (/\{dbl\}/.test(t) && !dbl) t = "{first} {last}. Spelled like it sounds."; return SK.fmt(t, Object.assign({ first: n.first, last: n.last, n: plusN, dj: SK.djName(), dbl: dbl ? dbl.toUpperCase() : "" }, extra || {})); };
     switch (typeName) {
       case "listed": P0.claim = fillClaim("listed"); P0.allowed = 1; P0.listed = { name: n.last.toUpperCase() + ", " + n.first.toUpperCase(), plus: 0 }; P0.idName = n.full; P0.label = n.full; break;
       case "listedPlus": P0.size = 1 + plusN; P0.claim = fillClaim("listedPlus"); P0.allowed = P0.size; P0.listed = { name: n.last.toUpperCase() + ", " + n.first.toUpperCase(), plus: plusN }; P0.idName = n.full; P0.label = n.full; break;
@@ -135,7 +139,7 @@ function makeCrowd(p, diff, rnd, SK) {
       case "fakevip": { const v = SK.pick(vipNames, rnd); P0.claim = SK.fmt(SK.pick(CLAIMS.fakevip, rnd), { vip: v }); P0.allowed = 0; P0.idName = n.full; P0.bandKind = "fakegold"; P0.label = "???"; P0.vipName = v; break; }
       case "reentry": P0.claim = fillClaim("reentry"); P0.allowed = 1; P0.reentry = true; P0.idName = n.full; P0.bandKind = "valid"; P0.label = "???"; break;
       case "fakeband": P0.claim = fillClaim("fakeband"); P0.allowed = 0; P0.idName = n.full; P0.bandKind = SK.pick(["wrongcol", "marker", "wrongglyph"], rnd); P0.label = "???"; break;
-      case "press": P0.size = 1 + 1; P0.claim = SK.fmt(SK.pick(CLAIMS.press, rnd), { n: 1 }); P0.allowed = 2; P0.listed = { name: "PRESS: BROOKLYN BEAT", plus: 1, press: true }; P0.idName = n.full; P0.label = "Brooklyn Beat"; P0.claimedName = "Brooklyn Beat"; break;
+      case "press": P0.size = 1 + 1; P0.claim = fillClaim("press", { n: 1 }); P0.allowed = 2; P0.listed = { name: n.last.toUpperCase() + ", " + n.first.toUpperCase() + " (BROOKLYN BEAT)", plus: 1, press: true }; P0.idName = n.full; P0.label = n.full; break;
       case "bribe": P0.claim = fillClaim("bribe"); P0.allowed = 0; P0.idName = n.full; P0.label = "???"; break;
       case "marcus": { const big = diff >= 5; P0.size = big ? 31 : 4; P0.claim = SK.fmt(SK.pick(big ? CLAIMS.marcus5 : CLAIMS.marcus, rnd), { dj: SK.djName() }); P0.allowed = 2; P0.listed = { name: "MARCUS (BEST FRIEND)", plus: 1, marcus: true }; P0.idName = "Marcus Bell"; P0.label = "Marcus"; P0.char = "marcus"; P0.claimedName = "Marcus"; P0.big = big; break; }
       default: break;
@@ -304,7 +308,7 @@ async function run(host, p, SK) {
       steps: [
         "People arrive one at a time. Decide who gets in, <b>and how many</b>: use the <b>+</b> / <b>-</b> counter, then <b>LET IN</b> or <b>TURN AWAY</b>.",
         "Check the <b>LIST</b> (<b>1</b>), the <b>ID</b> (<b>2</b>) and the <b>WRISTBAND</b> (<b>3</b>). The name must be on the list <i>and</i> match the ID.",
-        "<b>Capacity is real.</b> Hold spots for the VIPs still to come. Crashers eat your room.",
+        "<b>Capacity is real.</b> Hold a spot for every VIP still to come. When the room is full, \"we're full\" is a fair answer. Crashers eat your room.",
         "Marcus is <b>+1</b>. He will say plus three" + (diff >= 5 ? " (today, plus thirty)" : "") + ". It is still +1."
       ],
       pill: "DIFFICULTY " + diff,
@@ -317,13 +321,14 @@ async function run(host, p, SK) {
     const mIn = SK.meter(hud, { label: "INSIDE", color: "#39d0ff", max: cap, value: 0, marks: [] }); mIn.set(0, "0/" + cap);
     const mHeat = SK.meter(hud, { label: "LINE", color: "#ff6a3a", max: 100, value: 0 });
     const mAng = SK.meter(hud, { label: "ANGRY", color: "#ff3fa4", max: 10, value: 0 }); mAng.set(0, "0/10");
+    const roomEl = el("div", { cls: "gl-room", "aria-live": "polite" }, hud);
     // clipboard
     const clip = el("div", { cls: "gl-clip" }, side);
     const clipH = el("h3", { text: "CLIPBOARD \u2014 " + venue.toUpperCase() }, clip);
     clipH.addEventListener("click", () => clip.classList.toggle("closed"));
     if ((window.innerHeight || 800) < 460) clip.classList.add("closed");
     const cul = el("ul", {}, clip);
-    el("li", { html: "Capacity <b>" + cap + "</b>. List: <b>" + list.length + "</b> names." }, cul);
+    el("li", { html: "Capacity <b>" + cap + "</b>. List: <b>" + list.length + "</b> names. VIPs count." }, cul);
     el("li", { html: "VIPs: <b>" + G.vipNames.slice(0, Math.max(1, G.vipCount)).join(", ") + "</b>. Gold band. No ID needed." }, cul);
     el("li", { html: "Tonight's band: <b>" + band.name + "</b>. Re-entry only." }, cul);
     el("li", { html: "Name on list = name on ID. \"I'm with the DJ\" is not a name." }, cul);
@@ -361,7 +366,7 @@ async function run(host, p, SK) {
     const blinkQ = {};
     const anim = { front: null, fx: 160, fy: 226, fs: 2, fa: 1, mode: "idle", t: 0, dur: 0.6, from: null, to: null, exitKind: null, walk: 0, expr: "", talking: false };
     const queue = []; // upcoming people (for drawing)
-    let inside = 0, angry = 0, crashers = 0, vipsIn = 0, vipsMissed = 0, correct = 0, total = 0, admittedTotal = 0, held = G.vipCount;
+    let inside = 0, angry = 0, crashers = 0, vipsIn = 0, vipsMissed = 0, correct = 0, total = 0, admittedTotal = 0, held = G.vipCount, legitIn = 0, full = 0, marcusIn = true;
     let heat = 0, awaiting = false, cur = null, count = 1, doneAll = false;
     const heatRate = [0, 1.5, 2.3, 3.1, 4.0][diff - 1];
     const lightFront = { lx: -0.45, rim: { color: "#ff3fa4", side: 1 }, shadow: 0, cast: false };
@@ -458,7 +463,7 @@ async function run(host, p, SK) {
         }
       } else if (kind === "id") {
         drawIdCard(r0.g, pr, SK);
-        if (!pr.hasId) r0.txt.innerHTML = "<span class='gold'>No ID.</span> \"It's in the jet.\"";
+        if (!pr.hasId) r0.txt.innerHTML = "<span class='gold'>No ID.</span> \"" + (/kosmo|axl/i.test(pr.vipName || "") ? "It's with my tour manager." : "I don't carry one. You know me.") + "\"";
         else {
           r0.txt.innerHTML = "NAME ON ID:<br><b>" + pr.idName + "</b>";
         }
@@ -474,7 +479,12 @@ async function run(host, p, SK) {
     rows.band.btn.addEventListener("click", () => doCheck("band"));
 
     // ---------- decisions
-    const setCount = n => { count = clamp(n, 1, cur ? Math.max(1, cur.size) : 1); cntEl.innerHTML = count + "<small>" + (count === 1 ? "PERSON" : "PEOPLE") + "</small>"; };
+    // free = room left once every VIP still due has a spot; warns before the count eats one
+    const showRoom = () => {
+      const due = held - (cur && awaiting && cur.vip ? 1 : 0), room = cap - inside, free = Math.max(0, room - due), over = cur && awaiting && !cur.reentry && count > free;
+      roomEl.innerHTML = "FREE <b>" + free + "</b>" + (due > 0 ? " · HELD FOR VIPS <b class='gold'>" + due + "</b>" : "") + (over ? " · <span class='warn'>" + (count > room ? count + " won't fit" : count + " takes a VIP's spot") + "</span>" : "");
+    };
+    const setCount = n => { count = clamp(n, 1, cur ? Math.max(1, cur.size) : 1); cntEl.innerHTML = count + "<small>" + (count === 1 ? "PERSON" : "PEOPLE") + "</small>"; showRoom(); };
     bMinus.addEventListener("click", () => setCount(count - 1)); bPlus.addEventListener("click", () => setCount(count + 1));
     bAll.addEventListener("click", () => setCount(cur ? cur.size : 1));
     let decide = null;
@@ -512,6 +522,7 @@ async function run(host, p, SK) {
       anim.mode = "idle"; anim.talking = true;
       awaiting = true; lockActs(true);
       if (inside >= cap && !pr.reentry) bYes.disabled = true;
+      showRoom();
       SK.__last = { cur: { allowed: pr.allowed, size: pr.size, type: pr.type, vip: pr.vip, reentry: pr.reentry }, room: cap - inside, held };
       warmPerson(queue[1]);
       [queue[5], queue[6]].forEach(q => { if (q) SK.warmQueue(S, [() => SK.warm(q.def, { face: "front", act: "stand" }, lightQ), () => SK.warm(q.def, { face: "front", act: "phone" }, lightQ)], 70); });
@@ -521,13 +532,14 @@ async function run(host, p, SK) {
       heat = Math.max(0, heat - 55); mHeat.set(heat);
       // ----- evaluate
       total++;
-      const room = cap - inside, n = count;
+      const room = cap - inside, n = count, fair = cap - legitIn - (held - (pr.vip ? 1 : 0));
       let adm = 0;
       if (choice === "in") adm = pr.reentry ? n : Math.min(n, Math.max(0, room));
       if (choice === "in" && !pr.reentry && n > room) { floats.add("FULL!", 84, 60, "#ff6a6a", { sc: 2, life: 1.6 }); RP.sfx("error"); }
-      if (!pr.reentry) { inside += adm; admittedTotal += adm; }
+      if (!pr.reentry) { inside += adm; admittedTotal += adm; legitIn += Math.min(adm, pr.allowed); }
       if (pr.vip) held--;
       let verdict = "", reply = "";
+      if (pr.type === "marcus") marcusIn = adm >= pr.allowed;
       if (pr.allowed === 0) {
         if (adm === 0) { verdict = "good"; correct += 1; }
         else { verdict = "crash"; crashers += adm; }
@@ -535,19 +547,21 @@ async function run(host, p, SK) {
         verdict = adm === pr.allowed ? "good" : "extra"; correct += adm === pr.allowed ? 1 : 0.6; if (adm > pr.allowed) crashers += adm - pr.allowed;
         if (pr.vip) vipsIn++;
       } else if (adm > 0) { verdict = "short"; correct += 0.4; angry++; }
+      else if (!pr.vip && !pr.reentry && pr.allowed > fair) { verdict = "full"; correct += 1; full++; } // no room left that crashers didn't take: fair
       else { verdict = "miss"; angry += pr.vip ? 2 : 1; if (pr.vip) vipsMissed++; }
       const fakeish = ["fakevip", "imposter", "fakeband", "bribe", "stranger", "strangerPlus"].includes(pr.type);
       if (verdict === "good" && choice === "in") { reply = pr.type === "marcus" ? (diff >= 5 ? "THIRTY? We said... okay. Plus one. I'll tell them. They won't understand." : SK.pick(MARCUS_PART, rnd)) : SK.pick(ADMIT_REPLY, rnd); floats.add("+" + adm, 84, 58, "#9be15d", { sc: 2, life: 1.3, icon: "check" }); RP.sfx(pr.vip ? "cheer" : "ping"); anim.expr = "happy"; }
       else if (verdict === "good") { reply = fakeish ? SK.pick(DENY_FAKE, rnd) : SK.pick(DENY_REPLY, rnd); floats.add("GOOD CALL", 84, 58, "#9be15d", { sc: 2, life: 1.3, icon: "check" }); RP.sfx("ping"); anim.expr = "sad"; }
       else if (verdict === "crash") { reply = SK.pick(ADMIT_CRASH, rnd); floats.add("CRASHER IN!", 84, 58, "#ff6a6a", { sc: 2, life: 1.5, icon: "skull" }); RP.sfx("buzz"); anim.expr = "happy"; }
       else if (verdict === "extra") { reply = pr.type === "marcus" ? "Plus three! Thank you! ...Wait, what did the list say? Forget it. Thank you!" : SK.pick(ADMIT_CRASH, rnd); floats.add((adm - pr.allowed) + " TOO MANY", 84, 58, "#ffc44d", { sc: 2, life: 1.5 }); RP.sfx("buzz"); anim.expr = "happy"; }
+      else if (verdict === "full") { reply = SK.pick(FULL_REPLY, rnd); floats.add("FULL. FAIR.", 84, 58, "#9be15d", { sc: 2, life: 1.3, icon: "check" }); RP.sfx("ping"); anim.expr = "sad"; }
       else if (verdict === "short") { reply = pr.type === "marcus" ? "It's my BIRTHDAY." : "Wait, what about my friends? They were right here. ...Fine."; floats.add("SHORT", 84, 58, "#ffc44d", { sc: 2, life: 1.3 }); RP.sfx("buzz"); anim.expr = "sad"; }
       else { // miss
         reply = pr.reentry ? "I was INSIDE. I have the stamp. This is the worst night of my life." : pr.vip ? SK.fmt(SK.pick(DENY_VIP, rnd), { dj: myName }) : SK.pick(DENY_REPLY, rnd);
         floats.add(pr.vip ? "VIP TURNED AWAY!" : "WRONG!", 84, 58, "#ff6a6a", { sc: 2, life: 1.6, icon: "cross" }); RP.sfx(pr.vip ? "boo" : "buzz"); anim.expr = "angry";
       }
       if (angry > 10) angry = 10;
-      mIn.set(inside, inside + "/" + cap); mAng.set(angry, angry + "/10");
+      mIn.set(inside, inside + "/" + cap); mAng.set(angry, angry + "/10"); showRoom();
       anim.talking = true;
       await speak(pr, reply, { speed: 85 });
       await S.wait(380);
@@ -569,10 +583,11 @@ async function run(host, p, SK) {
     await S.wait(300);
     grid.style.display = "none"; wrap.querySelectorAll(".sk-tip").forEach(n => { n.style.display = "none"; });
     const title = vipsMissed ? "You bounced a VIP" : crashers > crashLimit ? "The room is... festive" : angry >= 5 ? "Door's closed. Reviews are mixed." : sc >= 85 ? "Immaculate door" : "Doors closed";
-    const lines = [vipsMissed ? "A VIP stood outside in the cold. The fire marshal was less of a problem than the group chat." : crashers ? crashers + " crashers slipped through. \"I know the DJ\" worked " + crashers + " time" + (crashers > 1 ? "s" : "") + "." : "Nobody got in who shouldn't have. Marcus is still sulking."];
+    const lines = [vipsMissed ? "A VIP stood outside in the cold. The fire marshal was less of a problem than the group chat." : crashers ? crashers + " crashers slipped through. \"I know the DJ\" worked " + crashers + " time" + (crashers > 1 ? "s" : "") + "." : "Nobody got in who shouldn't have." + (marcusIn ? "" : " Marcus is still sulking.")];
+    if (full && !vipsMissed) lines.push(full + (full > 1 ? " groups" : " group") + " turned away for room. Nobody argues with a fire code. They try.");
     const stats = [["INSIDE", inside + "/" + cap], ["VIPS IN", vipsIn + "/" + G.vipCount, vipsMissed ? "bad" : "ok"], ["CRASHERS", crashers, crashers ? "bad" : "ok"], ["ANGRY", angry, angry > 3 ? "bad" : ""]];
     const stamp = { w: 64, h: 24, k: 4, draw(g) { const col = ok ? "#9be15d" : "#ff6a6a"; R(g, 0, 0, 64, 24, "#0a0716"); R(g, 1, 1, 62, 22, col); R(g, 3, 3, 58, 18, "#0a0716"); txtC(g, ok ? "DOORS OK" : "DOORS SHUT", 32, 8, col, 2, 1); } };
-    await SK.endCard(S, wrap, { kicker: venue.toUpperCase() + " · DOOR REPORT", title, lines, stats, score: sc, ok, stamp, rank: sc >= 90 ? "BEST BOUNCER" : sc >= 75 ? "SHARP DOOR" : sc >= 55 ? "ACCEPTABLE" : sc >= 35 ? "LEAKY" : "WIDE OPEN" });
+    await SK.endCard(S, wrap, { kicker: venue.toUpperCase() + " · DOOR REPORT", title, lines, stats, score: sc, ok, stamp, rank: sc >= 90 ? "BEST BOUNCER" : sc >= 75 ? "SHARP DOOR" : sc >= 55 ? "ACCEPTABLE" : sc >= 35 ? (crashers ? "LEAKY" : "TOO TIGHT") : (crashers ? "WIDE OPEN" : "LOCKED OUT") });
     return { ok, score: sc, admitted: admittedTotal, angry, crashers, vipsIn, vipsMissed };
   }
 }

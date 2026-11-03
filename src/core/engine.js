@@ -117,6 +117,16 @@ function updateHud() {
   if (S.followers || S.act > 1) parts.push(S.followers.toLocaleString("en-US") + " fans");
   if (S.clock) parts.push(S.clock);
   dom.hud.textContent = parts.join(" · ");
+  refreshInvLabels();
+}
+/* item names may read live state (the wallet shows cash): keep slot labels in step with the header */
+function refreshInvLabels() {
+  if (!dom.inv) return;
+  dom.inv.querySelectorAll(".slot[data-id]").forEach(bt => {
+    const id = bt.dataset.id, n = nameOf(id);
+    if (bt.getAttribute("aria-label") !== n) bt.setAttribute("aria-label", n);
+    const sp = bt.querySelector("span"); if (sp && sp.textContent !== shortOf(id)) sp.textContent = shortOf(id);
+  });
 }
 RP.hud = updateHud;
 
@@ -142,6 +152,7 @@ function renderInv() {
     const id = S.inv[i];
     const bt = el("button", { type: "button", cls: "slot" + (id ? "" : " empty") + (id && id === pending ? " sel" : "") }, dom.inv);
     if (id) {
+      bt.dataset.id = id;
       const ic = iconFor(id), c = mk(32, 24); c.getContext("2d").drawImage(ic, 0, 0);
       bt.appendChild(c); el("span", { text: shortOf(id) }, bt);
       bt.setAttribute("aria-label", nameOf(id));
@@ -156,10 +167,16 @@ function clickItem(id) {
   if (busy) { if (skipFn) skipFn(); return; }
   if ((verb === "use" || verb === "give") && !pending) {
     const it = ITEMS[id] || {};
-    if (verb === "use" && it.useAlone) { act("use", { inv: id }); return; }
+    if (verb === "use" && it.useAlone && !comboTargetsHere(id)) { act("use", { inv: id }); return; }
     pending = id; renderInv(); updateSentence(); return;
   }
-  if (pending) { if (pending === id) { pending = null; renderInv(); updateSentence(); return; } act(verb, { inv: id }, pending); return; }
+  if (pending) {
+    if (pending === id) {
+      if (verb === "use" && (ITEMS[id] || {}).useAlone) { act("use", { inv: id }); return; }   /* second click: use it on its own */
+      pending = null; renderInv(); updateSentence(); return;
+    }
+    act(verb, { inv: id }, pending); return;
+  }
   act(verb || "look", { inv: id });
 }
 const has = id => S.inv.includes(id);
@@ -438,6 +455,14 @@ function repositionSpeech() {
   e.style.left = clamp(sx - w / 2, 4, W - w - 4) + "px";
   e.style.top = clamp(ay - h, 4, SH - h - 4) + "px";
 }
+/* a voice's tag ("PA: "), never doubled when the line already starts with it, never run into the text */
+function speakerLabel(v, text) {
+  let p = v && v.prefix ? String(v.prefix) : "";
+  if (!p) return "";
+  if (!/\s$/.test(p)) p += " ";
+  const t = p.trim().toLowerCase();
+  return text.slice(0, t.length).toLowerCase() === t ? "" : p;
+}
 function say(text, who = "kid") {
   const tag = /^@([\w-]+) ([\s\S]*)$/.exec(text);
   if (tag) { who = tag[1]; text = tag[2]; }
@@ -446,7 +471,7 @@ function say(text, who = "kid") {
     if (fast) { RP.test.log.push((who || "kid") + ": " + text); res(); return; }
     const e = el("div", { cls: "line" + (who === "nar" ? " nar" : ""), "data-who": who }, dom.talk);
     const v = VOICES[who];
-    e.textContent = (v && v.prefix ? v.prefix : "") + text;
+    e.textContent = speakerLabel(v, text) + text;
     e.style.color = speakerColor(who);
     e.style.fontSize = (who === "nar" ? 24 : 20) * speechScale + "px";
     e.style.maxWidth = Math.min(600, (who === "nar" ? 440 : 300) * Math.max(1, speechScale * 0.9)) + "px";
@@ -769,6 +794,7 @@ MG.play = async function (id, params = {}) {
   ov.remove();
   MG.active = null;
   setBusy(false);
+  updateHud();   /* a mini-game may have spent cash itself */
   return result || { ok: false };
 };
 
@@ -856,6 +882,16 @@ function findCombo(a, b) {
   for (const [[x, y], h] of GCOMBOS) if ((x === a && y === b) || (x === b && y === a)) return h;
   return null;
 }
+/* a use-alone item (the phone) waits for a target when something in this room is combinable with it */
+function comboTargetsHere(id) {
+  const lists = [(cur && cur.def.combos) || [], ...(S.act && ACTS[S.act] && ACTS[S.act].combos ? [ACTS[S.act].combos] : [])];
+  for (const L of lists) for (const c of L) {
+    const [x, y] = c.length === 3 ? c : [c[0][0], c[0][1]];
+    const o = x === id ? y : y === id ? x : null;
+    if (o && (hotDef(o) || actorById(o))) return true;
+  }
+  return false;
+}
 function walkPointFor(id, px, py) {
   const h = hotDef(id);
   if (h && h.walk) { const w = evalv(h.walk, S); if (w) return w; }
@@ -910,6 +946,7 @@ async function act(v, target, withItem) {
           const h = findCombo(withItem, id);
           if (h) await runH(h, target);
           else if (v === "give" && hd.give) await runH(hd.give, withItem);
+          else if (v === "use" && (ITEMS[withItem] || {}).useAlone && ITEMS[withItem].use != null) await runH(ITEMS[withItem].use);
           else await say(v === "give" ? (id === "self" ? "I already have it." : isActor ? "They don't want that." : "I'd rather keep it.") : DEFAULT.with());
         } else if (hd.exit && (v === "use" || v === "open")) {
           if (hd[v] != null) await runH(hd[v], target); else await goExit(hd);
@@ -924,6 +961,7 @@ async function act(v, target, withItem) {
       if (withItem) {
         const h = findCombo(withItem, id);
         if (h) await runH(h);
+        else if (v === "use" && (ITEMS[withItem] || {}).useAlone && ITEMS[withItem].use != null) await runH(ITEMS[withItem].use);
         else await say(DEFAULT.with());
       } else {
         const h = it[v];
@@ -1036,11 +1074,17 @@ function revealHotspots() {
     if (x - camX < -10 || x - camX > W + 10) return;
     const e = el("div", { cls: "hs", text: name }, dom.talk);
     const w = e.offsetWidth, h = e.offsetHeight;
-    let lx = clamp(x - camX - w / 2, 2, W - w - 2), ly = clamp(y - h / 2, 2, SH - h - 2);
-    for (let k = 0; k < 6; k++) {
-      const hit = placed.find(p => lx < p[0] + p[2] + 2 && lx + w + 2 > p[0] && ly < p[1] + p[3] + 1 && ly + h + 1 > p[1]);
+    const ox = clamp(x - camX - w / 2, 2, W - w - 2), oy = clamp(y - h / 2, 2, SH - h - 2);
+    let lx = ox, ly = oy;
+    const overlap = (a, b) => a < 0 ? null : placed.find(p => a < p[0] + p[2] + 2 && b < p[1] + p[3] + 1 && a + w + 2 > p[0] && b + h + 1 > p[1]);
+    for (let k = 0; k < 16; k++) {
+      const hit = overlap(lx, ly);
       if (!hit) break;
-      ly = clamp(k % 2 ? hit[1] - h - 2 : hit[1] + hit[3] + 2, 2, SH - h - 2);
+      const m = k % 4;   /* try below, above, right of, left of whatever is in the way */
+      if (m === 0) { lx = ox; ly = clamp(hit[1] + hit[3] + 2, 2, SH - h - 2); }
+      else if (m === 1) { lx = ox; ly = clamp(hit[1] - h - 2, 2, SH - h - 2); }
+      else if (m === 2) { ly = oy; lx = clamp(hit[0] + hit[2] + 4, 2, W - w - 2); }
+      else { ly = oy; lx = clamp(hit[0] - w - 4, 2, W - w - 2); }
     }
     placed.push([lx, ly, w, h]);
     e.style.left = lx + "px"; e.style.top = ly + "px";

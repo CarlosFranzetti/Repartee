@@ -1,5 +1,8 @@
 /* club.Drama — choose-your-response social puzzles with escalating stakes.
-   Params (all optional): { scenario: "rival" | "promoter" | "friend" | "backstage" | "ego", rival: "DJ Brandon Shine", difficulty 1..5, arcade }
+   Params (all optional): { scenario: "rival" | "promoter" | "friend" | "backstage" | "ego", rival: "DJ Brandon Shine", difficulty 1..5, arcade,
+     venue: "Halcyon Room" (rival, ego), boss: "Odessa" (rival: who runs the room),
+     slot: "11:45 PM" (ego: your set), rivalSlot: "10:15 PM" (ego: his), manager: "Reggie" (ego: his manager; unnamed if absent),
+     nameDrop: "Roz" (ego: who signed the running order) }
    Three beats of choices (stakes go up each time) and a payoff. Two meters: REPUTATION and VIBE.
    Result: { ok, score 0..100, outcome: "legend" | "win" | "draw" | "lose", ending: id, scenario, rep, vibe }
    ok = outcome is not "lose". Never mutates RP.state. All characters here are FICTIONAL. */
@@ -31,14 +34,16 @@ let cssDone = false;
 /* ------------------------------------------------------------------------------------------ scenario data */
 /* node: { npc, mood, say: [[who, text|[alts]]...], ch: [[text, {r, v, t, f}, next|fn, reply, mood], ...] }
    who: "nar" narrator | "npc" the other person | "me" you.  reply starting with "~" is narration.
-   Tokens: {me} your DJ name, {npc} their name.  next === "END" goes to the payoff. */
+   Tokens: {me} your DJ name, {npc} their name, plus each scenario's `vars` (filled from params, else the defaults there).
+   next === "END" goes to the payoff. */
 const SC = {};
 
 SC.rival = {
   title: "The Rival", scene: "booth", npc: "brandon", start: "r1", bias: 4,
+  vars: p => ({ venue: p.venue || "The club", boss: p.boss || "the manager", Boss: p.boss || "The manager" }),
   intro: "{npc} is a resident here. He has hair like a toaster ad and a rotating list of grievances. It is 11:40 PM. Your set is at midnight.",
   nodes: {
-    r1: { mood: "happy", say: [["nar", "Halcyon Room, 11:40 PM. The booth. Twenty minutes to your set."], ["npc", ["Oh hey, {me}. Just warming up your gear. For you. As a friend.", "Hey, {me}! I was just making sure your gear works. It does. Barely. Like you."]], ["npc", "Nice crate, by the way. Is it a rental?"]],
+    r1: { mood: "happy", say: [["nar", "{venue}, 11:40 PM. The booth. Twenty minutes to your set."], ["npc", ["Oh hey, {me}. Just warming up your gear. For you. As a friend.", "Hey, {me}! I was just making sure your gear works. It does. Barely. Like you."]], ["npc", "Nice crate, by the way. Is it a rental?"]],
       ch: [
         ["Hands off the gear, {npc}.", { r: 6, v: -2, t: "firm" }, "r2a", "Whoa. Relax. I'm literally being helpful.", "angry"],
         ["Thanks. Somebody had to warm up the room.", { r: 8, v: 4, t: "wit" }, "r2b", "...Funny. We'll see how funny it is at 12:15.", "surprised"],
@@ -50,7 +55,7 @@ SC.rival = {
         ["It's my gear. It's not borrowed. It's... financed.", { r: 7, v: 5, t: "wit" }, "r3x", "Ha! Financed! Somebody's been to the bank!", "surprised"],
         ["[Quietly pull his headphone cable out.] Oops.", { r: -3, v: 4, t: "petty" }, "r3y", "~The crowd laughs. {npc} looks like a toaster that's been dropped.", "angry"],
         ["Let the crowd decide. First track wins.", { r: 8, v: 3, t: "bold" }, "r3x", "Oh, you want to play? Fine. FINE.", "happy"],
-        ["I'll go get the manager.", { r: 2, v: -3, t: "safe" }, "r3y", "Run along. Tell her I said hi. She hates me. She loves me.", "happy"]
+        ["I'll go get {boss}.", { r: 2, v: -3, t: "safe" }, "r3y", "Run along. Tell {boss} I said hi. Hates me. Loves me.", "happy"]
       ] },
     r2b: { mood: "surprised", say: [["nar", "A flicker of doubt crosses his face, then gets deleted."], ["npc", "Cute. Let me guess. You're \"authentic.\" You play records. You have a \"story.\""]],
       ch: [
@@ -80,7 +85,7 @@ SC.rival = {
         ["This one's for you, {npc}. [Play something earnest and cheesy.]", { r: 7, v: 6, t: "wit" }, "END", "~The crowd howls. He's dancing. He doesn't know he's dancing.", "surprised"],
         ["[Grab the mic.] Ladies and gentlemen, {npc}, who is already tired!", { r: 3, v: 4, t: "cheek" }, "END", "~Half the room cheers, the other half writes it down for later.", "angry"]
       ] },
-    r3y: { mood: "happy", say: [["nar", "Midnight. The manager taps her watch. {npc} leans in."], ["npc", "They're my crowd, {me}. They don't even know your name."]],
+    r3y: { mood: "happy", say: [["nar", "Midnight. {Boss} taps the clock. {npc} leans in."], ["npc", "They're my crowd, {me}. They don't even know your name."]],
       ch: [
         ["Then I'll teach them.", { r: 6, v: 3, t: "bold" }, "END", "~He opens his mouth. Closes it. A very small win.", "worried"],
         ["They know it. They just can't spell it.", { r: 5, v: 6, t: "wit" }, "END", "~He pretends not to laugh. His shoulders betray him.", "surprised"],
@@ -260,19 +265,22 @@ SC.backstage = {
 
 SC.ego = {
   title: "The Superstar", scene: "dock", npc: "axl", start: "e1", bias: 2,
-  intro: "{npc} headlines the main stage and believes the sun sets when he says so. His people want your 10 PM slot. You need it more than he does.",
+  vars: p => ({ venue: p.venue || "The festival", slot: p.slot || "10 PM", rivalSlot: p.rivalSlot || "midnight",
+    mgr: p.manager || "his manager", Mgr: p.manager || "His manager", mgrIntro: p.manager ? "His manager, " + p.manager + "," : "His manager",
+    drop: p.nameDrop || "The stage manager" }),
+  intro: "{npc} headlines the main stage and believes the sun sets when he says so. His people want your {slot} slot. You need it more than he does.",
   nodes: {
-    e1: { mood: "happy", say: [["nar", "Harbor Lights. Backstage by the water. 6:30 PM. Your set is at ten."], ["npc", ["Hey. You. The local act. Great news. Your slot's moving to 3 AM. It's a promotion. Of time.", "Oh hey, local guy. We moved you to 3 AM. It's very exclusive. Nobody will be there. Perfect."]], ["nar", "{npc}'s assistant hands him a golden towel. He holds it like a trophy."]],
+    e1: { mood: "happy", say: [["nar", "{venue}. Backstage by the water. Your set is at {slot}."], ["npc", ["Hey. You. The local act. Great news. Your slot's moving to 3 AM. It's a promotion. Of time.", "Oh hey, local guy. We moved you to 3 AM. It's very exclusive. Nobody will be there. Perfect."]], ["nar", "{npc}'s assistant hands him a golden towel. He holds it like a trophy."]],
       ch: [
-        ["My slot's at ten. It's on the poster.", { r: 5, v: -1, t: "firm" }, "e2a", "A POSTER? I'm on three posters. Two of them are bigger than the festival.", "angry"],
+        ["My slot's {slot}. It's on the poster.", { r: 5, v: -1, t: "firm" }, "e2a", "A POSTER? I'm on three posters. Two of them are bigger than the festival.", "angry"],
         ["Three AM? Perfect. Nobody's ever played after sunrise.", { r: 7, v: 4, t: "wit" }, "e2b", "...Wait. Are you making fun of me?", "surprised"],
         ["Congratulations on having so many hours.", { r: 6, v: 5, t: "wit" }, "e2b", "Thank you. I do have a lot of hours. I'm very busy.", "happy"],
         ["Of course, {npc}. Whatever you need.", { r: -9, v: 0, t: "weak" }, "e2c", "See, THIS is why I like local acts. Unthreatening. Like furniture.", "happy"]
       ] },
     e2a: { mood: "angry", say: [["nar", "His assistant hands him a cold-pressed something. He drinks it like he's been wronged by it."], ["npc", "I don't think you understand how this works. I move slots. It's what I do. Like the moon. Or tides."]],
       ch: [
-        ["Then take the moon's slot. Mine is ten.", { r: 5, v: 5, t: "wit" }, "e3x", "...The moon's already headlining. It's not a bad take.", "surprised"],
-        ["Posters are legally binding. It says ten PM. That's the deal.", { r: 7, v: 2, t: "firm" }, "e3x", "Legally binding?! Who said that? Who TOLD you that?", "worried"],
+        ["Then take the moon's slot. Mine is {slot}.", { r: 5, v: 5, t: "wit" }, "e3x", "...The moon's already headlining. It's not a bad take.", "surprised"],
+        ["Posters are legally binding. It says {slot}. That's the deal.", { r: 7, v: 2, t: "firm" }, "e3x", "Legally binding?! Who said that? Who TOLD you that?", "worried"],
         ["[Smile.] Let's ask the crowd.", { r: 6, v: 6, t: "bold" }, "e3y", "The crowd. Ha. The crowd. They love me. That's all they do.", "happy"],
         ["[Walk away.]", { r: 2, v: -2, t: "cool" }, "e3y", "Hey! I wasn't done being impressive!", "angry"]
       ] },
@@ -288,14 +296,14 @@ SC.ego = {
         ["Actually, furniture bites.", { r: 6, v: 5, t: "wit" }, "e3x", "~He jumps back an inch. The entourage pretends they didn't see.", "surprised"],
         ["{npc}. I need that slot. My whole life is in it.", { r: 4, v: 2, t: "honest" }, "e3y", "...A whole life? In a slot? That's... sad. But also kind of beautiful.", "worried"],
         ["[Nod. Say nothing.]", { r: -6, v: -4, t: "weak" }, "e3y", "Good. Great. Love the energy.", "happy"],
-        ["I'll play 3 AM. If you open for me at ten.", { r: 8, v: 4, t: "bold" }, "e3x", "OPEN?! For YOU? I... have never... no. No. Ha. Ha ha ha ha.", "surprised"]
+        ["I'll play 3 AM. If you open for me.", { r: 8, v: 4, t: "bold" }, "e3x", "OPEN?! For YOU? I... have never... no. No. Ha. Ha ha ha ha.", "surprised"]
       ] },
-    e3x: { mood: "worried", say: [["nar", "His manager, Reggie, appears with a tablet and a face like a spreadsheet."], ["npc", "The contract says ten PM for the local. Axl's rider says \"ten PM: Axl.\" One of these is a hallucination."]],
+    e3x: { mood: "worried", say: [["nar", "{mgrIntro} appears with a tablet and a face like a spreadsheet."], ["npc", "The contract says {slot} for you. My rider says {slot} for me. One of these is a hallucination."]],
       ch: [
-        ["[Read the contract out loud. Slowly.]", { r: 8, v: 3, t: "firm" }, "END", "~Reggie reads along. His lips move. His eyes close. \"Yeah. That's the contract.\"", "angry"],
-        ["How about I open at 9:30 and Axl closes at 10:30?", { r: 6, v: 4, t: "deal" }, "END", "~Reggie looks to Axl. Axl looks at the water. The water doesn't help.", "worried"],
-        ["Kosmo Delacroix said the schedule's fine. Ask him.", { r: 5, v: 6, t: "name-drop" }, "END", "~The entourage goes silent. Somebody drops a tablet. In the distance, a dog barks.", "surprised"],
-        ["[Hand over your phone with the festival's own email.]", { r: 7, v: 5, t: "proof" }, "END", "~Reggie reads it. He reads it again. He whispers the word \"oops.\"", "worried"]
+        ["[Read the contract out loud. Slowly.]", { r: 8, v: 3, t: "firm" }, "END", "~{Mgr} reads along. Lips move. His eyes close. \"Yeah. That's the contract.\"", "angry"],
+        ["Radical idea. We both play when the poster says.", { r: 6, v: 4, t: "deal" }, "END", "~{Mgr} looks at {npc}. {npc} looks at the water. The water doesn't help.", "worried"],
+        ["{drop} signed the running order. Go ask.", { r: 5, v: 6, t: "name-drop" }, "END", "~The entourage goes silent. Somebody drops a tablet. In the distance, a dog barks.", "surprised"],
+        ["[Hand over your phone with the festival's own email.]", { r: 7, v: 5, t: "proof" }, "END", "~{Mgr} reads it. Then reads it again. He whispers the word \"oops.\"", "worried"]
       ] },
     e3y: { mood: "angry", say: [["nar", "He is bored. Bored is when he's dangerous."], ["npc", "Let's do this like adults. Back-to-back. First one to clear the floor loses the slot. Loser carries the towel."]],
       ch: [
@@ -306,10 +314,10 @@ SC.ego = {
       ] }
   },
   endings: {
-    legend: { title: "You Keep Ten O'Clock", lines: [["nar", "Axl backs down. In front of everyone. He hands you the golden towel. It's warm. It smells like a fancy gym."], ["nar", "You open at ten. He plays at midnight. Your name is on the poster in bigger letters."]] },
-    win: { title: "Ten PM, Locked", lines: [["nar", "You keep ten PM. Axl takes 11:30 and a long pout."], ["nar", "Reggie quietly buys you a drink and says, \"For the record. I read the contract.\""]] },
-    draw: { title: "A Compromise (Everyone Is Annoyed)", lines: [["nar", "Ten to eleven, you. Eleven to midnight, Axl. A schedule everyone hates equally."], ["nar", "That's what a compromise is. You learn something."]] },
-    lose: { title: "Three A.M.", lines: [["nar", "You play at 3 AM. Eleven people. Two are asleep. One is Lou."], ["nar", "Lou is thrilled. \"Reminds me of 1993,\" he says. You have no idea what that means. But you play for Lou."]] }
+    legend: { title: "You Keep Your Slot", lines: [["nar", "Axl backs down. In front of everyone. He hands you the golden towel. It's warm. It smells like a fancy gym."], ["nar", "You keep {slot}. Somebody reprints the poster with your name bigger."]] },
+    win: { title: "Slot Locked", lines: [["nar", "You keep {slot}. Axl keeps {rivalSlot} and a long pout."], ["nar", "{Mgr} quietly buys you a drink and says, \"For the record. I read the contract.\""]] },
+    draw: { title: "A Compromise (Everyone Is Annoyed)", lines: [["nar", "You keep {slot}, minus twenty minutes. Axl keeps his, plus twenty. A schedule everyone hates equally."], ["nar", "That's what a compromise is. You learn something."]] },
+    lose: { title: "On His Clock", lines: [["nar", "The poster still says {slot}. Axl's people call the poster \"a draft.\""], ["nar", "You'll start when he stops. He hasn't said when he stops."]] }
   }
 };
 
@@ -458,7 +466,8 @@ async function run(host, p, SK) {
   const defFor = key => key === "brandon" || key === "gus" ? RP.chars.get("sk_" + key) : (RP.chars.get(PRESET[key] || key));
   const kidDef = SK.charDef("kid");
   const st = { rep: 50, vibe: 50, f: {}, tags: [] };
-  const tok = (s) => SK.fmt(s, { me: myName, npc: npcNames[sc.npc] || "them" });
+  const vars = Object.assign(sc.vars ? sc.vars(p) : {}, { me: myName, npc: npcNames[sc.npc] || "them" });
+  const tok = (s) => SK.fmt(s, vars);
   const head = host.header("club.Drama", (p.arcade ? "Arcade · " : "") + sc.title);
   head.classList.add("sk-head");
   let leaveRes = null;
