@@ -8,14 +8,14 @@ const A4 = RP.a4;
 
 const jfk = [
   ["expect", "S.room === 'a4_jfk'", "at JFK"],
-  ["look", "hot:a4_board"], ["look", "hot:a4_cart"], ["use", "hot:a4_vend"], ["look", "hot:a4_pax2"], ["look", "inv:a4_rider"], ["expect", "S.money === 142", "a tight start: $150 less the $8 cab to JFK"],                          // (empty answer queue: picks the last option = Never mind)
+  ["look", "hot:a4_board"], ["look", "hot:a4_cart"], ["use", "hot:a4_vend"], ["look", "hot:a4_pax2"], ["look", "inv:a4_rider"], ["run", async (S, RP) => { RP.test.m0 = S.money; }], ["expect", "S.money <= 220", "a tight start: $150 less the cab to JFK, never more than $220"],                          // (empty answer queue: picks the last option = Never mind)
   ["pickup", "hot:a4_forms"], ["expect", "!RP.has('a4_form')", "no form before the airline tells me I'm in trouble"],
   ["use", "hot:a4_door_bag"], ["expect", "S.room === 'a4_jfk'", "Baggage Services is closed to me before check-in"],
   ["give", "hot:a4_dolores", "a4_bag"], ["expect", "!S.f.a4_bagChecked", "passport first"],
   ["give", "hot:a4_dolores", "a4_passport"], ["expect", "RP.has('a4_boarding')", "boarding pass"],
   ["give", "hot:a4_dolores", "a4_bag"],
   ["expect", "S.f.a4_bagChecked && RP.has('a4_claim') && S.f.a4_msgBag && !RP.has('a4_bag') && S.f.noTravel", "bag checked, claim tag, message, travel blocked"],
-  ["expect", "S.money === 47", "the walk-up bag fee cost $95"],
+  ["expect", "S.money === RP.test.m0 - 95", "the walk-up bag fee cost $95"],
   ["pickup", "hot:a4_forms"], ["expect", "RP.has('a4_form')", "Form 7B"],
   ["answers", [1]], ["use", "hot:a4_vend"], ["expect", "RP.has('a4_jerky')", "jerky"],
   ["answers", [2]], ["use", "hot:a4_vend"], ["expect", "RP.has('a4_water')", "rider item 1: water ($3)"],
@@ -110,7 +110,8 @@ RP.walkthroughs.act4fail = [
   ["pickup", "hot:a4_bag"],
   ["run", async (S, RP) => { RP.test.travelQ.push("a4_loc_jfk"); }], ["use", "hot:a4_door"], ["expect", "S.room === 'a4_jfk'", "at JFK"],
   // JFK: the pickle trap, then a bag fee I cannot pay, then two records to the man in the Hawaiian shirt
-  ["answers", [3]], ["use", "hot:a4_vend"], ["expect", "RP.has('a4_pickle') && S.money === 139", "a pickle: $3 for the wrong vegetable"],
+  ["run", async (S, RP) => { RP.test.m0 = S.money; }],
+  ["answers", [3]], ["use", "hot:a4_vend"], ["expect", "RP.has('a4_pickle') && S.money === RP.test.m0 - 3", "a pickle: $3 for the wrong vegetable"],
   ["give", "hot:a4_dolores", "a4_passport"],
   ["run", async (S, RP) => { S.money = 20; }],
   ["give", "hot:a4_dolores", "a4_bag"], ["expect", "!S.f.a4_bagChecked && RP.has('a4_bag')", "$20 will not cover the bag fee"],

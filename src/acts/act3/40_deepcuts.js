@@ -92,7 +92,14 @@ async function rayTalk(S) {
       "@a3_ray Play it LOUD. That's what it's for. A record's not a vase, it's a conversation. Go have it in public."]);
     return;
   }
-  if (S.f.a3_hunt && !S.f.a3_estateDone) { await RP.lines(["@a3_ray The Pruitt house. Woodside. Go. Bring a cart. Bring cash. Bring your best 'I'm not desperate' face."]); return; }
+  if (S.f.a3_hunt && !S.f.a3_estateDone) {
+    await RP.lines(["@a3_ray The Pruitt house. Woodside. Go. Bring a cart. Bring cash. Bring your best 'I'm not desperate' face."]);
+    if (!S.f.a3_rayHal && (await RP.choose(["Ray, what do you know about Hal Pruitt?", "Nothing. Later."])) === 0) {
+      S.f.a3_rayHal = true; S.f.a3_knowHal = true;
+      await RP.lines(["@a3_ray Hal? Stubborn as a stylus. Told me once, '98: a record in a box is a body in a freezer. Never sold to a dealer, only to people who'd play them.", "@a3_ray If the niece is smart she'll listen to anybody who says the same. And if a dealer's circling, tell the niece what Hal would have said. Then watch the dealer's face."]);
+    }
+    return;
+  }
   await RP.say(S.f.a3_rayTip ? "Ray. I'm back. Tell me something rude." : "Hey, Ray.");
   await RP.say(S.f.a3_rayTip ? "Tell you what? That you still have a lot to learn? Fine. You do." : "Well, well. The residency guy. Still wearing the jacket. How's the booth? Warm? Full of other people's fingerprints?", "a3_ray");
   await RP.convo([

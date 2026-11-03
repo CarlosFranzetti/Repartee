@@ -1,6 +1,8 @@
 /* Act 3 — the Pruitt house, Woodside, Queens. Dead collector's estate sale: the whole collection (junk and gems),
-   a pair of Technics SL-1210MK2s, and the grail on the platter. Flags: a3_estateSeen, a3_estatePaid, a3_estateDone,
-   a3_grail (Loose Joints taken), a3_tt (Technics taken), a3_priyaAtEstate, a3_birdHeard. */
+   a pair of Technics SL-1210MK2s, and the grail on the platter. The puzzle: Priya bids $110 for the whole house; beat her with
+   cash ($115), the flyer's small print ($70) or what Mort/Ray said about Hal ($90). Sort the three shelves by Hal's pencil
+   stars (a dealer pays for the rest). Bernard says where the grail is (talk to him three times, or feed him a salty snack).
+   Flags: a3_estateSeen, a3_estatePaid, a3_sh[3], a3_dug, a3_platterKnown, a3_estateDone, a3_grail, a3_tt, a3_priyaAtEstate. */
 (function () {
 "use strict";
 const RP = window.RP;
@@ -87,57 +89,88 @@ function light(S) {
 }
 
 /* ---- scripts ---- */
+const BID = 110;   // Priya's cash offer for the whole house
+const SHELVES = [
+  { name: "left shelves", ids: ["gwen_guthrie_padlock", "double_exposure_ten_percent", "donna_summer_i_feel_love", "chic_good_times"] },
+  { name: "middle shelves", ids: ["dinosaur_l_go_bang", "peech_boys_dont_make_me_wait", "taana_gardner_heartbeat", "snap_rhythm_is_a_dancer", "cc_music_factory_gonna_make_you_sweat"] },
+  { name: "right shelves", ids: ["loleatta_holloway_love_sensation", "class_action_weekend", "strafe_set_it_off", "masters_at_work_blood_vibes_the_ha_dance", "black_box_ride_on_time", "reel_2_real_i_like_to_move_it", "grover_washington_jr_winelight"] }
+];
+const nm = id => RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "") + ": " + RP.rec(id).title.replace(/ \(.*\)/, "");
+const dealer = id => GEMS.includes(id) ? 12 : id === "masters_at_work_blood_vibes_the_ha_dance" ? 40 : 3;   // the junk dealer's cash: a starred sleeve is worth more to him than a dollar-bin hit, a real 12" most of all
 async function priyaArgument(S) {
   S.f.a3_priyaAtEstate = true;
-  await RP.lines(["@a3_priya I'll give you eighty for the best twenty. Cash. Right now.", "@a3_tanya Whole thing. One buyer. I'm not splitting it. I've got a train to catch and a cat to feed.", "@a3_priya That's ridiculous. I only want the good ones.",
-    "@a3_tanya Then you can pay for the bad ones too. They're the same weight."]);
+  await RP.lines(["@a3_priya A hundred and ten. Cash. The whole house, turntables, bird, everything, and I'll have a van here by four.", "@a3_tanya Whole thing. One buyer. I'm not splitting it. I've got a train to catch and a cat to feed.",
+    "@a3_priya It's more than anyone else will pay you. I'm doing you a favour.", "@a3_tanya It's more than I asked. Anybody who beats it gets it. Otherwise it's hers at five.",
+    "@a3_priya You, the Halcyon guy. Beat my number or get out of my way."]);
+}
+async function tanyaDeal(S, how) {
+  const price = how === "flyer" ? 70 : how === "hal" ? 90 : BID + 5;
+  if (how === "flyer") await RP.lines(["I hold out the flyer. Tanya reads her own handwriting, the small print under the address, and her face goes through four stages.", "@a3_tanya I wrote that at midnight. I forgot I wrote that. 'No dealers.'", "@a3_priya That's a flyer. Flyers aren't contracts.", "@a3_tanya It's my uncle's wish and my biro. Seventy dollars. The DJ gets it. You get a very long train ride."]);
+  else if (how === "hal") await RP.lines(["I tell her what Mort told me at the fair, and what Ray said at Deep Cuts: Hal never sold a record to a dealer, threw one out of this house in '09 for pricing a sleeve while it was still playing.", "@a3_tanya ...He did. He threw him out the front door. I was eleven. I thought it was the funniest thing I'd ever seen.", "@a3_priya Sentimental nonsense!",
+    "@a3_tanya Ninety. And you're going to play them, the whole thing, out loud. That's my price."]);
+  else await RP.lines(["A hundred and fifteen. Cash. I put the extra five down like a man buying a dream.", "@a3_priya Oh, come ON.", "@a3_tanya Cash is cash. I'm sorry, Priya. Not my favourite way to be right."]);
+  if (!RP.canAfford(price)) { await RP.lines(["I check my wallet. " + U.fmtMoney(S.money) + ". She wants " + U.fmtMoney(price) + ".", "@a3_tanya Then I can't. I can hold it till five, but not after. Odessa pays hands on a weekday, I hear. Mort buys records."]); return; }
+  if (how === "flyer") RP.take("a3_flyer");
+  RP.money(-price); S.f.a3_estatePaid = true; S.f.a3_estatePrice = price; S.f.a3_priyaAtEstate = false;
+  const pr = RP.actor("a3_priya"); if (pr) pr.vis = () => false;
+  RP.relight();
+  await RP.lines(["@a3_priya ...May the best digger lose. I mean win. I mean get out of my way.", "She leaves with her headphones round her neck and her scowl intact. The room gets noticeably quieter.",
+    "@a3_tanya Deal. It's yours. The shelves, the crates, the turntables. Good luck.", "Sixty years of one man's records. In a Queens living room. And I just bought it.",
+    "@a3_tanya Hal had a system. A star in pencil on the sleeve means it made him cry. He didn't say it out loud, but I've seen him look. Go through the shelves, keep what's worth keeping, and the dealer outside takes the rest."]);
+}
+async function tanyaFlyer(S) {
+  if (S.f.a3_estatePaid) { await RP.say("She's seen the flyer. She wrote the flyer.", "nar"); return; }
+  S.f.a3_tanyaMet = true; await tanyaDeal(S, "flyer");
 }
 async function tanyaTalk(S) {
   if (S.f.a3_estateDone) { await RP.lines(["@a3_tanya Everything's yours. Lock up when you leave. Or don't. I won't know. I'll be on the train."]); return; }
-  if (S.f.a3_estatePaid) { await RP.lines(["@a3_tanya It's all yours. Sort it, sell it, keep it, burn it. I'm done."]); return; }
-  if (S.f.a3_priyaAtEstate) { await RP.lines(["@a3_priya Fine. YOU deal with her."]); }
-  await RP.lines(["Hi. I'm here for the collection. Hal Pruitt's?", "@a3_tanya Oh. Thank God. Another one. Are you buying or are you a 'looky-loo'?",
-    "@a3_tanya My uncle Hal had sixty years of records. I have a train at five and a cat at home. The whole house. All of it. Whole collection or nothing.",
-    "@a3_tanya Ninety dollars. The turntables are in. So's the parakeet. He's free with purchase. No, he's NOT free. I mean he IS. Please."]);
-  const price = Math.min(90, S.money);
-  const opts = ["Pay $" + price + ". Done.", "Haggle: 'My name is on a flyer. Almost.'", "Let me look around first."];
-  const i = await RP.choose(opts);
-  if (i === 2) { await RP.say("Take your time. But time is money. And money is my train.", "a3_tanya"); return; }
-  let pay = price;
-  if (i === 1) {
-    await RP.lines(["I'm a resident DJ. At the Halcyon Room. I will play your uncle's records for a hundred people.", "@a3_tanya ...He'd have liked that. He didn't like people, but he liked the idea of people. Eighty. Final."]);
-    pay = Math.min(80, S.money);
+  if (S.f.a3_estatePaid) {
+    if (S.f.a3_dug && !S.f.a3_grail) { await RP.lines(["@a3_tanya Looking for something? Hal talked to that bird more than he talked to me. If Bernard keeps saying something, it's usually the point.", "@a3_tanya Salty things help. He gets chatty."]); return; }
+    await RP.lines(["@a3_tanya It's all yours. Sort it, sell it, keep it, burn it. I'm done."]); return;
   }
-  if (S.money < 1) { await RP.lines(["@a3_tanya You have no money. I have no patience. Take it. Honestly. Just... take it.", "I will play every one of these in my uncle's honor. Starting with the bird."]); pay = 0; }
-  if (pay) RP.money(-pay);
-  S.f.a3_estatePaid = true;
-  await RP.lines(["@a3_tanya Deal. It's yours. Good luck.", "Sixty years of one man's records. In a Queens living room. And I just bought it."]);
-  await sortCollection(S, pay);
+  if (S.f.a3_tanyaMet) await RP.lines(["@a3_tanya Priya's number is still " + U.fmtMoney(BID) + ". I take the better reason, or the better number, at five."]);
+  else {
+    S.f.a3_tanyaMet = true;
+    await RP.lines(["Hi. I'm here for the collection. Hal Pruitt's?", "@a3_tanya Oh. Thank God. Another one. Are you buying or are you a 'looky-loo'?",
+      "@a3_tanya My uncle Hal had sixty years of records. I have a train at five and a cat at home. The whole house, all of it, whole collection or nothing. The turntables are in. So's the parakeet. He's free with purchase. No, he's NOT free. I mean he IS. Please.",
+      "@a3_tanya Priya has offered " + U.fmtMoney(BID) + ". I'll take the better offer, or a better reason. I'm not choosy. I'm tired."]);
+  }
+  const opts = ["Outbid her: " + U.fmtMoney(BID + 5) + " cash"], how = ["cash"];
+  if (RP.has("a3_flyer")) { opts.push("Show her the estate-sale flyer"); how.push("flyer"); }
+  if (S.f.a3_knowHal) { opts.push("Tell her what Mort and Ray said about Hal and dealers"); how.push("hal"); }
+  opts.push("Pitch: 'I'll play your uncle's records for a hundred people.'"); how.push("pitch");
+  opts.push("Let me look around first."); how.push("later");
+  const k = how[await RP.choose(opts)];
+  if (k === "later") { await RP.say("Take your time. But time is money. And money is my train.", "a3_tanya"); return; }
+  if (k === "pitch") {
+    await RP.lines(["I'm a resident DJ. At the Halcyon Room. I will play your uncle's records for a hundred people.", "@a3_tanya ...He'd have liked that. He didn't like people, but he liked the idea of people.",
+      "@a3_tanya But a hundred and ten is a train ticket and a vet bill. Sweet isn't a number. If you've got something in writing from him, or something somebody said about him, I'll listen.", "@a3_tanya I put his wishes on the flyer I pinned up at the fair. Small print. Nobody reads small print."]);
+    return;
+  }
+  await tanyaDeal(S, k);
 }
-async function sortCollection(S, pay) {
-  await RP.fadeTo(1, 700);
-  A3.clockTo(S, "MON 1:20 PM");
-  await RP.say("Hours later. Dust in my teeth, a crate in every direction, a pile of 'maybe' that's bigger than most people's collection.", "nar");
-  await RP.fadeTo(0, 700);
-  const intro = ["Hal's system is penciled on the sleeves. A star means it made him cry. Eight of them, a shelf of their own: Gwen Guthrie, Double Exposure, Dinosaur L, Peech Boys, Taana Gardner, Loleatta, Class Action, Strafe.",
-    "The rest: dollar-bin hits, a Winelight that's mostly dust, and one Masters At Work 12\" that's worth real money. A dealer is parking his van outside."];
-  await RP.lines(intro);
-  const heavy = await RP.choose(["Keep the eight stars. Sell everything else to the dealer.", "Keep the four that look expensive. Sell the rest by the box."]) === 1;
-  const keep = heavy ? ["gwen_guthrie_padlock", "double_exposure_ten_percent", "dinosaur_l_go_bang", "masters_at_work_blood_vibes_the_ha_dance"] : GEMS;
-  const cash = pay + (heavy ? 55 : 30);   // the dealer's cash: the lot price back, plus a small profit (more if I keep less)
+async function sortShelf(S, i) {
+  if (!S.f.a3_estatePaid) { await RP.say("Tanya's watching me. It's not mine yet. Money first."); return; }
+  const sh = SHELVES[i], done = S.f.a3_sh || (S.f.a3_sh = [false, false, false]);
+  if (done[i]) { await RP.say("Sorted. What's left on these shelves is dust, price stickers and the rest of Hal's opinions."); return; }
+  await RP.lines(["The " + sh.name + ". Hal's system, in pencil on every sleeve: a star means it made him cry.", sh.ids.map(id => (GEMS.includes(id) ? "[*] " : "[ ] ") + nm(id)).join("; ") + "."]);
+  const c = await RP.choose(["Keep the starred sleeves. The dealer takes the rest.", "Keep the big names. The dealer takes the starred ones.", "Not yet."]);
+  if (c === 2) return;
+  const keep = sh.ids.filter(id => GEMS.includes(id) === (c === 0)), sold = sh.ids.filter(id => !keep.includes(id));
   keep.forEach(id => RP.addRecord(id));
-  await RP.lines(["I keep " + keep.length + " records. The rest I stack in a box that says 'FOR THE NEXT SUCKER.'"]);
-  if (S.f.a3_priyaAtEstate) {
-    await RP.lines(["@a3_priya ...You keep the good ones. Fine. I'll take the rest off your hands. Fair price. Not a penny of it fair to ME."]);
-    if (cash) { RP.money(cash); }
-    await RP.lines(["@a3_priya Don't look at me like that. I get the junk. You get the glory. We both go home with something. Bye."]);
-    S.f.a3_priyaAtEstate = false;
-  } else if (cash) { RP.money(cash); await RP.say("A junk dealer takes the rest for $" + cash + ". It's an honest hustle."); }
-  S.f.a3_dug = true;
-  await RP.lines(["Now the turntables. And whatever's on that platter."]);
+  const cash = sold.reduce((n, id) => n + dealer(id), 0);
+  if (cash) RP.money(cash);
+  done[i] = true; S.f.a3_gems = (S.f.a3_gems || 0) + keep.filter(id => GEMS.includes(id)).length;
+  await RP.lines(c === 0 ? ["I keep " + keep.length + ", every one with a pencil star. The rest go in a box that says 'FOR THE NEXT SUCKER.' The dealer outside gives me " + U.fmtMoney(cash) + " for the box.", "It doesn't feel like a loss. It feels like listening."]
+    : ["I keep the ones I'd recognise in a bin, and the dealer takes Hal's stars for " + U.fmtMoney(cash) + ". They are safely in a man's van, and I'm going to think about this on the train for a year.", "I'll never know what the stars were for. That's the cost."]);
+  if (done.every(Boolean)) {
+    S.f.a3_dug = true; A3.clockTo(S, "MON 1:20 PM");
+    await RP.lines(["That's the last shelf. Hours of dust in my teeth. " + (S.f.a3_gems >= 8 ? "All eight stars are in the crate." : S.f.a3_gems ? S.f.a3_gems + " of Hal's eight stars are in the crate." : "None of Hal's stars are in the crate."),
+      "Now the turntables. And Tanya said Bernard knows something."]);
+  }
 }
 async function takeGrail(S) {
-  if (!S.f.a3_estatePaid) { await RP.lines(["There's a record on the left platter, under the dust sheet. It's not mine yet. 'Everything must go' is a promise. Pay first."]); return; }
+  if (!S.f.a3_estatePaid) { await RP.lines(["There's a shape on the left platter, under the dust sheet. It's not mine yet. 'Everything must go' is a promise. Pay first."]); return; }
   if (!S.f.a3_dug) { await RP.say("I should sort the collection first. It's a lot. It's the whole house."); return; }
   if (S.f.a3_grail) { await RP.say("It's in the bag, flat and snug. I check on it every ten minutes."); return; }
   S.f.a3_grail = true;
@@ -152,6 +185,10 @@ async function takeTT(S) {
   if (!S.f.a3_estatePaid) { await RP.say("Two Technics SL-1210MK2s under a dust sheet. They're beautiful. They're not mine. Yet."); return; }
   if (!S.f.a3_dug) { await RP.say("First the records. The turntables are the dessert."); return; }
   if (S.f.a3_tt) { await RP.say("Already got them. My back says 'thanks,' in a very sarcastic voice."); return; }
+  if (!S.f.a3_grail) {
+    await RP.lines(["I take the corner of the left deck and the sheet won't lie flat. Something is holding it up. Every time I touch the sheet, Bernard starts shouting.", S.f.a3_platterKnown ? "The record on the platter first. Then the deck." : "Whatever's under there, the bird has an opinion. Hal talked to him more than he talked to people."]);
+    return;
+  }
   S.f.a3_tt = true;
   RP.setGear("turntables", "technics_sl_1210mk2");
   RP.relight();
@@ -169,11 +206,23 @@ async function maybeFinish(S) {
   }
 }
 async function birdTalk(S) {
+  const n = S.f.a3_birdN = (S.f.a3_birdN || 0) + 1;
   S.f.a3_birdHeard = true;
   await RP.say("Hey, Bernard. Who's a good bird?");
   RP.sfx("blip");
-  await RP.say("IS IT ALL OVER MY FACE? IS IT ALL OVER MY FACE?", "a3_bernard");
-  await RP.lines(["...Hal taught the bird the record. Of course he did.", "So the grail's in this house. Or at least the bird's convinced it is."]);
+  if (n === 1) { await RP.say("IS IT ALL OVER MY FACE? IS IT ALL OVER MY FACE?", "a3_bernard"); await RP.lines(["...Hal taught the bird the record. Of course he did.", "A bird like that has more than one line. Maybe he needs time. Or something salty."]); }
+  else if (n === 2) { await RP.say("FOR COMPANY! FOR COMPANY!", "a3_bernard"); await RP.lines(["'For company.' That's what Mort said Hal called the Loose Joints. So the bird is repeating the point of the house.", "He stops. He gives me one eye. He's waiting for the next line, or a chip."]); }
+  else await birdFull(S);
+}
+async function birdFull(S) {
+  S.f.a3_platterKnown = true; RP.relight();
+  await RP.say("FOR COMPANY! LEFT PLATTER! IS IT ALL OVER MY FACE?", "a3_bernard");
+  await RP.lines(["...The left platter. The sheet on it hasn't lain flat since I walked in.", "Hal told the bird where he put it, in the order he'd say it to a friend. Of all the sleeves in this house, the one that mattered is in plain sight, under a dust sheet."]);
+}
+async function feedBird(S, id) {
+  RP.take(id);
+  await RP.lines(["I offer Bernard a " + (id === "a3_chips" ? "chip" : "pork rind") + ". He takes it out of my hand like he's collecting rent, and eats it with his eyes closed.", "He is, it turns out, a bird who talks with his mouth full."]);
+  await birdFull(S);
 }
 RP.voice("a3_bernard", { color: "#5ad85a", prefix: "BERNARD: ", anchor: [32, 120] });
 
@@ -209,20 +258,20 @@ RP.room({
   hotspots: [
     { id: "a3_e_door", name: "front door", r: [4, 38, 54, 130], z: 20, walk: [66, 220, "left"], look: "The front door. A flyer taped to it says ESTATE SALE. EVERYTHING MUST GO. Hal's life, itemized, with a coupon.", exit: S => "travel" },
     { id: "a3_tanya", name: "Tanya", z: 80, look: "Tanya Pruitt: Hal's niece. Hospital scrubs, a lanyard, a clipboard, and an expression like someone who's discovered that grief is mostly logistics.",
-      talk: S => tanyaTalk(S), give: "@a3_tanya I don't need a thing. I need a buyer and a taxi." },
-    { id: "a3_priya", name: "Priya", z: 80, look: "Priya, still scowling. The scowl's so permanent I think it's part of her haircut.", talk: ["Priya, we could split it?", "@a3_priya No."] },
-    { id: "a3_e_shelves", name: "record shelves", rects: [[60, 8, 100, 152], [166, 8, 100, 152], [272, 8, 100, 152]], z: 20, walk: [220, 214, "back"],
-      look: S => S.f.a3_estatePaid ? "Floor-to-ceiling shelves. Hal had a system I don't understand: records by color, then by year, then by 'did it make him cry.' The last category has its own shelf." : "Floor-to-ceiling shelves of records, each marked with a yellow sticker. Hal priced everything in advance. In pencil. And then crossed out and then re-priced.",
-      use: S => S.f.a3_estatePaid ? (S.f.a3_dug ? "I've gone through it all. My fingers have dust and my head has a lot of titles in it." : "Right. Time to sort the collection. I should talk to Tanya... or just start. She's... on her phone.") : "Tanya's watching me. It's not mine yet. Money first.",
-      pickup: S => S.f.a3_estatePaid ? "They're mine now. And they weigh more than I do." : "The sticker says 'EVERYTHING MUST GO.' It doesn't say 'to you.'" },
+      talk: S => tanyaTalk(S), give: async (S, item) => { if (item === "a3_flyer") await tanyaFlyer(S); else return "@a3_tanya I don't need a thing. I need a buyer and a taxi."; } },
+    { id: "a3_priya", name: "Priya", z: 80, look: "Priya, still scowling. The scowl's so permanent I think it's part of her haircut.", talk: ["Priya, we could split it?", "@a3_priya No. A hundred and ten, whole lot. Beat it or leave."],
+      give: async (S, item) => item === "a3_flyer" ? "Priya reads it, hits 'No dealers please' and her scowl deepens to a new depth. 'That's for Tanya, not me.' She hands it back like it's burning." : "@a3_priya I don't take handouts. I take records." },
+    ...[[60, 110], [166, 216], [272, 322]].map(([x, wx], i) => ({ id: "a3_e_sh" + i, name: SHELVES[i].name, r: [x, 8, 100, 152], z: 20, walk: [wx, 214, "back"],
+      look: S => S.f.a3_sh && S.f.a3_sh[i] ? "Sorted. The " + SHELVES[i].name + " are bare: dust, price stickers and one ghost outline where a sleeve used to be." : S.f.a3_estatePaid ? ["Hal's system, in pencil on the sleeves. A star means it made him cry.", SHELVES[i].ids.map(id => (GEMS.includes(id) ? "[*] " : "[ ] ") + nm(id)).join("; ") + "."] : "Floor-to-ceiling shelves of records, each marked with a yellow sticker, and on some sleeves a tiny pencil star. Hal priced everything in advance. In pencil. And crossed out and re-priced.",
+      use: S => sortShelf(S, i), open: S => sortShelf(S, i), pickup: S => S.f.a3_estatePaid ? sortShelf(S, i) : "The sticker says 'EVERYTHING MUST GO.' It doesn't say 'to you.'" })),
     { id: "a3_e_stacks", name: "crates", rects: [[244, 176, 60, 70], [340, 186, 60, 56], [118, 196, 50, 40]], z: 40, walk: [300, 236, "back"], look: "Milk crates stacked like a fort. Every one is full, and every one has a yellow sticker. I do a quick count: eleven crates and one cat tree. No cat.", pickup: "They're heavy. Rough guess: a thousand records. It's a number that hurts to carry." },
     { id: "a3_e_tt", name: "Technics turntables", r: [392, 92, 154, 44], z: 35, vis: S => !S.f.a3_tt, walk: [468, 214, "back"],
       look: S => S.f.a3_estatePaid ? "Two Technics SL-1210MK2s on a card table. Satin black. The nicest thing in the house. The satin-black counterpart of the SL-1200MK2, built like a small tank." : "Two Technics under a dust sheet. SL-1210MK2. Even under cloth they look like they could win a staring contest.",
       pickup: S => takeTT(S), use: S => takeTT(S), open: S => takeTT(S) },
-    { id: "a3_e_platter", name: "record on the platter", r: [396, 98, 70, 36], z: 45, vis: S => !S.f.a3_grail, walk: [430, 214, "back"],
-      look: S => S.f.a3_dug ? "A record on the left platter, under the sheet. It's a plain white sleeve with 'FOR COMPANY' written in pencil." : "There's a shape on the left platter, under the dust sheet. A record. Probably the last one he played.",
+    { id: "a3_e_platter", name: "record on the platter", r: [396, 98, 70, 36], z: 45, vis: S => !S.f.a3_grail && !!S.f.a3_platterKnown, walk: [430, 214, "back"],
+      look: S => "A record on the left platter, under the sheet, where the bird said. A plain white sleeve with 'FOR COMPANY' written in pencil.",
       pickup: S => takeGrail(S), use: S => takeGrail(S), open: S => takeGrail(S) },
-    { id: "a3_e_bird", name: "Bernard (parakeet)", r: [20, 150, 40, 60], z: 38, walk: [74, 216, "left"], look: "Bernard, a parakeet in a cage. He's looking at me with the stern expression of a bird who's seen everything and approved of none of it.", talk: S => birdTalk(S), pickup: "He's not mine. And he's looking at my hand like it's lunch.", use: S => birdTalk(S) },
+    { id: "a3_e_bird", name: "Bernard (parakeet)", r: [20, 150, 40, 60], z: 38, walk: [74, 216, "left"], look: "Bernard, a parakeet in a cage. He's looking at me with the stern expression of a bird who's seen everything and approved of none of it.", talk: S => birdTalk(S), give: async (S, item) => { if (item === "a3_chips" || item === "a3_rinds") await feedBird(S, item); else return "Bernard looks at it like it's an insult. He says nothing. For once."; }, pickup: "He's not mine. And he's looking at my hand like it's lunch.", use: S => birdTalk(S) },
     { id: "a3_e_chair", name: "armchair", r: [518, 130, 94, 80], z: 30, walk: [560, 220, "back"], look: "A recliner under a dust sheet. On the arm: reading glasses folded neatly. Somebody's sat here for fifty years, listening. You can see the shape.", use: "I'd sit, but it's Hal's chair. It still has his shape in it.", pickup: "It's an armchair. It's not leaving without a crew and a prayer." },
     { id: "a3_e_clock", name: "clock", r: [20, 12, 22, 22], z: 20, look: "A clock that stopped at 3:15. Somebody didn't want to wind it after. I don't blame them." },
     { id: "a3_e_photos", name: "photos of Hal", rects: [[578, 106, 24, 30], [600, 108, 24, 30]], z: 20, walk: [590, 216, "back"], look: "Hal in his thirties with a crate of records on each shoulder. Hal at eighty with a record in each hand. Same grin. Same pose. Sixty years in two frames." },
@@ -232,8 +281,11 @@ RP.room({
   ],
   combos: [
     ["a3_pickle", "a3_e_bird", "I hold up the pickle. Bernard looks at it like it's an insult. He says nothing. For once."],
-    ["a3_chips", "a3_e_bird", "I offer Bernard a chip. He takes it out of my hand like he's collecting rent."],
-    ["a3_bag", "a3_e_shelves", "My bag's already full. But it's about to get fuller. Money first."]
+    ["a3_chips", "a3_e_bird", S => feedBird(S, "a3_chips")],
+    ["a3_rinds", "a3_e_bird", S => feedBird(S, "a3_rinds")],
+    ["a3_flyer", "a3_tanya", S => tanyaFlyer(S)],
+    ["a3_flyer", "a3_priya", "Priya reads it, hits 'No dealers please' and her scowl finds a new depth. 'That's for Tanya, not me.' She hands it back like it's burning."],
+    ["a3_bag", "a3_e_sh0", "My bag's already full. But it's about to get fuller. Money first."]
   ],
   self: { look: "Covered in dust, standing in a dead man's living room with a bag of records. Respectful, and a little scared.", talk: "I say 'thank you' out loud to the room. It feels like the thing to do." }
 });

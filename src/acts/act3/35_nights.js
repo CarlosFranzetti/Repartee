@@ -100,7 +100,7 @@ A3.hug = async function (S) {
 };
 
 A3.catBackfire = async function (S) {
-  await lines(["The floor is loud and happy, and Brandon is at Gus's sound desk holding a blue USB up like a stolen crown."]);
+  await lines(["The floor is loud and happy, and Brandon is at Gus's sound desk holding a stolen USB up like a crown."]);
   await RP.npcWalk("a3_brandon", 440, 222, "right");
   await lines(["@a3_brandon Gus. Buddy. Plug this into the wall feed. Market research.", "Gus looks at the pretzel Brandon is holding out. At the USB. At the pretzel.", "@a3_gus ...Okay."]);
   RP.sfx("click"); await RP.wait(500);
@@ -111,7 +111,7 @@ A3.catBackfire = async function (S) {
   await RP.npcWalk("a3_odessa", 410, 224, "right");
   await lines(["@a3_odessa Brandon. Why is the Thursday kid's USB in your hand?", "@a3_brandon He gave it to me! For safekeeping! We're friends! We hugged!", "I did not give him a USB. I gave him a cat.",
     "@a3_odessa Mr. Whiskers has never looked better. Brandon, my office. We're discussing your Saturday, and the word 'we' is doing me a favour.", "@a3_brandon You can't do that! It's MY Saturday! Those are MY- that's MY cat!",
-    "He leaves, gold vest flapping like a very expensive bird, with a USB that cost him four dollars, a plan that cost him a Saturday and not one track."]);
+    "He leaves, gold vest flapping like a very expensive bird, with a stolen cat, a plan that cost him a Saturday and not one track."]);
   S.f.a3_brandonDone = true; S.f.a3_usbBack = true; S.f.a3_brandonGone = true; S.f.a3_catFamous = true; AC("a3_brandon").vis = () => false; RP.relight();
   RP.followers(25);
   await lines(["@a3_odessa Kosmo's about to wrap. Go to the booth. Be ready.", "I'm ready. I'm so ready. The cat is ready too."]);
@@ -241,7 +241,7 @@ async function anniversarySet(S) {
   const mid = spread(pool.filter(id => id !== op && id !== cl).sort((a, b) => RP.rec(a).energy - RP.rec(b).energy || RP.rec(a).bpm - RP.rec(b).bpm), 4);
   const order = [op].concat(mid.slice(0, 3), RP.hasRecord("white_nyc93") ? ["white_nyc93"] : [], mid.slice(3), RP.hasRecord(GRAIL) ? [GRAIL] : [], [cl]);
   S.f.a3_setDone = true;
-  RP.followers(80);
+  RP.followers(60 + 4 * (S.f.a3_gems == null ? 8 : S.f.a3_gems));   // Hal's stars are what the set is made of
   RP.setClock("FRI 1:15 AM");
   const hasGrail = RP.hasRecord(GRAIL);
   const ids = order.filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");

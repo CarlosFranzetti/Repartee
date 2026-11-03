@@ -62,20 +62,29 @@ function update(dt, S, t) {
 
 async function runTrain(S) {
   await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard.", "Two minutes ago a girl in a hoodie got a swipe out of him, and he took payment in a segment. Rico was right. The J has a guy."]);
-  for (let tries = 0; ; tries++) {
-    const i = await RP.choose(["Jump the turnstile with a bag of records on my shoulder", "Order a car on my phone", "Ask the man with the oranges for a swipe"]);
-    if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); break; }
-    await RP.lines(i === 0 ? ["I get one leg over. The bag, forty pounds of vinyl, does not. A transit cop at the far end of the platform lifts one eyebrow, and I put the leg back.", "The cop is still looking. I stand very still, like a man waiting for a train."]
-      : ["The app takes forty seconds to open. It quotes $61 for Bushwick at this hour. At the word 'confirm,' the phone gives up and goes black.", "Three percent was optimistic."]);
-    if (tries >= 1) { await RP.lines(["@nar The man with the oranges has watched all of it. He walks over, swipes me through, and says nothing. Then, 'In oranges.'", "I take the orange."]); break; }
+  const i = await RP.choose(["Jump the turnstile with a bag of records on my shoulder", "Order a car on my phone", "Ask the man with the oranges for a swipe"]);
+  if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); }
+  else if (i === 0) {
+    const fine = Math.min(S.money, 50);
+    await RP.lines(["I get one leg over. The bag, forty pounds of vinyl, does not. A transit cop at the far end of the platform lifts one eyebrow, then walks the whole platform to make a point of it.",
+      fine ? "@nar 'Fifty dollars or a summons, your call.' I pay " + U.fmtMoney(fine) + ", which is the rent's first bite, and he writes the receipt in the tiniest handwriting." : "@nar 'Fifty dollars or a summons.' I turn out my pockets. There is nothing in them but lint and three percent. He sighs and writes 'warning' in the box.",
+      "The man with the oranges has watched all of it. He walks over, swipes me through, and says nothing. Then, 'In oranges.'", "I take the orange."]);
+    if (fine) { RP.money(-fine); S.f.a3_ticket = fine; }
+  } else {
+    const fee = Math.min(S.money, 6);
+    await RP.lines(["The app takes forty seconds to open. It quotes $61 for Bushwick at this hour. At the word 'confirm,' the phone gives up and goes black.", "Three percent was optimistic. " + (fee ? "The app has already charged me " + U.fmtMoney(fee) + " for the privilege of failing to confirm." : "It would have charged me for the privilege, if I'd had it."),
+      "The J pulls in, opens its doors, shuts them, and leaves while I'm shaking the phone. The next is a rumor. Seventeen minutes, a bench, and a sleeping man's snore like a bad subwoofer.",
+      "The man with the oranges walks over, swipes me through for the next one, and says nothing. Then, 'In oranges.'", "I take the orange."]);
+    if (fee) RP.money(-fee);
+    S.f.a3_missedJ = true;
   }
   S.f.a3_train = true;
-  await RP.lines(["I'm through the turnstile. The rent money never left my pocket.", "Down the platform, the headlights come round the curve like a promise."]);
+  await RP.lines([S.f.a3_ticket || S.f.a3_missedJ ? "I'm through the turnstile, a little poorer and a lot more humble." : "I'm through the turnstile. The rent money never left my pocket.", "Down the platform, the headlights come round the curve like a promise."]);
   trainState = 1; trainT = 0; doorsOpen = false;
   await RP.wait(3800);
   await RP.walkTo(330, 214, "back");
-  await RP.lines(["I get on. The car's empty, except for the man with the oranges, asleep now with the bag in his lap, and a woman reading a paperback about a vampire.", "Phone: running on fumes. Bag: all records. Rent money: untouched. I made it.", "@nar The last train, Friday morning, over the Williamsburg Bridge. The river's black, and the bass is still going."]);
-  A3.clockTo(S, "FRI 2:20 AM");
+  await RP.lines(["I get on. The car's empty, except for the man with the oranges, asleep now with the bag in his lap, and a woman reading a paperback about a vampire.", "Phone: running on fumes. Bag: all records. " + (S.f.a3_ticket || S.f.a3_missedJ ? "Rent money: dented." : "Rent money: untouched.") + " I made it.", "@nar The last train, Friday morning, over the Williamsburg Bridge. The river's black, and the bass is still going."]);
+  A3.clockTo(S, S.f.a3_missedJ ? "FRI 2:55 AM" : "FRI 2:20 AM");
   await RP.fadeTo(1, 1200);
   trainState = 0; doorsOpen = false;
   await RP.goto("a3_apartment", 560, 232, "left");
