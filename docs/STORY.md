@@ -1,6 +1,6 @@
 # re:parteé — Story bible
 
-**Tagline:** From broke-ass bedroom DJ to festival headliner. One bad decision at a time.
+**Tagline:** From broke-ass bedroom DJ to festival headliner. One questionable decision at a time.
 
 A humorous, sometimes gritty point-and-click adventure in the style of Maniac Mansion, Zak
 McKracken and The Secret of Monkey Island. You play a broke, party-loving bedroom DJ in New York

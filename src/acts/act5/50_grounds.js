@@ -162,7 +162,7 @@ async function rayTalk(S) {
       ]);
     } },
     { text: "What did you think of the radio interview?", when: S2 => !!S2.f.a5_interviewDone, once: true, run: async () => {
-      await RP.lines(["@ray I heard it. \"One bad decision at a time.\" That's not a motto, that's a tote bag.", "@ray You were fine. Don't let it go to your head. Let it go to your feet."]);
+      await RP.lines(["@ray I heard it. \"One questionable decision at a time.\" That's not a motto, that's a tote bag.", "@ray You were fine. Don't let it go to your head. Let it go to your feet."]);
     } },
     { text: "Think my crate's okay?", once: true, run: async () => {
       A5.ensureCrate(S);

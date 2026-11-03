@@ -74,9 +74,12 @@ function showTitle() {
   const cv = el("canvas", { id: "tcv", width: 640, height: 360 }, ov);
   paintTitleHi(cv.getContext("2d"));
   const box = el("div", { cls: "tbox" }, ov);
-  el("h1", { cls: "logo", html: 're<span class="c">:</span>parte<span class="e">é</span>' }, box);
+  const logo = el("h1", { cls: "logo", html: '<span class="re">re<span class="c">:</span></span><span class="pa">parte<span class="e">é</span></span>' }, box);
+  // the streaming patch's tap code lives on the logo: 3 taps on "re:", 2 on "parteé", 3 on "re:"
+  logo.querySelector(".re").addEventListener("click", () => { if (RP.stream && RP.stream.tap("R")) stopPreview(); });
+  logo.querySelector(".pa").addEventListener("click", () => { RP.stream && RP.stream.tap("P"); });
   el("p", { cls: "tag", text: "A PIXEL-ART DJ ADVENTURE GAME" }, box);
-  el("p", { cls: "tagline", text: "From broke-ass bedroom DJ to festival headliner. One bad decision at a time." }, box);
+  el("p", { cls: "tagline", text: "From broke-ass bedroom DJ to festival headliner. One questionable decision at a time." }, box);
   if (DEMO && !pageOpen(DEMO.level)) { lockedPage(box); return; }
   const menu = el("div", { cls: "menu" }, box);
   const panel = el("div", { cls: "panelbox", hidden: "" }, box);
@@ -93,9 +96,9 @@ function showTitle() {
   const first = [saved ? bCont : bNew];
   add("HOW TO PLAY", () => toggle(panel, howTo));
   if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => { chapters(panel); themeSync(2000); });
-  add("JUKEBOX", () => { if (RP.stream && RP.stream.tap("J")) { stopPreview(); return; } toggle(panel, jukebox); });
+  add("JUKEBOX", () => toggle(panel, jukebox));
   add("MINI-GAMES", () => toggle(panel, arcade));
-  add("CREDITS", () => { if (RP.stream && RP.stream.tap("C")) return; toggle(panel, credits); });
+  add("CREDITS", () => toggle(panel, credits));
   if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all eight mini-games in the arcade. Sound on helps." }, box);
   else el("p", { cls: "small", text: "Five levels. Eight mini-games. Sound on helps." }, box);
   if (SITE) levelNav(box);

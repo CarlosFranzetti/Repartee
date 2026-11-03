@@ -14,8 +14,8 @@
 
 ## Later
 
-- [x] **Secret streaming patch.** Built 2026-11-03 (`src/core/stream.js`): JUKEBOX x3, CREDITS x2, JUKEBOX x3 on the
-      title screen flashes the screen and turns it on (a toggle then appears under HOW TO PLAY). The jukebox and the
+- [x] **Secret streaming patch.** Built 2026-11-03 (`src/core/stream.js`): tapping the title logo (3 on "re:", 2 on "parteé",
+      3 on "re:") flashes the screen and turns it on (a toggle then appears under HOW TO PLAY). The jukebox and the
       story's record plays stream the real track, audio only, through the public functions of the owner's
       discogs-stream project (youtube-search, then yt-dlp-audio, then invidious-audio), falling back to the built-in
       loop if anything fails. Mini-games always keep the synthesized loops, so beat.Match is untouched. Streams start a
