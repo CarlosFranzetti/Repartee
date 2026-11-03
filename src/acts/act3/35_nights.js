@@ -22,7 +22,7 @@ A3.hallEnter = async function (S, from) {
     await lines(["@nar The Halcyon Room. Thursday, 9:08 PM.", "Smells like fog juice and ambition. Same as every Thursday.", "@a3_odessa Nine-oh-eight. Cutting it close.", "Doors are at ten.", "@a3_odessa Six months, never late. Don't start the week before the anniversary.",
       "Six months ago Odessa came down to Vic's Basement Tapes for my monthly and offered me Thursdays before the last record ended. I still play Vic's. Thursdays pay the rent.",
       "@a3_odessa Next Thursday's the anniversary. Six months. I want the room full and you on it.", "And Saturday?", "@a3_odessa Saturday is Brandon Shine's. Gold vest. Sunglasses indoors. Same as last week.",
-      "@a3_odessa Fill tonight. Then we'll talk Saturday.", "@a3_odessa Gus has the monitors. They're asleep. You know the rule.", "Snack.", "@a3_odessa Don't say it out loud. He can hear it."]);
+      "@a3_odessa Fill tonight. Then we'll talk Saturday.", "@a3_odessa He's been asking about your Thursday, by the way. Twice. Brandon doesn't ask about other people's nights. He asks what time they end.", "@a3_odessa Gus has the monitors. They're asleep. You know the rule.", "Snack.", "@a3_odessa Don't say it out loud. He can hear it."]);
     return;
   }
   // ---- the week: the club in daylight
@@ -70,7 +70,7 @@ A3.boothEnter = async function (S, from) {
 /* ====================================================================== the booth: sets */
 async function night1Set(S) {
   RP.setClock("THU 10:00 PM");
-  await lines(["Ten PM. The floor's empty: five people at the bar, four of whom work here.", "Gus gives me a thumbs-up from the desk. His other hand is in the chips."]);
+  await lines(["Ten PM. The floor's empty: five people at the bar, four of whom work here.", "Gus gives me a thumbs-up from the desk. His other hand is in the chips.", "Behind the CDJs, a gold smiley sticker on the mixer's edge. Someone sat here before me and wanted it known."]);
   S.f.a3_brandonSeen = true;
   await say("Nobody is here to impress, so I get to be careful. Start soft, build, and let the room find me.");
   const res = await A3.mg("crowdRead", { records: A3.hand(S, 9, ["everything_but_the_girl_missing", "inner_city_good_life", "sylvester_you_make_me_feel_mighty_real", "cece_peniston_finally", "hardrive_deep_inside", "crystal_waters_gypsy_woman", "mr_fingers_washing_machine_can_you_feel_it", "mood_ii_swing_closer", "phuture_acid_tracks"]), crowd: "empty-bar", rounds: 4, difficulty: 1, venue: "Halcyon Room" }, {
@@ -132,7 +132,7 @@ async function kosmoOverrun(S) {
     giveUp: "A minute", onFail: async () => { await lines(["The floor drifts. Half of it is on its phones, the other half is asking Odessa for something she doesn't have.", "Right: breathe, watch the floor, pick the right record."]); },
     assist: async () => { await say("Odessa steps up with a sheet of paper that says 'FIVE MORE MINUTES' in lipstick. The room reads it. The room forgives me."); } });
   if (res.giveUp) return;
-  await lines(["@a3_kosmo ...Not bad, Wendell. Not bad at all.", "@a3_kosmo Keep the room warm. I'm going to find a sandwich."]);
+  await lines(["@a3_kosmo ...Not bad, Wendell. Not bad at all.", "@a3_kosmo There's a woman from Berlin by the door. Black coat, no drink. She's been here since eleven. Don't look. Rule one.", "@a3_kosmo Keep the room warm. I'm going to find a sandwich."]);
   S.f.a3_kosmoDone = true; RP.relight();
   RP.followers(25);
   await lines(["He hands me the headphones like a sacred object and walks off the stage.", "Kosmo Delacroix just told me 'not bad.' In the right light, that's practically a knighthood."]);
@@ -172,7 +172,7 @@ async function anniversarySet(S) {
   await lines(["I send them home on " + nm(cl) + ", just as planned. The lights come up slowly. Nobody leaves."]);
   RP.sfx("cheer");
   S.f.a3_vegaHere = true;
-  await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend."]);
+  await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend.", "@a3_dj_louie_vega Woman by the door, black coat, filming you since the white label. Berlin accent. She tipped her head at the booth. I know that head tip. That's a booker."]);
   await say("Nice blend. Louie Vega said 'nice blend.' I'm going to put it on my gravestone.");
   await lines(["@a3_odoff ...That's the one. That's the set. That's Saturday.", "@a3_odoff Saturday. Eleven PM. The main floor. Prime time. Brandon's got a vacation.", "@a3_odoff Take the old booth monitors. Dynaudio BM5s. Too good for Gus, who only listens to the sound of a bag opening."]);
   RP.setGear("monitors", "dynaudio_bm5_mkiii");
@@ -182,7 +182,7 @@ async function anniversarySet(S) {
   await lines(["@a3_marcusoff That was... the best night of my life. And I've been to a lot of nights.", "I'm going to cry. In front of Marcus. In front of Rico, Dee and the guy from the cab."]);
   RP.setClock("FRI 1:35 AM");
   await lines(["Twenty minutes of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ.' Odessa covers half. My half is the envelope: two hundred dollars.",
-    "I hand Nico the envelope without opening it. I just played the best set of my life for free."]);
+    "I hand Nico the envelope without opening it. I just played the best set of my life for free.", "@nar Marcus, counting his change: 'Trains are a mess, man. If your card's dead, find the oranges guy on the Delancey platform. He swipes people through. Takes payment in fruit.'"]);
   RP.money(-TAB);
   await lines(["Phone: 3%. Bag: every record I own. Time: twenty-five to two."]);
   await RP.fadeTo(1, 800); S.f.noTravel = false;

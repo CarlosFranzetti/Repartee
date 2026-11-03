@@ -130,7 +130,7 @@ async function talkLou(S) {
     { text: "Lou... about \"NYC 93.\"", when: S2 => !S2.f.a2_louSecret && (RP.has("white") || RP.hasRecord("white_nyc93")), run: async () => louSecret(S) },
     { text: "How's Gerald?", run: async () => {
       S.f.a2_geraldAsked = true;
-      await RP.lines(["@a2_lou Your plant? Gerald's thriving. I water him through the hole in the wall with a turkey baster.", "@a2_lou He's seen things. He asked about you. Okay, he didn't. He's a plant. But he'd ask."]);
+      await RP.lines(["@a2_lou Your plant? Gerald's thriving. I water him through the hole in the wall with a turkey baster.", "@a2_lou He's seen things. He asked about you. Okay, he didn't. He's a plant. But he'd ask.", "From behind Lou, through the crack, something small goes \"mrrp.\"", "Was that a cat?", "@a2_lou Radiator.", "The radiator is on the other side of the hall.", "@a2_lou It's a visitor. He likes my records. He's not on the lease. Neither of us is discussing it."]);
     } },
     { text: "Ever heard of Basement Tapes?", when: S2 => S2.f.a2_plan, run: async () => {
       S.f.a2_louTapes = true;
@@ -163,7 +163,7 @@ RP.room({
     { id: "a2_4c", name: "my door (4C)", r: [358, 38, 50, 130], z: 22, walk: [382, 214, "back"],
       look: "4C. My door, my home, my security deposit's last resting place. A gleaming new deadbolt shines on it like a smug dentist. There's a notice taped under the peephole.",
       use: "Locked. The lock's new and it knows it.", open: "Locked. I try the handle twice, in case the first time was a mistake.", push: "I throw my shoulder against it. The door doesn't care. My shoulder cares a lot.", pull: "Nothing. The deadbolt looks like a tiny smirk.",
-      talk: async S => { await RP.lines(["Gerald? ...Gerald, it's me.", "No answer. He's a plant. He's got good instincts.", "I'll be back for you, buddy."]); } },
+      talk: async S => { await RP.lines(["Gerald? ...Gerald, it's me.", "No answer. He's a plant. He's got good instincts.", "I'll be back for you, buddy.", S.f.a2_billGot ? "My mail all goes to Lou anyway. Nothing in there needs me except Gerald." : "My mail goes to Lou, not to 4C. Nothing in there needs me except Gerald."]); } },
     { id: "a2_notice", name: "notice", r: [366, 52, 34, 28], z: 40, walk: [382, 214, "back"],
       look: "\"NOTICE: LOCK CHANGE (TEMPORARY). Tenants must contact Management to receive new key. Management office hours: Tuesdays, 2:00-2:15 PM.\" Fifteen minutes a week. They've thought of everything except help. I'm not rearranging my life to beg Kowalski for a quarter hour he'll spend saying \"next week.\" Marcus's couch is home for now.",
       pickup: "It's taped on with the kind of tape that outlives civilization.", use: "I could read it again. It wouldn't get better." },

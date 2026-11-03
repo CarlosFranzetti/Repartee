@@ -154,12 +154,12 @@ async function takeBag(S) {
   if (!S.f.a4_dogFed) { await RP.lines(["I reach for the bag. Nugget growls. It's a very small, very professional growl.", "I'll need to get her off it first. She's a beagle. Beagles like one thing."]); return; }
   S.f.a4_bagBack = true; RP.give("a4_bag");
   RP.sfx("pickup");
-  await RP.lines(["Thirty-eight kilos of records, back in my arms. It's never been so heavy. Or so beautiful.", "Okay. Gates. Plane. Berlin. Nothing else goes wrong."]);
+  await RP.lines(["@a4_delgado Tag. BER-4471. (He checks it against the bag's tag with a finger like a pen.) Matches. Without that tag, it's mine, and so is the bag.","Thirty-eight kilos of records, back in my arms. It's never been so heavy. Or so beautiful.", "Okay. Gates. Plane. Berlin. Nothing else goes wrong."]);
   RP.setClock("SAT 8:41 AM");
 }
 async function boardTheGate(S) {
   if (!S.f.a4_bagBack) { await RP.say("I can't board without my bag. Without records I'm just a guy with feelings and a window seat."); return; }
-  await RP.lines(["Through the metal detector. Chain, belt, keys, coins, jacket, dignity: all in a tray.", "*BEEP*"]);
+  await RP.lines(["@a4_delgado Boarding pass. (I hold it up. He scans it.) 23A. Hope you like clouds.", "Through the metal detector. Chain, belt, keys, coins, jacket, dignity: all in a tray.", "*BEEP*"]);
   RP.sfx("buzz");
   await RP.lines(["@a4_delgado Anything in your pockets?", "A hole. A metaphorical one.", "@a4_delgado Jacket.", "(I take off the bomber. It beeps again. The bomber is made of beeping.)",
     "@a4_delgado Go. Go before it beeps a third time. Have a nice flight, uh, \"" + A4.misspell(A4.dj(S)) + ".\""]);
@@ -220,7 +220,7 @@ RP.room({
     ["a4_jerky", "a4_inspect", S => nuggetFeed(RP.state)],
     ["a4_jerky", "a4_delgado", "Giving jerky to the officer is bribery. And I'd have to bribe a dog next. Also bribery."],
     ["a4_boarding", "a4_delgado", S => giveToDelgado(RP.state, "a4_boarding")],
-    ["a4_claim", "a4_delgado", "He glances at the tag. \"That's Baggage Services' problem. I handle the detained part.\""],
+    ["a4_claim", "a4_delgado", S => RP.state.f.a4_formSigned && !RP.state.f.a4_bagBack ? "He glances at the tag. \"Hold it. I'll want it when you take the bag. Not before.\"" : "He glances at the tag. \"That's Baggage Services' problem. I handle the detained part.\""],
     ["a4_form", "a4_nugget", "She's a beagle. She can't sign. She also can't read. She CAN smell, though, and she smells the stamp."],
     ["a4_passport", "a4_delgado", "He doesn't need to see it. He needs to see a stamped form. He's quite particular."],
     ["a4_white", "a4_nugget", "She sniffs the white label. She sneezes. A first review."]

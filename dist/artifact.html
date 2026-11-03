@@ -16925,7 +16925,7 @@ def("a1_tank", { name: "Tank", height: 108, build: "big", skin: "#57331f", hair:
   top: { style: "bomber", color: "#0e0c14", color2: "#c0302c" }, bottom: { style: "pants", color: "#17131f" }, shoes: { style: "boots", color: "#17131f" },
   acc: ["shades", "earring", "watch"], voice: "#ff6a6a" });
 /* Nowhere bartenders + regulars */
-def("a1_mia", { name: "Mia", height: 92, build: "thin", figure: "curvy", skin: "#e8b48f", hair: { style: "mohawk", color: "#39d0ff" },
+def("a1_dani", { name: "Dani", height: 92, build: "thin", figure: "curvy", skin: "#e8b48f", hair: { style: "mohawk", color: "#39d0ff" },
   top: { style: "tank", color: "#17131f" }, bottom: { style: "jeans", color: "#17131f" }, shoes: { style: "boots", color: "#17131f" },
   acc: ["earring", "apron"], voice: "#39d0ff" });
 def("a1_rafa", { name: "Rafa", height: 97, build: "average", skin: "#c98a62", hair: { style: "curly", color: "#1c1418" }, facial: "beard", facialColor: "#1c1418",
@@ -17629,7 +17629,7 @@ async function loadTracks(S) {
   await RP.say("Copying...");
   await RP.wait(500);
   await RP.lines(pool);
-  S.f.a1_usbLoaded = true; RP.refreshInv(); RP.sfx("success");
+  S.f.a1_usbLoaded = true; S.f.a1_setStyle = i; RP.refreshInv(); RP.sfx("success");
   await RP.lines(["Done. 64 gigs of music on a stick I stole from a temp office.", "First hour: vinyl. Second hour: this. I'm a real DJ with a real plan, and a USB with someone else's logo on it."]);
 }
 RP.act1LaptopUse = async S => {
@@ -18561,7 +18561,7 @@ RP.room({
     ["a1_popcorn", "a1_ali", "Ali looks at the \"Linda\" bag. \"Not mine. That's an office bag. You're a long way from Midtown.\""],
     ["a1_slice", "canmachine", "The machine takes cans. It does not take pizza. It's stricter than the health department."],
     ["a1_flyer", "a1_ali", "Ali reads the flyer. \"DJ... what? Spelling is a skill, my friend.\""],
-    ["a1_usb", "a1_ali", "\"No,\" Ali says. \"I'm not a computer store. I don't do USB.\""]
+    ["a1_usb", "a1_ali", "\"No,\" Ali says. \"I'm not a computer store. I don't do USB. Not since 2019. A man sold me a 'ten-terabyte' stick. It was a lighter.\" He taps the lighter on the register, still bitter."]
   ]
 });
 RP.rooms.a1_bodega.hotspots.push({ id: "a1_ali", name: "Ali", look: "Ali. He runs the bodega, the block, and most of the information on the block. Always a pencil behind the ear.",
@@ -19940,7 +19940,7 @@ async function showFlyer(S) {
 async function giveSlice(S) {
   if (S.f.a1_tankSlice) { await RP.say("You gave me one already. Don't be greedy.", "a1_tank"); return; }
   RP.take("a1_slice"); S.f.a1_tankSlice = true;
-  await RP.lines(["I hold out the slice from Sal's. Pepperoni, folded right.", "@a1_tank ...Is that Sal's?", "It's Sal's.", "@a1_tank (He takes it. He folds it, perfectly. He eats it in two bites with his eyes closed.)", "@a1_tank Mm.", "@a1_tank That's the best slice in Bushwick. I haven't said that out loud in nine years."]);
+  await RP.lines(["I hold out the slice from Sal's. Pepperoni, folded right.", "@a1_tank ...Is that Sal's?", "It's Sal's.", "@a1_tank (He takes it. He folds it, perfectly. He eats it in two bites with his eyes closed.)", "@a1_tank Mm.", "@a1_tank That's the best slice in Bushwick. I haven't said that out loud in nine years.", "@a1_tank It's a little stiff. Wednesday, right? ...Doesn't matter. Wednesday Sal's beats Saturday anyone."]);
   if (tankOpen(S)) await letIn(S);
   else await RP.lines(["@a1_tank That helps. But I still need a reason to let you past. A reason with a name on it."]);
 }
@@ -20024,7 +20024,7 @@ ndHot.push({ id: "a1_q1", name: "guy in line", look: "A guy in a black hoodie. H
 } catch (e) { console.error("load error in src/acts/act1/70_nowhere_door.js", e); (window.__loadErrors = window.__loadErrors || []).push("src/acts/act1/70_nowhere_door.js: " + e); }
 /* ---- src/acts/act1/72_nowhere.js ---- */
 try {
-/* Act 1 — a1_nowhere: inside Nowhere, Saturday 10 PM. Booth with turntables, the bar, bartenders Mia and
+/* Act 1 — a1_nowhere: inside Nowhere, Saturday 10 PM. Booth with turntables, the bar, bartenders Dani and
    Rafa, regulars, Dante. The vinyl hour is crowd.Read with your four records. Bartenders dancing = a good set
    -> Dante: "Great set. I'll pay you next week." -> RP.completeAct.
    Flags: a1_nowSeen, a1_setTries, a1_setGood, a1_setDone. */
@@ -20126,6 +20126,7 @@ async function playSet(S) {
   RP.setClock("SAT 10:03 PM");
   if (!S.f.a1_setTries) await RP.lines(["Ten o'clock. Four records, two turntables, one broken heart and a clean needle.", "Missing, Acid Tracks, NYC 93, and \"" + RP.rec(closer).title + ".\" I know what I'm doing. I read the room. The room is empty."]);
   else await RP.say("Needle down. Again. Softer this time.");
+  if (!S.f.a1_setTries) await RP.say(["The stick in my pocket is all soul. The vinyl hour should warm the room up for it.", "The stick in my pocket is all peak. The vinyl hour had better not peak first.", "The stick in my pocket is a little of everything. The room will get a little of everything."][S.f.a1_setStyle ?? 2], "nar");
   RP.setMusic(null);
   let res = await RP.mg.play("crowdRead", { records: ids, crowd: "empty-bar", rounds: 4, difficulty: S.f.a1_setTries > 0 ? 1 : 2, venue: "Nowhere", story: true });
   S.f.a1_setTries = (S.f.a1_setTries || 0) + 1;
@@ -20133,7 +20134,7 @@ async function playSet(S) {
   if (!good) {
     k.act = "stand"; RP.place("kid", 320, 214, "front");
     RP.setMusic({ genre: "house", bpm: 118, volume: 0.3, energy: 2, filter: ["lowpass", 900] });
-    await RP.lines(["The bartenders are still polishing the same glass. Mia looks at me. It isn't unkind. It's worse: it's patient.", "@dante Rough. Start softer. Build. Don't drop the peak early. Again."]);
+    await RP.lines(["The bartenders are still polishing the same glass. Dani looks at me. It isn't unkind. It's worse: it's patient.", "@dante Rough. Start softer. Build. Don't drop the peak early. Again."]);
     return;
   }
   /* it works */
@@ -20141,17 +20142,17 @@ async function playSet(S) {
   if (S.f.a1_setTries >= 3 && res && !res.ok && !res.missing) await RP.say("Third try. The bartenders feel sorry for me and dance out of pure pity. I'll take it.", "nar");
   RP.setMusic({ genre: "house", bpm: 122, volume: 0.5, energy: 4 });
   RP.sfx("cheer");
-  ["a1_mia", "a1_rafa"].forEach(id => { const a = RP.actor(id); if (a) { a.act = "dance"; a.baseAct = "dance"; } });
+  ["a1_dani", "a1_rafa"].forEach(id => { const a = RP.actor(id); if (a) { a.act = "dance"; a.baseAct = "dance"; } });
   RP.flash("#ff3fa4", 400);
-  await RP.lines(["Then something happens. Rafa stops mid-pour. His head starts to nod.", "Mia puts down the glass. She grabs the bar, closes her eyes, and starts to move.", "The bartenders are dancing. The bartenders. Are. DANCING.", "And behind them, the floor fills. People who weren't here a minute ago are here now. Hands up. Phones out. The room's alive."]);
+  await RP.lines(["Then something happens. Rafa stops mid-pour. His head starts to nod.", "Dani puts down the glass. She grabs the bar, closes her eyes, and starts to move.", "The bartenders are dancing. The bartenders. Are. DANCING.", "And behind them, the floor fills. People who weren't here a minute ago are here now. Hands up. Phones out. The room's alive."]);
   RP.followers(60);
   await RP.fadeTo(1, 700);
   RP.setClock("SAT 11:55 PM");
   k.act = "stand"; RP.place("kid", 320, 212, "front");
   RP.place("dante", 268, 218, "right"); RP.actor("dante").expr = "happy";
-  await RP.say("The second hour. The USB. Tracks I picked on Wednesday, with a stolen stick. Nobody could tell. It didn't matter.", "nar");
+  await RP.say(["The second hour. The USB. Soul on a stolen stick, picked on Wednesday. Nobody could tell. The room swayed.", "The second hour. The USB. All peak, picked on Wednesday. The floor didn't ask where the stick came from. It jumped.", "The second hour. The USB. A little of everything, from a stolen stick. Nobody could tell. Nobody was bored."][S.f.a1_setStyle ?? 2], "nar");
   await RP.fadeTo(0, 700);
-  await RP.lines(["@dante Hey. HEY.", "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
+  await RP.lines(["@dante Hey. HEY.", ...["@dante That second hour. Soul. Where'd that come from? The room was holding hands.", "@dante That second hour. All peak, no brakes. I aged a year. The room loved it.", "@dante That second hour. Safe. Smooth. I'd say take a risk, but nobody left, so."][S.f.a1_setStyle ?? 2].slice(0,1), "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
   RP.sfx("success");
   await RP.lines(["A handful of records, a stolen USB, a flyer with my name wrong, and a slice for the doorman. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
   await RP.completeAct([
@@ -20178,9 +20179,9 @@ async function danteTalk(S) {
   ]);
 }
 async function bartend(S, who) {
-  const m = who === "mia";
-  if (S.f.a1_setGood) { await RP.lines(m ? ["@a1_mia I haven't danced behind a bar since... never. Don't tell Rafa.", "@a1_mia Great set. Drinks are on... nobody. But great set."] : ["@a1_rafa Okay, okay. You got me. I'm a dancer now.", "@a1_rafa Don't ask about the screenplay."]); return; }
-  await RP.lines(m ? ["Hey. Any chance you'll dance later?", "@a1_mia I haven't danced behind a bar in six years. Not since the last DJ who made me want to.", "@a1_mia Make me want to. It's not hard. It's just rare."] : ["Slow night?", "@a1_rafa Slow? It's ten. It's a funeral until eleven.", "@a1_rafa I'm writing a screenplay. It's about a bartender. It's a drama. Ask me about it. Don't."]);
+  const m = who === "dani";
+  if (S.f.a1_setGood) { await RP.lines(m ? ["@a1_dani I haven't danced behind a bar since... never. Don't tell Rafa.", S.f.a1_setStyle === 1 ? "@a1_dani Great set. That second hour nearly broke my knees. Drinks are on... nobody." : S.f.a1_setStyle === 0 ? "@a1_dani Great set. That soul stuff is why I got into this. Drinks are on... nobody." : "@a1_dani Great set. Drinks are on... nobody. But great set."] : ["@a1_rafa Okay, okay. You got me. I'm a dancer now.", "@a1_rafa Don't ask about the screenplay."]); return; }
+  await RP.lines(m ? ["Hey. Any chance you'll dance later?", "@a1_dani I haven't danced behind a bar in six years. Not since the last DJ who made me want to.", "@a1_dani Make me want to. It's not hard. It's just rare."] : ["Slow night?", "@a1_rafa Slow? It's ten. It's a funeral until eleven.", "@a1_rafa I'm writing a screenplay. It's about a bartender. It's a drama. Ask me about it. Don't."]);
 }
 
 RP.room({
@@ -20201,7 +20202,7 @@ RP.room({
   ],
   actors: [
     { id: "dante", char: "dante", x: 196, y: 232, face: "right", act: "stand", name: "Dante" },
-    { id: "a1_mia", char: "a1_mia", x: 544, y: 194, face: "front", act: "stand", name: "Mia" },
+    { id: "a1_dani", char: "a1_dani", x: 544, y: 194, face: "front", act: "stand", name: "Dani" },
     { id: "a1_rafa", char: "a1_rafa", x: 596, y: 194, face: "front", act: "stand", name: "Rafa" },
     { id: "a1_hank", char: "a1_hank", x: 64, y: 204, face: "right", act: "sit", name: "Old Hank" },
     { id: "a1_twig", char: "a1_twig", x: 470, y: 236, face: "front", act: "stand", name: "Twig" },
@@ -20253,7 +20254,7 @@ RP.room({
 });
 const nh = RP.rooms.a1_nowhere.hotspots;
 nh.push({ id: "dante", name: "Dante", look: "Dante. Buzzcut, goatee, a bomber jacket with a pink lining, and a smile that says \"I'll pay you next week.\" It's a smile I've learned to respect.", talk: S => S.f.a1_setDone ? RP.lines(["@dante I'll pay you next week. It's a sacred promise."]) : danteTalk(S), use: "I can't use Dante. People have tried. It's usually the other way around.", pickup: "Dante's not for carrying. He's for believing. Eventually.", push: "I'd push him, but he'd say \"next week\" and I'd be broke forever.", give: "\"Sure, just put it on my tab,\" says Dante. \"I'll pay you next week.\"" });
-nh.push({ id: "a1_mia", name: "Mia", look: "Mia. Cyan mohawk, black apron, an expression of someone who's heard every DJ promise \"I'll make you dance.\" She's yet to dance.", talk: S => bartend(S, "mia"), use: "I order a water. Mia gives me a glass of tap and a look. We both know my budget.", pickup: "Mia's not for taking. She's for impressing.", push: "I wave. She raises one eyebrow. It's all the conversation I'm allowed.", give: "Mia shakes her head. \"Tips go in the jar. Everyone else's gifts go in the bin.\"" });
+nh.push({ id: "a1_dani", name: "Dani", look: "Dani. Cyan mohawk, black apron, an expression of someone who's heard every DJ promise \"I'll make you dance.\" She's yet to dance.", talk: S => bartend(S, "dani"), use: "I order a water. Dani gives me a glass of tap and a look. We both know my budget.", pickup: "Dani's not for taking. She's for impressing.", push: "I wave. She raises one eyebrow. It's all the conversation I'm allowed.", give: "Dani shakes her head. \"Tips go in the jar. Everyone else's gifts go in the bin.\"" });
 nh.push({ id: "a1_rafa", name: "Rafa", look: "Rafa. Curly hair, a beard, a red tee under a black apron. He pours drinks like he's reading a tragedy.", talk: S => bartend(S, "rafa"), use: "I ask for a water. Rafa pours it in the saddest, most poetic way I've seen.", pickup: "Rafa's a person. And a screenwriter, I think.", push: "I tap the bar. Rafa nods. A tiny conversation.", give: "Rafa waves it off. \"Tips go in the jar, man.\"" });
 nh.push({ id: "a1_hank", name: "Old Hank", look: "Old Hank. A white beard, a vest, a pair of glasses and the front row of a couch. He's been at every Nowhere since it was a laundromat. That's what he says.", talk: async S => { await RP.lines(["Evening.", "@a1_hank Used to be a laundromat. Same dryers, worse music. I'm still waiting on a sock.", "@a1_hank Start slow. Nobody dances at ten. Not even in 1993. Let the bartenders hear it first."]); }, use: "I'd sit next to him, but the couch is full of memories.", pickup: "Hank is a lot of history. I'd throw out my back.", push: "I nudge his sleeve. He raises his glass. It's a toast. It's a no.", give: "\"Thanks, young man,\" says Hank. \"But I'm on a very strict diet. Of nostalgia.\"" });
 nh.push({ id: "a1_twig", name: "Twig", look: "Twig. He got in. I don't know how. Maybe he knows somebody who knows somebody who knows Tank's cousin.", talk: async S => { await RP.lines(["You got in!", "@a1_twig Tank's cousin. It's a whole thing. I'll tell you later. When there's a later.", "@a1_twig Make 'em dance, man. I came for you. I mean... I came for the bartenders. But you."]); }, use: "I clap him on the shoulder. He nearly drops his drink. We're friends now.", pickup: "Twig's lighter than a record, but with way more opinions.", push: "I nudge him. He nudges me. We both nudge a stranger. Chaos.", give: "\"I'm good,\" says Twig. \"I'm saving room for the music.\"" });
@@ -20317,7 +20318,7 @@ RP.walkthroughs.act1 = [
   ["give", "hot:a1_tank", "a1_flyer"], ["give", "hot:a1_tank", "a1_slice"],
   ["expect", "S.f.a1_tankIn", "Tank lets me in"],
   ["walk", "hot:ndDoor"], ["expect", "S.room === 'a1_nowhere'", "inside Nowhere"],
-  ["talk", "hot:a1_mia"],
+  ["talk", "hot:a1_dani"],
   ["mg", { ok: true, score: 90, played: ["everything_but_the_girl_missing", "phuture_acid_tracks", "white_nyc93", "cece_peniston_finally"], peak: 92 }],
   ["use", "hot:booth"],
   ["expect", "S.f.a1_setGood", "the bartenders danced"],
@@ -20556,7 +20557,8 @@ RP.defineAct({
     ]);
     await RP.phone([
       { from: "DANTE (NOWHERE)", text: "killer set!! i'll pay u next week", hot: true },
-      { from: "MR. KOWALSKI (LANDLORD)", text: "Lock change is TEMPORARY. Rent due FRI. Hot water: next week." },
+      { from: "MR. KOWALSKI (LANDLORD)", text: "Lock change is TEMPORARY. Rent due TUE, office hours. Hot water: next week." },
+      { from: "STAFFRIGHT TEMPS", text: "Re: your Synergex shift. We found someone more punctual. Also 3 USB sticks are unaccounted for. We're not saying. We're saying." },
       { from: "MOM", text: "Did you eat. Is that couch clean" }
     ]);
     await RP.lines(["Everybody's paying me next week. Even the hot water.", "Okay. Think. I need cash, a shower, a gig, and a pair of turntables. In that order. Or any order."]);
@@ -20729,11 +20731,11 @@ function light(S) {
 function nextHint(S, voice) {
   const m = voice === "marcus";
   if (!S.f.a2_plan) return m ? "Ask me about the plan. I've been dying to tell you the plan." : "Marcus has been trying to tell me a plan since I woke up.";
-  if (!S.f.a2_plasma) return m ? "Money first. LifeDrop on Atlantic Ave. They want ID, proof of address and a form. Lou in 4B has been collecting your mail." : "Money: the LifeDrop plasma center. They'll want ID, proof of address and a form. Lou in 4B has been collecting my mail.";
-  if (!S.f.a2_showered) return m ? "You smell like a hot dog. Dani. Seven settings. Text her." : "I smell like a hot dog. Dani has a shower with seven settings.";
-  if (!S.f.a2_cashed && RP.has("a2_card")) return m ? "That LifeDrop card isn't cash. The bodega ATM on the corner turns it into cash. With a fee. And an asterisk." : "The card isn't cash. The corner bodega's ATM turns it into cash, with a fee and an asterisk.";
-  if (!S.f.a2_metEddie) return m ? "Go see Eddie before the party. Window-shop. Eddie loves a window-shopper." : "I should visit Eddie in Williamsburg before the party and see what the damage is.";
-  return m ? "You're set. Sleep on the couch and I'll wake you for Friday. Birthday. Twenty-eight. Plus three." : "I think I'm ready. Rent's due Friday and so is Marcus's party. Sleep on it. Literally.";
+  if (!S.f.a2_plasma) return m ? "Money first. You're broke in a way a flyer could fix. Look at the pole outside." : "Money. Something on the pole outside promised a hundred dollars, and I have a body.";
+  if (!S.f.a2_showered) return m ? "You smell like a hot dog. Toby has my bathroom until step twelve. Who else owns a shower?" : "I smell like a hot dog. Toby has the bathroom until step twelve. Somebody else must own a shower.";
+  if (!S.f.a2_cashed && RP.has("a2_card")) return m ? "That card isn't cash. Somewhere on this block plastic becomes paper. At a price." : "A card isn't cash. Somewhere on this block plastic becomes paper. At a price.";
+  if (!S.f.a2_metEddie) return m ? "You have money and no turntables. I mentioned a van. Window-shop before Friday." : "Money, no turntables. Marcus mentioned a van. Window-shop before Friday.";
+  return m ? "You're set. Sleep on the couch and I'll wake you for Friday. Birthday. Twenty-eight. Plus three." : "I think I'm ready. Rent's due Tuesday and the party's Friday. Sleep on it. Literally.";
 }
 A2.hint = nextHint;
 
@@ -20945,7 +20947,7 @@ async function talkMarcus(S) {
       ]);
       await RP.lines([
         "I can't afford turntables. I can't afford a sandwich.",
-        "@marcus LifeDrop on Atlantic Ave. Plasma. New donors get a hundred bucks on a card. Mrs. Pearl on the third floor is a platinum member.",
+        "@marcus LifeDrop on Atlantic Ave. Plasma. New donors get a hundred bucks on a card. Mrs. Pearl on the stoop is a platinum member.",
         "@marcus And Eddie Two-Times has turntables in a van under the BQE. Audio-Technica. A two-time deal.",
         "What's a two-time deal?",
         "@marcus Nobody knows. It's always a two-time deal.",
@@ -20973,8 +20975,8 @@ async function talkMarcus(S) {
     { text: "Tell me about Vic.", when: S2 => S2.f.a2_plan, run: async () => {
       await RP.lines(["@marcus Vic. Tall. Sunglasses indoors. Counts money with a rubber band like it's a hobby.", "@marcus He pays cash, on time, which makes him the single most suspicious man in Brooklyn."]);
     } },
-    { text: "Landlord says rent's due Friday.", run: async () => {
-      await RP.lines(["@marcus Kowalski? He told me hot water was \"next week.\" In 2023.", "@marcus Your rent is a problem for future you. Future you has a hot shower and a monthly residency."]);
+    { text: "Landlord says rent's due Tuesday.", run: async () => {
+      await RP.lines(["@marcus Kowalski? He told me hot water was \"next week.\" In 2023.", "@marcus Tuesday is a problem for future you. Future you has a hot shower and a monthly residency."]);
     } },
     { text: "What should I do next?", when: S2 => S2.f.a2_plan, run: async () => { await RP.say(A2.hint(S, "marcus"), "marcus"); } },
     { text: "Later.", end: true }
@@ -21253,13 +21255,13 @@ async function talkPearl(S) {
       S.f.a2_pearlTips = true;
       await RP.lines([
         "@a2_pearl Platinum member. Two hundred twelve donations. Ask me about my mug.",
-        "@a2_pearl LifeDrop, Atlantic Avenue. You need ID, proof of address and Form 27-B. Not a text message. Rhonda doesn't believe in texts.",
+        "@a2_pearl LifeDrop, Atlantic Avenue. Bring paper. Rhonda doesn't believe in texts.",
         "@a2_pearl The pen is chained to the desk. Don't fight the pen.",
         "@a2_pearl Nurse Bev does the needle. Look at the ceiling. Think about pizza. And eat the cookie after, it's terrible, but it's tradition."
       ]);
     } },
     { text: "I got locked out. What counts as proof of address?", when: S2 => S2.f.a2_pearlTips, run: async () => {
-      await RP.lines(["@a2_pearl A bill. A lease. An envelope with your name on it and a real street. Not a screenshot.", "@a2_pearl Is somebody keeping your mail? Somebody always keeps the mail. There's always a Lou."]);
+      await RP.lines(["@a2_pearl A bill. A lease. An envelope with your name on it and a real street. Not a screenshot."]);
     } },
     { text: "What's a two-time deal?", run: async () => { await RP.lines(["@a2_pearl Eddie? Oh, honey. I bought a toaster from Eddie. Then I bought it again. Neither toasts."]); } },
     { text: "Where do I cash a prepaid card?", when: S2 => S2.f.a2_pearlTips, run: async () => { await RP.lines(["@a2_pearl The bodega machine on the corner. It says \"no fee.\" Look closer. There's an asterisk. There's always an asterisk."]); } },
@@ -21296,6 +21298,7 @@ RP.room({
   ],
   enter: async (S, from) => {
     if (from === "a2_couch" && !S.f.a2_streetSeen) { S.f.a2_streetSeen = true; RP.toast("Click the subway stairs to travel."); }
+    else if (from !== "a2_couch" && !S.f.a2_smittySeen && S.f.a2_plan && S.f.a2_ch === 1) { S.f.a2_smittySeen = true; await RP.lines(["Across the street, Smitty is on a stoop that isn't his, holding a package that isn't his.", "He sees me and pretends to be a bush. It almost works."]); }
   },
   hotspots: [
     { id: "a2_stoopdoor", name: "Marcus's door", r: [110, 18, 50, 120], z: 30, walk: [160, 202, "back"],
@@ -21521,6 +21524,7 @@ async function talkRhonda(S) {
     S.f.a2_numTaken = true;
     await RP.lines(["@a2_rhonda Take a number.", "There's nobody here.", "@a2_rhonda Take a number anyway."]);
   }
+  if (!S.f.a2_showered && !S.f.a2_cleared && !S.f.a2_smellNoted) { S.f.a2_smellNoted = true; await RP.say("Is that a hot dog? Don't answer. Sit downwind, hon.", "a2_rhonda"); }
   if (S.f.a2_cleared) { await RP.say("You're cleared, hon. Bev's at bay three. Don't pass out near my plant.", "a2_rhonda"); return; }
   await RP.convo([
     { text: "I'd like to donate plasma.", when: S2 => !S2.f.a2_formGot, once: true, run: async () => {
@@ -22326,7 +22330,7 @@ async function talkLou(S) {
     { text: "Lou... about \"NYC 93.\"", when: S2 => !S2.f.a2_louSecret && (RP.has("white") || RP.hasRecord("white_nyc93")), run: async () => louSecret(S) },
     { text: "How's Gerald?", run: async () => {
       S.f.a2_geraldAsked = true;
-      await RP.lines(["@a2_lou Your plant? Gerald's thriving. I water him through the hole in the wall with a turkey baster.", "@a2_lou He's seen things. He asked about you. Okay, he didn't. He's a plant. But he'd ask."]);
+      await RP.lines(["@a2_lou Your plant? Gerald's thriving. I water him through the hole in the wall with a turkey baster.", "@a2_lou He's seen things. He asked about you. Okay, he didn't. He's a plant. But he'd ask.", "From behind Lou, through the crack, something small goes \"mrrp.\"", "Was that a cat?", "@a2_lou Radiator.", "The radiator is on the other side of the hall.", "@a2_lou It's a visitor. He likes my records. He's not on the lease. Neither of us is discussing it."]);
     } },
     { text: "Ever heard of Basement Tapes?", when: S2 => S2.f.a2_plan, run: async () => {
       S.f.a2_louTapes = true;
@@ -22359,7 +22363,7 @@ RP.room({
     { id: "a2_4c", name: "my door (4C)", r: [358, 38, 50, 130], z: 22, walk: [382, 214, "back"],
       look: "4C. My door, my home, my security deposit's last resting place. A gleaming new deadbolt shines on it like a smug dentist. There's a notice taped under the peephole.",
       use: "Locked. The lock's new and it knows it.", open: "Locked. I try the handle twice, in case the first time was a mistake.", push: "I throw my shoulder against it. The door doesn't care. My shoulder cares a lot.", pull: "Nothing. The deadbolt looks like a tiny smirk.",
-      talk: async S => { await RP.lines(["Gerald? ...Gerald, it's me.", "No answer. He's a plant. He's got good instincts.", "I'll be back for you, buddy."]); } },
+      talk: async S => { await RP.lines(["Gerald? ...Gerald, it's me.", "No answer. He's a plant. He's got good instincts.", "I'll be back for you, buddy.", S.f.a2_billGot ? "My mail all goes to Lou anyway. Nothing in there needs me except Gerald." : "My mail goes to Lou, not to 4C. Nothing in there needs me except Gerald."]); } },
     { id: "a2_notice", name: "notice", r: [366, 52, 34, 28], z: 40, walk: [382, 214, "back"],
       look: "\"NOTICE: LOCK CHANGE (TEMPORARY). Tenants must contact Management to receive new key. Management office hours: Tuesdays, 2:00-2:15 PM.\" Fifteen minutes a week. They've thought of everything except help. I'm not rearranging my life to beg Kowalski for a quarter hour he'll spend saying \"next week.\" Marcus's couch is home for now.",
       pickup: "It's taped on with the kind of tape that outlives civilization.", use: "I could read it again. It wouldn't get better." },
@@ -23144,7 +23148,7 @@ async function playSet(S) {
     "@a2_vic ...That's different."
   ]);
   await RP.lines([
-    "@a2_vic And you. The PA kid. In my basement. With two hundred people and a pair of AT-LPs.",
+    "@a2_vic And you. The PA kid. In my basement. With sixty people and a pair of AT-LPs.",
     "I can explain.",
     "@a2_vic Explain what? That you took a dead basement and made it better than I did?",
     "@a2_vic ...What was that record?",
@@ -23227,12 +23231,13 @@ async function settleUp(S) {
   RP.setClock("TUE 2:00 PM");
   await RP.lines([
     "@nar Tuesday, 2:00 PM. Management office hours. Fifteen minutes, exactly as advertised.",
-    "@nar I slide the rent across the desk: late, in cash, in an envelope that still smells like a basement.",
+    "@nar I slide the rent across the desk: on time, by one day, in cash, in an envelope that still smells like a basement.",
     "@a2_kowalski ...It's all here. Huh. The lock change was temporary. Here's your key. Hot water: next week.",
     "@nar It's always next week. It's the one thing in this building that never changes.",
     "@nar 4C is mine again. Gerald is on the windowsill, leaning at the light like a hostage who has made peace with it. Lou has been watering him through the wall with a turkey baster."
   ]);
   RP.text("MARCUS", "i have my couch back. i'm in the exact middle of it. alone. feet up. best day of my life. take ur socks");
+  RP.text("JESS", "moxie says she'll return my amp 'with flowers.' it's bolted in her rack. keep it, i said monday and meant it. you owe me a cat photo");
   await RP.say("Marcus has his couch back. I have never seen a man so happy to lie down on his own furniture.", "nar");
 }
 
@@ -24957,7 +24962,7 @@ RP.room({
     { id: "a3_o_door", name: "door to the club", r: [4, 38, 50, 130], z: 20, walk: [60, 214, "left"], look: "The door back to the club. The bass comes through the steel like a heartbeat.", exit: S => ({ room: "a3_halcyon", x: 604, y: 220, face: "front" }) },
     { id: "a3_o_calendar", name: "wall calendar", r: [260, 28, 96, 74], z: 20, walk: [310, 214, "back"],
       look: S => S.f.a3_saturday ? ["The wall calendar. Saturday has a new name written in on it, in lipstick. It's mine. It's spelled right.", "Odessa crossed out BS. 'BS.' ...I wonder if that stands for Brandon Shine or what it also stands for."] : ["The wall calendar: every Thursday says YOU. Every Saturday says BS.", "BS. Brandon Shine. Or what everyone calls him when he's not in the room."], pickup: "It's Odessa's. She'd notice. She notices a crooked pen." },
-    { id: "a3_o_cork", name: "corkboard", r: [164, 26, 84, 66], z: 20, walk: [206, 214, "back"], look: "A corkboard of flyers from a decade of Thursdays. Fifty gigs, forty DJs, seven fire inspections.", pickup: "I'm not touching Odessa's corkboard. There are pins in it and a lot of history." },
+    { id: "a3_o_cork", name: "corkboard", r: [164, 26, 84, 66], z: 20, walk: [206, 214, "back"], look: "A corkboard of flyers from a decade of Thursdays. Fifty gigs, forty DJs, seven fire inspections. In the corner, a gold-edged card: BRANDON SHINE, 'ASK ABOUT MY THURSDAYS.' Under it, in Odessa's pen: 'He means yours.'", pickup: "I'm not touching Odessa's corkboard. There are pins in it and a lot of history." },
     { id: "a3_o_photos", name: "framed photos", r: [66, 44, 96, 46], z: 20, walk: [116, 214, "back"], look: "Framed photos of old Thursdays. Everyone is sweaty and happy. Nobody is looking at their phone because it's twenty years ago. Okay, maybe not that many. Ten.", pickup: "They're nailed to the wall. By someone who doesn't want them moved." },
     { id: "a3_o_thermo", name: "thermostat", r: [404, 60, 36, 50], z: 22, walk: [422, 214, "back"],
       look: "A thermostat set to 68, with a note: 'DO NOT TOUCH. -O.' The note is laminated. The note is older than some of the DJs.",
@@ -25015,7 +25020,7 @@ A3.hallEnter = async function (S, from) {
     await lines(["@nar The Halcyon Room. Thursday, 9:08 PM.", "Smells like fog juice and ambition. Same as every Thursday.", "@a3_odessa Nine-oh-eight. Cutting it close.", "Doors are at ten.", "@a3_odessa Six months, never late. Don't start the week before the anniversary.",
       "Six months ago Odessa came down to Vic's Basement Tapes for my monthly and offered me Thursdays before the last record ended. I still play Vic's. Thursdays pay the rent.",
       "@a3_odessa Next Thursday's the anniversary. Six months. I want the room full and you on it.", "And Saturday?", "@a3_odessa Saturday is Brandon Shine's. Gold vest. Sunglasses indoors. Same as last week.",
-      "@a3_odessa Fill tonight. Then we'll talk Saturday.", "@a3_odessa Gus has the monitors. They're asleep. You know the rule.", "Snack.", "@a3_odessa Don't say it out loud. He can hear it."]);
+      "@a3_odessa Fill tonight. Then we'll talk Saturday.", "@a3_odessa He's been asking about your Thursday, by the way. Twice. Brandon doesn't ask about other people's nights. He asks what time they end.", "@a3_odessa Gus has the monitors. They're asleep. You know the rule.", "Snack.", "@a3_odessa Don't say it out loud. He can hear it."]);
     return;
   }
   // ---- the week: the club in daylight
@@ -25063,7 +25068,7 @@ A3.boothEnter = async function (S, from) {
 /* ====================================================================== the booth: sets */
 async function night1Set(S) {
   RP.setClock("THU 10:00 PM");
-  await lines(["Ten PM. The floor's empty: five people at the bar, four of whom work here.", "Gus gives me a thumbs-up from the desk. His other hand is in the chips."]);
+  await lines(["Ten PM. The floor's empty: five people at the bar, four of whom work here.", "Gus gives me a thumbs-up from the desk. His other hand is in the chips.", "Behind the CDJs, a gold smiley sticker on the mixer's edge. Someone sat here before me and wanted it known."]);
   S.f.a3_brandonSeen = true;
   await say("Nobody is here to impress, so I get to be careful. Start soft, build, and let the room find me.");
   const res = await A3.mg("crowdRead", { records: A3.hand(S, 9, ["everything_but_the_girl_missing", "inner_city_good_life", "sylvester_you_make_me_feel_mighty_real", "cece_peniston_finally", "hardrive_deep_inside", "crystal_waters_gypsy_woman", "mr_fingers_washing_machine_can_you_feel_it", "mood_ii_swing_closer", "phuture_acid_tracks"]), crowd: "empty-bar", rounds: 4, difficulty: 1, venue: "Halcyon Room" }, {
@@ -25125,7 +25130,7 @@ async function kosmoOverrun(S) {
     giveUp: "A minute", onFail: async () => { await lines(["The floor drifts. Half of it is on its phones, the other half is asking Odessa for something she doesn't have.", "Right: breathe, watch the floor, pick the right record."]); },
     assist: async () => { await say("Odessa steps up with a sheet of paper that says 'FIVE MORE MINUTES' in lipstick. The room reads it. The room forgives me."); } });
   if (res.giveUp) return;
-  await lines(["@a3_kosmo ...Not bad, Wendell. Not bad at all.", "@a3_kosmo Keep the room warm. I'm going to find a sandwich."]);
+  await lines(["@a3_kosmo ...Not bad, Wendell. Not bad at all.", "@a3_kosmo There's a woman from Berlin by the door. Black coat, no drink. She's been here since eleven. Don't look. Rule one.", "@a3_kosmo Keep the room warm. I'm going to find a sandwich."]);
   S.f.a3_kosmoDone = true; RP.relight();
   RP.followers(25);
   await lines(["He hands me the headphones like a sacred object and walks off the stage.", "Kosmo Delacroix just told me 'not bad.' In the right light, that's practically a knighthood."]);
@@ -25165,7 +25170,7 @@ async function anniversarySet(S) {
   await lines(["I send them home on " + nm(cl) + ", just as planned. The lights come up slowly. Nobody leaves."]);
   RP.sfx("cheer");
   S.f.a3_vegaHere = true;
-  await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend."]);
+  await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend.", "@a3_dj_louie_vega Woman by the door, black coat, filming you since the white label. Berlin accent. She tipped her head at the booth. I know that head tip. That's a booker."]);
   await say("Nice blend. Louie Vega said 'nice blend.' I'm going to put it on my gravestone.");
   await lines(["@a3_odoff ...That's the one. That's the set. That's Saturday.", "@a3_odoff Saturday. Eleven PM. The main floor. Prime time. Brandon's got a vacation.", "@a3_odoff Take the old booth monitors. Dynaudio BM5s. Too good for Gus, who only listens to the sound of a bag opening."]);
   RP.setGear("monitors", "dynaudio_bm5_mkiii");
@@ -25175,7 +25180,7 @@ async function anniversarySet(S) {
   await lines(["@a3_marcusoff That was... the best night of my life. And I've been to a lot of nights.", "I'm going to cry. In front of Marcus. In front of Rico, Dee and the guy from the cab."]);
   RP.setClock("FRI 1:35 AM");
   await lines(["Twenty minutes of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ.' Odessa covers half. My half is the envelope: two hundred dollars.",
-    "I hand Nico the envelope without opening it. I just played the best set of my life for free."]);
+    "I hand Nico the envelope without opening it. I just played the best set of my life for free.", "@nar Marcus, counting his change: 'Trains are a mess, man. If your card's dead, find the oranges guy on the Delancey platform. He swipes people through. Takes payment in fruit.'"]);
   RP.money(-TAB);
   await lines(["Phone: 3%. Bag: every record I own. Time: twenty-five to two."]);
   await RP.fadeTo(1, 800); S.f.noTravel = false;
@@ -26039,10 +26044,10 @@ function update(dt, S, t) {
 }
 
 async function runTrain(S) {
-  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard."]);
+  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard.", "Two minutes ago a girl in a hoodie got a swipe out of him, and he took payment in a segment. Rico was right. The J has a guy."]);
   for (let tries = 0; ; tries++) {
     const i = await RP.choose(["Jump the turnstile with a bag of records on my shoulder", "Order a car on my phone", "Ask the man with the oranges for a swipe"]);
-    if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, no cash and three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); break; }
+    if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); break; }
     await RP.lines(i === 0 ? ["I get one leg over. The bag, forty pounds of vinyl, does not. A transit cop at the far end of the platform lifts one eyebrow, and I put the leg back.", "The cop is still looking. I stand very still, like a man waiting for a train."]
       : ["The app takes forty seconds to open. It quotes $61 for Bushwick at this hour. At the word 'confirm,' the phone gives up and goes black.", "Three percent was optimistic."]);
     if (tries >= 1) { await RP.lines(["@nar The man with the oranges has watched all of it. He walks over, swipes me through, and says nothing. Then, 'In oranges.'", "I take the orange."]); break; }
@@ -26086,8 +26091,8 @@ RP.room({
     if (S.f.a3_train) return;
     if (!S.f.a3_platSeen) {
       S.f.a3_platSeen = true; RP.setClock("FRI 1:35 AM");
-      await RP.lines(["@nar Friday. Half past one. Delancey Street.", "A bag of records on my shoulder. My phone at 3%. " + (S.money > 0 ? "$" + Math.round(S.money) + " in my wallet, and every dollar of it belongs to my landlord." : "Zero dollars in my pocket."),
-        "My MetroCard expired at midnight. The machine's out of service, and the turnstile doesn't take cash, or sympathy. Tonight's problem is the last train home."]);
+      await RP.lines(["@nar Friday. Half past one. Delancey Street.", "A bag of records on my shoulder. My phone at 3%. " + (S.money > 0 ? "After the tab, $" + Math.round(S.money) + " is left in my wallet, and every dollar of it is the landlord's." : "After the tab, nothing is left in my pocket."),
+        "My MetroCard expired at midnight. The machine's out of service, and the turnstile doesn't take cash, or sympathy, and I'm not breaking the rent for a swipe. Tonight's problem is the last train home."]);
     }
     await runTrain(S);
   },
@@ -26473,7 +26478,9 @@ RP.defineAct({
     RP.setGear("turntables", "technics_sl_1210mk7");
     await RP.lines([
       "My own pair of Technics SL-1210MK7s, bought with Halcyon money. I pet them when nobody's looking.",
-      "And an email I've read nine times. Ingrid Falk, Berlin, again. It's on the laptop."
+      "Hal Pruitt's old MK2s from Queens sit under the desk as spares. The Loose Joints is on the shelf in its FOR COMPANY sleeve. I haven't played it since the anniversary. Some records you keep.",
+      "Thursdays at the Halcyon are good. Two hundred people, a booth that knows my name, Odessa's lipstick napkins. It's comfortable, and comfortable is how a person ends up with a plaque on a wall.",
+      "And an email I've read nine times. Ingrid Falk, Berlin, again. Berlin is the jump. It's on the laptop."
     ]);
   },
   doneTitle: "FIRST TOUR",
@@ -26505,11 +26512,11 @@ RP.item("a4_bag", { name: "record bag", short: "Rec. bag", icon: bagIcon,
 RP.item("a4_boarding", { name: "boarding pass", short: "Boarding",
   icon: c => { R(c, 3, 6, 26, 14, "#efeaf6"); R(c, 3, 6, 26, 3, "#2f62b8"); R(c, 20, 9, 1, 11, "#9a96b0"); for (let y = 11; y < 19; y += 2) R(c, 5, y, 12, 1, "#55516a"); for (let x = 22; x < 28; x += 2) R(c, x, 11, 1, 8, "#17131f"); },
   look: "Boarding pass, JFK to Berlin. Seat 23A, a window. I'll be the one pressing my face against it.",
-  use: "It only works at gates, and the gate agent hasn't seen mine yet." });
+  use: S => S.f.a4_boarded ? "Already scanned. Now it's a seat number, 23A, and a souvenir." : "It works at gates. Waving it at a vending machine is not a gate." });
 RP.item("a4_claim", { name: "baggage claim tag", short: "Claim tag",
   icon: c => { R(c, 9, 3, 14, 19, "#efe6d0"); R(c, 9, 3, 14, 3, "#c0302c"); ell(c, 16, 6, 2, 1, "#6a1a1a"); for (let x = 11; x < 21; x += 2) R(c, x, 11, 1, 7, "#17131f"); P(c, 12, 9, "#55516a"); P(c, 14, 9, "#55516a"); },
   look: S => "Claim tag BER-4471. It has my name on it, spelled \"" + A4.misspell(A4.dj(S)) + "\". I'm starting to think it's an industry standard.",
-  use: "It's proof that I owned a bag once." });
+  use: S => S.f.a4_bagBack ? "Its work is done. I'm keeping it, like a ticket stub from a very long argument." : "It proves the bag is mine. It only works on people behind desks, and they like it handed over, not waved." });
 RP.item("a4_form", { name: S => S.f.a4_formStamped ? "Form 7B (stamped)" : "Form 7B", short: "Form 7B",
   icon: (c, S) => { R(c, 8, 2, 16, 21, "#efe6d0"); for (let y = 6; y < 20; y += 3) R(c, 11, y, 10, 1, "#55516a"); R(c, 11, 5, 5, 2, "#c0302c"); if (S.f.a4_formStamped) { ell(c, 19, 17, 4, 4, "#2f62b8"); ell(c, 19, 17, 2, 2, "#efe6d0"); P(c, 19, 17, "#2f62b8"); } },
   iconKey: S => S.f.a4_formStamped ? 1 : 0,
@@ -26531,7 +26538,7 @@ RP.item("a4_photo", { name: "photo of the hole", short: "Hole pic",
 RP.item("a4_band", { name: "Halle Neun wristband", short: "Band",
   icon: c => { R(c, 4, 9, 24, 7, "#9be15d"); R(c, 4, 9, 24, 1, "#d8ff9a"); R(c, 4, 15, 24, 1, "#5a9a2a"); txt(c, "H9", 10, 10, "#17131f"); ell(c, 5, 12, 1, 2, "#17131f"); },
   look: "A neon green wristband. Halle Neun. If I lose it, I lose the club.",
-  use: "It's on my wrist. It's holding me together." });
+  use: "It's on my wrist. Show it to anyone who doubts I played Halle Neun. Sven's clerks in particular." });
 RP.item("a4_postcard", { name: "hotel postcard", short: "Postcard",
   icon: c => { R(c, 4, 4, 24, 16, "#efeaf6"); R(c, 5, 5, 22, 10, "#5a8ad8"); R(c, 5, 12, 22, 3, "#3a7a4a"); R(c, 17, 7, 3, 5, "#efe6d0"); R(c, 16, 7, 1, 5, "#c0302c"); R(c, 5, 16, 22, 1, "#9a96b0"); P(c, 7, 18, "#55516a"); },
   look: "A postcard of the hotel, with the TV tower photoshopped in so it looks closer. It's close enough to autograph.",
@@ -26944,7 +26951,7 @@ async function release(S) {
   await RP.fadeTo(0, 500);
   RP.followers([2400, 3400, 4400][wk]);
   S.f.a4_viral = true;
-  await RP.lines(["It's... working?", "A clip of a cat falling off a couch, set to my remix. 4 million views.", "I don't even own a cat."]);
+  await RP.lines(["It's... working?", "A clip of a cat falling off a couch, set to my remix. 4 million views.", "I don't even own a cat.", "@a4_lou That's Biscuit. Orange cat off the flyer in the hall. She came in my window in June, I fed her a sardine, and now she lives with me.", "@a4_lou She falls off my couch every day. Somebody must have filmed it. I did not know she was a celebrity.", "Lou has a cat. Biscuit has a record deal. Nobody told me either."]);
   await RP.phone([
     { from: "JESS", text: "is that MR WHISKERS in 40,000 videos. i want 10%. and the usb back", hot: true },
     { from: "MARCUS", text: "BRO. cat video. you're famous. berlin?? plus three?", hot: false },
@@ -27045,7 +27052,7 @@ RP.room({
     { id: "a4_sampler", name: "sampler", r: [248, 122, 50, 22], z: 50, walk: [272, 214, "back"],
       look: "A pad sampler with a tiny screen and sixteen pads. Only four of them have ever hit a note I meant.", use: S => makeTrack(S), push: S => makeTrack(S), pickup: "Nope. It stays. It's attached to my ambitions." },
     { id: "a4_decks", name: "Technics", rects: [[374, 108, 74, 34], [488, 108, 74, 34]], z: 55, walk: [440, 214, "back"],
-      look: "A pair of Technics SL-1210MK7s. Direct drive, the same decks every club on earth has. They're mine. I'm still getting used to that.",
+      look: "A pair of Technics SL-1210MK7s. Direct drive, the same decks every club on earth has. They're mine. I'm still getting used to that. Under the desk, Hal Pruitt's MK2s keep them company, the old guard.",
       use: S => loadSample(S), push: "Don't push the Technics. They look at you.", pull: "Pitch fader's at zero. Where it belongs.", pickup: "Each weighs about as much as a toddler. A rich, important toddler." },
     { id: "a4_mixer", name: "mixer", r: [447, 108, 42, 34], z: 56, walk: [470, 214, "back"], look: "Pioneer DJM-350. Two channels, zero crackle. The crackle was a phase of my life.", use: "Faders up, faders down. I could do this for hours.", pickup: "It's wired into the whole studio. It's an organ. Of my studio." },
     { id: "a4_monitors", name: "monitors", rects: [[346, 94, 30, 48], [560, 94, 30, 48]], z: 54, walk: [470, 214, "back"], look: "Dynaudio BM5 mkIII studio monitors. They tell me the truth about my music. The truth is a lot.", use: "Quiet in here for now. Lou would like to keep it that way.", pickup: "They're heavy and they cost more than my first car. Which I didn't have." },
@@ -27056,7 +27063,7 @@ RP.room({
       look: "LABEL NAME? \"Wall Music (no)\", \"Lou & Me (no)\", \"Hole (yes?)\". I have a very small creative team.", pickup: "It's taped up with six layers of tape. It's staying." },
     { id: "a4_panels", name: "acoustic panels", rects: [[346, 20, 98, 50], [550, 20, 44, 50]], z: 12, walk: [470, 214, "back"], look: "Foam panels. Soundproofing. Lou says they don't work. Lou says that every time he hears me through them." },
     { id: "a4_shelf", name: "record shelf", r: [12, 16, 136, 82], z: 20, walk: [80, 218, "back"],
-      look: "Every record that didn't fit in the crate. Alphabetized by how much I love them.", use: S => RP.crateView ? RP.crateView() : "A lot of vinyl.", open: S => RP.crateView ? RP.crateView() : "A lot of vinyl." },
+      look: "Every record that didn't fit in the crate. Alphabetized by how much I love them. Top shelf, behind glass: Loose Joints, \"Is It All Over My Face?\", in a sleeve marked FOR COMPANY. Hal Pruitt's last record is staying home.", use: S => RP.crateView ? RP.crateView() : "A lot of vinyl.", open: S => RP.crateView ? RP.crateView() : "A lot of vinyl." },
     { id: "a4_couch", name: "couch", r: [10, 108, 142, 62], z: 25, walk: [90, 226, "back"], look: "My couch. It's also my guest room, my Sunday and Lou's seat for the remix.", use: "I sit. I stand. Sitting is a lot.", push: "Couches don't move. They arrive and they stay.", pull: "I've tried pulling out the couch bed. It pulls out like a ghost." },
     { id: "a4_poster", name: "Halcyon poster", r: [156, 22, 44, 60], z: 22, walk: [180, 218, "back"], look: "HALCYON ROOM, THURSDAYS. Odessa's flyer guy misspelled my name on the first printing. This is the corrected one. It's also wrong." },
     { id: "a4_iou", name: "framed IOU", r: [150, 86, 50, 36], z: 24, walk: [180, 218, "back"], look: "A framed IOU from Dante: \"Next week.\" It's the oldest document in the apartment. It's a better investment than most stocks.", pickup: "If I take it down, the wall will hold a grudge." },
@@ -27572,7 +27579,7 @@ async function stampScene(S) {
     "Hi, Maddie. (She films me for six seconds.)", "@a4_bernadette She's screaming. Give me that form. Break's over."]);
   RP.sfx("click"); await RP.wait(300); RP.sfx("thump");
   S.f.a4_formStamped = true; RP.refreshInv();
-  await RP.lines(["*STAMP.* \"RECEIVED.\" She adds a smiley, which I'm fairly sure is a violation.", "@a4_bernadette Now Security. They'll sign it. Ask for Delgado. Tell him Bernadette says hi.", "@a4_bernadette And tell your friend the cat's doing great."]);
+  await RP.lines(["*STAMP.* \"RECEIVED.\" She adds a smiley, which I'm fairly sure is a violation.", "@a4_bernadette Now Security. They'll sign it. Ask for Delgado. Tell him Bernadette says hi.", "@a4_bernadette And tell your friend Lou the cat's doing great. He's in the comments under every video: 'That's my Biscuit.' Orange. Falls off couches. He's very proud."]);
   await RP.say("The form says what it's always wanted to say. All it needs is a signature.");
 }
 async function giveToBernadette(S, item) {
@@ -27809,12 +27816,12 @@ async function takeBag(S) {
   if (!S.f.a4_dogFed) { await RP.lines(["I reach for the bag. Nugget growls. It's a very small, very professional growl.", "I'll need to get her off it first. She's a beagle. Beagles like one thing."]); return; }
   S.f.a4_bagBack = true; RP.give("a4_bag");
   RP.sfx("pickup");
-  await RP.lines(["Thirty-eight kilos of records, back in my arms. It's never been so heavy. Or so beautiful.", "Okay. Gates. Plane. Berlin. Nothing else goes wrong."]);
+  await RP.lines(["@a4_delgado Tag. BER-4471. (He checks it against the bag's tag with a finger like a pen.) Matches. Without that tag, it's mine, and so is the bag.","Thirty-eight kilos of records, back in my arms. It's never been so heavy. Or so beautiful.", "Okay. Gates. Plane. Berlin. Nothing else goes wrong."]);
   RP.setClock("SAT 8:41 AM");
 }
 async function boardTheGate(S) {
   if (!S.f.a4_bagBack) { await RP.say("I can't board without my bag. Without records I'm just a guy with feelings and a window seat."); return; }
-  await RP.lines(["Through the metal detector. Chain, belt, keys, coins, jacket, dignity: all in a tray.", "*BEEP*"]);
+  await RP.lines(["@a4_delgado Boarding pass. (I hold it up. He scans it.) 23A. Hope you like clouds.", "Through the metal detector. Chain, belt, keys, coins, jacket, dignity: all in a tray.", "*BEEP*"]);
   RP.sfx("buzz");
   await RP.lines(["@a4_delgado Anything in your pockets?", "A hole. A metaphorical one.", "@a4_delgado Jacket.", "(I take off the bomber. It beeps again. The bomber is made of beeping.)",
     "@a4_delgado Go. Go before it beeps a third time. Have a nice flight, uh, \"" + A4.misspell(A4.dj(S)) + ".\""]);
@@ -27875,7 +27882,7 @@ RP.room({
     ["a4_jerky", "a4_inspect", S => nuggetFeed(RP.state)],
     ["a4_jerky", "a4_delgado", "Giving jerky to the officer is bribery. And I'd have to bribe a dog next. Also bribery."],
     ["a4_boarding", "a4_delgado", S => giveToDelgado(RP.state, "a4_boarding")],
-    ["a4_claim", "a4_delgado", "He glances at the tag. \"That's Baggage Services' problem. I handle the detained part.\""],
+    ["a4_claim", "a4_delgado", S => RP.state.f.a4_formSigned && !RP.state.f.a4_bagBack ? "He glances at the tag. \"Hold it. I'll want it when you take the bag. Not before.\"" : "He glances at the tag. \"That's Baggage Services' problem. I handle the detained part.\""],
     ["a4_form", "a4_nugget", "She's a beagle. She can't sign. She also can't read. She CAN smell, though, and she smells the stamp."],
     ["a4_passport", "a4_delgado", "He doesn't need to see it. He needs to see a stamped form. He's quite particular."],
     ["a4_white", "a4_nugget", "She sniffs the white label. She sneezes. A first review."]
@@ -28002,7 +28009,7 @@ async function kosmoTalk(S) {
       await giveBag(S);
     } },
     { text: "Great set at the Halcyon, Kosmo.", when: S => !S.f.a4_kosmoPraise, run: async () => { S.f.a4_kosmoPraise = true; await RP.lines(["@a4_kosmo Of course it was. I remember it fondly. It was... last week? A basement? A large place. With... acoustics.", "Six months ago. I played after you.", "@a4_kosmo Yes. That. Wonderful people. Who are you, again?"]); } },
-    { text: "Where are you headed?", run: () => RP.lines(["@a4_kosmo Berlin. They hold me in a different kind of reverence there. They're mostly quiet about it.", "@a4_kosmo And you, Brenton? What brings you?", "A booking. Halle Neun.", "@a4_kosmo (pause) I... don't know it. How lovely."]) },
+    { text: "Where are you headed?", run: () => RP.lines(["@a4_kosmo Berlin. They hold me in a different kind of reverence there. They're mostly quiet about it. A booker named Falk books me a Sunday brunch there every year, and she books my seat, which is why I'm on this plane and not a better one.", "@a4_kosmo And you, Brenton? What brings you?", "A booking. Halle Neun.", "@a4_kosmo (pause) I... don't know it. How lovely."]) },
     { text: "Never mind. Sleep well.", end: true }
   ]);
 }
@@ -28831,7 +28838,7 @@ function light(S) {
 }
 
 /* ------------------------------------------------------------------ the set */
-const techno = S => A4.TECHNO.filter(id => S.records.includes(id));
+const techno = S => A4.TECHNO.filter(id => S.records.includes(id)).concat(S.records.includes("white_nyc93") ? ["white_nyc93"] : []);
 async function katjaTalk(S) {
   if (S.f.a4_setDone) { await RP.lines(["@a4_katja You played. They stayed. That's all I ask.", "@a4_katja Come back next year. Maybe sooner. I'll pretend I never said that."]); return; }
   S.f.a4_katjaTalked = true;
@@ -28879,6 +28886,10 @@ async function startSet(S) {
   RP.sfx("cheer");
   await RP.lines([sc >= 70 ? "The room doesn't scream. It exhales. Eight hundred people in black let out one breath at the same time, and that's applause." : "It's... fine. The room nods. In Berlin, \"fine\" is a standing ovation with the sound off.",
     "@a4_katja (arms crossed, a tiny smile that she'll deny) Good.", "@a4_jeff (from the side of the booth, one nod)"]);
+  if (S.f.a4_played.includes("white_nyc93")) {
+    S.f.a4_whitePlayed = true; RP.followers(600);
+    await RP.lines(["@a4_katja The unknown one. No label, no name, a house kick from 1993. Sven asked me who it was. Sven has never asked me anything.", "@a4_katja Eight hundred people just Shazamed a record that does not exist. That is the best thing that can happen in this building.", "Berlin asked for Lou's record by its marker pen. I am telling him tonight."]);
+  }
   RP.actor("kid").act = "stand"; RP.place("kid", 380, 214, "front"); RP.actor("a4_jeff").act = "stand";
   S.f.a4_setDone = true;
   RP.followers(sc >= 70 ? 4200 : 1800);
@@ -29097,7 +29108,7 @@ async function brandtTalk(S) {
   }
   await RP.convo([
     { text: "Can you give me another key?", when: S => !S.f.a4_clerkOk, run: async () => { await RP.lines(["@a4_brandt I could. But the room is occupied by a man who says it's his. I require proof of whose it is. A passport, perhaps."]); } },
-    { text: "What's Axl doing here, anyway?", when: S => !S.f.a4_brandtAxl, run: async () => { S.f.a4_brandtAxl = true; await RP.lines(["@a4_brandt Herr Vanta wanted the biggest suite. We had a reservation for him: the Kaiserin Suite. But he arrived before the paperwork. And then he saw your room's view of the television tower.", "@a4_brandt He said it was \"symbolic.\" I do not understand the symbol.", "@a4_brandt If he knew his suite was ready, he'd leave in a second. But he won't listen to me. He doesn't listen to anyone but himself. And pens."]); } },
+    { text: "What's Axl doing here, anyway?", when: S => !S.f.a4_brandtAxl, run: async () => { S.f.a4_brandtAxl = true; await RP.lines(["@a4_brandt Herr Vanta wanted the biggest suite. We had a reservation for him: the Kaiserin Suite. But he arrived before the paperwork. And then he saw your room's view of the television tower.", "@a4_brandt He said it was \"symbolic.\" I do not understand the symbol.", "@a4_brandt He plays a festival on the river on Monday. Same agency as Frau Falk, Nachtwerk, so same hotel list. He tells every hotel it is a world tour. It is a Monday.", "@a4_brandt If he knew his suite was ready, he'd leave in a second. But he won't listen to me. He doesn't listen to anyone but himself. And pens."]); } },
     { text: "Is there anything that makes him get up?", when: S => S.f.a4_brandtAxl && !S.f.a4_brandtPen, run: async () => { S.f.a4_brandtPen = true; await RP.lines(["@a4_brandt Herr Vanta cannot resist a pen. It's a medical condition. Anyone asks for an autograph, and he stops everything.", "@a4_brandt If someone were to... request one, I could then mention the Kaiserin Suite. He'd be out the door before the pen is dry.", "@a4_brandt The postcards are in the rack. They're free. Everyone says it's the best thing in the lobby."]); } },
     { text: "Never mind.", end: true }
   ]);
@@ -29108,6 +29119,12 @@ async function brandtGive(S, item) {
     S.f.a4_clerkOk = true;
     await RP.lines(["@a4_brandt (peers at the passport, then at me, then at the passport) The photo is from a time of more hair.", "It's from 2019.", "@a4_brandt It is you. Barely. Room 12 is yours. The key, however, is with Herr Vanta.",
       "@a4_brandt If you could persuade him to leave... I cannot. I'm a hotel clerk. I'm trained only in the art of looking pained."]);
+    return;
+  }
+  if (item === "a4_band") {
+    if (S.f.a4_clerkOk) return "He glances at the wristband and nods. \"Halle Neun. Yes. I believed you already.\"";
+    S.f.a4_clerkOk = true;
+    await RP.lines(["@a4_brandt (reads the neon band) Halle Neun. The Sunday set? Sven passed you in?", "I did the quiz. One answer wrong.", "@a4_brandt Sven passes nobody. He does not pass impostors. This is better than a passport. Room 12 is yours. The key, however, is with Herr Vanta.", "@a4_brandt If you could persuade him to leave... I cannot. I am trained only in the art of looking pained."]);
     return;
   }
   if (item === "a4_postcard") return "He raises an eyebrow. \"That's for Herr Vanta. I'm a clerk, not a fan.\"";
@@ -29199,11 +29216,14 @@ async function finale(S) {
   RP.text("INGRID FALK", "Harbor Lights Festival, NYC waterfront. Headline slot. Poster attached (Axl is slightly bigger, sorry). Flights home are booked. Congratulations.", false);
   A4.callOff(S);
   S.f.a4_offer = true;
-  await RP.lines(["Home. New York. A festival. A bag with a seatbelt. A key I never have to return.", "I don't know what to do next. But I know where I'm going."]);
+  await RP.lines(["A festival. A bag with a seatbelt. A key I never have to return. Ingrid booked the flight home for Tuesday, and Kosmo, I'm told, is on it. The bag gets the aisle seat again."]);
   S.f.noTravel = false;
   await RP.fadeTo(1, 800);
-  RP.setClock("MON 9:15 AM");
-  await RP.say("New York. Home. A few days later.", "nar");
+  RP.setClock("TUE 7:40 PM");
+  await RP.say("Tuesday. Berlin to JFK. The bag gets the window. I get the middle seat and no complaints.", "nar");
+  await RP.lines(["Bushwick. 4C. The stairwell smells of cat. Lou opens 4B before I find my keys.", "@a4_lou Kid. You're home. Biscuit has been standing at the pipe hole since Sunday. I don't know what she thinks is in there.", "@a4_lou Harbor Lights. I looked it up. Go on, play it, and bring me something I can brag about at the post office.",
+    "Gerald is alive. He has grown toward the window and left a leaf on the floor, like a note. I take that as congratulations.", "Berlin was the jump. This is the landing. Saturday night, the waterfront, the biggest room I have ever been asked to fill, and a poster where my name is slightly smaller."]);
+  RP.setClock("WED 9:15 AM");
   await RP.fadeTo(0, 400);
   await RP.completeAct([
     [!!S.f.a4_track, "Remixed \"NYC 93\" with Lou"],
@@ -29272,6 +29292,7 @@ RP.room({
     ["a4_passport", "a4_brandt", S => brandtGive(RP.state, "a4_passport")],
     ["a4_passport", "a4_desk", S => brandtGive(RP.state, "a4_passport")],
     ["a4_passport", "a4_axl", "Axl would put his own face on my passport if I let him. No."],
+    ["a4_band", "a4_brandt", S => brandtGive(RP.state, "a4_band")],
     ["a4_postcard", "a4_axl", S => axlSign(RP.state)],
     ["a4_postcard", "a4_brandt", S => brandtGive(RP.state, "a4_postcard")],
     ["a4_postcard", "a4_ent2", "Tiff takes the postcard, reads it, sighs and hands it back. \"For him. He's got to do it himself.\""],
@@ -29605,7 +29626,7 @@ RP.item("a5_pass", {
     R(c, 8, 17, S.f.a5_passFixed ? 16 : 11, 2, S.f.a5_passFixed ? "#1d1622" : "#c0302c"); R(c, 8, 20, 9, 1, "#8a86a0");
   },
   iconKey: S => S.f.a5_passFixed ? 1 : 0,
-  look: S => S.f.a5_passFixed ? ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "DJ " + A5.pName(S).replace(/^DJ /, "") + ", in Sharpie. Spelled right. A first for any laminate."] : ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "It says \"DJ " + A5.mangle(S.name).replace(/^DJ /, "") + "\". So close. So Dante."],
+  look: S => S.f.a5_passFixed ? ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "DJ " + A5.pName(S).replace(/^DJ /, "") + ", in Sharpie. Spelled right. A first for any laminate."] : ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "Hand-laminated by an intern. The name is a stylistic choice. Not mine."],
   use: "It's a pass. You show it to people who don't believe you."
 });
 RP.item("a5_marker", {
@@ -29630,7 +29651,7 @@ RP.item("a5_tickets", {
   name: "drink tickets", short: "Tickets",
   icon: c => { for (let i = 0; i < 4; i++) { R(c, 4 + i * 2, 5 + i, 22, 11, i % 2 ? "#ff3fa4" : "#ffd23f"); R(c, 4 + i * 2, 5 + i, 22, 1, "#ffffff"); } txt(c, "NOWH", 8, 9, "#17131f"); },
   look: "A roll of 400 NOWHERE drink tickets. That's Dante's idea of a paycheck. They have a certain... street value. At Nowhere. On a Saturday.",
-  use: "I'll spend them wisely. Meaning: not at once."
+  use: "Four hundred tickets, one drink each. Dante paid me in a currency only Dante's bar accepts. I'll frame one. The rest are Marcus's problem."
 });
 
 RP.item("a5_water", {
@@ -31126,6 +31147,7 @@ async function interview(S) {
     "@a5_dana And we're clear. Wow. " + (score >= 6 ? "That was great radio. I'm going to cry in the booth." : score >= 3 ? "That was solid. Hair and everything." : "Well. That was... a radio segment."),
     "@a5_dana Harbor Lights, Saturday. Don't be late. I'll be in the front."
   ]);
+  if (score < 3) await RP.lines(["@a5_dana I'll have the producer cut it for time. Most of it. All of it.", "(The clip gets eleven plays. Ten are Marcus. New fans: a handful, mostly confused.)"]);
   RP.text("MARGO (MGR)", "That was " + (score >= 6 ? "perfect" : score >= 3 ? "good" : "an experience") + ". Gate at 7 PM: wristbands + guest list. Whit wants the list by 8.", false);
   RP.unlock("a5_loc_gate");
   await RP.lines(["Gate at seven. Time for lunch. Or the subway, which is lunch for people with no time."]);
@@ -31625,6 +31647,15 @@ async function twinkieTalk(S) {
     { text: "Later, Twinkie.", end: true }
   ]);
 }
+async function kosmoGrounds(S) {
+  if (S.f.a5_kosmoG) { await RP.lines(["@kosmo Dennis. The tacos say TACOS. Trust a menu that commits."]); return; }
+  S.f.a5_kosmoG = true;
+  await RP.lines([
+    "@kosmo Ah. Dennis. They've given you a lanyard. That's how it starts.",
+    "Kosmo? It's not Dennis.",
+    "@kosmo Of course it isn't. Walk the lawn, Dennis. Every stage looks bigger from the grass. Then it gets smaller. Then it gets right."
+  ]);
+}
 async function jessTalk(S) {
   if (!S.f.a5_jessMet) {
     S.f.a5_jessMet = true;
@@ -31701,6 +31732,7 @@ RP.room({
     { id: "twinkie", char: "twinkie", x: 640, y: 206, face: "front", act: "stand", name: "Twinkie" },
     { id: "jess", char: "jess", x: 232, y: 236, face: "left", act: "stand", name: "Jess" },
     { id: "eddie", char: "eddie", x: 302, y: 236, face: "left", act: "stand", name: "Eddie Two-Times" },
+    { id: "kosmo", char: "kosmo", x: 560, y: 240, face: "left", act: "stand", name: "Kosmo Delacroix", vis: S2 => !night(S2) },
     { id: "a5_gloria", char: "a5_gloria", x: 830, y: 226, face: "front", act: "stand", name: "Gloria" },
     { crowd: { n: 2, rect: [70, 238, 50, 10], seed: 77, face: "front", act: "stand", scale: 0.95, vis: S2 => !night(S2) } },
     { crowd: { n: 1, rect: [368, 242, 40, 8], seed: 81, face: "front", act: "stand", scale: 0.95, vis: S2 => !night(S2) } },
@@ -31724,6 +31756,7 @@ RP.room({
     { id: "a5_wray", name: "Deep Cuts pop-up", r: [428, 120, 136, 98], z: 15, walk: [496, 236, "back"], look: "Deep Cuts, pop-up edition: bins of records, price cards in Ray's handwriting, and a neon sign Ray says he \"didn't buy, it just arrived.\"", pickup: "Ray's watching. Ray's always watching. And he'll charge me for the look.", use: "I have a crate. I have a lot of records. I'm not allowed to buy any more. Margo has views.", open: "The bins are open. They've been open since 1993. I'll look through them after the set." },
     { id: "a5_wbar", name: "Harbor Bar", r: [580, 116, 124, 102], z: 15, walk: [650, 236, "back"], look: "HARBOR BAR: 1 TICKET. A shelf of bottles, a stack of tickets, a tower of cups, and a woman in mesh who knows everything.", use: "I'm not drinking before my set. I'm a professional. I'm a very nervous professional.", pickup: "The tickets are guarded by a woman who remembers everything. Hands off." },
     { id: "twinkie", name: "Twinkie", talk: S => twinkieTalk(S), look: "Twinkie. Mesh top, pink skirt, shades at night. The only person I know who's been at every after-party and still looks awake.", give: (S, item) => "Twinkie: \"I'll remember that you tried.\"", pickup: "Twinkie remembers. Twinkie will remember this too.", use: "I can't use Twinkie. I can only be used BY Twinkie." },
+    { id: "kosmo", name: "Kosmo Delacroix", vis: S2 => !night(S2), talk: S => kosmoGrounds(S), look: "Kosmo Delacroix, in the long coat and the shades, reading the taco truck menu like a contract. Of course he's here. He's everywhere I've ever been nervous.", give: "Kosmo: \"No, thank you. Dennis.\"", pickup: "No.", use: "I can't use Kosmo. People have tried." },
     { id: "jess", name: "Jess", talk: S => jessTalk(S), look: "Jess. Purple hoodie, ponytail, and a bubble backpack carrier at her feet. She looks great. Lucky for her, she's not looking at me.", give: (S, item) => "Jess: \"No, thanks. Mr. Whiskers has everything.\"", pickup: "No.", use: "Jess has opinions about being used." },
     { id: "a5_wcat", name: "Mr. Whiskers", r: [186, 218, 36, 32], z: 40, walk: [210, 244, "right"], look: "Mr. Whiskers, in a bubble carrier, wearing a festival wristband and tiny cat shades. He has more followers than I do and more sleep than I will ever have.", talk: "\"Mr. Whiskers.\" He blinks, slowly. In cat, that's \"I love you.\" In human, that's \"you're blocking my nap.\"", pickup: "Jess would end me. Also he'd scratch.", use: "I can't use a cat. A cat uses YOU.", push: "He wiggles. I stop." },
     { id: "eddie", name: "Eddie Two-Times", talk: S => eddieTalk(S), look: "Eddie Two-Times, behind an ice chest, selling water at nine dollars. His jacket's open. His sign says \"WATER $9.\" Under it, in tiny letters: \"(TWO-TIME PRICE).\"", give: (S, item) => "Eddie: \"Thanks! Where's the cash?\"", pickup: "The ice chest weighs thirty kilos. Eddie's weight in two-time deals.", use: "I can use Eddie. It's a mistake. I do it anyway." },
@@ -31972,6 +32005,7 @@ RP.room({
     { id: "a5_dj_francois_k", char: "a5_dj_francois_k", x: 808, y: 207, face: "left", act: "stand", name: "Francois K" },
     { id: "a5_tech1", char: "a5_tech1", x: 300, y: 242, face: "right", act: "stand", name: "Roadie" },
     { id: "a5_tech2", char: "a5_tech2", x: 560, y: 240, face: "left", act: "stand", name: "Crew" },
+    { id: "kosmo", char: "kosmo", x: 400, y: 238, face: "left", act: "stand", name: "Kosmo Delacroix", vis: S2 => night(S2) },
     { id: "lou", char: "lou", x: 700, y: 232, face: "front", act: "stand", name: "Lou", vis: S2 => !!S2.f.a5_louArrived },
     { id: "marcus", char: "marcus", x: 626, y: 240, face: "left", act: "stand", name: "Marcus", vis: S2 => !!S2.f.a5_louArrived }
   ],
@@ -31988,9 +32022,10 @@ RP.room({
     { id: "a5_btable", name: "catering table", r: [42, 150, 128, 66], z: 30, walk: [100, 232, "back"], look: S => S.f.a5_smoothie ? "A table full of trays and a coffee urn. One empty spot where Axl's smoothie used to be." : "A long table: pasta, wraps, fruit, a coffee urn. At the end, a lone green smoothie, labeled AXL. It seems to be glaring at me.", pickup: S => catererTalk(S), use: S => catererTalk(S) },
     { id: "a5_bsmoothie", name: "green smoothie", r: [36, 150, 14, 28], z: 50, vis: S => !S.f.a5_smoothie, walk: [60, 232, "back"], look: "A tall green smoothie labeled AXL V. — NO ICE, NO SEEDS, NO EYE CONTACT. It's the angriest beverage I've ever seen.", pickup: S => catererTalk(S), use: S => catererTalk(S) },
     { id: "a5_caterer", name: "caterer", talk: S => catererTalk(S), look: "The caterer, in an apron and a cap, with an expression that says \"I'm going to retire in March.\"", give: "\"I don't take anything. Everything's free.\"", pickup: "I'm not lifting the caterer." },
+    { id: "kosmo", name: "Kosmo Delacroix", vis: S2 => night(S2), talk: S => RP.lines(S.f.a5_kosmoB ? ["@kosmo Quiet, Dennis. I'm listening to the building."] : (S.f.a5_kosmoB = true, ["@kosmo Dennis. Nervous? Good. The ones who aren't, I walk away from.", "It's not Dennis, Kosmo.", "@kosmo Go on up. Everybody remembers the first record. Make it the right one."])), look: "Kosmo Delacroix, leaning on a flight case beside the stage door like he's holding it up. He hasn't taken the shades off since I've known him. I think they're load-bearing.", give: "Kosmo: \"Not now, Dennis.\"", pickup: "No." },
     { id: "a5_tech1", name: "roadie", talk: S => RP.lines(["@a5_tech1 Headliner? Cool. Mind the cable. Not that one. That one.", "There are four hundred cables.", "@a5_tech1 Then mind all of them."]), look: "A roadie in a headset, a roll of gaffer tape on his wrist like a bracelet. He hasn't sat down since Thursday.", give: "\"Hands full, boss. Hands are always full.\"", pickup: "He carries cable all day. He's not also carrying me." },
     { id: "a5_tech2", name: "crew", talk: S => RP.lines(["@a5_tech2 If Roz asks, I'm on lights.", "Are you on lights?", "@a5_tech2 I'm on a break that looks like lights."]), look: "A crew member in a black cap, a red bun out the back, a lanyard heavy with laminates. She has the calm of someone who's seen a stage fall down. Twice.", give: "\"Unless it's a fuse, I don't want it.\"", pickup: "No. She'd log it as an incident." },
-    { id: "a5_btrailer", name: "your trailer", r: [196, 128, 142, 78], z: 20, walk: [262, 226, "back"], look: S => "A white trailer: ARTIST 1. A gold star on the door. The sign says \"DJ " + A5.mangle(A5.pName(S)).replace(/^DJ /, "") + ".\" It's my trailer. I'm someone who has a trailer.", open: S => ownTrailer(S), use: S => ownTrailer(S), push: "It weighs a lot. It's got a bathroom. Wow.", pickup: "It's got wheels, a hitch and a sense of occasion.", talk: "\"Hello, trailer.\" It says nothing. It's a trailer. It doesn't have to." },
+    { id: "a5_btrailer", name: "your trailer", r: [196, 128, 142, 78], z: 20, walk: [262, 226, "back"], look: "A white trailer: ARTIST 1. A gold star on the door and a laminated sign. It's my trailer. I'm someone who has a trailer.", open: S => ownTrailer(S), use: S => ownTrailer(S), push: "It weighs a lot. It's got a bathroom. Wow.", pickup: "It's got wheels, a hitch and a sense of occasion.", talk: "\"Hello, trailer.\" It says nothing. It's a trailer. It doesn't have to." },
     { id: "a5_baxl", name: "Axl's trailer", r: [352, 100, 216, 108], z: 20, walk: [470, 232, "back"], look: "A gold trailer the size of a house. AXL in a giant neon sign on the roof, a red carpet, velvet ropes, two potted palms. The plaque on the door: AXL VANTA — DO NOT KNOCK. It's the trailer of a man who's never been told no.", use: S => axlDoor(S), open: S => axlDoor(S), pickup: "It's a trailer. It's golden. It's not mine.", push: "It's very gold and very solid. I push. It pushes back by existing.", talk: S => axlDoor(S), give: (S, item) => item === "a5_smoothie" ? axlDoor(S) : "I'm not giving Axl's trailer anything. It already has everything." },
     { id: "a5_bcarpet", name: "red carpet", r: [428, 206, 82, 32], z: 8, floor: true, look: "A red carpet leading nowhere in particular. Straight from the trailer door to a tiny velvet rope. Axl's walk of fame." },
     { id: "a5_bpalm", name: "potted palms", rects: [[388, 150, 56, 70], [518, 150, 56, 70]], z: 25, walk: [455, 236, "back"], look: "Two enormous potted palms flank the red carpet. They're in black plastic pots with GOLD spray paint. Even Axl's plants have an entourage.", pickup: "The palms weigh more than my gear. Don't ask.", use: "I can't use plants. I can only compliment them. Nice palm." },
@@ -32130,6 +32165,7 @@ async function axlScene(S) {
     "I'm looking at the ceiling. It's very nice.",
     "@axl Okay. You live. Who are you?",
     "I'm the headliner.",
+    ...(S.f.a5_axlAngry ? ["@axl ...Wait. I know that voice. \"Axl who?\" That was you.", "It was a bit, on the radio.", "@axl Margo played it for me. Twice. On speaker. In the car. I've been having feelings since Friday."] : []),
     "@axl I'M the headliner.",
     "There are two headliners?",
     "@axl There's ONE. Look at the poster. My name's bigger. I've got a billion streams. A billion! Do you know what a billion is?",
@@ -32152,7 +32188,8 @@ async function axlScene(S) {
     await RP.lines(["@axl ...What did you say?", "Alex. Your mother has a banner. It says \"MY ALEX.\"", "@axl ...Who told you about the banner?", "A woman who remembers everything.", "@axl Twinkie. Of course. Okay. Okay okay okay. Listen. That's between us."]);
     win = true; S.f.a5_axlLeverage = true;
   }
-  if (win && S.f.a5_axlAngry) await RP.lines(["@axl I heard what you said on the radio. Don't think I didn't. ...But it's a good idea. I'm allowed to have a good idea."]);
+  if (win && S.f.a5_axlAngry) await RP.lines(["@axl ...It's a good idea. I'm allowed to have a good idea, even from the guy who said \"Axl who.\"", "@axl I'm keeping the clip, though. For my lawyers. They eat contracts and clips."]);
+  else if (!win && S.f.a5_axlAngry) await RP.lines(["@axl And that's before the radio. I haven't even started on the radio."]);
   S.f.a5_axlDone = true; S.f.a5_axlWon = win;
   if (S.f.a5_axlWon) {
     RP.sfx("success");
@@ -32790,6 +32827,10 @@ function drawSign(c, S) {
   R(c, 596, 224, 30, 16, "#c8925a"); R(c, 596, 224, 30, 1, "#e0b078"); txt(c, "+30", 602, 229, "#17131f", 1, 1); R(c, 610, 238, 2, 4, "#8a6a4a");
 }
 
+function drawBiscuit(c, S) {
+  R(c, 484, 194, 18, 8, "#7c7a88"); R(c, 486, 192, 14, 3, "#94929e"); R(c, 498, 188, 8, 8, "#7c7a88"); R(c, 498, 186, 2, 3, "#7c7a88"); R(c, 504, 186, 2, 3, "#7c7a88");
+  P(c, 500, 191, "#f4d35e"); P(c, 504, 191, "#f4d35e"); R(c, 486, 195, 12, 1, "#5a5868"); R(c, 482, 199, 6, 2, "#94929e");
+}
 function lightMap(S) {
   return { ambient: "#c8a8c8", lights: [{ x: SUN.x, y: SUN.y, r: 600, color: "#ffc8a0", steps: 4, power: 0.7, rim: true }, { x: SUN.x, y: SUN.y, r: 240, color: "#fff0d0", steps: 3, power: 0.6 }],
     halos: [{ x: SUN.x, y: SUN.y, r: 60, color: "#ffb070", strength: 0.9 }], rims: [{ x: SUN.x, y: SUN.y, r: 700, color: "#ffc080" }], key: { x: SUN.x, y: SUN.y }, shadow: 0.55 };
@@ -32807,11 +32848,18 @@ async function louTalk(S) {
       "@lou Every Saturday, 1993, I'd stand at the back of a club and hear that bar in my head. And now it's...",
       "@lou ...It's out there. It's in other people's heads. Kid. I can stop worrying about the drawer.",
       "Every Saturday. From now on, Lou.",
-      "@lou Don't push it. Sundays are for sleeping."
+      "@lou Don't push it. Sundays are for sleeping.",
+      "There's a gray cat on the bench next to you, Lou.",
+      "@lou Don't look at him. He's not mine. He came through the pipe hole in March for a sandwich and didn't leave.",
+      "He has a name. It's on a poster in our hallway. Biscuit. Two floors of people are looking for him.",
+      "@lou I know. I took the poster down twice. Somebody keeps putting it back. ...He has a bed now. He has a window. I'm not ready.",
+      "Lou. He's allowed to be found by you.",
+      "@lou ...Then he's found. Write that on the poster. Also, your plant is fine. Gerald's on my sill. He gets more light than you do."
     ]);
+    S.f.a5_biscuit = true;
     return;
   }
-  await RP.lines(["@lou Go watch the sun. I'm done. My knees are on strike.", "@lou ...Thank you, kid. I mean it. Don't tell anyone I said so."]);
+  await RP.lines(["@lou Go watch the sun. My knees are on strike.", "@lou ...Thank you, kid. I mean it. Don't tell anyone I said so.", "(Biscuit opens one eye at me. It's the same speech, shorter.)"]);
 }
 async function danteTalk(S) {
   if (!S.f.a5_pDante) {
@@ -32837,12 +32885,12 @@ async function danteTalk(S) {
 async function simpleTalk(S, who) {
   const L = {
     marcus: [A5.guest(S).pier, "It counts, Marcus.", "@marcus PLUS THIRTY. It was a state of mind. It's always been a state of mind."],
-    ray: ["@ray Not bad. You didn't peak early. You peaked right. That's the whole job.", "@ray The white label thing was good. Keep it for the book you're going to write.", "Is that praise, Ray?", "@ray It's a medical observation. Don't tell anyone."],
-    twinkie: ["@twinkie Honey. You played it all. I remember everything, and I'm still going to remember that.", "@twinkie Sit. Watch the sun. It's the best part of the night. The rest is just the buildup."],
-    eddie: ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie It's an invoice for introductions. Two-time. Don't worry about it. I'll take it in spirit."],
-    jess: ["@jess Mr. Whiskers slept through the whole set. That's the highest compliment he gives.", S.f.a5_whiskersShout ? "@jess And you said his name. He heard. He blinked at me. Slowly." : "@jess He'd have loved a shout-out. Next time.", "@jess Thanks for letting me see this. You really did it."],
-    margo: ["@a5_margoT The headline slot got four hundred thousand views before sunrise. I invoiced the sunrise.", "@a5_margoT I'm proud of you. I'm going to say it once. Then back to being a manager.", "Margo, you sound like a person."],
-    kosmo: ["@kosmo " + nm(S) + ". I said it right. I'll say it right again. It's a good name. It's earned.", "Thanks, Kosmo.", "@kosmo Don't thank me. Thank the record you kept."]
+    ray: ["@ray You didn't peak early. You peaked right. That's the whole job.", "Is that praise, Ray?", "@ray It's a medical observation. Don't tell anyone."],
+    twinkie: ["@twinkie Honey, I remember everything. I'm going to remember the last bar for a while.", "@twinkie Sit. The sunrise is the best part. The rest was buildup."],
+    eddie: ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie An invoice for introductions. Two-time. I'll take it in spirit."],
+    jess: S.f.a5_biscuit ? ["@jess Mr. Whiskers has been staring at that cat next to Lou for an hour.", "Biscuit's staring back.", "@jess Nobody's blinking. It's the loudest thing at this festival."] : ["@jess Mr. Whiskers slept through the whole set. That's the highest compliment he gives.", S.f.a5_whiskersShout ? "@jess And you said his name. He blinked at me. Slowly." : "@jess He'd have loved a shout-out. Next time."],
+    margo: S.f.a5_axlAngry ? ["@a5_margoT The headline slot did four hundred thousand views by sunrise. The \"Axl who\" clip did two million.", "That was a bit, Margo.", "@a5_margoT It's also a merch line. I invoiced the sunrise and the clip. Don't stand near me, I'm a manager."] : ["@a5_margoT The headline slot did four hundred thousand views by sunrise. I invoiced the sunrise.", "@a5_margoT I'm proud of you. Once. Then back to being a manager."],
+    kosmo: ["@kosmo " + nm(S) + ". I said it right. I'll say it right again.", "Thanks, Kosmo.", "@kosmo Don't thank me. Thank the record you kept."]
   }[who];
   await RP.lines(L);
 }
@@ -32854,11 +32902,12 @@ async function finale(S) {
   await RP.walkTo(150, 224, "right");
   await RP.lines([
     "The sun's all the way up now. Gold across the harbor, the skyline lit from behind, the lighthouse on my poster doing its job at last.",
-    "I think about the bedroom. The crackling channel two. The bag of oregano. The phone at one percent.",
+    "I think about the bedroom. The crackling channel two. The phone at one percent.",
     "I used to say: \"I don't own turntables. I own records. It's a whole thing.\"",
     "Now I own turntables. A mixer from Barcelona. A trailer, for about nine hours.",
-    "It's still a whole thing.",
-    "@lou ...Kid. Sit. You're blocking the sunrise."
+    "@lou ...Kid. Sit. You're blocking the sunrise.",
+    "I sit. Biscuit steps over my knee, claims the middle of the bench, and takes the sun like a landlord.",
+    "It's still a whole thing."
   ]);
   const checks = [
     [!!S.f.a5_gearDone, "Bought the rig: Taula 4 MR, Core 47s, CDJ-3000s"],
@@ -32883,7 +32932,7 @@ RP.room({
   start: { x: 90, y: 236, face: "right" },
   fx: [{ type: "dust", rect: [0, 100, 640, 100], count: 16, color: "#ffe0c0" }, { type: "confetti", count: 30, width: 640, floor: 250, on: () => true }],
   actors: S => [
-    { id: "lou", char: "lou", x: 478, y: 224, face: "left", act: "stand", name: "Lou" },
+    { id: "lou", char: "lou", x: 470, y: 216, face: "left", act: "sit", name: "Lou" },
     { id: "marcus", char: "marcus", x: 590, y: 244, face: "left", act: "stand", name: "Marcus" },
     { id: "ray", char: "ray", x: 360, y: 232, face: "front", act: "stand", name: "Ray" },
     { id: "twinkie", char: "twinkie", x: 290, y: 236, face: "right", act: "stand", name: "Twinkie" },
@@ -32894,7 +32943,7 @@ RP.room({
     { id: "kosmo", char: "kosmo", x: 250, y: 200, face: "right", act: "stand", name: "Kosmo Delacroix" }
   ],
   sprites: [
-    { y: 192, draw: art.sprite((c, S) => drawBench(c, S)) }, { y: 238, draw: art.sprite((c, S) => drawCooler(c, S)) }, { y: 242, draw: art.sprite((c, S) => drawSign(c, S)) }
+    { y: 192, draw: art.sprite((c, S) => drawBench(c, S)) }, { y: 238, draw: art.sprite((c, S) => drawCooler(c, S)) }, { y: 242, draw: art.sprite((c, S) => drawSign(c, S)) }, { y: 214, draw: art.sprite((c, S) => drawBiscuit(c, S), S => !!S.f.a5_pLou) }
   ],
   hotspots: [
     { id: "a5_psun", name: "the sunrise", r: [0, 0, 400, 180], z: 6, walk: [170, 226, "right"],
@@ -32908,6 +32957,7 @@ RP.room({
     { id: "a5_pcooler", name: "cooler", r: [128, 218, 32, 22], z: 22, walk: [144, 244, "back"], look: "A cooler of warm juice, a half-sandwich and a note: FOR LOU. Marcus's.", open: "Juice. Sandwich. The note. I don't touch it. It's sacred.", pickup: "It's Marcus's. It's the last of the plus-thirty supplies." },
     { id: "a5_psign", name: "\"+30\" sign", r: [594, 222, 34, 20], z: 24, walk: [610, 246, "back"], look: "A cardboard sign: +30. Abandoned on the planks. It's the funniest piece of litter I've ever seen. And the most loved.", pickup: "I think Marcus wants it back for his wedding." },
     { id: "lou", name: "Lou", talk: S => louTalk(S), look: "Lou, on a bench, in his good navy cardigan and his dancing shoes, watching the sunrise as though it were a rerun he'd forgotten he liked.", give: "Lou's holding a sleeve of a record I'd like him to keep.", pickup: "No. Lou would punish me with a lecture.", use: "Not Lou. Lou's the user." },
+    { id: "a5_biscuit", name: "Biscuit", r: [482, 186, 22, 18], z: 30, walk: [490, 242, "back"], vis: S2 => !!S2.f.a5_pLou, talk: "\"Biscuit.\" He blinks at me, slowly. He's heard that name on two floors of posters and has decided it's beneath him.", look: "A gray tabby on the bench next to Lou, loafed like a bread that retired. The poster in the hallway says LOST. He looks extremely found.", pickup: "Lou would take it personally. So would the cat.", use: "You don't use Biscuit. You get permitted near him." },
     { id: "dante", name: "Dante", talk: S => danteTalk(S), look: "Dante. Bomber jacket, goatee, the confidence of a man who has never once paid anyone on time and has never once been sorry.", give: (S, item) => "Dante: \"For me? You shouldn't have. I'll pay you for it. Next week.\"", pickup: "I'd rather get paid.", use: "I'd like to use Dante for a payment. That'd be new." },
     { id: "marcus", name: "Marcus", talk: S => simpleTalk(S, "marcus"), look: "Marcus, wearing a lanyard like a medal, and a tote bag. The \"+30\" sign is next to him. The man is a legend of optimism.", give: "He'd take it, and also bring thirty friends.", pickup: "No." },
     { id: "ray", name: "Ray", talk: S => simpleTalk(S, "ray"), look: "Ray, at dawn, with his arms crossed and a very small, very hidden smile. It's the closest to praise I'll ever get from him.", give: "No.", pickup: "No." },
@@ -32919,9 +32969,9 @@ RP.room({
   ],
   combos: [
     ["a5_tickets", "dante", "Dante: \"You're trying to give them BACK? They're a currency! You can't return a currency!\""],
-    ["a5_tickets", "lou", "Lou: \"Drink tickets? I don't drink anymore. I haven't since 1993.\""],
+    ["a5_tickets", "lou", "Lou: \"Drink tickets? I haven't had a drink since 1993. Give them to the cat.\" Biscuit does not want a drink either."],
     ["a5_tickets", "marcus", "Marcus: \"FOR ME? FOR THIRTY OF US? ...Wait, they're for you. Okay. But thanks.\""],
-    ["a5_tickets", "eddie", "Eddie: \"A two-time deal! I'll take half! Twice!\" I keep them."]
+    ["a5_tickets", "kosmo", "Kosmo takes one ticket, studies it, hands it back. \"Nowhere. Good room. Terrible currency.\""]
   ],
   enter: async (S, from) => {
     if (S.f.a5_pierArrived) return;
@@ -32932,7 +32982,7 @@ RP.room({
       "@nar SUN 6:12 AM",
       "Twinkie's after-party. A pier at the end of the festival, the sun coming up behind the skyline and a dozen tired people who don't want to go home.",
       "@twinkie Honey. You came. I saved you the best spot. It's the one with the sun.",
-      "(Talk to everyone. Then, watch the sunrise.)"
+      "(Lou's on the bench. Dante owes me. The sun is nearly up.)"
     ]);
   },
   self: { look: "A DJ in a pink-lined coat on a pier at dawn. Tired. Done. Happy. All three.", talk: "I'm smiling at nobody in particular. It's a nice feeling. I'll write it down." }

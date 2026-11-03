@@ -177,6 +177,7 @@ async function talkRhonda(S) {
     S.f.a2_numTaken = true;
     await RP.lines(["@a2_rhonda Take a number.", "There's nobody here.", "@a2_rhonda Take a number anyway."]);
   }
+  if (!S.f.a2_showered && !S.f.a2_cleared && !S.f.a2_smellNoted) { S.f.a2_smellNoted = true; await RP.say("Is that a hot dog? Don't answer. Sit downwind, hon.", "a2_rhonda"); }
   if (S.f.a2_cleared) { await RP.say("You're cleared, hon. Bev's at bay three. Don't pass out near my plant.", "a2_rhonda"); return; }
   await RP.convo([
     { text: "I'd like to donate plasma.", when: S2 => !S2.f.a2_formGot, once: true, run: async () => {

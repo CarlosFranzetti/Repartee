@@ -157,11 +157,11 @@ function light(S) {
 function nextHint(S, voice) {
   const m = voice === "marcus";
   if (!S.f.a2_plan) return m ? "Ask me about the plan. I've been dying to tell you the plan." : "Marcus has been trying to tell me a plan since I woke up.";
-  if (!S.f.a2_plasma) return m ? "Money first. LifeDrop on Atlantic Ave. They want ID, proof of address and a form. Lou in 4B has been collecting your mail." : "Money: the LifeDrop plasma center. They'll want ID, proof of address and a form. Lou in 4B has been collecting my mail.";
-  if (!S.f.a2_showered) return m ? "You smell like a hot dog. Dani. Seven settings. Text her." : "I smell like a hot dog. Dani has a shower with seven settings.";
-  if (!S.f.a2_cashed && RP.has("a2_card")) return m ? "That LifeDrop card isn't cash. The bodega ATM on the corner turns it into cash. With a fee. And an asterisk." : "The card isn't cash. The corner bodega's ATM turns it into cash, with a fee and an asterisk.";
-  if (!S.f.a2_metEddie) return m ? "Go see Eddie before the party. Window-shop. Eddie loves a window-shopper." : "I should visit Eddie in Williamsburg before the party and see what the damage is.";
-  return m ? "You're set. Sleep on the couch and I'll wake you for Friday. Birthday. Twenty-eight. Plus three." : "I think I'm ready. Rent's due Friday and so is Marcus's party. Sleep on it. Literally.";
+  if (!S.f.a2_plasma) return m ? "Money first. You're broke in a way a flyer could fix. Look at the pole outside." : "Money. Something on the pole outside promised a hundred dollars, and I have a body.";
+  if (!S.f.a2_showered) return m ? "You smell like a hot dog. Toby has my bathroom until step twelve. Who else owns a shower?" : "I smell like a hot dog. Toby has the bathroom until step twelve. Somebody else must own a shower.";
+  if (!S.f.a2_cashed && RP.has("a2_card")) return m ? "That card isn't cash. Somewhere on this block plastic becomes paper. At a price." : "A card isn't cash. Somewhere on this block plastic becomes paper. At a price.";
+  if (!S.f.a2_metEddie) return m ? "You have money and no turntables. I mentioned a van. Window-shop before Friday." : "Money, no turntables. Marcus mentioned a van. Window-shop before Friday.";
+  return m ? "You're set. Sleep on the couch and I'll wake you for Friday. Birthday. Twenty-eight. Plus three." : "I think I'm ready. Rent's due Tuesday and the party's Friday. Sleep on it. Literally.";
 }
 A2.hint = nextHint;
 
@@ -373,7 +373,7 @@ async function talkMarcus(S) {
       ]);
       await RP.lines([
         "I can't afford turntables. I can't afford a sandwich.",
-        "@marcus LifeDrop on Atlantic Ave. Plasma. New donors get a hundred bucks on a card. Mrs. Pearl on the third floor is a platinum member.",
+        "@marcus LifeDrop on Atlantic Ave. Plasma. New donors get a hundred bucks on a card. Mrs. Pearl on the stoop is a platinum member.",
         "@marcus And Eddie Two-Times has turntables in a van under the BQE. Audio-Technica. A two-time deal.",
         "What's a two-time deal?",
         "@marcus Nobody knows. It's always a two-time deal.",
@@ -401,8 +401,8 @@ async function talkMarcus(S) {
     { text: "Tell me about Vic.", when: S2 => S2.f.a2_plan, run: async () => {
       await RP.lines(["@marcus Vic. Tall. Sunglasses indoors. Counts money with a rubber band like it's a hobby.", "@marcus He pays cash, on time, which makes him the single most suspicious man in Brooklyn."]);
     } },
-    { text: "Landlord says rent's due Friday.", run: async () => {
-      await RP.lines(["@marcus Kowalski? He told me hot water was \"next week.\" In 2023.", "@marcus Your rent is a problem for future you. Future you has a hot shower and a monthly residency."]);
+    { text: "Landlord says rent's due Tuesday.", run: async () => {
+      await RP.lines(["@marcus Kowalski? He told me hot water was \"next week.\" In 2023.", "@marcus Tuesday is a problem for future you. Future you has a hot shower and a monthly residency."]);
     } },
     { text: "What should I do next?", when: S2 => S2.f.a2_plan, run: async () => { await RP.say(A2.hint(S, "marcus"), "marcus"); } },
     { text: "Later.", end: true }

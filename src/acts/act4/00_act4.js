@@ -207,7 +207,9 @@ RP.defineAct({
     RP.setGear("turntables", "technics_sl_1210mk7");
     await RP.lines([
       "My own pair of Technics SL-1210MK7s, bought with Halcyon money. I pet them when nobody's looking.",
-      "And an email I've read nine times. Ingrid Falk, Berlin, again. It's on the laptop."
+      "Hal Pruitt's old MK2s from Queens sit under the desk as spares. The Loose Joints is on the shelf in its FOR COMPANY sleeve. I haven't played it since the anniversary. Some records you keep.",
+      "Thursdays at the Halcyon are good. Two hundred people, a booth that knows my name, Odessa's lipstick napkins. It's comfortable, and comfortable is how a person ends up with a plaque on a wall.",
+      "And an email I've read nine times. Ingrid Falk, Berlin, again. Berlin is the jump. It's on the laptop."
     ]);
   },
   doneTitle: "FIRST TOUR",
@@ -239,11 +241,11 @@ RP.item("a4_bag", { name: "record bag", short: "Rec. bag", icon: bagIcon,
 RP.item("a4_boarding", { name: "boarding pass", short: "Boarding",
   icon: c => { R(c, 3, 6, 26, 14, "#efeaf6"); R(c, 3, 6, 26, 3, "#2f62b8"); R(c, 20, 9, 1, 11, "#9a96b0"); for (let y = 11; y < 19; y += 2) R(c, 5, y, 12, 1, "#55516a"); for (let x = 22; x < 28; x += 2) R(c, x, 11, 1, 8, "#17131f"); },
   look: "Boarding pass, JFK to Berlin. Seat 23A, a window. I'll be the one pressing my face against it.",
-  use: "It only works at gates, and the gate agent hasn't seen mine yet." });
+  use: S => S.f.a4_boarded ? "Already scanned. Now it's a seat number, 23A, and a souvenir." : "It works at gates. Waving it at a vending machine is not a gate." });
 RP.item("a4_claim", { name: "baggage claim tag", short: "Claim tag",
   icon: c => { R(c, 9, 3, 14, 19, "#efe6d0"); R(c, 9, 3, 14, 3, "#c0302c"); ell(c, 16, 6, 2, 1, "#6a1a1a"); for (let x = 11; x < 21; x += 2) R(c, x, 11, 1, 7, "#17131f"); P(c, 12, 9, "#55516a"); P(c, 14, 9, "#55516a"); },
   look: S => "Claim tag BER-4471. It has my name on it, spelled \"" + A4.misspell(A4.dj(S)) + "\". I'm starting to think it's an industry standard.",
-  use: "It's proof that I owned a bag once." });
+  use: S => S.f.a4_bagBack ? "Its work is done. I'm keeping it, like a ticket stub from a very long argument." : "It proves the bag is mine. It only works on people behind desks, and they like it handed over, not waved." });
 RP.item("a4_form", { name: S => S.f.a4_formStamped ? "Form 7B (stamped)" : "Form 7B", short: "Form 7B",
   icon: (c, S) => { R(c, 8, 2, 16, 21, "#efe6d0"); for (let y = 6; y < 20; y += 3) R(c, 11, y, 10, 1, "#55516a"); R(c, 11, 5, 5, 2, "#c0302c"); if (S.f.a4_formStamped) { ell(c, 19, 17, 4, 4, "#2f62b8"); ell(c, 19, 17, 2, 2, "#efe6d0"); P(c, 19, 17, "#2f62b8"); } },
   iconKey: S => S.f.a4_formStamped ? 1 : 0,
@@ -265,7 +267,7 @@ RP.item("a4_photo", { name: "photo of the hole", short: "Hole pic",
 RP.item("a4_band", { name: "Halle Neun wristband", short: "Band",
   icon: c => { R(c, 4, 9, 24, 7, "#9be15d"); R(c, 4, 9, 24, 1, "#d8ff9a"); R(c, 4, 15, 24, 1, "#5a9a2a"); txt(c, "H9", 10, 10, "#17131f"); ell(c, 5, 12, 1, 2, "#17131f"); },
   look: "A neon green wristband. Halle Neun. If I lose it, I lose the club.",
-  use: "It's on my wrist. It's holding me together." });
+  use: "It's on my wrist. Show it to anyone who doubts I played Halle Neun. Sven's clerks in particular." });
 RP.item("a4_postcard", { name: "hotel postcard", short: "Postcard",
   icon: c => { R(c, 4, 4, 24, 16, "#efeaf6"); R(c, 5, 5, 22, 10, "#5a8ad8"); R(c, 5, 12, 22, 3, "#3a7a4a"); R(c, 17, 7, 3, 5, "#efe6d0"); R(c, 16, 7, 1, 5, "#c0302c"); R(c, 5, 16, 22, 1, "#9a96b0"); P(c, 7, 18, "#55516a"); },
   look: "A postcard of the hotel, with the TV tower photoshopped in so it looks closer. It's close enough to autograph.",

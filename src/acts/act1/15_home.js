@@ -28,7 +28,7 @@ async function loadTracks(S) {
   await RP.say("Copying...");
   await RP.wait(500);
   await RP.lines(pool);
-  S.f.a1_usbLoaded = true; RP.refreshInv(); RP.sfx("success");
+  S.f.a1_usbLoaded = true; S.f.a1_setStyle = i; RP.refreshInv(); RP.sfx("success");
   await RP.lines(["Done. 64 gigs of music on a stick I stole from a temp office.", "First hour: vinyl. Second hour: this. I'm a real DJ with a real plan, and a USB with someone else's logo on it."]);
 }
 RP.act1LaptopUse = async S => {

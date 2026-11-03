@@ -154,7 +154,7 @@ async function stampScene(S) {
     "Hi, Maddie. (She films me for six seconds.)", "@a4_bernadette She's screaming. Give me that form. Break's over."]);
   RP.sfx("click"); await RP.wait(300); RP.sfx("thump");
   S.f.a4_formStamped = true; RP.refreshInv();
-  await RP.lines(["*STAMP.* \"RECEIVED.\" She adds a smiley, which I'm fairly sure is a violation.", "@a4_bernadette Now Security. They'll sign it. Ask for Delgado. Tell him Bernadette says hi.", "@a4_bernadette And tell your friend the cat's doing great."]);
+  await RP.lines(["*STAMP.* \"RECEIVED.\" She adds a smiley, which I'm fairly sure is a violation.", "@a4_bernadette Now Security. They'll sign it. Ask for Delgado. Tell him Bernadette says hi.", "@a4_bernadette And tell your friend Lou the cat's doing great. He's in the comments under every video: 'That's my Biscuit.' Orange. Falls off couches. He's very proud."]);
   await RP.say("The form says what it's always wanted to say. All it needs is a signature.");
 }
 async function giveToBernadette(S, item) {

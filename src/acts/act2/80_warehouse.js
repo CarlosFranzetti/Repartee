@@ -232,7 +232,7 @@ async function playSet(S) {
     "@a2_vic ...That's different."
   ]);
   await RP.lines([
-    "@a2_vic And you. The PA kid. In my basement. With two hundred people and a pair of AT-LPs.",
+    "@a2_vic And you. The PA kid. In my basement. With sixty people and a pair of AT-LPs.",
     "I can explain.",
     "@a2_vic Explain what? That you took a dead basement and made it better than I did?",
     "@a2_vic ...What was that record?",
@@ -315,12 +315,13 @@ async function settleUp(S) {
   RP.setClock("TUE 2:00 PM");
   await RP.lines([
     "@nar Tuesday, 2:00 PM. Management office hours. Fifteen minutes, exactly as advertised.",
-    "@nar I slide the rent across the desk: late, in cash, in an envelope that still smells like a basement.",
+    "@nar I slide the rent across the desk: on time, by one day, in cash, in an envelope that still smells like a basement.",
     "@a2_kowalski ...It's all here. Huh. The lock change was temporary. Here's your key. Hot water: next week.",
     "@nar It's always next week. It's the one thing in this building that never changes.",
     "@nar 4C is mine again. Gerald is on the windowsill, leaning at the light like a hostage who has made peace with it. Lou has been watering him through the wall with a turkey baster."
   ]);
   RP.text("MARCUS", "i have my couch back. i'm in the exact middle of it. alone. feet up. best day of my life. take ur socks");
+  RP.text("JESS", "moxie says she'll return my amp 'with flowers.' it's bolted in her rack. keep it, i said monday and meant it. you owe me a cat photo");
   await RP.say("Marcus has his couch back. I have never seen a man so happy to lie down on his own furniture.", "nar");
 }
 

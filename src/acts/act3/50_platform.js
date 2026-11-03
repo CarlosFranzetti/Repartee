@@ -61,10 +61,10 @@ function update(dt, S, t) {
 }
 
 async function runTrain(S) {
-  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard."]);
+  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard.", "Two minutes ago a girl in a hoodie got a swipe out of him, and he took payment in a segment. Rico was right. The J has a guy."]);
   for (let tries = 0; ; tries++) {
     const i = await RP.choose(["Jump the turnstile with a bag of records on my shoulder", "Order a car on my phone", "Ask the man with the oranges for a swipe"]);
-    if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, no cash and three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); break; }
+    if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); break; }
     await RP.lines(i === 0 ? ["I get one leg over. The bag, forty pounds of vinyl, does not. A transit cop at the far end of the platform lifts one eyebrow, and I put the leg back.", "The cop is still looking. I stand very still, like a man waiting for a train."]
       : ["The app takes forty seconds to open. It quotes $61 for Bushwick at this hour. At the word 'confirm,' the phone gives up and goes black.", "Three percent was optimistic."]);
     if (tries >= 1) { await RP.lines(["@nar The man with the oranges has watched all of it. He walks over, swipes me through, and says nothing. Then, 'In oranges.'", "I take the orange."]); break; }
@@ -108,8 +108,8 @@ RP.room({
     if (S.f.a3_train) return;
     if (!S.f.a3_platSeen) {
       S.f.a3_platSeen = true; RP.setClock("FRI 1:35 AM");
-      await RP.lines(["@nar Friday. Half past one. Delancey Street.", "A bag of records on my shoulder. My phone at 3%. " + (S.money > 0 ? "$" + Math.round(S.money) + " in my wallet, and every dollar of it belongs to my landlord." : "Zero dollars in my pocket."),
-        "My MetroCard expired at midnight. The machine's out of service, and the turnstile doesn't take cash, or sympathy. Tonight's problem is the last train home."]);
+      await RP.lines(["@nar Friday. Half past one. Delancey Street.", "A bag of records on my shoulder. My phone at 3%. " + (S.money > 0 ? "After the tab, $" + Math.round(S.money) + " is left in my wallet, and every dollar of it is the landlord's." : "After the tab, nothing is left in my pocket."),
+        "My MetroCard expired at midnight. The machine's out of service, and the turnstile doesn't take cash, or sympathy, and I'm not breaking the rent for a swipe. Tonight's problem is the last train home."]);
     }
     await runTrain(S);
   },

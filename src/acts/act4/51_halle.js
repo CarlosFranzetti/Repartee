@@ -65,7 +65,7 @@ function light(S) {
 }
 
 /* ------------------------------------------------------------------ the set */
-const techno = S => A4.TECHNO.filter(id => S.records.includes(id));
+const techno = S => A4.TECHNO.filter(id => S.records.includes(id)).concat(S.records.includes("white_nyc93") ? ["white_nyc93"] : []);
 async function katjaTalk(S) {
   if (S.f.a4_setDone) { await RP.lines(["@a4_katja You played. They stayed. That's all I ask.", "@a4_katja Come back next year. Maybe sooner. I'll pretend I never said that."]); return; }
   S.f.a4_katjaTalked = true;
@@ -113,6 +113,10 @@ async function startSet(S) {
   RP.sfx("cheer");
   await RP.lines([sc >= 70 ? "The room doesn't scream. It exhales. Eight hundred people in black let out one breath at the same time, and that's applause." : "It's... fine. The room nods. In Berlin, \"fine\" is a standing ovation with the sound off.",
     "@a4_katja (arms crossed, a tiny smile that she'll deny) Good.", "@a4_jeff (from the side of the booth, one nod)"]);
+  if (S.f.a4_played.includes("white_nyc93")) {
+    S.f.a4_whitePlayed = true; RP.followers(600);
+    await RP.lines(["@a4_katja The unknown one. No label, no name, a house kick from 1993. Sven asked me who it was. Sven has never asked me anything.", "@a4_katja Eight hundred people just Shazamed a record that does not exist. That is the best thing that can happen in this building.", "Berlin asked for Lou's record by its marker pen. I am telling him tonight."]);
+  }
   RP.actor("kid").act = "stand"; RP.place("kid", 380, 214, "front"); RP.actor("a4_jeff").act = "stand";
   S.f.a4_setDone = true;
   RP.followers(sc >= 70 ? 4200 : 1800);

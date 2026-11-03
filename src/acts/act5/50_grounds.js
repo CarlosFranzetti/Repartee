@@ -195,6 +195,15 @@ async function twinkieTalk(S) {
     { text: "Later, Twinkie.", end: true }
   ]);
 }
+async function kosmoGrounds(S) {
+  if (S.f.a5_kosmoG) { await RP.lines(["@kosmo Dennis. The tacos say TACOS. Trust a menu that commits."]); return; }
+  S.f.a5_kosmoG = true;
+  await RP.lines([
+    "@kosmo Ah. Dennis. They've given you a lanyard. That's how it starts.",
+    "Kosmo? It's not Dennis.",
+    "@kosmo Of course it isn't. Walk the lawn, Dennis. Every stage looks bigger from the grass. Then it gets smaller. Then it gets right."
+  ]);
+}
 async function jessTalk(S) {
   if (!S.f.a5_jessMet) {
     S.f.a5_jessMet = true;
@@ -271,6 +280,7 @@ RP.room({
     { id: "twinkie", char: "twinkie", x: 640, y: 206, face: "front", act: "stand", name: "Twinkie" },
     { id: "jess", char: "jess", x: 232, y: 236, face: "left", act: "stand", name: "Jess" },
     { id: "eddie", char: "eddie", x: 302, y: 236, face: "left", act: "stand", name: "Eddie Two-Times" },
+    { id: "kosmo", char: "kosmo", x: 560, y: 240, face: "left", act: "stand", name: "Kosmo Delacroix", vis: S2 => !night(S2) },
     { id: "a5_gloria", char: "a5_gloria", x: 830, y: 226, face: "front", act: "stand", name: "Gloria" },
     { crowd: { n: 2, rect: [70, 238, 50, 10], seed: 77, face: "front", act: "stand", scale: 0.95, vis: S2 => !night(S2) } },
     { crowd: { n: 1, rect: [368, 242, 40, 8], seed: 81, face: "front", act: "stand", scale: 0.95, vis: S2 => !night(S2) } },
@@ -294,6 +304,7 @@ RP.room({
     { id: "a5_wray", name: "Deep Cuts pop-up", r: [428, 120, 136, 98], z: 15, walk: [496, 236, "back"], look: "Deep Cuts, pop-up edition: bins of records, price cards in Ray's handwriting, and a neon sign Ray says he \"didn't buy, it just arrived.\"", pickup: "Ray's watching. Ray's always watching. And he'll charge me for the look.", use: "I have a crate. I have a lot of records. I'm not allowed to buy any more. Margo has views.", open: "The bins are open. They've been open since 1993. I'll look through them after the set." },
     { id: "a5_wbar", name: "Harbor Bar", r: [580, 116, 124, 102], z: 15, walk: [650, 236, "back"], look: "HARBOR BAR: 1 TICKET. A shelf of bottles, a stack of tickets, a tower of cups, and a woman in mesh who knows everything.", use: "I'm not drinking before my set. I'm a professional. I'm a very nervous professional.", pickup: "The tickets are guarded by a woman who remembers everything. Hands off." },
     { id: "twinkie", name: "Twinkie", talk: S => twinkieTalk(S), look: "Twinkie. Mesh top, pink skirt, shades at night. The only person I know who's been at every after-party and still looks awake.", give: (S, item) => "Twinkie: \"I'll remember that you tried.\"", pickup: "Twinkie remembers. Twinkie will remember this too.", use: "I can't use Twinkie. I can only be used BY Twinkie." },
+    { id: "kosmo", name: "Kosmo Delacroix", vis: S2 => !night(S2), talk: S => kosmoGrounds(S), look: "Kosmo Delacroix, in the long coat and the shades, reading the taco truck menu like a contract. Of course he's here. He's everywhere I've ever been nervous.", give: "Kosmo: \"No, thank you. Dennis.\"", pickup: "No.", use: "I can't use Kosmo. People have tried." },
     { id: "jess", name: "Jess", talk: S => jessTalk(S), look: "Jess. Purple hoodie, ponytail, and a bubble backpack carrier at her feet. She looks great. Lucky for her, she's not looking at me.", give: (S, item) => "Jess: \"No, thanks. Mr. Whiskers has everything.\"", pickup: "No.", use: "Jess has opinions about being used." },
     { id: "a5_wcat", name: "Mr. Whiskers", r: [186, 218, 36, 32], z: 40, walk: [210, 244, "right"], look: "Mr. Whiskers, in a bubble carrier, wearing a festival wristband and tiny cat shades. He has more followers than I do and more sleep than I will ever have.", talk: "\"Mr. Whiskers.\" He blinks, slowly. In cat, that's \"I love you.\" In human, that's \"you're blocking my nap.\"", pickup: "Jess would end me. Also he'd scratch.", use: "I can't use a cat. A cat uses YOU.", push: "He wiggles. I stop." },
     { id: "eddie", name: "Eddie Two-Times", talk: S => eddieTalk(S), look: "Eddie Two-Times, behind an ice chest, selling water at nine dollars. His jacket's open. His sign says \"WATER $9.\" Under it, in tiny letters: \"(TWO-TIME PRICE).\"", give: (S, item) => "Eddie: \"Thanks! Where's the cash?\"", pickup: "The ice chest weighs thirty kilos. Eddie's weight in two-time deals.", use: "I can use Eddie. It's a mistake. I do it anyway." },

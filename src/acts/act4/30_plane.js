@@ -108,7 +108,7 @@ async function kosmoTalk(S) {
       await giveBag(S);
     } },
     { text: "Great set at the Halcyon, Kosmo.", when: S => !S.f.a4_kosmoPraise, run: async () => { S.f.a4_kosmoPraise = true; await RP.lines(["@a4_kosmo Of course it was. I remember it fondly. It was... last week? A basement? A large place. With... acoustics.", "Six months ago. I played after you.", "@a4_kosmo Yes. That. Wonderful people. Who are you, again?"]); } },
-    { text: "Where are you headed?", run: () => RP.lines(["@a4_kosmo Berlin. They hold me in a different kind of reverence there. They're mostly quiet about it.", "@a4_kosmo And you, Brenton? What brings you?", "A booking. Halle Neun.", "@a4_kosmo (pause) I... don't know it. How lovely."]) },
+    { text: "Where are you headed?", run: () => RP.lines(["@a4_kosmo Berlin. They hold me in a different kind of reverence there. They're mostly quiet about it. A booker named Falk books me a Sunday brunch there every year, and she books my seat, which is why I'm on this plane and not a better one.", "@a4_kosmo And you, Brenton? What brings you?", "A booking. Halle Neun.", "@a4_kosmo (pause) I... don't know it. How lovely."]) },
     { text: "Never mind. Sleep well.", end: true }
   ]);
 }

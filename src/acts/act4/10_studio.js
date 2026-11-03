@@ -309,7 +309,7 @@ async function release(S) {
   await RP.fadeTo(0, 500);
   RP.followers([2400, 3400, 4400][wk]);
   S.f.a4_viral = true;
-  await RP.lines(["It's... working?", "A clip of a cat falling off a couch, set to my remix. 4 million views.", "I don't even own a cat."]);
+  await RP.lines(["It's... working?", "A clip of a cat falling off a couch, set to my remix. 4 million views.", "I don't even own a cat.", "@a4_lou That's Biscuit. Orange cat off the flyer in the hall. She came in my window in June, I fed her a sardine, and now she lives with me.", "@a4_lou She falls off my couch every day. Somebody must have filmed it. I did not know she was a celebrity.", "Lou has a cat. Biscuit has a record deal. Nobody told me either."]);
   await RP.phone([
     { from: "JESS", text: "is that MR WHISKERS in 40,000 videos. i want 10%. and the usb back", hot: true },
     { from: "MARCUS", text: "BRO. cat video. you're famous. berlin?? plus three?", hot: false },
@@ -410,7 +410,7 @@ RP.room({
     { id: "a4_sampler", name: "sampler", r: [248, 122, 50, 22], z: 50, walk: [272, 214, "back"],
       look: "A pad sampler with a tiny screen and sixteen pads. Only four of them have ever hit a note I meant.", use: S => makeTrack(S), push: S => makeTrack(S), pickup: "Nope. It stays. It's attached to my ambitions." },
     { id: "a4_decks", name: "Technics", rects: [[374, 108, 74, 34], [488, 108, 74, 34]], z: 55, walk: [440, 214, "back"],
-      look: "A pair of Technics SL-1210MK7s. Direct drive, the same decks every club on earth has. They're mine. I'm still getting used to that.",
+      look: "A pair of Technics SL-1210MK7s. Direct drive, the same decks every club on earth has. They're mine. I'm still getting used to that. Under the desk, Hal Pruitt's MK2s keep them company, the old guard.",
       use: S => loadSample(S), push: "Don't push the Technics. They look at you.", pull: "Pitch fader's at zero. Where it belongs.", pickup: "Each weighs about as much as a toddler. A rich, important toddler." },
     { id: "a4_mixer", name: "mixer", r: [447, 108, 42, 34], z: 56, walk: [470, 214, "back"], look: "Pioneer DJM-350. Two channels, zero crackle. The crackle was a phase of my life.", use: "Faders up, faders down. I could do this for hours.", pickup: "It's wired into the whole studio. It's an organ. Of my studio." },
     { id: "a4_monitors", name: "monitors", rects: [[346, 94, 30, 48], [560, 94, 30, 48]], z: 54, walk: [470, 214, "back"], look: "Dynaudio BM5 mkIII studio monitors. They tell me the truth about my music. The truth is a lot.", use: "Quiet in here for now. Lou would like to keep it that way.", pickup: "They're heavy and they cost more than my first car. Which I didn't have." },
@@ -421,7 +421,7 @@ RP.room({
       look: "LABEL NAME? \"Wall Music (no)\", \"Lou & Me (no)\", \"Hole (yes?)\". I have a very small creative team.", pickup: "It's taped up with six layers of tape. It's staying." },
     { id: "a4_panels", name: "acoustic panels", rects: [[346, 20, 98, 50], [550, 20, 44, 50]], z: 12, walk: [470, 214, "back"], look: "Foam panels. Soundproofing. Lou says they don't work. Lou says that every time he hears me through them." },
     { id: "a4_shelf", name: "record shelf", r: [12, 16, 136, 82], z: 20, walk: [80, 218, "back"],
-      look: "Every record that didn't fit in the crate. Alphabetized by how much I love them.", use: S => RP.crateView ? RP.crateView() : "A lot of vinyl.", open: S => RP.crateView ? RP.crateView() : "A lot of vinyl." },
+      look: "Every record that didn't fit in the crate. Alphabetized by how much I love them. Top shelf, behind glass: Loose Joints, \"Is It All Over My Face?\", in a sleeve marked FOR COMPANY. Hal Pruitt's last record is staying home.", use: S => RP.crateView ? RP.crateView() : "A lot of vinyl.", open: S => RP.crateView ? RP.crateView() : "A lot of vinyl." },
     { id: "a4_couch", name: "couch", r: [10, 108, 142, 62], z: 25, walk: [90, 226, "back"], look: "My couch. It's also my guest room, my Sunday and Lou's seat for the remix.", use: "I sit. I stand. Sitting is a lot.", push: "Couches don't move. They arrive and they stay.", pull: "I've tried pulling out the couch bed. It pulls out like a ghost." },
     { id: "a4_poster", name: "Halcyon poster", r: [156, 22, 44, 60], z: 22, walk: [180, 218, "back"], look: "HALCYON ROOM, THURSDAYS. Odessa's flyer guy misspelled my name on the first printing. This is the corrected one. It's also wrong." },
     { id: "a4_iou", name: "framed IOU", r: [150, 86, 50, 36], z: 24, walk: [180, 218, "back"], look: "A framed IOU from Dante: \"Next week.\" It's the oldest document in the apartment. It's a better investment than most stocks.", pickup: "If I take it down, the wall will hold a grudge." },

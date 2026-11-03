@@ -135,7 +135,7 @@ async function brandtTalk(S) {
   }
   await RP.convo([
     { text: "Can you give me another key?", when: S => !S.f.a4_clerkOk, run: async () => { await RP.lines(["@a4_brandt I could. But the room is occupied by a man who says it's his. I require proof of whose it is. A passport, perhaps."]); } },
-    { text: "What's Axl doing here, anyway?", when: S => !S.f.a4_brandtAxl, run: async () => { S.f.a4_brandtAxl = true; await RP.lines(["@a4_brandt Herr Vanta wanted the biggest suite. We had a reservation for him: the Kaiserin Suite. But he arrived before the paperwork. And then he saw your room's view of the television tower.", "@a4_brandt He said it was \"symbolic.\" I do not understand the symbol.", "@a4_brandt If he knew his suite was ready, he'd leave in a second. But he won't listen to me. He doesn't listen to anyone but himself. And pens."]); } },
+    { text: "What's Axl doing here, anyway?", when: S => !S.f.a4_brandtAxl, run: async () => { S.f.a4_brandtAxl = true; await RP.lines(["@a4_brandt Herr Vanta wanted the biggest suite. We had a reservation for him: the Kaiserin Suite. But he arrived before the paperwork. And then he saw your room's view of the television tower.", "@a4_brandt He said it was \"symbolic.\" I do not understand the symbol.", "@a4_brandt He plays a festival on the river on Monday. Same agency as Frau Falk, Nachtwerk, so same hotel list. He tells every hotel it is a world tour. It is a Monday.", "@a4_brandt If he knew his suite was ready, he'd leave in a second. But he won't listen to me. He doesn't listen to anyone but himself. And pens."]); } },
     { text: "Is there anything that makes him get up?", when: S => S.f.a4_brandtAxl && !S.f.a4_brandtPen, run: async () => { S.f.a4_brandtPen = true; await RP.lines(["@a4_brandt Herr Vanta cannot resist a pen. It's a medical condition. Anyone asks for an autograph, and he stops everything.", "@a4_brandt If someone were to... request one, I could then mention the Kaiserin Suite. He'd be out the door before the pen is dry.", "@a4_brandt The postcards are in the rack. They're free. Everyone says it's the best thing in the lobby."]); } },
     { text: "Never mind.", end: true }
   ]);
@@ -146,6 +146,12 @@ async function brandtGive(S, item) {
     S.f.a4_clerkOk = true;
     await RP.lines(["@a4_brandt (peers at the passport, then at me, then at the passport) The photo is from a time of more hair.", "It's from 2019.", "@a4_brandt It is you. Barely. Room 12 is yours. The key, however, is with Herr Vanta.",
       "@a4_brandt If you could persuade him to leave... I cannot. I'm a hotel clerk. I'm trained only in the art of looking pained."]);
+    return;
+  }
+  if (item === "a4_band") {
+    if (S.f.a4_clerkOk) return "He glances at the wristband and nods. \"Halle Neun. Yes. I believed you already.\"";
+    S.f.a4_clerkOk = true;
+    await RP.lines(["@a4_brandt (reads the neon band) Halle Neun. The Sunday set? Sven passed you in?", "I did the quiz. One answer wrong.", "@a4_brandt Sven passes nobody. He does not pass impostors. This is better than a passport. Room 12 is yours. The key, however, is with Herr Vanta.", "@a4_brandt If you could persuade him to leave... I cannot. I am trained only in the art of looking pained."]);
     return;
   }
   if (item === "a4_postcard") return "He raises an eyebrow. \"That's for Herr Vanta. I'm a clerk, not a fan.\"";
@@ -237,11 +243,14 @@ async function finale(S) {
   RP.text("INGRID FALK", "Harbor Lights Festival, NYC waterfront. Headline slot. Poster attached (Axl is slightly bigger, sorry). Flights home are booked. Congratulations.", false);
   A4.callOff(S);
   S.f.a4_offer = true;
-  await RP.lines(["Home. New York. A festival. A bag with a seatbelt. A key I never have to return.", "I don't know what to do next. But I know where I'm going."]);
+  await RP.lines(["A festival. A bag with a seatbelt. A key I never have to return. Ingrid booked the flight home for Tuesday, and Kosmo, I'm told, is on it. The bag gets the aisle seat again."]);
   S.f.noTravel = false;
   await RP.fadeTo(1, 800);
-  RP.setClock("MON 9:15 AM");
-  await RP.say("New York. Home. A few days later.", "nar");
+  RP.setClock("TUE 7:40 PM");
+  await RP.say("Tuesday. Berlin to JFK. The bag gets the window. I get the middle seat and no complaints.", "nar");
+  await RP.lines(["Bushwick. 4C. The stairwell smells of cat. Lou opens 4B before I find my keys.", "@a4_lou Kid. You're home. Biscuit has been standing at the pipe hole since Sunday. I don't know what she thinks is in there.", "@a4_lou Harbor Lights. I looked it up. Go on, play it, and bring me something I can brag about at the post office.",
+    "Gerald is alive. He has grown toward the window and left a leaf on the floor, like a note. I take that as congratulations.", "Berlin was the jump. This is the landing. Saturday night, the waterfront, the biggest room I have ever been asked to fill, and a poster where my name is slightly smaller."]);
+  RP.setClock("WED 9:15 AM");
   await RP.fadeTo(0, 400);
   await RP.completeAct([
     [!!S.f.a4_track, "Remixed \"NYC 93\" with Lou"],
@@ -310,6 +319,7 @@ RP.room({
     ["a4_passport", "a4_brandt", S => brandtGive(RP.state, "a4_passport")],
     ["a4_passport", "a4_desk", S => brandtGive(RP.state, "a4_passport")],
     ["a4_passport", "a4_axl", "Axl would put his own face on my passport if I let him. No."],
+    ["a4_band", "a4_brandt", S => brandtGive(RP.state, "a4_band")],
     ["a4_postcard", "a4_axl", S => axlSign(RP.state)],
     ["a4_postcard", "a4_brandt", S => brandtGive(RP.state, "a4_postcard")],
     ["a4_postcard", "a4_ent2", "Tiff takes the postcard, reads it, sighs and hands it back. \"For him. He's got to do it himself.\""],

@@ -178,6 +178,7 @@ async function interview(S) {
     "@a5_dana And we're clear. Wow. " + (score >= 6 ? "That was great radio. I'm going to cry in the booth." : score >= 3 ? "That was solid. Hair and everything." : "Well. That was... a radio segment."),
     "@a5_dana Harbor Lights, Saturday. Don't be late. I'll be in the front."
   ]);
+  if (score < 3) await RP.lines(["@a5_dana I'll have the producer cut it for time. Most of it. All of it.", "(The clip gets eleven plays. Ten are Marcus. New fans: a handful, mostly confused.)"]);
   RP.text("MARGO (MGR)", "That was " + (score >= 6 ? "perfect" : score >= 3 ? "good" : "an experience") + ". Gate at 7 PM: wristbands + guest list. Whit wants the list by 8.", false);
   RP.unlock("a5_loc_gate");
   await RP.lines(["Gate at seven. Time for lunch. Or the subway, which is lunch for people with no time."]);

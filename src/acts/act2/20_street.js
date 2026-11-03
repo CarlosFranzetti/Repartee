@@ -126,13 +126,13 @@ async function talkPearl(S) {
       S.f.a2_pearlTips = true;
       await RP.lines([
         "@a2_pearl Platinum member. Two hundred twelve donations. Ask me about my mug.",
-        "@a2_pearl LifeDrop, Atlantic Avenue. You need ID, proof of address and Form 27-B. Not a text message. Rhonda doesn't believe in texts.",
+        "@a2_pearl LifeDrop, Atlantic Avenue. Bring paper. Rhonda doesn't believe in texts.",
         "@a2_pearl The pen is chained to the desk. Don't fight the pen.",
         "@a2_pearl Nurse Bev does the needle. Look at the ceiling. Think about pizza. And eat the cookie after, it's terrible, but it's tradition."
       ]);
     } },
     { text: "I got locked out. What counts as proof of address?", when: S2 => S2.f.a2_pearlTips, run: async () => {
-      await RP.lines(["@a2_pearl A bill. A lease. An envelope with your name on it and a real street. Not a screenshot.", "@a2_pearl Is somebody keeping your mail? Somebody always keeps the mail. There's always a Lou."]);
+      await RP.lines(["@a2_pearl A bill. A lease. An envelope with your name on it and a real street. Not a screenshot."]);
     } },
     { text: "What's a two-time deal?", run: async () => { await RP.lines(["@a2_pearl Eddie? Oh, honey. I bought a toaster from Eddie. Then I bought it again. Neither toasts."]); } },
     { text: "Where do I cash a prepaid card?", when: S2 => S2.f.a2_pearlTips, run: async () => { await RP.lines(["@a2_pearl The bodega machine on the corner. It says \"no fee.\" Look closer. There's an asterisk. There's always an asterisk."]); } },
@@ -169,6 +169,7 @@ RP.room({
   ],
   enter: async (S, from) => {
     if (from === "a2_couch" && !S.f.a2_streetSeen) { S.f.a2_streetSeen = true; RP.toast("Click the subway stairs to travel."); }
+    else if (from !== "a2_couch" && !S.f.a2_smittySeen && S.f.a2_plan && S.f.a2_ch === 1) { S.f.a2_smittySeen = true; await RP.lines(["Across the street, Smitty is on a stoop that isn't his, holding a package that isn't his.", "He sees me and pretends to be a bush. It almost works."]); }
   },
   hotspots: [
     { id: "a2_stoopdoor", name: "Marcus's door", r: [110, 18, 50, 120], z: 30, walk: [160, 202, "back"],

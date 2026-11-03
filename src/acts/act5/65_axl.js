@@ -98,6 +98,7 @@ async function axlScene(S) {
     "I'm looking at the ceiling. It's very nice.",
     "@axl Okay. You live. Who are you?",
     "I'm the headliner.",
+    ...(S.f.a5_axlAngry ? ["@axl ...Wait. I know that voice. \"Axl who?\" That was you.", "It was a bit, on the radio.", "@axl Margo played it for me. Twice. On speaker. In the car. I've been having feelings since Friday."] : []),
     "@axl I'M the headliner.",
     "There are two headliners?",
     "@axl There's ONE. Look at the poster. My name's bigger. I've got a billion streams. A billion! Do you know what a billion is?",
@@ -120,7 +121,8 @@ async function axlScene(S) {
     await RP.lines(["@axl ...What did you say?", "Alex. Your mother has a banner. It says \"MY ALEX.\"", "@axl ...Who told you about the banner?", "A woman who remembers everything.", "@axl Twinkie. Of course. Okay. Okay okay okay. Listen. That's between us."]);
     win = true; S.f.a5_axlLeverage = true;
   }
-  if (win && S.f.a5_axlAngry) await RP.lines(["@axl I heard what you said on the radio. Don't think I didn't. ...But it's a good idea. I'm allowed to have a good idea."]);
+  if (win && S.f.a5_axlAngry) await RP.lines(["@axl ...It's a good idea. I'm allowed to have a good idea, even from the guy who said \"Axl who.\"", "@axl I'm keeping the clip, though. For my lawyers. They eat contracts and clips."]);
+  else if (!win && S.f.a5_axlAngry) await RP.lines(["@axl And that's before the radio. I haven't even started on the radio."]);
   S.f.a5_axlDone = true; S.f.a5_axlWon = win;
   if (S.f.a5_axlWon) {
     RP.sfx("success");

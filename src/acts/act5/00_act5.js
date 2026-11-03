@@ -189,7 +189,7 @@ RP.item("a5_pass", {
     R(c, 8, 17, S.f.a5_passFixed ? 16 : 11, 2, S.f.a5_passFixed ? "#1d1622" : "#c0302c"); R(c, 8, 20, 9, 1, "#8a86a0");
   },
   iconKey: S => S.f.a5_passFixed ? 1 : 0,
-  look: S => S.f.a5_passFixed ? ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "DJ " + A5.pName(S).replace(/^DJ /, "") + ", in Sharpie. Spelled right. A first for any laminate."] : ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "It says \"DJ " + A5.mangle(S.name).replace(/^DJ /, "") + "\". So close. So Dante."],
+  look: S => S.f.a5_passFixed ? ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "DJ " + A5.pName(S).replace(/^DJ /, "") + ", in Sharpie. Spelled right. A first for any laminate."] : ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "Hand-laminated by an intern. The name is a stylistic choice. Not mine."],
   use: "It's a pass. You show it to people who don't believe you."
 });
 RP.item("a5_marker", {
@@ -214,7 +214,7 @@ RP.item("a5_tickets", {
   name: "drink tickets", short: "Tickets",
   icon: c => { for (let i = 0; i < 4; i++) { R(c, 4 + i * 2, 5 + i, 22, 11, i % 2 ? "#ff3fa4" : "#ffd23f"); R(c, 4 + i * 2, 5 + i, 22, 1, "#ffffff"); } txt(c, "NOWH", 8, 9, "#17131f"); },
   look: "A roll of 400 NOWHERE drink tickets. That's Dante's idea of a paycheck. They have a certain... street value. At Nowhere. On a Saturday.",
-  use: "I'll spend them wisely. Meaning: not at once."
+  use: "Four hundred tickets, one drink each. Dante paid me in a currency only Dante's bar accepts. I'll frame one. The rest are Marcus's problem."
 });
 
 RP.item("a5_water", {

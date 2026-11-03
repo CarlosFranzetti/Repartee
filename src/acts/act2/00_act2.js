@@ -226,7 +226,8 @@ RP.defineAct({
     ]);
     await RP.phone([
       { from: "DANTE (NOWHERE)", text: "killer set!! i'll pay u next week", hot: true },
-      { from: "MR. KOWALSKI (LANDLORD)", text: "Lock change is TEMPORARY. Rent due FRI. Hot water: next week." },
+      { from: "MR. KOWALSKI (LANDLORD)", text: "Lock change is TEMPORARY. Rent due TUE, office hours. Hot water: next week." },
+      { from: "STAFFRIGHT TEMPS", text: "Re: your Synergex shift. We found someone more punctual. Also 3 USB sticks are unaccounted for. We're not saying. We're saying." },
       { from: "MOM", text: "Did you eat. Is that couch clean" }
     ]);
     await RP.lines(["Everybody's paying me next week. Even the hot water.", "Okay. Think. I need cash, a shower, a gig, and a pair of turntables. In that order. Or any order."]);

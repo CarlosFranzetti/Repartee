@@ -1,4 +1,4 @@
-/* Act 1 — a1_nowhere: inside Nowhere, Saturday 10 PM. Booth with turntables, the bar, bartenders Mia and
+/* Act 1 — a1_nowhere: inside Nowhere, Saturday 10 PM. Booth with turntables, the bar, bartenders Dani and
    Rafa, regulars, Dante. The vinyl hour is crowd.Read with your four records. Bartenders dancing = a good set
    -> Dante: "Great set. I'll pay you next week." -> RP.completeAct.
    Flags: a1_nowSeen, a1_setTries, a1_setGood, a1_setDone. */
@@ -100,6 +100,7 @@ async function playSet(S) {
   RP.setClock("SAT 10:03 PM");
   if (!S.f.a1_setTries) await RP.lines(["Ten o'clock. Four records, two turntables, one broken heart and a clean needle.", "Missing, Acid Tracks, NYC 93, and \"" + RP.rec(closer).title + ".\" I know what I'm doing. I read the room. The room is empty."]);
   else await RP.say("Needle down. Again. Softer this time.");
+  if (!S.f.a1_setTries) await RP.say(["The stick in my pocket is all soul. The vinyl hour should warm the room up for it.", "The stick in my pocket is all peak. The vinyl hour had better not peak first.", "The stick in my pocket is a little of everything. The room will get a little of everything."][S.f.a1_setStyle ?? 2], "nar");
   RP.setMusic(null);
   let res = await RP.mg.play("crowdRead", { records: ids, crowd: "empty-bar", rounds: 4, difficulty: S.f.a1_setTries > 0 ? 1 : 2, venue: "Nowhere", story: true });
   S.f.a1_setTries = (S.f.a1_setTries || 0) + 1;
@@ -107,7 +108,7 @@ async function playSet(S) {
   if (!good) {
     k.act = "stand"; RP.place("kid", 320, 214, "front");
     RP.setMusic({ genre: "house", bpm: 118, volume: 0.3, energy: 2, filter: ["lowpass", 900] });
-    await RP.lines(["The bartenders are still polishing the same glass. Mia looks at me. It isn't unkind. It's worse: it's patient.", "@dante Rough. Start softer. Build. Don't drop the peak early. Again."]);
+    await RP.lines(["The bartenders are still polishing the same glass. Dani looks at me. It isn't unkind. It's worse: it's patient.", "@dante Rough. Start softer. Build. Don't drop the peak early. Again."]);
     return;
   }
   /* it works */
@@ -115,17 +116,17 @@ async function playSet(S) {
   if (S.f.a1_setTries >= 3 && res && !res.ok && !res.missing) await RP.say("Third try. The bartenders feel sorry for me and dance out of pure pity. I'll take it.", "nar");
   RP.setMusic({ genre: "house", bpm: 122, volume: 0.5, energy: 4 });
   RP.sfx("cheer");
-  ["a1_mia", "a1_rafa"].forEach(id => { const a = RP.actor(id); if (a) { a.act = "dance"; a.baseAct = "dance"; } });
+  ["a1_dani", "a1_rafa"].forEach(id => { const a = RP.actor(id); if (a) { a.act = "dance"; a.baseAct = "dance"; } });
   RP.flash("#ff3fa4", 400);
-  await RP.lines(["Then something happens. Rafa stops mid-pour. His head starts to nod.", "Mia puts down the glass. She grabs the bar, closes her eyes, and starts to move.", "The bartenders are dancing. The bartenders. Are. DANCING.", "And behind them, the floor fills. People who weren't here a minute ago are here now. Hands up. Phones out. The room's alive."]);
+  await RP.lines(["Then something happens. Rafa stops mid-pour. His head starts to nod.", "Dani puts down the glass. She grabs the bar, closes her eyes, and starts to move.", "The bartenders are dancing. The bartenders. Are. DANCING.", "And behind them, the floor fills. People who weren't here a minute ago are here now. Hands up. Phones out. The room's alive."]);
   RP.followers(60);
   await RP.fadeTo(1, 700);
   RP.setClock("SAT 11:55 PM");
   k.act = "stand"; RP.place("kid", 320, 212, "front");
   RP.place("dante", 268, 218, "right"); RP.actor("dante").expr = "happy";
-  await RP.say("The second hour. The USB. Tracks I picked on Wednesday, with a stolen stick. Nobody could tell. It didn't matter.", "nar");
+  await RP.say(["The second hour. The USB. Soul on a stolen stick, picked on Wednesday. Nobody could tell. The room swayed.", "The second hour. The USB. All peak, picked on Wednesday. The floor didn't ask where the stick came from. It jumped.", "The second hour. The USB. A little of everything, from a stolen stick. Nobody could tell. Nobody was bored."][S.f.a1_setStyle ?? 2], "nar");
   await RP.fadeTo(0, 700);
-  await RP.lines(["@dante Hey. HEY.", "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
+  await RP.lines(["@dante Hey. HEY.", ...["@dante That second hour. Soul. Where'd that come from? The room was holding hands.", "@dante That second hour. All peak, no brakes. I aged a year. The room loved it.", "@dante That second hour. Safe. Smooth. I'd say take a risk, but nobody left, so."][S.f.a1_setStyle ?? 2].slice(0,1), "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
   RP.sfx("success");
   await RP.lines(["A handful of records, a stolen USB, a flyer with my name wrong, and a slice for the doorman. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
   await RP.completeAct([
@@ -152,9 +153,9 @@ async function danteTalk(S) {
   ]);
 }
 async function bartend(S, who) {
-  const m = who === "mia";
-  if (S.f.a1_setGood) { await RP.lines(m ? ["@a1_mia I haven't danced behind a bar since... never. Don't tell Rafa.", "@a1_mia Great set. Drinks are on... nobody. But great set."] : ["@a1_rafa Okay, okay. You got me. I'm a dancer now.", "@a1_rafa Don't ask about the screenplay."]); return; }
-  await RP.lines(m ? ["Hey. Any chance you'll dance later?", "@a1_mia I haven't danced behind a bar in six years. Not since the last DJ who made me want to.", "@a1_mia Make me want to. It's not hard. It's just rare."] : ["Slow night?", "@a1_rafa Slow? It's ten. It's a funeral until eleven.", "@a1_rafa I'm writing a screenplay. It's about a bartender. It's a drama. Ask me about it. Don't."]);
+  const m = who === "dani";
+  if (S.f.a1_setGood) { await RP.lines(m ? ["@a1_dani I haven't danced behind a bar since... never. Don't tell Rafa.", S.f.a1_setStyle === 1 ? "@a1_dani Great set. That second hour nearly broke my knees. Drinks are on... nobody." : S.f.a1_setStyle === 0 ? "@a1_dani Great set. That soul stuff is why I got into this. Drinks are on... nobody." : "@a1_dani Great set. Drinks are on... nobody. But great set."] : ["@a1_rafa Okay, okay. You got me. I'm a dancer now.", "@a1_rafa Don't ask about the screenplay."]); return; }
+  await RP.lines(m ? ["Hey. Any chance you'll dance later?", "@a1_dani I haven't danced behind a bar in six years. Not since the last DJ who made me want to.", "@a1_dani Make me want to. It's not hard. It's just rare."] : ["Slow night?", "@a1_rafa Slow? It's ten. It's a funeral until eleven.", "@a1_rafa I'm writing a screenplay. It's about a bartender. It's a drama. Ask me about it. Don't."]);
 }
 
 RP.room({
@@ -175,7 +176,7 @@ RP.room({
   ],
   actors: [
     { id: "dante", char: "dante", x: 196, y: 232, face: "right", act: "stand", name: "Dante" },
-    { id: "a1_mia", char: "a1_mia", x: 544, y: 194, face: "front", act: "stand", name: "Mia" },
+    { id: "a1_dani", char: "a1_dani", x: 544, y: 194, face: "front", act: "stand", name: "Dani" },
     { id: "a1_rafa", char: "a1_rafa", x: 596, y: 194, face: "front", act: "stand", name: "Rafa" },
     { id: "a1_hank", char: "a1_hank", x: 64, y: 204, face: "right", act: "sit", name: "Old Hank" },
     { id: "a1_twig", char: "a1_twig", x: 470, y: 236, face: "front", act: "stand", name: "Twig" },
@@ -227,7 +228,7 @@ RP.room({
 });
 const nh = RP.rooms.a1_nowhere.hotspots;
 nh.push({ id: "dante", name: "Dante", look: "Dante. Buzzcut, goatee, a bomber jacket with a pink lining, and a smile that says \"I'll pay you next week.\" It's a smile I've learned to respect.", talk: S => S.f.a1_setDone ? RP.lines(["@dante I'll pay you next week. It's a sacred promise."]) : danteTalk(S), use: "I can't use Dante. People have tried. It's usually the other way around.", pickup: "Dante's not for carrying. He's for believing. Eventually.", push: "I'd push him, but he'd say \"next week\" and I'd be broke forever.", give: "\"Sure, just put it on my tab,\" says Dante. \"I'll pay you next week.\"" });
-nh.push({ id: "a1_mia", name: "Mia", look: "Mia. Cyan mohawk, black apron, an expression of someone who's heard every DJ promise \"I'll make you dance.\" She's yet to dance.", talk: S => bartend(S, "mia"), use: "I order a water. Mia gives me a glass of tap and a look. We both know my budget.", pickup: "Mia's not for taking. She's for impressing.", push: "I wave. She raises one eyebrow. It's all the conversation I'm allowed.", give: "Mia shakes her head. \"Tips go in the jar. Everyone else's gifts go in the bin.\"" });
+nh.push({ id: "a1_dani", name: "Dani", look: "Dani. Cyan mohawk, black apron, an expression of someone who's heard every DJ promise \"I'll make you dance.\" She's yet to dance.", talk: S => bartend(S, "dani"), use: "I order a water. Dani gives me a glass of tap and a look. We both know my budget.", pickup: "Dani's not for taking. She's for impressing.", push: "I wave. She raises one eyebrow. It's all the conversation I'm allowed.", give: "Dani shakes her head. \"Tips go in the jar. Everyone else's gifts go in the bin.\"" });
 nh.push({ id: "a1_rafa", name: "Rafa", look: "Rafa. Curly hair, a beard, a red tee under a black apron. He pours drinks like he's reading a tragedy.", talk: S => bartend(S, "rafa"), use: "I ask for a water. Rafa pours it in the saddest, most poetic way I've seen.", pickup: "Rafa's a person. And a screenwriter, I think.", push: "I tap the bar. Rafa nods. A tiny conversation.", give: "Rafa waves it off. \"Tips go in the jar, man.\"" });
 nh.push({ id: "a1_hank", name: "Old Hank", look: "Old Hank. A white beard, a vest, a pair of glasses and the front row of a couch. He's been at every Nowhere since it was a laundromat. That's what he says.", talk: async S => { await RP.lines(["Evening.", "@a1_hank Used to be a laundromat. Same dryers, worse music. I'm still waiting on a sock.", "@a1_hank Start slow. Nobody dances at ten. Not even in 1993. Let the bartenders hear it first."]); }, use: "I'd sit next to him, but the couch is full of memories.", pickup: "Hank is a lot of history. I'd throw out my back.", push: "I nudge his sleeve. He raises his glass. It's a toast. It's a no.", give: "\"Thanks, young man,\" says Hank. \"But I'm on a very strict diet. Of nostalgia.\"" });
 nh.push({ id: "a1_twig", name: "Twig", look: "Twig. He got in. I don't know how. Maybe he knows somebody who knows somebody who knows Tank's cousin.", talk: async S => { await RP.lines(["You got in!", "@a1_twig Tank's cousin. It's a whole thing. I'll tell you later. When there's a later.", "@a1_twig Make 'em dance, man. I came for you. I mean... I came for the bartenders. But you."]); }, use: "I clap him on the shoulder. He nearly drops his drink. We're friends now.", pickup: "Twig's lighter than a record, but with way more opinions.", push: "I nudge him. He nudges me. We both nudge a stranger. Chaos.", give: "\"I'm good,\" says Twig. \"I'm saving room for the music.\"" });
