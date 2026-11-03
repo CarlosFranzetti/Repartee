@@ -171,7 +171,7 @@ async function headlineSet(S) {
     "Okay. Let's build a set."
   ]);
   /* 1. the running order: you pick the opener and the closer; the middle is the crate you packed */
-  await RP.lines(["The crate is open on the booth. Ray's white label is in my coat, and a thousand people are waiting on the first record.", "Open first. Then decide how it ends."]);
+  await RP.lines(["The crate is open on the booth. Lou's white label (NYC 93) is in my coat, and a thousand people are waiting on the first record.", "Open first. Then decide how it ends."]);
   const OPEN = ["mr_fingers_washing_machine_can_you_feel_it", "kerri_chandler_atmosphere_ep_vol_1", "frankie_knuckles_your_love"];
   const oi = await RP.choose(["Open low: Mr. Fingers, \"Can You Feel It\". Let the field lean in.", "Open on the groove: Kerri Chandler, \"Atmosphere\".", "Open on the voice: Frankie Knuckles, \"Your Love\"."]);
   const CLOSE = ["mood_ii_swing_closer", "robin_s_show_me_love", "donna_summer_i_feel_love"];
@@ -184,7 +184,7 @@ async function headlineSet(S) {
   ]);
   /* 2. crowd.Read: play the room */
   RP.audio && RP.audio.loop && RP.setMusic && RP.setMusic({ genre: "house", bpm: 122, volume: 0.32 });
-  /* the crate: your opener and closer, the middle of the pool, a closer always on hand, and Ray's white label */
+  /* the crate: your opener and closer, the middle of the pool, a closer always on hand, and Lou's white label */
   const crate = [OPEN[oi], "peech_boys_dont_make_me_wait", "nuyorican_soul_runaway", "masters_at_work_blood_vibes_the_ha_dance", "marshall_jefferson_move_your_body", "bucketheads_the_bomb", "david_morales_presents_the_face_needin_u", CLOSE[ci], "mood_ii_swing_closer", "white_nyc93"];
   const crateIds = crate.filter((id, k) => crate.indexOf(id) === k && (id === "white_nyc93" || RP.rec(id)));
   const cr = await A5.play("crowdRead", { records: crateIds, crowd: "festival", rounds: 5, goal: 4, difficulty: A5.rig(S).cdj3 ? 3 : 4, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
@@ -228,7 +228,7 @@ async function headlineSet(S) {
     "@lou Kid. Thank you."
   ]);
   if (S.f.a5_whiskersShout) await RP.lines(["And Mr. Whiskers: this one's for you. Slow blink, buddy.", "(Somewhere in the crowd, a bubble carrier is lifted over the barricade. Mr. Whiskers blinks. Slowly.)"]);
-  if (S.f.a5_radioPlug) await RP.lines(["(Near the barricade, a bottle goes up in the lights. SPIRIT WATER. Eddie has his own banner. It says: AS HEARD ON THE RADIO.)"]);
+  if (S.f.a5_radioPlug) { await RP.lines(["(Near the barricade, a bottle goes up in the lights. SPIRIT WATER. Eddie has his own banner. It says: AS HEARD ON THE RADIO.)", "(Someone near the front starts a chant: \"WA-TER! WA-TER!\" It lasts one bar. I've been branded.)"]); }
   await RP.lines(["Thank you, Harbor Lights. I'm " + nm + ". I started in a bedroom. I'm still in a bedroom. It just got a lot of people."]);
   /* 5. Kosmo, finally */
   const kos = RP.actor("kosmo");
@@ -320,9 +320,9 @@ RP.room({
         const nm = A5.pName(S);
         RP.sfx("cheer");
         await RP.lines([
-          "@a5_pa Ladies and gentlemen, Harbor Lights, the headliner of the night, from Bushwick, Brooklyn: DJ " + A5.mangle(nm).replace(/^DJ /, "") + "!",
+          "@a5_pa Ladies and gentlemen, Harbor Lights, the headliner of the night, from Bushwick, Brooklyn: " + nm + "!",
           "@a5_crowd (roaring) " + nm + "! " + nm + "! " + nm + "!",
-          "@a5_pa ...Or, I'm told, " + nm + ". Sorry. Brian printed it.",
+          "@a5_pa (off mic) Roz, I read it off the board. The board is right. ...Brian, put the old sheet down.",
           "A thousand faces. A field of them. My knees are doing a jig.",
           "(Walk to the booth. Use the decks.)"
         ]);

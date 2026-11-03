@@ -1,5 +1,5 @@
 /* Act 5 — headless walkthroughs: the whole level, from the studio on Thursday to RP.completeAct at sunrise.
-   act5: dream rig (CDJ-3000s only after selling records to Eddie), the radio plug, Saturday as smoothie -> Axl -> soundcheck.
+   act5: Taula + Core 47s + used NXS decks (the CDJ-3000s are out of reach; records sold to Eddie), the radio plug, Saturday as smoothie -> Axl -> soundcheck.
    act5alt: cheap honest rig (slept on it), Saturday as soundcheck -> smoothie -> Axl (so Axl's scene is what turns the evening to night).
    run: node tests/run.mjs walk act5 --act 5 --page <build>.html   (same with act5alt)
    Mini-game results are queued only for games that are registered (the queue is consumed in play order). */
@@ -11,8 +11,8 @@ const q = (id, res) => ["run", (S, R) => { if (R.mg.reg[id]) R.test.mgQ.push(res
 
 const thursday = [
   ["expect", "S.act === 5 && S.room === 'a5_studio' && S.f.a5_calledMargo", "act 5 starts in the studio; Margo called"],
-  ["expect", "S.money === 7000 || S.money > 7000", "fixed advance landed: $5,500 on top of the bank, not a top-up to ten thousand"],
-  ["expect", "S.f.a5_advance === 5500", "the advance is fixed"],
+  ["expect", "S.money >= 5500 && S.money <= 6000", "fixed advance landed: $4,000 on top of the bank; the full dream rig ($8,350) is out of reach"],
+  ["expect", "S.f.a5_advance === 4000", "the advance is fixed"],
   ["look", "hot:a5_poster"], ["look", "hot:a5_neon"], ["look", "hot:a5_gerald"], ["look", "hot:a5_mixer"],
   ["use", "hot:a5_bed"], ["expect", "S.f.a5_day === 1", "can't sleep before the Taula is bought"],
   ["answers", [0]], ["use", "hot:a5_rail"], ["expect", "S.f.a5_outfit === 'coat'", "pink-lined coat on"],
@@ -27,11 +27,13 @@ const thursday = [
   ["talk", "hot:eddie"],
   ["expect", "S.gear.monitors === 'dynaudio_core_47' && S.f.a5_monKind === 'core' && !S.f.a5_gearDone", "Core 47s bought; the money is now tight"],
   ["answers", ["What about decks", "Take the CDJ-3000", "Thanks"]], ["talk", "hot:a5_merce"],
-  ["expect", "!S.f.a5_gearDecks && S.money < 2976", "short of the CDJ-3000s: Mercè will not sell on credit"],
-  ["answers", ["buy some of my records", 0, 0, "Keep them", "Later"]], ["talk", "hot:eddie"],
-  ["expect", "S.f.a5_soldRecs === 2 && S.money >= 2976", "two records sold to Eddie raised the money honestly"],
-  ["answers", ["What about decks", "Take the CDJ-3000", "Thanks"]], ["talk", "hot:a5_merce"],
-  ["expect", "S.gear.decks === 'pioneer_cdj_3000' && S.f.a5_gearDone", "Taula + Core 47s + CDJ-3000s, paid for"],
+  ["expect", "!S.f.a5_gearDecks && S.money < 3200", "short of the CDJ-3000s: Mercè will not sell on credit"],
+  ["answers", ["buy some of my records", 0, 0, "Later"]], ["talk", "hot:eddie"],
+  ["expect", "S.f.a5_soldRecs === 2 && S.money < 3200", "two records sold to Eddie (his limit): still short of the CDJ-3000s, so the choice is real"],
+  ["answers", ["What about decks", "used 900NXS", "Not yet", "Thanks"]], ["talk", "hot:a5_merce"],
+  ["expect", "!S.f.a5_gearDecks", "the confirm let me back out"],
+  ["answers", ["What about decks", "used 900NXS", "SURE", "Thanks"]], ["talk", "hot:a5_merce"],
+  ["expect", "S.gear.decks === 'pioneer_cdj_900nxs' && S.f.a5_gearDone", "Taula + Core 47s + used 900NXS: the confirm asked twice, the second time accepted"],
   ["travel", "a5_loc_studio"], ["expect", "S.room === 'a5_studio'", "home"],
   ["look", "hot:a5_boxes"], ["use", "hot:a5_crate"],
   ["use", "hot:a5_bed"], ["expect", "S.f.a5_day === 2", "Friday"]
@@ -39,7 +41,7 @@ const thursday = [
 
 /* cheap and honest: the Taula, nothing else, slept on it; Margo's advance is taken and the old kit stays */
 const thursdayAlt = [
-  ["expect", "S.act === 5 && S.f.a5_calledMargo && S.f.a5_advance === 5500", "act 5 starts; fixed advance"],
+  ["expect", "S.act === 5 && S.f.a5_calledMargo && S.f.a5_advance === 4000", "act 5 starts; fixed advance"],
   ["travel", "a5_loc_boutique"], ["expect", "S.room === 'a5_boutique' && S.f.a5_boutiqueMet", "Lacquer & Wire"],
   ["answers", ["I'm short", "Call Margo", "I want the Taula", "What about decks", "I'll keep my 900s", "Thanks"]],
   q("buyGear", { ok: true, score: 90, bought: TAULA, paid: 1650, place: 1 }),
@@ -144,6 +146,8 @@ const pier = [
   ["use", "hot:a5_psun"], ["expect", "!S.done.includes(5)", "not yet: talk to Lou and Dante first"],
   ["talk", "hot:lou"], ["talk", "hot:dante"], ["expect", "RP.has('a5_tickets')", "Dante paid in drink tickets"],
   ["talk", "hot:marcus"], ["talk", "hot:ray"], ["talk", "hot:twinkie"], ["talk", "hot:eddie"], ["talk", "hot:jess"], ["talk", "hot:a5_margo"], ["talk", "hot:kosmo"],
+  ["expect", "S.f.a5_pierNudge", "once the talks were done, the sunrise was signposted"],
+  ["expect", "S.f.a5_feePaid", "Margo's fee reached the wallet"],
   ["use", "hot:a5_psun"],
   ["expect", "S.done.includes(5)", "act 5 complete"]
 ];

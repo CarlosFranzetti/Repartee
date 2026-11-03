@@ -173,8 +173,11 @@ function howTo(p) {
    ["Keys:", " L look, P pick up, U use, O open, T talk, G give, Esc to cancel. H (or Tab) shows what you can click."],
    ["Mini-games", " explain their own controls. You can replay any of them from the Mini-Game Arcade."]].forEach(([b, t]) => { const q = el("p", {}, p); el("b", { text: b }, q); q.appendChild(document.createTextNode(t)); });
 }
+const REPO_URL = "https://github.com/CarlosFranzetti/Repartee";
 function credits(p) {
   el("h3", { text: "RE:PARTEÉ" }, p);
+  el("p", { text: "A game by Carlos Franzetti." }, p);
+  el("a", { href: REPO_URL, text: "github.com/CarlosFranzetti/Repartee", target: "_blank", rel: "noopener" }, el("p", {}, p));
   el("p", { text: "Inspired by Maniac Mansion, Zak McKracken and the Alien Mindbenders, and The Secret of Monkey Island." }, p);
   el("p", { text: "All graphics are drawn in code and all music is synthesized live in your browser. No samples, no recordings." }, p);
   el("h3", { text: "REAL RECORDS, REAL PEOPLE" }, p);
@@ -309,6 +312,8 @@ RP.ending = async function () {
   el("p", { text: (S.name || "You") + ": from a milk crate of records and a crackling mixer to a festival headline." }, box);
   el("p", { text: S.records.length + " records in the crate. " + S.followers.toLocaleString("en-US") + " fans. " + RP.u.fmtMoney(S.money) + " in the bank (for now)." }, box);
   el("p", { text: "Thanks for playing. Go dig something." }, box);
+  el("p", { cls: "small", text: "A game by Carlos Franzetti" }, box);
+  el("a", { href: REPO_URL, text: "github.com/CarlosFranzetti/Repartee", target: "_blank", rel: "noopener" }, el("p", { cls: "small" }, box));
   const row = el("div", { cls: "erow" }, box);
   const b = el("button", { cls: "btn primary", type: "button", text: "BACK TO TITLE" }, row);
   await new Promise(r => b.addEventListener("click", r));

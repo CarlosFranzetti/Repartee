@@ -4,7 +4,9 @@
      { faults: ["ground-hum","dead-channel","feedback","blown-tweeter","wrong-input"],
        time: seconds until doors (default scales with faults and difficulty),
        stage: "loft" | "festival", difficulty: 1..5,
-       tech: "Mo (FOH)" (the crew member who talks to you; default SKYE at the loft, NADIA (FOH) at the festival) }
+       tech: "Mo (FOH)" (the crew member who talks to you; default SKYE at the loft, NADIA (FOH) at the festival),
+       rotary: true  (the mixer has level knobs, not faders, e.g. the Taula: "FADER" becomes "LEVEL KNOB" and the scrub step
+               says "turn it all the way down and all the way up"; default: on when stage is "festival" and the player's mixer is rotary) }
    Result: { ok, score (0..100), fixed } — ok means every fault is fixed and nothing new is broken. */
 (function () {
 "use strict";
@@ -117,6 +119,8 @@ const CSS = `
 .sc-ladder i { background: #241d48; } .sc-ladder i.g { background: #3fd07a; } .sc-ladder i.a { background: #ffc44d; } .sc-ladder i.r { background: #ff4a5a; }
 .sc-fader { display: flex; align-items: center; gap: 6px; font-size: 16px; color: var(--muted); }
 .sc-fader input { flex: 1; min-width: 0; accent-color: var(--cyan); height: 28px; }
+.sc-fader input.dirty { outline: 2px dashed var(--amber); outline-offset: 1px; }
+.sc-scrub { font-size: 15px; line-height: 1.05; color: var(--amber); } .sc-scrub b { font-weight: 400; } .sc-scrub span { padding: 0 3px; border: 1px solid var(--amber); } .sc-scrub span.hit { background: var(--amber); color: #12061a; }
 .sc-eq { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; align-items: end; }
 .sc-eq label { display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 14px; color: var(--muted); }
 .sc-eq input { writing-mode: vertical-lr; direction: rtl; width: 100%; height: 86px; margin: 0; accent-color: var(--lime); min-width: 0; }
@@ -227,6 +231,9 @@ RP.mg.register("soundCheck", {
       : gearLabel("behringer_djx750", "Behringer DJX750");
     const monName = gearLabel(G.monitors || (stageId === "festival" ? "dynaudio_core_47" : "krk_rokit_5_g4"), "Booth monitor");
     const NCH = ST.nch;
+    const mixG = stageId === "festival" && G.mixer && RP.gearInfo ? RP.gearInfo(G.mixer) : null;
+    const rotary = p.rotary != null ? !!p.rotary : !!(mixG && mixG.kind === "rotary");
+    const FD = rotary ? "level knob" : "fader";
     const S = {
       stage: stageId, deck: decks,
       ch: Array.from({ length: NCH }, () => ({ input: "line", fader: 0.8, dirt: 0, last: null, sw: 0 })),
@@ -490,7 +497,7 @@ RP.mg.register("soundCheck", {
         if (!d.play) return;
         const c = chain(i), nm = "deck " + d.id, n0 = lines.length;
         if (c.ch.dirt >= 2) { lines.push(["bad", nm + " is silent: dead channel"]); return; }
-        if (c.ch.fader < 0.1) { lines.push(["q", nm + " is faded out: fader down"]); return; }
+        if (c.ch.fader < 0.1) { lines.push(["q", nm + " is faded out: " + FD + " down"]); return; }
         highs = true;
         if (c.thin) lines.push(["bad", nm + " is thin and very quiet: wrong input level"]);
         if (c.hot) lines.push(["bad", nm + " is loud and distorted: wrong input level"]);
@@ -755,7 +762,7 @@ RP.mg.register("soundCheck", {
         ladder(c, x + 2, MIX[1] + 25, 9, lv, true, 1, 1);
         R(c, x + 2, MIX[1] + 9, 3, 1, lv > 1.02 ? "#ff4a5a" : "#3a1a22");
         const kx = x + sw - 9; R(c, kx, MIX[1] + 9, 3, 3, "#8a84a8"); R(c, kx + 1, MIX[1] + 9, 1, 1, "#efeaff"); R(c, kx, MIX[1] + 14, 3, 3, "#8a84a8"); R(c, kx + 1, MIX[1] + 14, 1, 1, "#efeaff");
-        const fy = MIX[1] + 19 + Math.round((1 - ch.fader) * 6); R(c, x + sw - 5, MIX[1] + 18, 1, 9, "#0a0814"); R(c, x + sw - 7, fy, 5, 2, "#d8d0e8");
+        if (rotary) { const kx2 = x + sw - 8, ky = MIX[1] + 20; ell(c, kx2 + 2, ky + 3, 3, 3, "#8a84a8"); P(c, kx2 + 2 + Math.round((ch.fader - 0.5) * 4), ky + 1, "#efeaff"); } else { const fy = MIX[1] + 19 + Math.round((1 - ch.fader) * 6); R(c, x + sw - 5, MIX[1] + 18, 1, 9, "#0a0814"); R(c, x + sw - 7, fy, 5, 2, "#d8d0e8"); }
       }
       const mx = MIX[0] + MIX[2] - 12; R(c, mx - 1, MIX[1] + 6, 11, MIX[3] - 8, "#1d1c2a"); ladder(c, mx + 1, MIX[1] + 27, 9, M.master, true, 1, 1); ladder(c, mx + 6, MIX[1] + 27, 9, M.master, true, 1, 1);
       txt(c, "MIXER", MIX[0] + 2, MIX[1] - 8, "#a8a2c8", 1, 1);
@@ -951,16 +958,20 @@ RP.mg.register("soundCheck", {
             const sg = el("div", { cls: "sc-seg" }, card);
             const bp = el("button", { type: "button", "aria-pressed": "false", text: "PHONO", cls: "on-pink" }, sg), bl = el("button", { type: "button", "aria-pressed": "false", text: "LINE" }, sg);
             bp.addEventListener("click", () => { ch.input = "phono"; RP.sfx("blip"); checkFixes(); syncAll(); }); bl.addEventListener("click", () => { ch.input = "line"; RP.sfx("blip"); checkFixes(); syncAll(); });
-            const fd = el("div", { cls: "sc-fader" }, card); el("span", { text: stageId === "festival" ? "GAIN" : "FADER" }, fd);
-            const inp = el("input", { type: "range", min: "0", max: "100", step: "1", value: String(Math.round(ch.fader * 100)), "aria-label": "Channel " + (i + 1) + " fader" }, fd);
+            const fd = el("div", { cls: "sc-fader" }, card); el("span", { text: rotary ? "LEVEL KNOB" : stageId === "festival" ? "GAIN" : "FADER" }, fd);
+            const inp = el("input", { type: "range", min: "0", max: "100", step: "1", value: String(Math.round(ch.fader * 100)), "aria-label": "Channel " + (i + 1) + " " + FD }, fd);
+            /* a dirty strip shows what to do: scrub the control between its two ends, with the ends marked and the dirt left */
+            const scr = el("div", { cls: "sc-scrub" }, card);
+            const scrub = () => { if (ch.dirt > 0) { scr.style.display = ""; scr.innerHTML = "<b>DIRTY · " + "▮".repeat(ch.dirt) + "</b><br>Scrub the " + FD + " " + (rotary ? "all the way down, then all the way up" : "end to end") + ": <span class='" + (ch.last === "lo" ? "hit" : "") + "'>MIN</span> ⟷ <span class='" + (ch.last === "hi" ? "hit" : "") + "'>MAX</span>"; inp.classList.add("dirty"); } else { scr.style.display = "none"; inp.classList.remove("dirty"); } };
             inp.addEventListener("input", () => {
               const v = parseInt(inp.value, 10) / 100; ch.fader = v;
               if (ch.dirt > 0) { const zone = v < 0.12 ? "lo" : v > 0.88 ? "hi" : null; if (zone && zone !== ch.last) { if (ch.last) { ch.sw++; RP.sfx("scratch"); if (ch.sw % 2 === 0) { ch.dirt--; if (ch.dirt === 0) { checkFixes(); setMsg("CH" + (i + 1) + " is clean."); } else setMsg("It is crackling less. Keep scrubbing CH" + (i + 1) + "."); } } ch.last = zone; } }
-              syncAll(true);
+              scrub(); syncAll(true);
             });
             const sp = el("button", { cls: "kbtn", type: "button", text: "SPRAY CLEANER" }, card); sp.style.fontSize = "16px";
-            sp.addEventListener("click", () => { RP.sfx("spray"); if (ch.dirt > 0) { ch.dirt = Math.max(0, ch.dirt - 1); setMsg(ch.dirt ? "Sprayed CH" + (i + 1) + ". Now scrub the fader end to end." : "CH" + (i + 1) + " is clean."); if (!ch.dirt) checkFixes(); } else setMsg("CH" + (i + 1) + " smells like a hardware store now. Nothing was dirty."); syncAll(); });
+            sp.addEventListener("click", () => { RP.sfx("spray"); if (ch.dirt > 0) { ch.dirt = Math.max(0, ch.dirt - 1); setMsg(ch.dirt ? "Sprayed CH" + (i + 1) + ". Now scrub the " + FD + (rotary ? " all the way down and up." : " end to end.") : "CH" + (i + 1) + " is clean."); if (!ch.dirt) checkFixes(); } else setMsg("CH" + (i + 1) + " smells like a hardware store now. Nothing was dirty."); syncAll(); });
             panelSync.push(() => {
+              scrub();
               const dk = S.deck[feeds]; sm.textContent = feeds >= 0 ? "from deck " + dk.id : "free";
               bp.setAttribute("aria-pressed", String(ch.input === "phono")); bl.setAttribute("aria-pressed", String(ch.input === "line"));
               const lv = M.chLvl[i], on = Math.round(clamp(lv, 0, 1.2) * 10); cells.forEach((cl, n) => { cl.className = n < on ? (n < 6 ? "g" : n < 8 ? "a" : "r") : ""; });

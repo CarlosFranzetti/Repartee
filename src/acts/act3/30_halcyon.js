@@ -196,7 +196,12 @@ RP.room({
     { id: "a3_brandon", name: "DJ Brandon Shine", z: 80, look: "DJ Brandon Shine. Gold vest, sunglasses indoors, a tan that's not from outdoors. His smile arrives half a second before the rest of him.",
       talk: S => A3.brandonTalk(S), give: (S, item) => A3.brandonGive(S, item) },
     { id: "a3_marcus", name: "Marcus", z: 80, look: "Marcus, plus three, dancing in a way that means he's been in the building forty seconds.",
-      talk: ["Marcus! You came!", "@a3_marcus I came! My friend came! The guy from the cab came!", "He's very into the music. He's holding a drink he didn't pay for."] },
+      talk: async S => {
+        await RP.lines(["Marcus! You came!", "@a3_marcus I came! My friends came! The guy from the cab came!", "He's very into the music. He's holding a drink he didn't pay for."]);
+        if (!S.f.a3_marcusTab) { S.f.a3_marcusTab = true; await RP.lines(["@a3_marcus Oh, I told the bar it's all on you. It's your anniversary! You're rich! Odessa said she'd cover half. Odessa said a lot of things.", "That's the plus three. They didn't come free."]); }
+        if (S.f.a3_swapFound && !S.f.a3_feudOver && !S.f.a3_brandonDone) await RP.lines(["@a3_marcus Dee tended bar for six years. She says two bartenders at war always share one record. Find it, put it on the bar player, and watch them fold."]);
+        else await RP.say("Marcus pats the air near my shoulder, the way you do with a friend who's about to be famous.", "nar");
+      } },
     { id: "a3_h_foh", name: "sound desk", r: [432, 188, 100, 28], z: 30, walk: [448, 220, "back"],
       look: "Gus's front-of-house desk: forty faders, a laptop, and a graveyard of snack wrappers. It looks like a spaceship that crashed into a vending machine.",
       use: "Gus looks at my hand. At the desk. At my hand. I withdraw it.", pickup: "Gus looks at me. I put it down." },

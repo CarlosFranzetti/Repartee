@@ -2,7 +2,7 @@
    Act definition, characters, voices, items, locations and shared helpers (window.RP.a5).
 
    Flags (S.f.a5_*):  day (1 Thu, 2 Fri, 3 Sat) · tod ("day"|"night") · calledMargo · gearMixer / gearMonitors / gearDecks (each: settled; monKind / deckKind say what) / gearDone (all settled, or slept on it)
-   · feeAdvance (Margo's $1,500 advance) · soldRecs (records sold to Eddie) · radioPlug (paid read on the radio)
+   · feeAdvance (Margo's $600 advance, against the fee) · soldRecs (records sold to Eddie) · radioPlug (paid read on the radio)
    · boutiqueMet · interviewDone · interviewScore · danteOnAir · gateMet · guestDone · guestPick (0 all seven, 1 four, 2 none) · guestIn · louPass (have it) · louPassGiven · louComing
    · slept2 / slept3 · phase (Saturday: 0 arrive, 2 soundcheck AND Axl both done (night), 3 overrun handled, 5 set done)
    · rayMet · sharpie · passFixed · gloriaOK · twinkieIntel · axlIntel · jessMet · smoothie · axlDone · louArrived · soundDone ·
@@ -133,6 +133,9 @@ A5.mangle = name => {
   parts[0] = out;
   return "DJ " + parts.join(" ");
 };
+/* Saturday's fee, credited once at the pier: the fee, less the invoice for the sunrise, less the advance and its 10% handling */
+A5.FEE = 5000;
+A5.feeNet = S => A5.FEE - 200 - (S.f.a5_feeAdvance ? 600 + 60 : 0);
 /* robust mini-game call: handles missing mini-games, failure (retry or wing it), never dead-ends */
 A5.play = async function (id, params, o) {
   o = o || {};
@@ -267,7 +270,7 @@ RP.defineAct({
     } else {
       S.gear = Object.assign({ decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk7", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" }, S.gear);
       S.gear.turntables = "technics_sl_1210mk7"; /* bought with Halcyon money in Act 4 */
-      S.money = Math.max(S.money || 0, 1500);
+      S.money = Math.max(1500, Math.min(S.money || 0, 2000)); /* the rig stays a choice, whatever the save carried */
       S.followers = Math.max(S.followers || 0, 2000);
     }
     A5.ensureCrate(S);
@@ -281,7 +284,7 @@ RP.defineAct({
   wardrobe: A5.outfits.coat.patch,
   async intro(S) {
     const k = RP.actor("kid"); k.face = "front";
-    S.f.a5_advance = 5500;
+    S.f.a5_advance = 4000;
     const gi = id => RP.gearInfo(id) || { price: 0 };
     await RP.lines([
       "Thursday. Ten in the morning. Three days until I headline a festival.",
@@ -300,7 +303,8 @@ RP.defineAct({
       "That's " + RP.u.fmtMoney(S.money) + " in the bank. I've never had that much at once. I have to sit down. I'm sitting down.",
       "@a5_margo Here's the plan. You're not playing a festival on a mixer from a different decade. Lacquer & Wire in Williamsburg. The Can Electric Taula 4 MR, handwired in Barcelona. That comes first.",
       "The Taula. I say its name like a prayer.",
-      "@a5_margo Then it's choices. CDJ-3000s are " + RP.u.fmtMoney(gi("pioneer_cdj_3000").price) + ". Dynaudio Core 47s are " + RP.u.fmtMoney(gi("dynaudio_core_47").price) + ". You cannot have all of it. Your old kit still works. People have headlined on worse.",
+      "@a5_margo Then it's choices. CDJ-3000s are " + RP.u.fmtMoney(gi("pioneer_cdj_3000").price) + ". Dynaudio Core 47s are " + RP.u.fmtMoney(gi("dynaudio_core_47").price) + ". The Taula, the Cores and the CDJs together are " + RP.u.fmtMoney(gi("can_electric_taula_4_mr").price + gi("dynaudio_core_47").price + gi("pioneer_cdj_3000").price) + ". You have " + RP.u.fmtMoney(S.money) + ". Pick two. Or one and a half.",
+      "@a5_margo Your old kit still works. People have headlined on worse.",
       "@a5_margo If you're short, there are honest ways. Ask me. Ask the shop. Ask Dana at the radio. Eddie Two-Times will be there, so check your pockets.",
       "@a5_margo I'm so sorry. It was the only way to get the mixer. Don't buy anything with a deal attached.",
       "Margo. It's Eddie. Every deal has a deal attached."

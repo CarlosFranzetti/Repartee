@@ -160,7 +160,7 @@ async function buySnack(S) {
     if (!RP.canAfford(2)) { await RP.say("I have... " + U.fmtMoney(S.money) + ". It's the 'no' kind of money."); return; }
     RP.money(-2); RP.give(id); await RP.say(line);
   };
-  if (i === 0) await buy("a3_chips", "Salt & vinegar. The color of a bruise. Gus will love them.");
+  if (i === 0) await buy("a3_chips", "Salt & vinegar. The color of a bruise." + (S.f.a3_soundcheck ? " Gus is covered. Somebody with a beak might not be." : " Gus will love them."));
   else if (i === 1) await buy("a3_rinds", "Pork rinds. I'm not sure what my plan is, but they look confident.");
   else if (i === 2) await buy("a3_pickle", "A pickle in a bag with a splash of brine. This is how you eat in the city.");
 }
@@ -204,15 +204,16 @@ async function useEddie(S) {
 
 async function twinkie3(S) {
   if (S.f.a3_twinkie3) {
-    await RP.lines(["@a3_twinkie Still here, honey. Tiny shuts the door in six minutes.", "@a3_twinkie Pat, pat. Remember. A hug is the one con where you thank the thief."]);
+    await RP.lines(["@a3_twinkie Still here, honey. Tiny shuts the door in six minutes.", "@a3_twinkie You got my text? Pat, pat. Remember. A hug is the one con where you thank the thief.",
+      "@a3_twinkie Whatever you're doing about it, do it before the door. He's a hugger, not a patient one."]);
     return;
   }
   S.f.a3_twinkie3 = true;
   await RP.lines(["@a3_twinkie Look who it is. The Thursday kid. Hair's different. Same eyes. Tired.",
     "Hey, Twinkie. Know anything I should know?", "@a3_twinkie I know everything. It's the cost of not sleeping.",
     "@a3_twinkie Brandon was at the bodega at four. Bought a blue USB. Took the label off in the shop.", "@a3_twinkie Same shade as yours, honey. I notice shades. It's a gift. And a curse. Mostly a curse.",
-    "That is... a lot of detail for a USB.", "@a3_twinkie He's a hugger. Three DJs on this street, three hugs, two of them are still looking for their keys. The pat is twice, on the jacket, where you keep what matters.",
-    "He wants my USB?", "@a3_twinkie I'm not saying a word. If I had a USB I couldn't stand to lose, I wouldn't keep it where a hugger can reach. Or I'd give him something to take. Or I'd put his own face on it: the man sticks little gold smileys on everything he owns, even the stage. He'd be thrown by his own signature.",
+    "That is... a lot of detail for a USB.", "@a3_twinkie He's a hugger. The pat is twice, on the jacket, where you keep what matters.",
+    "He wants my USB?", "@a3_twinkie I'm not saying a word. If I had a stick I couldn't stand to lose, I wouldn't keep it where a hugger can reach. Or I'd give him something to take. Or I'd put his own face on it: the man sticks little gold smileys on everything he owns. There's one on his poster right there.",
     "@a3_twinkie I didn't say any of that. It's four dollars a minute for advice. Tonight I'm waiving it."]);
 }
 
@@ -301,7 +302,13 @@ RP.room({
     { id: "a3_marquee", name: "marquee", r: [190, 70, 80, 50], z: 19, walk: [230, 222, "back"],
       look: S => ["THURSDAYS: " + A3.billed(S) + ". That's me, if you squint, and I'm squinting.", "SATURDAYS: DJ BRANDON SHINE. NO SNEAKERS. That one's personal."], pickup: "It's bolted to the wall. Unlike my ambitions." },
     { id: "a3_brandonposter", name: "Brandon's poster", r: [360, 56, 56, 76], z: 21, walk: [388, 222, "back"],
-      look: "SATURDAYS: BRANDON SHINE. ALL NIGHT. A poster with a lot of gold and zero humility. Sunglasses at night, on paper.", pickup: "I could take it. I could also not start a war with a poster.", use: "I'd draw a mustache on it, but that's what they WANT." },
+      look: S => "SATURDAYS: BRANDON SHINE. ALL NIGHT. A poster with a lot of gold and zero humility. Sunglasses at night, on paper." + (S.f.a3_smileyTaken ? "" : " A gold smiley sticker is stuck in the bottom corner, loosely."),
+      pickup: async S => {
+        if (S.f.a3_smileyTaken || RP.has("a3_smiley") || S.f.a3_usbSticker) { await RP.say("I could take the poster. I could also not start a war with a poster. The smiley's already mine."); return; }
+        S.f.a3_smileyTaken = true; RP.give("a3_smiley"); RP.sfx("click");
+        await RP.say("I peel the gold smiley off the corner of the poster. It comes away clean. Brandon will never notice. Brandon will absolutely notice.");
+      },
+      use: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a3_brandonposter").pickup) },
     { id: "a3_flyers", name: "flyers", rects: [[170, 128, 20, 28], [426, 76, 28, 38], [450, 102, 26, 34], [406, 116, 22, 30]], z: 17, walk: [200, 222, "back"],
       look: "Wheat-pasted flyers three layers deep. A graveyard of Thursdays. One says 'SOUL CLAP' and one says 'HOUSE' and none of them say my name correctly.", pickup: "They've bonded to the wall. They live here now." },
     { id: "a3_bodega", name: "Sunrise Deli", rects: [[6, 104, 154, 70]], z: 12, walk: [90, 226, "back"],

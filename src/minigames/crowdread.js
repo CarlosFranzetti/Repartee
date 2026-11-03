@@ -3,6 +3,8 @@
      records: [recordIds]   the set you can play (each once)       crowd: "empty-bar"|"house"|"techno"|"festival"|"loft"
      rounds: 4              records you get to play                 goal: floor-energy target (0-5; a value >5 is read as 0-100)
      difficulty: 1-5        venue: label for the sign / header      arcade: bool   seed: number
+     special: [recordIds]   records the story calls special (a white label is always special): they land with a warm floor,
+                            and only flop on a cold one. Peaking early is penalized: the floor burns out if it runs ahead of the build.
    Result: { ok, score 0-100, played: [ids], peak (0-5), final (0-5), goal, bartenders: bool, rounds }
    ok = the floor energy at the end of the last round reached the goal (empty-bar: the bartenders are dancing).
    The crowd's hint line each round uses the same role words as the tags on the records: WARMUP, BUILDER, PEAK, CLOSER (and WEIRD). */
@@ -77,21 +79,33 @@ function evalPick(C, st, rec) {
   let fit = clamp(0.5 * fe + 0.25 * fb + 0.25 * fg + bonus, 0, 1);
   let surprise = null, extra = 0;
   if (isWeird(rec)) {
+    const special = rec.label === "white label" || (st.special || []).indexOf(rec.id) >= 0;
     const luck = (st.rnd ? st.rnd() - 0.5 : 0) * 0.16;
-    const works = st.E + luck >= C.warm * (0.85 + 0.1 * (diff - 1) / 2) - 0.1 && fg >= 0.4 && fe >= 0.4;
+    const works = special ? st.E + luck >= C.warm * 0.6 && fg >= 0.3 : st.E + luck >= C.warm * (0.85 + 0.1 * (diff - 1) / 2) - 0.1 && fg >= 0.4 && fe >= 0.4;
     if (works) { surprise = "win"; fit = clamp(fit + 0.2, 0, 1); extra = 0.18; }
     else { surprise = "flop"; fit = fit * 0.5; extra = -0.25; }
   }
-  const gain = (fit - 0.45) * 1.3 + extra;
+  let gain = (fit - 0.45) * 1.3 + extra;
+  if (surprise === "flop") gain = Math.min(gain, -0.45);          // a flop always costs the floor something
+  /* pacing: the floor should climb with the set. Running ahead of the build burns the crowd out before the end. */
+  const pace = C.e0 + (st.goal - C.e0) * (st.round + 1) / st.rounds;
+  const ahead = st.E + gain - (pace + 0.55);
+  let early = false;
+  if (ahead > 0 && !last && surprise !== "flop") {
+    early = true;
+    fit = clamp(fit - Math.min(0.3, ahead * 0.3), 0, 1);
+    gain -= Math.min(1.1, ahead * 0.9);
+  }
   const E2 = clamp(st.E + gain, 0.4, 5);
   // why: the weakest part
   const parts = { energy: fe, tempo: fb, taste: fg };
   let why = "ok";
-  if (fit < 0.5 || surprise === "flop") {
+  if (early) why = "early";
+  else if (fit < 0.5 || surprise === "flop") {
     const min = Math.min(fe, fb, fg);
     why = surprise === "flop" ? "weird" : min === fe ? (d > 0 ? "hard" : "soft") : min === fb ? "tempo" : "taste";
   }
-  return { fit, fe, fb, fg, want, d, E2, gain, surprise, why, parts, jump: st.prev ? rec.bpm - st.prev.bpm : 0 };
+  return { fit, fe, fb, fg, want, d, E2, gain, surprise, why, early, parts, jump: st.prev ? rec.bpm - st.prev.bpm : 0 };
 }
 
 /* compare at display precision so a floor showing the goal's number has reached it */
@@ -105,8 +119,9 @@ function summarize(C, E0, steps, goal) {
   let rising = 0; for (let i = 1; i < Es.length; i++) if (Es[i] > Es[i - 1] + 0.08) rising++;
   const build = 0.6 * (rising / n) + 0.4 * (1 - clamp((peak - final) / 1.2, 0, 1));
   const goalR = clamp((final - E0) / Math.max(0.5, goal - E0), 0, 1);
-  const score = Math.round(100 * (0.3 * avg("fe") + 0.2 * avg("fg") + 0.15 * avg("fb") + 0.15 * build + 0.2 * goalR));
-  return { score: clamp(score, 0, 100), final, peak, build, energy: avg("fe"), taste: avg("fg"), tempo: avg("fb"), goalR, ok: reached(final, goal) };
+  const earlies = steps.filter(s => s.early).length;
+  const score = Math.round(100 * (0.3 * avg("fe") + 0.2 * avg("fg") + 0.15 * avg("fb") + 0.15 * build + 0.2 * goalR) - 6 * earlies);
+  return { score: clamp(score, 0, 100), final, peak, earlies, build, energy: avg("fe"), taste: avg("fg"), tempo: avg("fb"), goalR, ok: reached(final, goal) };
 }
 
 /* ---- defaults ---- */
@@ -149,7 +164,7 @@ function resolveParams(p, host) {
   if (!ids.length) ids = pickDefaultRecords(C, rounds, rnd, diff);
   ids = ids.filter((id, i) => ids.indexOf(id) === i);
   rounds = Math.min(rounds, ids.length);
-  return { C, key, rnd, diff, ids, ids0, rounds, goal: normGoal(p.goal, C, diff), venue: p.venue ? String(p.venue) : null, seed: Math.floor(rnd() * 1e6) };
+  return { C, key, rnd, diff, ids, ids0, special: Array.isArray(p.special) ? p.special : [], rounds, goal: normGoal(p.goal, C, diff), venue: p.venue ? String(p.venue) : null, seed: Math.floor(rnd() * 1e6) };
 }
 
 /* ======================================================================
@@ -214,7 +229,8 @@ const LINES = {
   tempo: ["That tempo jump tripped everyone up.", "Dancers stumble. The groove they had is gone."],
   taste: ["Wrong crowd for that sound. Blank stares.", "Nobody here knows this. Nobody here wants to."],
   weirdWin: ["WEIRD, and they LOVE it. Nobody knows what this is.", "Nobody can name it. Everybody is dancing to it."],
-  weirdFlop: ["That was... a choice.", "The sound of a record clearing a room."]
+  weirdFlop: ["That was... a choice. The floor thins out.", "Nobody knows this one yet, and the floor is not in the mood to find out."],
+  early: ["Too much, too early. The floor burns out before the night does.", "You spent the peak in the first hour. They have nowhere left to go."]
 };
 const pick = (a, rnd) => a[Math.floor((rnd || Math.random)() * a.length)];
 
@@ -229,7 +245,7 @@ RP.mg.register("crowdRead", {
       let E = R.C.e0, prev = null; const steps = [], played = [], left = recs.slice();
       for (let r = 0; r < R.rounds; r++) {
         let best = null;
-        left.forEach(rec => { const ev = evalPick(R.C, { E, prev, round: r, rounds: R.rounds, goal: R.goal, diff: R.diff, rnd: null }, rec); if (!best || ev.fit > best.ev.fit) best = { rec, ev }; });
+        left.forEach(rec => { const ev = evalPick(R.C, { E, prev, round: r, rounds: R.rounds, goal: R.goal, diff: R.diff, special: R.special, rnd: null }, rec); if (!best || ev.fit > best.ev.fit) best = { rec, ev }; });
         left.splice(left.indexOf(best.rec), 1); steps.push(best.ev); played.push(best.rec.id); E = best.ev.E2; prev = best.rec;
       }
       const sm = summarize(R.C, R.C.e0, steps, R.goal);
@@ -287,7 +303,7 @@ RP.mg.register("crowdRead", {
       kit.fit(host, histCv, 160, 46, left, 2);
 
       /* ----- state ----- */
-      let lastDn = -1;
+      let lastDn = -1, queued = false;     // queued: Enter pressed while the floor was still reacting
       let S, cards, sel = null, phase = "pick", pickTimer = 0, timerOn = false, last = null, nextAt = 0;
       const timeLimit = [0, 0, 32, 26, 20][R.diff - 1];
       const barPct = e => Math.round(clamp(e / 5, 0, 1) * 1000) / 10 + "%";
@@ -403,7 +419,7 @@ RP.mg.register("crowdRead", {
         cards.forEach(c => { const lastOne = phase === "pick" && nFree === 1 && !S.used.has(c.rec.id); c.b.classList.toggle("lastone", lastOne); c.last.hidden = !lastOne; });
         // difficulty 1: star the best fit
         if (R.diff <= 1 && phase === "pick" && nFree > 1) {
-          let best = null; cards.forEach(c => { if (S.used.has(c.rec.id)) return; const ev = evalPick(C, { E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, rnd: null }, c.rec); if (!best || ev.fit > best.fit) best = { fit: ev.fit, c }; });
+          let best = null; cards.forEach(c => { if (S.used.has(c.rec.id)) return; const ev = evalPick(C, { E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, special: R.special, rnd: null }, c.rec); if (!best || ev.fit > best.fit) best = { fit: ev.fit, c }; });
           cards.forEach(c => c.b.classList.toggle("star", !!best && best.c === c));
         }
       }
@@ -446,21 +462,21 @@ RP.mg.register("crowdRead", {
         if (phase !== "pick" || !sel) return;
         const rec = RP.rec(sel); phase = "play"; timerOn = false; cTimer.style.display = "none";
         S.used.add(rec.id);
-        const ev = evalPick(C, { E: S.E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, rnd: S.rnd }, rec);
+        const ev = evalPick(C, { E: S.E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, special: R.special, rnd: S.rnd }, rec);
         S.steps.push(ev); S.played.push(rec.id);
         sound.play(rec, { vol: 0.72, fade: 1.3 });
         floor.setBpm(rec.bpm);
         host.sfx("blip");
         msg.textContent = "Now playing: " + kit.full(rec);
-        playBtn.disabled = true; playBtn.textContent = "THE FLOOR REACTS...";
+        playBtn.disabled = true; playBtn.textContent = S.round >= R.rounds - 1 ? "FINISH SET ▶" : "NEXT ROUND ▶"; queued = false;
         cards.forEach(c => { c.b.disabled = true; });
         const E1 = ev.E2, roleOK = !(S.askRoles && S.askRoles.length) || S.askRoles.some(v => hasV(rec, v));
         host.timeout(() => {
           S.E = E1; S.prev = rec; S.peak = Math.max(S.peak, S.E); floor.setEnergy(S.E);
-          const tier = ev.surprise === "win" ? "weirdWin" : ev.surprise === "flop" ? "weirdFlop" : ev.fit >= 0.8 && roleOK ? "great" : ev.fit >= 0.62 ? "good" : ev.fit >= 0.45 ? "meh" : ev.why === "hard" ? "hard" : ev.why === "soft" ? "soft" : ev.why === "tempo" ? "tempo" : "taste";
-          const good = ev.fit >= 0.62 || ev.surprise === "win";
-          const bad = ev.fit < 0.45 || ev.surprise === "flop";
-          const label = ev.surprise === "win" ? "THEY GET IT!" : ev.surprise === "flop" ? "WHAT WAS THAT?" : ev.fit >= 0.8 && roleOK ? "PERFECT BUILD" : ev.fit >= 0.62 ? "NICE ONE" : ev.fit >= 0.45 ? "OKAY" : tier === "hard" ? "TOO MUCH" : tier === "soft" ? "FLOOR DROP" : tier === "tempo" ? "TRAIN WRECK" : "WRONG ROOM";
+          const tier = ev.surprise === "win" ? "weirdWin" : ev.surprise === "flop" ? "weirdFlop" : ev.early ? "early" : ev.fit >= 0.8 && roleOK ? "great" : ev.fit >= 0.62 ? "good" : ev.fit >= 0.45 ? "meh" : ev.why === "hard" ? "hard" : ev.why === "soft" ? "soft" : ev.why === "tempo" ? "tempo" : "taste";
+          const good = (ev.fit >= 0.62 && !ev.early) || ev.surprise === "win";
+          const bad = ev.fit < 0.45 || ev.surprise === "flop" || ev.early;
+          const label = ev.surprise === "win" ? "THEY GET IT!" : ev.surprise === "flop" ? "WHAT WAS THAT?" : ev.early ? "PEAKED TOO EARLY" : ev.fit >= 0.8 && roleOK ? "PERFECT BUILD" : ev.fit >= 0.62 ? "NICE ONE" : ev.fit >= 0.45 ? "OKAY" : tier === "hard" ? "TOO MUCH" : tier === "soft" ? "FLOOR DROP" : tier === "tempo" ? "TRAIN WRECK" : "WRONG ROOM";
           floor.pop(label, good ? "#9be15d" : bad ? "#ff6a6a" : "#ffd23f", 160, 64);
           if (good) { host.sfx("cheer"); floor.emote(ev.fit >= 0.8 && roleOK ? "heart" : "note", ev.fit >= 0.8 && roleOK ? 5 : 4); floor.emote("note", 3); }
           else if (bad) { host.sfx("boo"); floor.emote("?", 5); }
@@ -479,8 +495,9 @@ RP.mg.register("crowdRead", {
             phase = "wait";
             playBtn.disabled = false; playBtn.textContent = lastRound ? "FINISH SET ▶" : "NEXT ROUND ▶";
             playBtn.focus({ preventScroll: true });
-          }, 1100);
-        }, 900);
+            if (queued) next();
+          }, 700);
+        }, 700);
       }
 
       function next() {
@@ -512,7 +529,8 @@ RP.mg.register("crowdRead", {
         lines.push(ok ? (C.theme === "empty-bar" ? "The bartenders are DANCING. Floor energy " + S.E.toFixed(1) + " / goal " + R.goal.toFixed(1) + "." : "The floor is going off. Energy " + S.E.toFixed(1) + " / goal " + R.goal.toFixed(1) + ".") : "The floor stopped at " + S.E.toFixed(1) + " — the goal was " + R.goal.toFixed(1) + ".");
         const dim = [];
         const worst = S.steps.reduce((w, s, i) => (!w || s.fit < w.fit ? { fit: s.fit, i, why: s.why } : w), null);
-        if (worst && worst.fit < 0.6) dim.push("Weakest pick: round " + (worst.i + 1) + " — " + ({ hard: "too much, too soon", soft: "you dropped the floor", tempo: "the tempo jump", taste: "wrong sound for this crowd", weird: "the weird one flopped", ok: "just a little off" }[worst.why] || "a bit off") + ".");
+        if (worst && worst.fit < 0.6) dim.push("Weakest pick: round " + (worst.i + 1) + " — " + ({ early: "you peaked too early", hard: "too much, too soon", soft: "you dropped the floor", tempo: "the tempo jump", taste: "wrong sound for this crowd", weird: "the weird one flopped", ok: "just a little off" }[worst.why] || "a bit off") + ".");
+        if (sm.earlies) dim.push("You ran ahead of the build " + sm.earlies + (sm.earlies > 1 ? " times" : " time") + ": a floor that peaks early burns out. Build, don't jump.");
         if (sm.peak - S.E > 0.5) dim.push("You peaked early (" + sm.peak.toFixed(1) + ") and let it slide.");
         dim.push("Set: " + S.played.map(id => RP.rec(id).title).join("  ›  "));
         host.sfx(ok ? "success" : "fail");
@@ -526,14 +544,14 @@ RP.mg.register("crowdRead", {
       }
 
       /* ----- events ----- */
-      playBtn.addEventListener("click", () => { if (phase === "pick") doPlay(); else if (phase === "wait") next(); });
+      playBtn.addEventListener("click", () => { if (phase === "pick") doPlay(); else if (phase === "wait") next(); else if (phase === "play") queued = true; });
       giveUp.addEventListener("click", () => { host.sfx("click"); done({ ok: false, score: 0, played: S ? S.played.slice() : [], peak: S ? S.peak : 0, goal: R.goal, rounds: R.rounds }); });
       host.onKey(e => {
         if (finished || e.ctrlKey || e.metaKey || e.altKey) return;
         const k = e.key;
         if (phase === "pick" && /^[1-9]$/.test(k)) { const c = cards[+k - 1]; if (c && !S.used.has(c.rec.id)) { e.preventDefault(); select(c.rec.id); c.b.focus({ preventScroll: true }); } }
         else if (k === "Enter" && (!document.activeElement || document.activeElement.tagName !== "BUTTON" || (document.activeElement.closest && document.activeElement.closest(".cr-hand")))) {
-          e.preventDefault(); if (phase === "pick") doPlay(); else if (phase === "wait") next();
+          e.preventDefault(); if (phase === "pick") doPlay(); else if (phase === "wait") next(); else if (phase === "play") queued = true;
         }
       });
 

@@ -183,7 +183,7 @@ T.start = function (fadeSec = 1.2) {
   N.out.gain.setValueAtTime(0.0001, AC.currentTime); N.out.gain.linearRampToValueAtTime(0.9, AC.currentTime + fadeSec);
   T.running = true;
   let step = 0, next = AC.currentTime + 0.1;
-  const tick = () => { while (next < AC.currentTime + 0.18) { schedule(step, next); next += STEP; step = (step + 1) % STEPS; } };
+  const tick = () => { const now = AC.currentTime; while (next < now - 0.02) { next += STEP; step = (step + 1) % STEPS; } while (next < now + 0.2) { schedule(step, next); next += STEP; step = (step + 1) % STEPS; } };
   tick();
   N.timer = setInterval(tick, 30);
 };

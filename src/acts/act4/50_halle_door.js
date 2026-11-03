@@ -116,7 +116,12 @@ async function runQuiz(S) {
   return true;
 }
 async function giveMate(S) {
-  if (S.f.a4_quizDone) return "He's already let me in. He looks at the bottle, then at me. \"Later,\" he says, which in Sven is a warm gesture.";
+  if (S.f.a4_quizDone && !S.f.a4_mateGiven) {
+    S.f.a4_mateGiven = true; RP.take("a4_mate");
+    await RP.lines(["I hold out the Club-Mate anyway. Sven looks at it, then at the door he has already opened.", "@a4_sven ...Nobody brings the door a drink after the door has let them in. That is how I know it is real.", "(He tucks it in his coat like contraband. Behind me, I think I hear him smile. It sounds like a hinge.)"]);
+    return;
+  }
+  if (S.f.a4_quizDone) return "He has the bottle already. \"Later,\" he says, which in Sven is a warm gesture.";
   if (S.f.a4_mateGiven) return "He has the bottle. Anything more would be a bribe, and he's very sure he's above those.";
   S.f.a4_mateGiven = true; RP.take("a4_mate"); S.f.a4_q1 = true;
   await RP.lines(["I hold out the Club-Mate. Sven looks at it for four full seconds, the way a cliff looks at a rowing boat.", "@a4_sven ...Nobody brings the door a drink. In nineteen years.", "@a4_sven (he opens it with a thumb) Question one, you have answered. Do not make me regret it."]);

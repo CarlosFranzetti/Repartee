@@ -107,12 +107,14 @@ async function axlScene(S) {
     ...(S.f.a5_axlAsked ? ["Your agent emailed Roz. They want to move me to nine and you to midnight.", "@axl The algorithm says I close. The algorithm's rarely wrong. It's said so."] : ["@axl My agent says the algorithm wants me at midnight and you at nine. Tell me you're here to agree.", "I'm here to talk about that. My slot is eleven forty-five.", "@axl The algorithm says I close. The algorithm's rarely wrong. It's said so."])
   ]);
   /* choose how to handle it: the smart move makes the early finish his idea; Twinkie's intel is the other way in */
+  if (S.f.a5_axlIntel) await RP.say("Twinkie's tip: don't fight Axl, call him Alex and mention his mother's banner.");
+  else await RP.say("Contracts and compliments are his daily bread. I need something he can't script. Someone at this festival knows everyone's mother. Twinkie, at the bar?");
   const opts = ["Hold the line: \"11:45 is in my contract.\"", "Flatter him: \"You're the reason I started.\"", "Sell it: \"A real headliner walks off on the high. Leave them begging at 11:30, and the encore is all anyone remembers.\""];
   if (S.f.a5_axlIntel) opts.push("\"Alex. Your mom's in the front row. With a banner.\"");
   const i = await RP.choose(opts);
   let win = false;
-  if (i === 0) await RP.lines(["@axl A contract. I have lawyers that eat contracts for lunch.", "I have Margo. Margo eats lawyers.", "@axl ...Margo can eat them in January. I'm busy now."]);
-  else if (i === 1) await RP.lines(["@axl Of course I'm the reason. Everyone says that. It gets old. It doesn't. Say it again.", "You... shaped a generation.", "@axl I did. I really did. And the clock is still mine."]);
+  if (i === 0) await RP.lines(["@axl A contract. I have lawyers that eat contracts for lunch.", "I have Margo. Margo eats lawyers.", "@axl ...Margo can eat them in January. I'm busy now.", "(Pushing his contract at him only made him dig in. He's heard it from better lawyers.)"]);
+  else if (i === 1) await RP.lines(["@axl Of course I'm the reason. Everyone says that. It gets old. It doesn't. Say it again.", "You... shaped a generation.", "@axl I did. I really did. And the clock is still mine.", "(Flattery fed him. It didn't move him. He has heard it daily since 2019.)"]);
   else if (i === 2) {
     await RP.lines(["@axl ...Go on.", "Nobody remembers who played after the legend. They remember the exit.", "@axl The exit.", "You do it at eleven-thirty, the field is still screaming, and the encore is a rumor they carry home.", "@axl ...A rumor. I LIKE a rumor."]);
     win = true;
@@ -140,6 +142,7 @@ async function axlScene(S) {
     ]);
   }
   if (!S.f.a5_soundDone) RP.setClock("SAT 6:20 PM");
+  if (S.f.a5_axlWon) await RP.say(S.f.a5_axlLeverage ? "(Twinkie's tip won it. Alex, the banner, and nothing else.)" : "(Making it his idea won it. He thinks he invented the early exit.)");
   const dark = A5.nightfall(S);
   await RP.lines(["@axl Out. And take the empty cup. I mean it."]);
   if (!dark) await RP.say("Axl's done. The soundcheck's still waiting for me at the main stage, and the afternoon is running out.");

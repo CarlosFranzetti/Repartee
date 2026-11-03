@@ -135,19 +135,21 @@ async function checkInPassport(S) {
   RP.sfx("typing");
   await RP.say("Got a boarding pass. Seat 23A, a window. I'll be the one pressing my face against it.");
 }
-const BAGFEE = { business: 40, economy: 75, "economy-direct": 75 };
-const bagFee = S => BAGFEE[S.f.a4_cls] || 95;           /* a thin deal (no class named) pays the walk-up rate */
+const BAGFEE = A4.BAGFEE, bagFee = A4.bagFee;
 async function checkInBag(S) {
   if (!S.f.a4_checkedPass) { await RP.say("Passport first, hon. I can't tag a bag with no person attached.", "a4_dolores"); return; }
   if (S.f.a4_bagChecked) return "She's already got the bag. I could feel it go. Somewhere a conveyor is doing the thing it does.";
   const fee = bagFee(S), biz = S.f.a4_cls === "business";
-  await RP.lines(["@a4_dolores Up on the scale. ...Thirty-eight kilos.", "It's records.", "@a4_dolores It's thirty-eight kilos of records. Limit's twenty-three" + (biz ? ", but business gets thirty-two, so you're six over" : "") + ". " + (BAGFEE[S.f.a4_cls] ? "Overweight is $" + fee + "." : "Your fare has no bag in it at all, so that's the walk-up rate: $" + fee + ".")]);
+  const lt = !!S.f.a4_lightBag;
+  await RP.lines(["@a4_dolores Up on the scale. ..." + (lt ? "Thirty-one kilos. And your jacket is walking funny." : "Thirty-eight kilos."), "It's records.",
+    "@a4_dolores It's " + (lt ? "thirty-one kilos of records, plus a jacket with opinions" : "thirty-eight kilos of records") + ". Limit's twenty-three" + (biz ? ", but business gets thirty-two" + (fee ? ", so you're " + (lt ? "nearly" : "six") + " over" : ", so you're under") : "") + ". " +
+    (!fee ? "Fine. Nothing to pay. I'm as surprised as you are." : BAGFEE[S.f.a4_cls] ? "Overweight is $" + fee + "." : "Your fare has no bag in it at all, so that's the walk-up rate: $" + fee + ".")]);
   if (!RP.canAfford(fee)) {
     await RP.lines(["I check my wallet. $" + S.money + " is not $" + fee + ".", "@a4_dolores Cash or card, hon. I don't do charity and I don't do IOUs. Step aside, there's a line.",
       "(The man in the Hawaiian shirt by the seats has been admiring my sleeves for ten minutes. A record or two would cover it.)"]);
     return;
   }
-  RP.money(-fee); await RP.say("$" + fee + ". For the privilege of being separated from my career.");
+  if (fee) { RP.money(-fee); await RP.say("$" + fee + ". For the privilege of being separated from my career."); }
   await RP.lines(["@a4_dolores Berlin. BER. Sticker on, tag on. Claim tag's yours. Don't lose it.", "@a4_dolores Name on the tag: \"" + tagName(S) + ".\" It's how it's always been."]);
   RP.take("a4_bag"); RP.give("a4_claim");
   S.f.a4_bagChecked = true; S.f.noTravel = true; S.f.a4_beltT = performance.now(); S.f.a4_beltDone = false;
@@ -170,7 +172,7 @@ async function doloresTalk(S) {
 /* ------------------------------------------------------------------ vending */
 async function vend(S) {
   const i = await RP.choose(["Potato chips ($3)", "Beef jerky ($4)", "Spring water ($3)", "Dill pickle ($3)", "Never mind"]);
-  if (i === 4) return;
+  if (i === 4) return "end";
   const price = [3, 4, 3, 3][i];
   if (i === 1 && S.f.a4_jerky) { await RP.say("I've already bought my jerky. The machine and I are even."); return; }
   if (i === 2 && S.f.a4_waterBought) { await RP.say("I've got a bottle. One bottle of water is a plan. Two is a personality."); return; }
@@ -191,7 +193,7 @@ async function collectorTalk(S) {
   await RP.convo([
     { text: "I could sell you a record. ($40)", run: async () => {
       const id = await A4.sellRecord(S, 40);
-      if (!id) return;
+      if (!id) return "end";
       const r = RP.rec(id);
       await RP.lines(["@a4_gil " + r.title + ". Hm. First pressing? No? ...Fine. Forty. Crisp, folded, a bit warm.", "It was a good record. It's now a good record in a tote bag in seat 14C. That's called a career move."]);
       return "end";
@@ -233,7 +235,7 @@ RP.room({
       },
       pickup: "I'm not picking up Dolores. She has a lanyard and a union.", push: "Not the check-in agent. Never the check-in agent." },
     { id: "a4_counter", name: "check-in counter", r: [92, 150, 176, 52], z: 30, walk: [188, 218, "back"],
-      look: "TransAtlantis check-in. The motto behind it says \"We Get You There. Eventually.\" At least they're honest.", use: S => doloresTalk(S), pickup: "Not without a forklift and a lawyer.",
+      look: S => "TransAtlantis check-in. The motto behind it says \"We Get You There. Eventually.\" At least they're honest. A card on the desk, small print: \"Checked bags over 23 kg: $" + (BAGFEE[S.f.a4_cls] || 95) + ". Cash or card. No exceptions, no stories.\"", use: S => doloresTalk(S), pickup: "Not without a forklift and a lawyer.",
       give: async (S, item) => item === "a4_passport" ? checkInPassport(S) : item === "a4_bag" ? checkInBag(S) : "Hand it to Dolores. The counter doesn't have hands." },
     { id: "a4_belt", name: "bag drop belt", r: [52, 108, 52, 44], z: 35, walk: [120, 220, "back"], look: "The bag drop. A black conveyor into a hole lined with rubber flaps. It leads to the airport's inner life. None of it good.", use: "Don't ride it. I saw a guy try once. He works in Baggage Services now.", push: "Pushing it wouldn't make anything faster. That's the whole point of a belt.", pickup: "You can't pick up a conveyor. I've tried with the one at the grocery store." },
     { id: "a4_board", name: "departures board", r: [292, 14, 240, 72], z: 25, walk: [410, 214, "back"],

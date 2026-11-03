@@ -169,6 +169,8 @@ async function margoTalk(S) {
     "@a5_margoT Your pass is wrong. The printer was run by an intern named Brian. Don't let Gloria see it.",
     "@a5_margoT If there's a problem, call me. If there's a disaster, text me. If there's a miracle, don't tell me. I'll jinx it."
   ]);
+  if (S.f.a5_radioPlug) await RP.lines(["@a5_margoT I heard the radio. Spirit Water. I told you. Eddie has since sent ME a bill for \"endorsement services.\" I am framing it.", "@a5_margoT Expect a chant. I'm not saying which one."]);
+  else if (S.f.a5_interviewDone) await RP.lines(["@a5_margoT Dana says you turned down the water. I haven't been that proud since Berlin. Don't let it go to your head. I'll invoice the pride."]);
   if (S.f.a5_feeAdvance) await RP.lines(["@a5_margoT And the advance I gave you is on tonight's invoice, with ten percent. I'm not a charity. I'm a firm."]);
 }
 async function margoIntro(S) {

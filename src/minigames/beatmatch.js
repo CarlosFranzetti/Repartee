@@ -87,7 +87,7 @@ RP.mg.register("beatMatch", {
     const xf = el("input", { type: "range", min: "0", max: "1", step: "0.01", value: "0", "aria-label": "Crossfader" }, xfw); el("span", { text: "B" }, xfw);
     const steps = el("div", { cls: "bmsteps" }, mix);
     const st1 = el("span", { cls: "stp cur", text: "1 TEMPO" }, steps), st2 = el("span", { cls: "stp", text: "2 BEATS" }, steps), st3 = el("span", { cls: "stp", text: "3 BRING IT IN" }, steps);
-    el("p", { cls: "tip", text: "Use your ears. Two kicks a hair apart sound like a horse galloping. One clean thump means you're locked. Keys: up/down pitch, left/right nudge." }, mix);
+    el("p", { cls: "tip", text: "Use your ears. Two kicks a hair apart sound like a horse galloping. One clean thump means you're locked. Keys: up/down pitch (hold to speed up, Shift = coarse), left/right nudge." }, mix);
     const B = deck("b", recB, "You control this one.");
     const fader = el("div", { cls: "fader" }, B.pr); el("span", { text: "−" }, fader);
     const pitch = el("input", { type: "range", min: "-8", max: "8", step: "0.01", value: "0", "aria-label": "Deck B pitch" }, fader); el("span", { text: "+" }, fader);
@@ -178,13 +178,22 @@ RP.mg.register("beatMatch", {
     hold(nudgeL, () => { st.nudge = -1; }, () => { st.nudge = 0; });
     hold(nudgeR, () => { st.nudge = 1; }, () => { st.nudge = 0; });
     host.cleanup(() => clearInterval(repeat));
+    /* held arrow keys repeat on our own clock (not the OS key-repeat delay) and speed up the longer they are held; Shift = coarse */
+    let kHeld = null, kT0 = 0, kTick = null;
+    const kStep = () => { const ms = performance.now() - kT0; return (ms < 350 ? 0.05 : ms < 900 ? 0.1 : 0.25) * (kHeld.shift ? 5 : 1); };
+    const kStop = () => { clearInterval(kTick); kTick = null; kHeld = null; };
+    host.cleanup(kStop);
     host.onKey(e => {
-      if (e.key === "ArrowUp") { e.preventDefault(); fine(-0.05); }
-      if (e.key === "ArrowDown") { e.preventDefault(); fine(0.05); }
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault(); if (e.repeat) return;
+        kStop(); const d = e.key === "ArrowUp" ? -1 : 1; kHeld = { key: e.key, shift: e.shiftKey }; kT0 = performance.now();
+        fine(d * kStep()); kTick = setInterval(() => { if (kHeld) fine(d * kStep()); }, 70);
+      }
       if (e.key === "ArrowLeft" && !e.repeat) st.nudge = -1;
       if (e.key === "ArrowRight" && !e.repeat) st.nudge = 1;
     });
-    host.onKeyUp(e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") st.nudge = 0; });
+    host.onKeyUp(e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") st.nudge = 0; if (kHeld && e.key === kHeld.key) kStop(); });
+    window.addEventListener("blur", kStop); host.cleanup(() => window.removeEventListener("blur", kStop));
     const sizeGrid = () => { const r = gcv.getBoundingClientRect(); const d = Math.min(2, window.devicePixelRatio || 1); gcv.width = Math.max(200, Math.round(r.width * d)); gcv.height = Math.round(72 * d); };
     sizeGrid();
     return new Promise(resolve => {

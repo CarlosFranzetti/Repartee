@@ -60,6 +60,13 @@ function lightMap(S) {
 
 /* ------------------------------------------------------------------------------------------ scripts */
 const nm = S => A5.pName(S);
+const money = n => RP.u.fmtMoney(n);
+/* once Lou and Dante have had their word, the sunrise is what is left */
+async function nudge(S) {
+  if (!S.f.a5_pLou || !S.f.a5_pDante || S.f.a5_pierNudge) return;
+  S.f.a5_pierNudge = true;
+  await RP.lines(["That is everyone I owed a word. Almost.", "(The sunrise is the last thing on the list. Use it.)"]);
+}
 async function louTalk(S) {
   if (!S.f.a5_pLou) {
     S.f.a5_pLou = true;
@@ -79,6 +86,7 @@ async function louTalk(S) {
       "@lou ...Then he's found. Write that on the poster. Also, your plant is fine. Gerald's on my sill. He gets more light than you do."
     ]);
     S.f.a5_biscuit = true;
+    await nudge(S);
     return;
   }
   await RP.lines(["@lou Go watch the sun. My knees are on strike.", "@lou ...Thank you, kid. I mean it. Don't tell anyone I said so.", "(Biscuit opens one eye at me. It's the same speech, shorter.)"]);
@@ -100,6 +108,7 @@ async function danteTalk(S) {
       "...It's the best paycheck I've ever gotten. And the worst. And the only one from you.",
       "@dante Great set, by the way. I'll book you again. Next week."
     ]);
+    await nudge(S);
     return;
   }
   await RP.lines(["@dante Four hundred tickets! Use them wisely! Preferably on me!"]);
@@ -111,10 +120,14 @@ async function simpleTalk(S, who) {
     twinkie: ["@twinkie Honey, I remember everything. I'm going to remember the last bar for a while.", "@twinkie Sit. The sunrise is the best part. The rest was buildup."],
     eddie: S.f.a5_soldRecs ? ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie An invoice for introductions. Two-time. I'll take it in spirit. Also: I'm keeping the " + (S.f.a5_soldTitle || "records") + ". It's in my van. It's happy. You can have it back at the Eddie price."] : ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie An invoice for introductions. Two-time. I'll take it in spirit."],
     jess: S.f.a5_biscuit ? ["@jess Mr. Whiskers has been staring at that cat next to Lou for an hour.", "Biscuit's staring back.", "@jess Nobody's blinking. It's the loudest thing at this festival."] : ["@jess Mr. Whiskers slept through the whole set. That's the highest compliment he gives.", S.f.a5_whiskersShout ? "@jess And you said his name. He blinked at me. Slowly." : "@jess He'd have loved a shout-out. Next time."],
-    margo: S.f.a5_feeAdvance ? ["@a5_margoT The fee cleared. Less the fifteen hundred I advanced you, less ten percent handling, less the invoice for the sunrise. You are in the black. Barely. Spiritually, enormously.", "That's the most honest paycheck I've had."] : S.f.a5_axlAngry ? ["@a5_margoT The headline slot did four hundred thousand views by sunrise. The \"Axl who\" clip did two million.", "That was a bit, Margo.", "@a5_margoT It's also a merch line. I invoiced the sunrise and the clip. Don't stand near me, I'm a manager."] : ["@a5_margoT The headline slot did four hundred thousand views by sunrise. I invoiced the sunrise.", "@a5_margoT I'm proud of you. Once. Then back to being a manager."],
+    margo: S.f.a5_feeAdvance ? ["@a5_margoT The fee cleared: " + money(A5.FEE) + ". Less the six hundred I advanced you, less ten percent handling on it, less the invoice for the sunrise. " + money(A5.feeNet(S)) + ", in your account. Spiritually, enormously.", "That's the most honest paycheck I've had."] : S.f.a5_axlAngry ? ["@a5_margoT The headline slot did four hundred thousand views by sunrise. The \"Axl who\" clip did two million.", "That was a bit, Margo.", "@a5_margoT It's also a merch line. I invoiced the sunrise and the clip. Don't stand near me, I'm a manager."] : ["@a5_margoT The headline slot did four hundred thousand views by sunrise. I invoiced the sunrise.", "@a5_margoT I'm proud of you. Once. Then back to being a manager."],
     kosmo: ["@kosmo " + nm(S) + ". I said it right. I'll say it right again.", "Thanks, Kosmo.", "@kosmo Don't thank me. Thank the record you kept."]
   }[who];
   await RP.lines(L);
+  if (who === "margo" && !S.f.a5_feePaid) {
+    S.f.a5_feePaid = true; RP.money(A5.feeNet(S)); RP.sfx("cash");
+    await RP.lines(S.f.a5_feeAdvance ? ["(Wallet: +" + money(A5.feeNet(S)) + ". The fee, less the advance and the sunrise.)"] : ["@a5_margoT The fee cleared: " + money(A5.FEE) + ", less " + money(200) + " for the sunrise. " + money(A5.feeNet(S)) + ", in your account.", "(Wallet: +" + money(A5.feeNet(S)) + ".)"]);
+  }
 }
 async function finale(S) {
   if (!S.f.a5_pLou || !S.f.a5_pDante) {
@@ -142,6 +155,7 @@ async function finale(S) {
     [!!S.f.a5_kosmoName, "Kosmo said your name right"],
     [!!S.f.a5_dantePaid, "Dante paid. In drink tickets."]
   ];
+  if (!S.f.a5_feePaid) { S.f.a5_feePaid = true; RP.money(A5.feeNet(S)); }
   S.f.a5_pierDone = true;
   RP.setClock("SUN 6:12 AM");
   await RP.completeAct(checks);

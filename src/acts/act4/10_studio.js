@@ -138,7 +138,7 @@ function light(S) {
 
 /* ------------------------------------------------------------------ scenes */
 const REPLY = S => ["Hi " + A4.dj(S) + ",", "Ingrid Falk again, Halle Neun. In the spring I said I would be in touch. This is me, in touch. In Berlin, six months is prompt.",
-  "The offer: Saturday, two a.m., the main room, after our headliner. I won't say who. You would only get nervous.",
+  "The offer: Saturday, two a.m., the main room, after our headliner. I won't say who. You would only get nervous. Our floor peaks at three, so you are the one who builds it.",
   "One problem: nobody books a DJ who has nothing out. Do you have a release?", "P.S. Bring your passport. You would be amazed how many don't.", "Grüße, Ingrid Falk, Nachtwerk Booking"];
 
 async function readEmail(S) {
@@ -351,8 +351,9 @@ async function ingridCall(S) {
     "The rider: water, towels, and a vegetable that is not a pickle.",
     "@kid And no exposure?", "No exposure. We have an exposure budget. I'm saving it for the tourists.",
     "Katja checks the rider at the door of the booth. Bring it yourself. Nachtwerk's rider budget is an urban legend, and every item you miss comes off your fee.",
-    "@kid I thought a rider meant the club buys it.", "In theory. Bring it. Also bring cash: I book the flight, I do not book your luggage."]);
-  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 8:55 AM, Terminal 4. Lands 10:55 PM Berlin time. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Rider: water, towels, 1 vegetable (NOT a pickle). Katja counts it. Passport!!", false);
+    "@kid I thought a rider meant the club buys it.", "In theory. Bring it. Also bring cash: I book the flight, I do not book your luggage.",
+    "The desk charges $" + A4.bagFee(S) + " for a bag over twenty-three kilos. Records weigh what records weigh. Plan for it, or plan your pockets."]);
+  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 8:55 AM, Terminal 4. Lands 10:55 PM Berlin time. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Rider: water, towels, 1 vegetable (NOT a pickle). Katja counts it. Bag over 23 kg = $" + A4.bagFee(S) + " at the desk. Passport!!", false);
   RP.give("a4_rider");
   A4.callOff(S);
   RP.setClock("FRI 11:58 AM");
@@ -482,8 +483,11 @@ async function openRayBox(S) {
 async function packBag(S) {
   if (S.f.a4_packed) return "I've got the bag.";
   if (!S.f.a4_rayBox) { await RP.say("It's empty. The Berlin records are in Ray's box, by the door."); return; }
+  await RP.lines(["Records in. It weighs about as much as a medium dog. A heavy one.", "Ingrid said the desk charges by the kilo over twenty-three. Ray's note, on the back: \"The airline weighs the bag. It doesn't weigh the kid.\""]);
+  const i = await RP.choose(["Stuff the bomber's pockets and a tote with the heaviest ones (about $25 off the fee)", "Everything in the bag, zipper up"]);
   S.f.a4_packed = true; RP.give("a4_bag");
-  await RP.lines(["Records in. Zipper up. It weighs about as much as a medium dog.", "Every record I own that matters is in here. If it gets lost, I'm done."]);
+  if (i === 0) { S.f.a4_lightBag = true; await RP.lines(["Twelve records in the jacket, six in a tote. I clink when I turn. The bag drops to a medium dog.", "I look like a man smuggling a very flat pizza. That's fine. It's only until the scale."]); }
+  else await RP.lines(["Zipper up. Every record I own that matters is in here. If it gets lost, I'm done."]);
 }
 function leaveCheck(S) {
   if (!S.f.a4_deal) return S.f.a4_email ? "Ingrid hasn't confirmed anything yet. First the record, then the money, then the airport." : "I'm not going anywhere before I read that email. It's from Berlin. It has an umlaut. It could be important.";
@@ -507,7 +511,7 @@ A4.wtStudio = [
   ["mg", { ok: true, score: 82, track: { name: "NYC 93 (Pipe Hole Remix)", bpm: 122 } }],
   ["use", "hot:a4_sampler"], ["expect", "S.f.a4_track", "track made"],
   ["answers", [0]], ["use", "hot:a4_hole", "phone"], ["run", async (S, RP) => { RP.test.answers.length = 0; }], ["expect", "RP.has('a4_photo')", "cover photo"],
-  ["mg", { ok: true, score: 74, deal: { fee: 1800 } }],
+  ["mg", { ok: true, score: 74, deal: { fee: 1800, flights: "economy" } }],
   ["use", "hot:a4_laptop"], ["expect", "S.f.a4_released && S.f.a4_viral && S.f.a4_deal && RP.has('a4_rider')", "released, spread, booked; the rider is in my pocket"],
   ["use", "hot:a4_door"], ["expect", "S.room === 'a4_studio'", "not leaving without the bag"],
   ["pickup", "hot:a4_bag"], ["expect", "RP.has('a4_bag')", "bag packed"],

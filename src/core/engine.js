@@ -495,7 +495,9 @@ async function lines(arr) {
 }
 RP.say = say; RP.lines = lines;
 
-function choose(opts) {
+/* choose(opts, { disabled: [indexes] }): numbered list (keys 1-9 pick, matching the numbers shown); disabled rows stay in place, dimmed */
+function choose(opts, cfg) {
+  const off = (cfg && cfg.disabled) || [];
   return new Promise(res => {
     if (fast) {
       const q = RP.test.answers.length ? RP.test.answers.shift() : opts.length - 1;
@@ -506,11 +508,25 @@ function choose(opts) {
     const ch = dom.choices;
     ch.innerHTML = ""; ch.hidden = false; dom.verbs.hidden = true; dom.inv.hidden = true;
     dom.panel.classList.add("choosing");
+    let done = false;
+    const pick = i => {
+      if (done || off.includes(i)) return;
+      done = true; document.removeEventListener("keydown", onKey);
+      ch.hidden = true; dom.verbs.hidden = false; dom.inv.hidden = false; dom.panel.classList.remove("choosing"); res(i);
+    };
+    const onKey = e => {
+      if (e.ctrlKey || e.metaKey || e.altKey || !/^[1-9]$/.test(e.key)) return;
+      if (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+      const i = +e.key - 1;
+      if (i < opts.length && !off.includes(i)) { e.preventDefault(); e.stopPropagation(); pick(i); }
+    };
+    document.addEventListener("keydown", onKey);
     opts.forEach((o, i) => {
-      const bt = el("button", { type: "button", cls: "choice", text: o }, ch);
-      bt.addEventListener("click", e => { e.stopPropagation(); ch.hidden = true; dom.verbs.hidden = false; dom.inv.hidden = false; dom.panel.classList.remove("choosing"); res(i); });
+      const bt = el("button", { type: "button", cls: "choice" + (off.includes(i) ? " used" : ""), text: (i < 9 ? (i + 1) + ". " : "") + o }, ch);
+      if (off.includes(i)) bt.setAttribute("aria-disabled", "true");
+      bt.addEventListener("click", e => { e.stopPropagation(); pick(i); });
     });
-    const first = ch.querySelector("button"); if (first) setTimeout(() => first.focus({ preventScroll: true }), 0);
+    const first = ch.querySelector("button:not(.used)"); if (first) setTimeout(() => first.focus({ preventScroll: true }), 0);
   });
 }
 RP.choose = choose;
@@ -518,11 +534,23 @@ RP.choose = choose;
 /* conversation helper: options = [{ text, when?:fn, once?:bool, run: async fn (return "end" to leave) }] */
 RP.convo = async function (options, opts = {}) {
   const used = new Set();
+  const seen = [];            // options shown so far, in first-shown order: a number never moves; new options are appended
   for (;;) {
     const avail = options.filter((o, i) => (!o.when || o.when(S)) && !(o.once && used.has(i)));
     if (!avail.length) return;
-    const i = await choose(avail.map(o => evalv(o.text, S)));
-    const o = avail[i]; used.add(options.indexOf(o));
+    let i, o;
+    if (fast) {
+      i = await choose(avail.map(x => evalv(x.text, S)));
+      o = avail[i];
+    } else {
+      avail.forEach(x => { if (!seen.includes(x)) seen.push(x); });
+      // used or no-longer-available options stay in their slot, dimmed
+      const row = seen, off = [];
+      row.forEach((x, k) => { if (!avail.includes(x)) off.push(k); });
+      i = await choose(row.map(x => evalv(x.text, S)), { disabled: off });
+      o = row[i];
+    }
+    used.add(options.indexOf(o));
     if (o.say !== false) await say(evalv(o.text, S));
     const r = o.run ? await o.run() : null;
     if (r === "end" || o.end) return;
@@ -576,7 +604,9 @@ RP.card = function (o) {
     if (o.checks) { const ul = el("ul", { cls: "checks" }, box); o.checks.forEach(([y, t]) => el("li", { cls: y ? "y" : "", text: t }, ul)); }
     const row = el("div", { cls: "erow" }, box);
     const bt = el("button", { cls: "btn primary", type: "button", text: o.button || "CONTINUE" }, row);
-    bt.addEventListener("click", () => { ov.remove(); res(); });
+    /* the key press that skipped the last line must not also dismiss the card (it used to flash by, then the next card followed) */
+    const t0 = performance.now();
+    bt.addEventListener("click", () => { if (performance.now() - t0 < 450) return; ov.remove(); res(); });
     setTimeout(() => bt.focus({ preventScroll: true }), 30);
   });
 };
@@ -1125,6 +1155,7 @@ RP.loadSave = async function () {
 };
 RP.clearSave = () => store.del(SAVE_KEY);
 RP.restore = async function (d) {
+  if (!fast && RP.audio && RP.audio.ready) { RP.audio.unlock(); await RP.audio.ready(); }
   if (!d || !ROOMS[d.room]) return false;
   S = Object.assign(baseState(), JSON.parse(JSON.stringify(d)));
   applyWardrobe(); renderInv(); updateHud();
@@ -1142,6 +1173,7 @@ function applyWardrobe() {
 RP.startAct = async function (n, opts = {}) {
   const a = ACTS[n];
   if (!a) { console.error("no act " + n); return; }
+  if (!fast && RP.audio && RP.audio.ready) { RP.audio.unlock(); await RP.audio.ready(); } // every level starts with the audio fully awake
   if (!opts.carry) { const name = S.name; S = baseState(); S.name = name || ""; }
   S.act = n; S.f.__hideKid = false;
   if (a.setup) a.setup(S, !!opts.carry);

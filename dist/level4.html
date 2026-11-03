@@ -75,6 +75,8 @@ body.p #panel.choosing { max-height: none; }
 .choice::before { content: "\25B8 "; color: #3a3070; }
 .choice:hover, .choice:focus-visible { color: var(--pink); }
 .choice:hover::before { color: var(--pink); }
+.choice.used { color: var(--muted); cursor: default; text-decoration: line-through; }
+.choice.used:hover, .choice.used:hover::before { color: var(--muted); }
 #panel.busy #verbs, #panel.busy #inv { opacity: .55; }
 #below { width: 100%; display: none; flex-direction: column; gap: 8px; }
 #hint { display: none; font-size: 16px; color: var(--muted); text-align: center; }
@@ -1603,7 +1605,8 @@ function ctx() {
     try {
       const C = window.AudioContext || window.webkitAudioContext;
       if (!C) return null;
-      AC = new C();
+      // "balanced" gives the audio thread a slightly larger buffer than the default, so a busy frame doesn't crackle
+      try { AC = new C({ latencyHint: "balanced" }); } catch (e) { AC = new C(); }
       comp = AC.createDynamicsCompressor();
       comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 6; comp.attack.value = 0.004; comp.release.value = 0.2;
       master = AC.createGain(); master.gain.value = audio.muted ? 0 : 0.85;
@@ -1619,6 +1622,25 @@ function ctx() {
   return AC;
 }
 audio.ctx = ctx;
+/* unlock: call from a click or key. Resumes the context and plays one silent sample (some mobile browsers only
+   start audio after a sound is played inside a gesture). ready(): resolves once the context is running, or after
+   a short wait, so music never starts against a context that is still waking up. */
+let unlocked = false;
+audio.unlock = () => {
+  const c = ctx(); if (!c) return;
+  if (!unlocked) { try { const b = c.createBuffer(1, 1, c.sampleRate), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); unlocked = true; } catch (e) { /* ignore */ } }
+};
+audio.ready = (maxMs = 600) => {
+  const c = ctx(); if (!c || c.state === "running") return Promise.resolve(!!c);
+  return new Promise(res => {
+    let done = false; const fin = v => { if (!done) { done = true; res(v); } };
+    try { c.resume().then(() => fin(true), () => fin(false)); } catch (e) { fin(false); }
+    setTimeout(() => fin(c.state === "running"), maxMs);
+  });
+};
+// coming back to the tab: wake the context; the schedulers skip the beats that were missed instead of bursting them
+document.addEventListener("visibilitychange", () => { if (!document.hidden && AC && AC.state === "suspended") { try { AC.resume(); } catch (e) { /* ignore */ } } });
+["pointerdown", "keydown", "touchend"].forEach(ev => window.addEventListener(ev, () => audio.unlock(), { capture: true, passive: true }));
 audio.buses = () => ({ music: musicBus, sfx: sfxBus, noise: noiseBuf });
 audio.setMute = m => {
   audio.muted = !!m;
@@ -1744,8 +1766,10 @@ let timer = null;
 function ensureTimer() { if (!timer) timer = setInterval(tick, 25); }
 function tick() {
   if (!AC) return;
-  const ahead = AC.currentTime + 0.12;
-  loops.forEach(L => { if (L.running) while (L.next < ahead) { L.playStep(L.step, L.next); L.advance(); } });
+  const now = AC.currentTime, ahead = now + 0.2;
+  // a stalled main thread (a heavy room paint, a background tab) leaves loops behind: skip the missed steps silently
+  // rather than scheduling them all in the past, which plays them at once as a burst
+  loops.forEach(L => { if (!L.running) return; let guard = 0; while (L.next < now - 0.02 && guard++ < 4096) L.advance(); while (L.next < ahead) { L.playStep(L.step, L.next); L.advance(); } });
   if (!loops.size) { clearInterval(timer); timer = null; }
 }
 
@@ -2154,7 +2178,7 @@ T.start = function (fadeSec = 1.2) {
   N.out.gain.setValueAtTime(0.0001, AC.currentTime); N.out.gain.linearRampToValueAtTime(0.9, AC.currentTime + fadeSec);
   T.running = true;
   let step = 0, next = AC.currentTime + 0.1;
-  const tick = () => { while (next < AC.currentTime + 0.18) { schedule(step, next); next += STEP; step = (step + 1) % STEPS; } };
+  const tick = () => { const now = AC.currentTime; while (next < now - 0.02) { next += STEP; step = (step + 1) % STEPS; } while (next < now + 0.2) { schedule(step, next); next += STEP; step = (step + 1) % STEPS; } };
   tick();
   N.timer = setInterval(tick, 30);
 };
@@ -5930,7 +5954,9 @@ async function lines(arr) {
 }
 RP.say = say; RP.lines = lines;
 
-function choose(opts) {
+/* choose(opts, { disabled: [indexes] }): numbered list (keys 1-9 pick, matching the numbers shown); disabled rows stay in place, dimmed */
+function choose(opts, cfg) {
+  const off = (cfg && cfg.disabled) || [];
   return new Promise(res => {
     if (fast) {
       const q = RP.test.answers.length ? RP.test.answers.shift() : opts.length - 1;
@@ -5941,11 +5967,25 @@ function choose(opts) {
     const ch = dom.choices;
     ch.innerHTML = ""; ch.hidden = false; dom.verbs.hidden = true; dom.inv.hidden = true;
     dom.panel.classList.add("choosing");
+    let done = false;
+    const pick = i => {
+      if (done || off.includes(i)) return;
+      done = true; document.removeEventListener("keydown", onKey);
+      ch.hidden = true; dom.verbs.hidden = false; dom.inv.hidden = false; dom.panel.classList.remove("choosing"); res(i);
+    };
+    const onKey = e => {
+      if (e.ctrlKey || e.metaKey || e.altKey || !/^[1-9]$/.test(e.key)) return;
+      if (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+      const i = +e.key - 1;
+      if (i < opts.length && !off.includes(i)) { e.preventDefault(); e.stopPropagation(); pick(i); }
+    };
+    document.addEventListener("keydown", onKey);
     opts.forEach((o, i) => {
-      const bt = el("button", { type: "button", cls: "choice", text: o }, ch);
-      bt.addEventListener("click", e => { e.stopPropagation(); ch.hidden = true; dom.verbs.hidden = false; dom.inv.hidden = false; dom.panel.classList.remove("choosing"); res(i); });
+      const bt = el("button", { type: "button", cls: "choice" + (off.includes(i) ? " used" : ""), text: (i < 9 ? (i + 1) + ". " : "") + o }, ch);
+      if (off.includes(i)) bt.setAttribute("aria-disabled", "true");
+      bt.addEventListener("click", e => { e.stopPropagation(); pick(i); });
     });
-    const first = ch.querySelector("button"); if (first) setTimeout(() => first.focus({ preventScroll: true }), 0);
+    const first = ch.querySelector("button:not(.used)"); if (first) setTimeout(() => first.focus({ preventScroll: true }), 0);
   });
 }
 RP.choose = choose;
@@ -5953,11 +5993,23 @@ RP.choose = choose;
 /* conversation helper: options = [{ text, when?:fn, once?:bool, run: async fn (return "end" to leave) }] */
 RP.convo = async function (options, opts = {}) {
   const used = new Set();
+  const seen = [];            // options shown so far, in first-shown order: a number never moves; new options are appended
   for (;;) {
     const avail = options.filter((o, i) => (!o.when || o.when(S)) && !(o.once && used.has(i)));
     if (!avail.length) return;
-    const i = await choose(avail.map(o => evalv(o.text, S)));
-    const o = avail[i]; used.add(options.indexOf(o));
+    let i, o;
+    if (fast) {
+      i = await choose(avail.map(x => evalv(x.text, S)));
+      o = avail[i];
+    } else {
+      avail.forEach(x => { if (!seen.includes(x)) seen.push(x); });
+      // used or no-longer-available options stay in their slot, dimmed
+      const row = seen, off = [];
+      row.forEach((x, k) => { if (!avail.includes(x)) off.push(k); });
+      i = await choose(row.map(x => evalv(x.text, S)), { disabled: off });
+      o = row[i];
+    }
+    used.add(options.indexOf(o));
     if (o.say !== false) await say(evalv(o.text, S));
     const r = o.run ? await o.run() : null;
     if (r === "end" || o.end) return;
@@ -6011,7 +6063,9 @@ RP.card = function (o) {
     if (o.checks) { const ul = el("ul", { cls: "checks" }, box); o.checks.forEach(([y, t]) => el("li", { cls: y ? "y" : "", text: t }, ul)); }
     const row = el("div", { cls: "erow" }, box);
     const bt = el("button", { cls: "btn primary", type: "button", text: o.button || "CONTINUE" }, row);
-    bt.addEventListener("click", () => { ov.remove(); res(); });
+    /* the key press that skipped the last line must not also dismiss the card (it used to flash by, then the next card followed) */
+    const t0 = performance.now();
+    bt.addEventListener("click", () => { if (performance.now() - t0 < 450) return; ov.remove(); res(); });
     setTimeout(() => bt.focus({ preventScroll: true }), 30);
   });
 };
@@ -6560,6 +6614,7 @@ RP.loadSave = async function () {
 };
 RP.clearSave = () => store.del(SAVE_KEY);
 RP.restore = async function (d) {
+  if (!fast && RP.audio && RP.audio.ready) { RP.audio.unlock(); await RP.audio.ready(); }
   if (!d || !ROOMS[d.room]) return false;
   S = Object.assign(baseState(), JSON.parse(JSON.stringify(d)));
   applyWardrobe(); renderInv(); updateHud();
@@ -6577,6 +6632,7 @@ function applyWardrobe() {
 RP.startAct = async function (n, opts = {}) {
   const a = ACTS[n];
   if (!a) { console.error("no act " + n); return; }
+  if (!fast && RP.audio && RP.audio.ready) { RP.audio.unlock(); await RP.audio.ready(); } // every level starts with the audio fully awake
   if (!opts.carry) { const name = S.name; S = baseState(); S.name = name || ""; }
   S.act = n; S.f.__hideKid = false;
   if (a.setup) a.setup(S, !!opts.carry);
@@ -8713,7 +8769,7 @@ RP.mg.register("beatMatch", {
     const xf = el("input", { type: "range", min: "0", max: "1", step: "0.01", value: "0", "aria-label": "Crossfader" }, xfw); el("span", { text: "B" }, xfw);
     const steps = el("div", { cls: "bmsteps" }, mix);
     const st1 = el("span", { cls: "stp cur", text: "1 TEMPO" }, steps), st2 = el("span", { cls: "stp", text: "2 BEATS" }, steps), st3 = el("span", { cls: "stp", text: "3 BRING IT IN" }, steps);
-    el("p", { cls: "tip", text: "Use your ears. Two kicks a hair apart sound like a horse galloping. One clean thump means you're locked. Keys: up/down pitch, left/right nudge." }, mix);
+    el("p", { cls: "tip", text: "Use your ears. Two kicks a hair apart sound like a horse galloping. One clean thump means you're locked. Keys: up/down pitch (hold to speed up, Shift = coarse), left/right nudge." }, mix);
     const B = deck("b", recB, "You control this one.");
     const fader = el("div", { cls: "fader" }, B.pr); el("span", { text: "−" }, fader);
     const pitch = el("input", { type: "range", min: "-8", max: "8", step: "0.01", value: "0", "aria-label": "Deck B pitch" }, fader); el("span", { text: "+" }, fader);
@@ -8804,13 +8860,22 @@ RP.mg.register("beatMatch", {
     hold(nudgeL, () => { st.nudge = -1; }, () => { st.nudge = 0; });
     hold(nudgeR, () => { st.nudge = 1; }, () => { st.nudge = 0; });
     host.cleanup(() => clearInterval(repeat));
+    /* held arrow keys repeat on our own clock (not the OS key-repeat delay) and speed up the longer they are held; Shift = coarse */
+    let kHeld = null, kT0 = 0, kTick = null;
+    const kStep = () => { const ms = performance.now() - kT0; return (ms < 350 ? 0.05 : ms < 900 ? 0.1 : 0.25) * (kHeld.shift ? 5 : 1); };
+    const kStop = () => { clearInterval(kTick); kTick = null; kHeld = null; };
+    host.cleanup(kStop);
     host.onKey(e => {
-      if (e.key === "ArrowUp") { e.preventDefault(); fine(-0.05); }
-      if (e.key === "ArrowDown") { e.preventDefault(); fine(0.05); }
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault(); if (e.repeat) return;
+        kStop(); const d = e.key === "ArrowUp" ? -1 : 1; kHeld = { key: e.key, shift: e.shiftKey }; kT0 = performance.now();
+        fine(d * kStep()); kTick = setInterval(() => { if (kHeld) fine(d * kStep()); }, 70);
+      }
       if (e.key === "ArrowLeft" && !e.repeat) st.nudge = -1;
       if (e.key === "ArrowRight" && !e.repeat) st.nudge = 1;
     });
-    host.onKeyUp(e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") st.nudge = 0; });
+    host.onKeyUp(e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") st.nudge = 0; if (kHeld && e.key === kHeld.key) kStop(); });
+    window.addEventListener("blur", kStop); host.cleanup(() => window.removeEventListener("blur", kStop));
     const sizeGrid = () => { const r = gcv.getBoundingClientRect(); const d = Math.min(2, window.devicePixelRatio || 1); gcv.width = Math.max(200, Math.round(r.width * d)); gcv.height = Math.round(72 * d); };
     sizeGrid();
     return new Promise(resolve => {
@@ -8870,6 +8935,7 @@ try {
      { slot: "turntables"|"decks"|"mixer"|"monitors"|"headphones",   default "turntables" ("mixer" for the boutique)
        options: [gearIds]        listings (the same id twice = two units from two sellers); default per slot
        seller: "Eddie Two-Times" | any name | "boutique"   ("boutique" = act-5 showroom: no scams, a waitlist instead of a haggle)
+       wallet: $ your real cash (default: the game's money); when it differs from budget the header reads "BUDGET (of your $wallet)"
        budget: $ cash in hand    default: enough for the best working unit only if you haggle
        scams: n                  how many listings are lemons (default by difficulty, always leaves >= 1 good unit)
        flaws: [...]              scripted scenario: one flaw key per listing ("ok" | "cosmetic" | a lemon flaw). Prices are then
@@ -9197,7 +9263,10 @@ RP.mg.register("buyGear", {
     root.removeChild(wrap); // header must be first
     const head = host.header("buy.Gear", boutique ? "Boutique · by appointment" : sc.seller + (/s$/i.test(sc.seller) ? "'" : "'s") + " van");
     head.classList.add("bg-head");
-    const cashEl = el("span", { cls: "bg-cash", html: "<small>CASH</small>" + money(sc.budget) }, head);
+    /* CASH is what you really carry; if the story caps what you can spend here, say so ("BUDGET $x of your $y") */
+    const wallet = p.wallet != null ? +p.wallet : (!p.arcade && host.S && typeof host.S.money === "number" ? host.S.money : null);
+    const cashHtml = () => wallet != null && Math.round(wallet) !== Math.round(sc.budget) ? "<small>BUDGET (of your " + money(wallet) + ")</small>" + money(sc.budget) : wallet != null ? "<small>CASH</small>" + money(sc.budget) : "<small>BUDGET</small>" + money(sc.budget);
+    const cashEl = el("span", { cls: "bg-cash", html: cashHtml() }, head);
     const leave = el("button", { cls: "btn bg-leave", type: "button", text: "LEAVE" }, head);
     root.appendChild(wrap);
 
@@ -9418,7 +9487,7 @@ RP.mg.register("buyGear", {
       btnBuy.textContent = st.buying ? "SURE? " + money(price) : sc.budget < price ? "NEED " + money(price - sc.budget) + " MORE" : "BUY " + money(price);
       btnBuy.classList.toggle("confirm", st.buying);
       btnBuy.disabled = !open || sc.budget < price;
-      cashEl.innerHTML = "<small>CASH</small>" + money(sc.budget);
+      cashEl.innerHTML = cashHtml();
     }
     buildDeal();
 
@@ -9429,7 +9498,12 @@ RP.mg.register("buyGear", {
       // an honest flaw you noticed is leverage
       if (l.cosmetic && l.probes.look && !l.cosLev) { l.cosLev = true; l.floor = r5(l.floor * 0.93); l.askNow = Math.min(l.askNow, r5(l.ask0 * 0.93)); speak("Fine, fine, the cover's gone. I'll knock a little off.", "worried"); RP.sfx("coin"); refreshCards(); refreshDeal(); return; }
       if (offer >= l.askNow) { l.agreed = l.askNow; speak("Sold! A two-time deal. Hand it over.", "happy"); RP.sfx("coin"); }
-      else if (offer >= l.floor) { l.agreed = offer; speak(pickR(["Alright, alright. " + money(offer) + ". A two-time deal.", "You're killing me. Fine. " + money(offer) + ".", "Ugh. " + money(offer) + ". Don't tell my mother."]), "happy"); RP.sfx("coin"); }
+      else if (offer >= l.floor && !l.pushed && offer < l.askNow * 0.93) {
+        /* a seller never takes the first big cut: he comes down part of the way and makes you say it again */
+        l.pushed = true; const mid = Math.max(offer, r5((offer + l.askNow) / 2)); l.askNow = Math.min(l.askNow, mid);
+        speak(pickR(["Whoa, whoa. " + money(offer) + "? Let's say " + money(l.askNow) + " and nobody cries.", "Nobody pays that. " + money(l.askNow) + ". That's already a favor."]), "worried"); RP.sfx("click");
+      }
+      else if (offer >= l.floor) { l.agreed = Math.min(offer, l.askNow); speak(pickR(["Alright, alright. " + money(offer) + ". A two-time deal.", "You're killing me. Fine. " + money(offer) + ".", "Ugh. " + money(offer) + ". Don't tell my mother."]), "happy"); RP.sfx("coin"); }
       else {
         const r = offer / l.floor, twice = l.lastOffer != null && Math.abs(l.lastOffer - offer) <= 1;
         l.patience -= r < 0.6 ? 2 : r < 0.85 ? 1 : 0;
@@ -9721,6 +9795,8 @@ try {
      records: [recordIds]   the set you can play (each once)       crowd: "empty-bar"|"house"|"techno"|"festival"|"loft"
      rounds: 4              records you get to play                 goal: floor-energy target (0-5; a value >5 is read as 0-100)
      difficulty: 1-5        venue: label for the sign / header      arcade: bool   seed: number
+     special: [recordIds]   records the story calls special (a white label is always special): they land with a warm floor,
+                            and only flop on a cold one. Peaking early is penalized: the floor burns out if it runs ahead of the build.
    Result: { ok, score 0-100, played: [ids], peak (0-5), final (0-5), goal, bartenders: bool, rounds }
    ok = the floor energy at the end of the last round reached the goal (empty-bar: the bartenders are dancing).
    The crowd's hint line each round uses the same role words as the tags on the records: WARMUP, BUILDER, PEAK, CLOSER (and WEIRD). */
@@ -9795,21 +9871,33 @@ function evalPick(C, st, rec) {
   let fit = clamp(0.5 * fe + 0.25 * fb + 0.25 * fg + bonus, 0, 1);
   let surprise = null, extra = 0;
   if (isWeird(rec)) {
+    const special = rec.label === "white label" || (st.special || []).indexOf(rec.id) >= 0;
     const luck = (st.rnd ? st.rnd() - 0.5 : 0) * 0.16;
-    const works = st.E + luck >= C.warm * (0.85 + 0.1 * (diff - 1) / 2) - 0.1 && fg >= 0.4 && fe >= 0.4;
+    const works = special ? st.E + luck >= C.warm * 0.6 && fg >= 0.3 : st.E + luck >= C.warm * (0.85 + 0.1 * (diff - 1) / 2) - 0.1 && fg >= 0.4 && fe >= 0.4;
     if (works) { surprise = "win"; fit = clamp(fit + 0.2, 0, 1); extra = 0.18; }
     else { surprise = "flop"; fit = fit * 0.5; extra = -0.25; }
   }
-  const gain = (fit - 0.45) * 1.3 + extra;
+  let gain = (fit - 0.45) * 1.3 + extra;
+  if (surprise === "flop") gain = Math.min(gain, -0.45);          // a flop always costs the floor something
+  /* pacing: the floor should climb with the set. Running ahead of the build burns the crowd out before the end. */
+  const pace = C.e0 + (st.goal - C.e0) * (st.round + 1) / st.rounds;
+  const ahead = st.E + gain - (pace + 0.55);
+  let early = false;
+  if (ahead > 0 && !last && surprise !== "flop") {
+    early = true;
+    fit = clamp(fit - Math.min(0.3, ahead * 0.3), 0, 1);
+    gain -= Math.min(1.1, ahead * 0.9);
+  }
   const E2 = clamp(st.E + gain, 0.4, 5);
   // why: the weakest part
   const parts = { energy: fe, tempo: fb, taste: fg };
   let why = "ok";
-  if (fit < 0.5 || surprise === "flop") {
+  if (early) why = "early";
+  else if (fit < 0.5 || surprise === "flop") {
     const min = Math.min(fe, fb, fg);
     why = surprise === "flop" ? "weird" : min === fe ? (d > 0 ? "hard" : "soft") : min === fb ? "tempo" : "taste";
   }
-  return { fit, fe, fb, fg, want, d, E2, gain, surprise, why, parts, jump: st.prev ? rec.bpm - st.prev.bpm : 0 };
+  return { fit, fe, fb, fg, want, d, E2, gain, surprise, why, early, parts, jump: st.prev ? rec.bpm - st.prev.bpm : 0 };
 }
 
 /* compare at display precision so a floor showing the goal's number has reached it */
@@ -9823,8 +9911,9 @@ function summarize(C, E0, steps, goal) {
   let rising = 0; for (let i = 1; i < Es.length; i++) if (Es[i] > Es[i - 1] + 0.08) rising++;
   const build = 0.6 * (rising / n) + 0.4 * (1 - clamp((peak - final) / 1.2, 0, 1));
   const goalR = clamp((final - E0) / Math.max(0.5, goal - E0), 0, 1);
-  const score = Math.round(100 * (0.3 * avg("fe") + 0.2 * avg("fg") + 0.15 * avg("fb") + 0.15 * build + 0.2 * goalR));
-  return { score: clamp(score, 0, 100), final, peak, build, energy: avg("fe"), taste: avg("fg"), tempo: avg("fb"), goalR, ok: reached(final, goal) };
+  const earlies = steps.filter(s => s.early).length;
+  const score = Math.round(100 * (0.3 * avg("fe") + 0.2 * avg("fg") + 0.15 * avg("fb") + 0.15 * build + 0.2 * goalR) - 6 * earlies);
+  return { score: clamp(score, 0, 100), final, peak, earlies, build, energy: avg("fe"), taste: avg("fg"), tempo: avg("fb"), goalR, ok: reached(final, goal) };
 }
 
 /* ---- defaults ---- */
@@ -9867,7 +9956,7 @@ function resolveParams(p, host) {
   if (!ids.length) ids = pickDefaultRecords(C, rounds, rnd, diff);
   ids = ids.filter((id, i) => ids.indexOf(id) === i);
   rounds = Math.min(rounds, ids.length);
-  return { C, key, rnd, diff, ids, ids0, rounds, goal: normGoal(p.goal, C, diff), venue: p.venue ? String(p.venue) : null, seed: Math.floor(rnd() * 1e6) };
+  return { C, key, rnd, diff, ids, ids0, special: Array.isArray(p.special) ? p.special : [], rounds, goal: normGoal(p.goal, C, diff), venue: p.venue ? String(p.venue) : null, seed: Math.floor(rnd() * 1e6) };
 }
 
 /* ======================================================================
@@ -9932,7 +10021,8 @@ const LINES = {
   tempo: ["That tempo jump tripped everyone up.", "Dancers stumble. The groove they had is gone."],
   taste: ["Wrong crowd for that sound. Blank stares.", "Nobody here knows this. Nobody here wants to."],
   weirdWin: ["WEIRD, and they LOVE it. Nobody knows what this is.", "Nobody can name it. Everybody is dancing to it."],
-  weirdFlop: ["That was... a choice.", "The sound of a record clearing a room."]
+  weirdFlop: ["That was... a choice. The floor thins out.", "Nobody knows this one yet, and the floor is not in the mood to find out."],
+  early: ["Too much, too early. The floor burns out before the night does.", "You spent the peak in the first hour. They have nowhere left to go."]
 };
 const pick = (a, rnd) => a[Math.floor((rnd || Math.random)() * a.length)];
 
@@ -9947,7 +10037,7 @@ RP.mg.register("crowdRead", {
       let E = R.C.e0, prev = null; const steps = [], played = [], left = recs.slice();
       for (let r = 0; r < R.rounds; r++) {
         let best = null;
-        left.forEach(rec => { const ev = evalPick(R.C, { E, prev, round: r, rounds: R.rounds, goal: R.goal, diff: R.diff, rnd: null }, rec); if (!best || ev.fit > best.ev.fit) best = { rec, ev }; });
+        left.forEach(rec => { const ev = evalPick(R.C, { E, prev, round: r, rounds: R.rounds, goal: R.goal, diff: R.diff, special: R.special, rnd: null }, rec); if (!best || ev.fit > best.ev.fit) best = { rec, ev }; });
         left.splice(left.indexOf(best.rec), 1); steps.push(best.ev); played.push(best.rec.id); E = best.ev.E2; prev = best.rec;
       }
       const sm = summarize(R.C, R.C.e0, steps, R.goal);
@@ -10005,7 +10095,7 @@ RP.mg.register("crowdRead", {
       kit.fit(host, histCv, 160, 46, left, 2);
 
       /* ----- state ----- */
-      let lastDn = -1;
+      let lastDn = -1, queued = false;     // queued: Enter pressed while the floor was still reacting
       let S, cards, sel = null, phase = "pick", pickTimer = 0, timerOn = false, last = null, nextAt = 0;
       const timeLimit = [0, 0, 32, 26, 20][R.diff - 1];
       const barPct = e => Math.round(clamp(e / 5, 0, 1) * 1000) / 10 + "%";
@@ -10121,7 +10211,7 @@ RP.mg.register("crowdRead", {
         cards.forEach(c => { const lastOne = phase === "pick" && nFree === 1 && !S.used.has(c.rec.id); c.b.classList.toggle("lastone", lastOne); c.last.hidden = !lastOne; });
         // difficulty 1: star the best fit
         if (R.diff <= 1 && phase === "pick" && nFree > 1) {
-          let best = null; cards.forEach(c => { if (S.used.has(c.rec.id)) return; const ev = evalPick(C, { E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, rnd: null }, c.rec); if (!best || ev.fit > best.fit) best = { fit: ev.fit, c }; });
+          let best = null; cards.forEach(c => { if (S.used.has(c.rec.id)) return; const ev = evalPick(C, { E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, special: R.special, rnd: null }, c.rec); if (!best || ev.fit > best.fit) best = { fit: ev.fit, c }; });
           cards.forEach(c => c.b.classList.toggle("star", !!best && best.c === c));
         }
       }
@@ -10164,21 +10254,21 @@ RP.mg.register("crowdRead", {
         if (phase !== "pick" || !sel) return;
         const rec = RP.rec(sel); phase = "play"; timerOn = false; cTimer.style.display = "none";
         S.used.add(rec.id);
-        const ev = evalPick(C, { E: S.E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, rnd: S.rnd }, rec);
+        const ev = evalPick(C, { E: S.E, prev: S.prev, round: S.round, rounds: R.rounds, goal: R.goal, diff: R.diff, special: R.special, rnd: S.rnd }, rec);
         S.steps.push(ev); S.played.push(rec.id);
         sound.play(rec, { vol: 0.72, fade: 1.3 });
         floor.setBpm(rec.bpm);
         host.sfx("blip");
         msg.textContent = "Now playing: " + kit.full(rec);
-        playBtn.disabled = true; playBtn.textContent = "THE FLOOR REACTS...";
+        playBtn.disabled = true; playBtn.textContent = S.round >= R.rounds - 1 ? "FINISH SET ▶" : "NEXT ROUND ▶"; queued = false;
         cards.forEach(c => { c.b.disabled = true; });
         const E1 = ev.E2, roleOK = !(S.askRoles && S.askRoles.length) || S.askRoles.some(v => hasV(rec, v));
         host.timeout(() => {
           S.E = E1; S.prev = rec; S.peak = Math.max(S.peak, S.E); floor.setEnergy(S.E);
-          const tier = ev.surprise === "win" ? "weirdWin" : ev.surprise === "flop" ? "weirdFlop" : ev.fit >= 0.8 && roleOK ? "great" : ev.fit >= 0.62 ? "good" : ev.fit >= 0.45 ? "meh" : ev.why === "hard" ? "hard" : ev.why === "soft" ? "soft" : ev.why === "tempo" ? "tempo" : "taste";
-          const good = ev.fit >= 0.62 || ev.surprise === "win";
-          const bad = ev.fit < 0.45 || ev.surprise === "flop";
-          const label = ev.surprise === "win" ? "THEY GET IT!" : ev.surprise === "flop" ? "WHAT WAS THAT?" : ev.fit >= 0.8 && roleOK ? "PERFECT BUILD" : ev.fit >= 0.62 ? "NICE ONE" : ev.fit >= 0.45 ? "OKAY" : tier === "hard" ? "TOO MUCH" : tier === "soft" ? "FLOOR DROP" : tier === "tempo" ? "TRAIN WRECK" : "WRONG ROOM";
+          const tier = ev.surprise === "win" ? "weirdWin" : ev.surprise === "flop" ? "weirdFlop" : ev.early ? "early" : ev.fit >= 0.8 && roleOK ? "great" : ev.fit >= 0.62 ? "good" : ev.fit >= 0.45 ? "meh" : ev.why === "hard" ? "hard" : ev.why === "soft" ? "soft" : ev.why === "tempo" ? "tempo" : "taste";
+          const good = (ev.fit >= 0.62 && !ev.early) || ev.surprise === "win";
+          const bad = ev.fit < 0.45 || ev.surprise === "flop" || ev.early;
+          const label = ev.surprise === "win" ? "THEY GET IT!" : ev.surprise === "flop" ? "WHAT WAS THAT?" : ev.early ? "PEAKED TOO EARLY" : ev.fit >= 0.8 && roleOK ? "PERFECT BUILD" : ev.fit >= 0.62 ? "NICE ONE" : ev.fit >= 0.45 ? "OKAY" : tier === "hard" ? "TOO MUCH" : tier === "soft" ? "FLOOR DROP" : tier === "tempo" ? "TRAIN WRECK" : "WRONG ROOM";
           floor.pop(label, good ? "#9be15d" : bad ? "#ff6a6a" : "#ffd23f", 160, 64);
           if (good) { host.sfx("cheer"); floor.emote(ev.fit >= 0.8 && roleOK ? "heart" : "note", ev.fit >= 0.8 && roleOK ? 5 : 4); floor.emote("note", 3); }
           else if (bad) { host.sfx("boo"); floor.emote("?", 5); }
@@ -10197,8 +10287,9 @@ RP.mg.register("crowdRead", {
             phase = "wait";
             playBtn.disabled = false; playBtn.textContent = lastRound ? "FINISH SET ▶" : "NEXT ROUND ▶";
             playBtn.focus({ preventScroll: true });
-          }, 1100);
-        }, 900);
+            if (queued) next();
+          }, 700);
+        }, 700);
       }
 
       function next() {
@@ -10230,7 +10321,8 @@ RP.mg.register("crowdRead", {
         lines.push(ok ? (C.theme === "empty-bar" ? "The bartenders are DANCING. Floor energy " + S.E.toFixed(1) + " / goal " + R.goal.toFixed(1) + "." : "The floor is going off. Energy " + S.E.toFixed(1) + " / goal " + R.goal.toFixed(1) + ".") : "The floor stopped at " + S.E.toFixed(1) + " — the goal was " + R.goal.toFixed(1) + ".");
         const dim = [];
         const worst = S.steps.reduce((w, s, i) => (!w || s.fit < w.fit ? { fit: s.fit, i, why: s.why } : w), null);
-        if (worst && worst.fit < 0.6) dim.push("Weakest pick: round " + (worst.i + 1) + " — " + ({ hard: "too much, too soon", soft: "you dropped the floor", tempo: "the tempo jump", taste: "wrong sound for this crowd", weird: "the weird one flopped", ok: "just a little off" }[worst.why] || "a bit off") + ".");
+        if (worst && worst.fit < 0.6) dim.push("Weakest pick: round " + (worst.i + 1) + " — " + ({ early: "you peaked too early", hard: "too much, too soon", soft: "you dropped the floor", tempo: "the tempo jump", taste: "wrong sound for this crowd", weird: "the weird one flopped", ok: "just a little off" }[worst.why] || "a bit off") + ".");
+        if (sm.earlies) dim.push("You ran ahead of the build " + sm.earlies + (sm.earlies > 1 ? " times" : " time") + ": a floor that peaks early burns out. Build, don't jump.");
         if (sm.peak - S.E > 0.5) dim.push("You peaked early (" + sm.peak.toFixed(1) + ") and let it slide.");
         dim.push("Set: " + S.played.map(id => RP.rec(id).title).join("  ›  "));
         host.sfx(ok ? "success" : "fail");
@@ -10244,14 +10336,14 @@ RP.mg.register("crowdRead", {
       }
 
       /* ----- events ----- */
-      playBtn.addEventListener("click", () => { if (phase === "pick") doPlay(); else if (phase === "wait") next(); });
+      playBtn.addEventListener("click", () => { if (phase === "pick") doPlay(); else if (phase === "wait") next(); else if (phase === "play") queued = true; });
       giveUp.addEventListener("click", () => { host.sfx("click"); done({ ok: false, score: 0, played: S ? S.played.slice() : [], peak: S ? S.peak : 0, goal: R.goal, rounds: R.rounds }); });
       host.onKey(e => {
         if (finished || e.ctrlKey || e.metaKey || e.altKey) return;
         const k = e.key;
         if (phase === "pick" && /^[1-9]$/.test(k)) { const c = cards[+k - 1]; if (c && !S.used.has(c.rec.id)) { e.preventDefault(); select(c.rec.id); c.b.focus({ preventScroll: true }); } }
         else if (k === "Enter" && (!document.activeElement || document.activeElement.tagName !== "BUTTON" || (document.activeElement.closest && document.activeElement.closest(".cr-hand")))) {
-          e.preventDefault(); if (phase === "pick") doPlay(); else if (phase === "wait") next();
+          e.preventDefault(); if (phase === "pick") doPlay(); else if (phase === "wait") next(); else if (phase === "play") queued = true;
         }
       });
 
@@ -10737,7 +10829,7 @@ DK.wantText = (want, rec) => {
   if (want.id) { const r = rec || RP.rec(want.id); bits.push(r.artist + " – " + r.title); }
   if (want.vibe) bits.push("a " + String(want.vibe).toUpperCase());
   if (want.genre) bits.push(want.genre);
-  if (want.maxPrice != null) bits.push("under " + DK.money(want.maxPrice));
+  if (want.maxPrice != null) bits.push(DK.money(want.maxPrice) + " or less");
   return bits.length ? (want.id ? "" : "WANT: ") + bits.join(", ") : "Find something good.";
 };
 /* the four set roles a record can carry (rec.vibe), in plain words. Same names and colours as the tags in crowd.Read. */
@@ -11917,9 +12009,10 @@ RP.mg.register("goDigging", {
       S.prev = { loop, copy: c, t0: performance.now(), lastCrack: performance.now(), len: 9 };
       if (S.mode === "flip") setMode("inspect");
       if (S.previews > 5 && S.previews % 3 === 0) quip("tooMany"); else if (c.warped) quip("warp"); else quip("preview");
-      if (want && want.vibe) {
-        const rn = DK.rolesOf(c.rec).map(r => DK.ROLES[r].name), fits = (c.rec.vibe || []).includes(want.vibe), W = String(want.vibe).toUpperCase();
-        msg.textContent = "You hear it: " + (rn.join(" / ") || "no clear role") + ". " + (fits ? "That's the " + W + " on your list." : "Not the " + W + " on your list.");
+      {
+        const rn = DK.rolesOf(c.rec).map(r => DK.ROLES[r].name);
+        msg.textContent = "You hear it: " + (rn.join(" / ") || "no clear role") + ".";
+        if (want && want.vibe) { const fits = (c.rec.vibe || []).includes(want.vibe), W = String(want.vibe).toUpperCase(); msg.textContent += " " + (fits ? "That's the " + W + " on your list." : "Not the " + W + " on your list."); }
       }
       render();
     }
@@ -12041,13 +12134,13 @@ RP.mg.register("goDigging", {
       const step = h.step, floorP = Math.max(step, Math.ceil(c.base * c.floorFrac / step - 1e-9) * step);
       if (floorP >= c.base - 1e-9) { h.msg = "No discount on that one."; say("Sticker's the sticker on this one. Take it or flip."); c.haggled = true; S.hag = null; RP.sfx("error"); render(); return; }
       if (h.offer >= c.base - 1e-9) { S.hag = null; render(); return; }
-      if (h.offer >= floorP - 1e-9) { c.deal = h.offer; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); return; }
+      if (h.offer >= floorP - 1e-9) { c.deal = h.offer; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); buy(); return; }   // a deal is a sale: no second BUY click
       if (h.offer >= floorP - step * 1.01 || h.offer >= floorP * 0.88) { h.counter = floorP; h.msg = "He counters at " + money(floorP) + "."; RP.sfx("click"); say(DK.pick(RAY_QUIPS.counter) + " " + money(floorP) + "."); render(); return; }
       S.patience--; RP.sfx("error");
       if (S.patience <= 0) { S.hag = null; c.haggled = true; quip("noPatience"); } else { h.msg = DK.pick(RAY_QUIPS.insult); say(h.msg); }
       render();
     }
-    function takeCounter() { const h = S.hag, c = cur(); if (!h || !c || h.counter == null) return; c.deal = h.counter; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); }
+    function takeCounter() { const h = S.hag, c = cur(); if (!h || !c || h.counter == null) return; c.deal = h.counter; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); buy(); }
 
     /* ------------------------------------------------ buy */
     /* why this copy might not count for the list. Genre, price and condition are visible; the role is only known after LISTEN. */
@@ -12056,7 +12149,7 @@ RP.mg.register("goDigging", {
       const rec = c.rec, out = [];
       if (want.id && rec.id !== want.id) out.push({ k: "id", t: "You came for " + DK.wantText({ id: want.id }, recOf(want.id)) + ". This isn't it." });
       if (want.genre && !DK.matchWant(rec, { genre: want.genre }, null)) out.push({ k: "genre", t: "It's " + rec.genre + ". You want " + want.genre + "." });
-      if (want.maxPrice != null && pr > want.maxPrice + 1e-9) out.push({ k: "price", t: "It costs " + money(pr) + ". The list says under " + money(want.maxPrice) + "." });
+      if (want.maxPrice != null && pr > want.maxPrice + 1e-9) out.push({ k: "price", t: "It costs " + money(pr) + ". The list says " + money(want.maxPrice) + " or less." });
       if (c.cond.id === "beat") out.push({ k: "cond", t: "It's BEAT. A trashed copy doesn't count for the list." });
       if (want.vibe) {
         const W = String(want.vibe).toUpperCase();
@@ -12717,6 +12810,13 @@ const CSS = `
 .mt-arr { display: grid; grid-template-columns: 38px repeat(8, minmax(0, 1fr)); gap: 3px; align-items: stretch; }
 .mt-arr .rl { font-size: 12px; color: var(--muted); display: flex; align-items: center; justify-content: flex-end; padding-right: 2px; }
 .mt-sec { font-size: 13px; padding: 3px 0; border: 2px solid; border-color: var(--sc) #0a0716 #0a0716 var(--sc); background: #1a1534; color: var(--sc); cursor: pointer; line-height: 1; min-width: 0; overflow: hidden; }
+.mt-sec.sel { outline: 2px solid #fff; outline-offset: 1px; }
+.mt-aim { font-size: 17px; line-height: 1.05; color: var(--fg); margin-bottom: 4px; } .mt-aim b { font-weight: 400; color: var(--amber); }
+.mt-secbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
+.mt-seclab { font-size: 16px; color: var(--muted); flex: 1 1 100%; }
+.mt-secpick { font-family: var(--ui); font-size: 15px; padding: 2px 6px; border: 2px solid var(--sc, var(--muted)); background: #1a1534; color: var(--sc, var(--fg)); cursor: pointer; line-height: 1; }
+.mt-secpick:disabled { opacity: .45; cursor: default; } .mt-secpick.cur { background: var(--sc); color: #12061a; }
+.mt-undo { margin-left: auto; --sc: var(--fg); }
 .mt-sec.play { background: var(--sc); color: #12061a; }
 .mt-em { position: relative; height: 54px; display: flex; flex-direction: column-reverse; gap: 1px; background: #0a0816; border: 1px solid #241d48; padding: 1px; cursor: pointer; }
 .mt-em i { flex: 1; background: #1a1534; }
@@ -12973,15 +13073,24 @@ RP.mg.register("makTracks", {
     }
     const goalBox = el("div", { cls: "mt-box" }, colB);
     el("div", { cls: "mt-h", html: "<b>GOALS</b><span>level " + diff + "</span>" }, goalBox);
+    el("div", { cls: "mt-aim", html: "<b>THE AIM:</b> bounce a track whose DROP hits hard. Fill the pattern, then in the arrangement put a quiet BUILD or BREAK bar right before the DROP so the DROP lands " + TIER_GOALS.jump[diff - 1] + "+ points louder." + (withLou ? " Lou has to like it too (mood " + TIER_GOALS.taste[diff - 1] + "%+)." : "") }, goalBox);
     const goalUl = el("ul", { cls: "mt-goals" }, goalBox);
     const arrBox = el("div", { cls: "mt-box" }, colB);
-    el("div", { cls: "mt-h", html: "<b>ARRANGEMENT</b><span>tap a bar name to change it</span>" }, arrBox);
+    el("div", { cls: "mt-h", html: "<b>ARRANGEMENT</b><span>tap a bar, then pick its section</span>" }, arrBox);
+    const secBar = el("div", { cls: "mt-secbar" }, arrBox);
+    const secLab = el("span", { cls: "mt-seclab", text: "No bar selected." }, secBar);
+    const secBtns = SEC_ORDER.map(k => {
+      const b = el("button", { cls: "mt-secpick", type: "button", text: SECS[k].name, disabled: "disabled" }, secBar); b.style.setProperty("--sc", SECS[k].col);
+      b.addEventListener("click", () => setSection(st.selBar, k)); return b;
+    });
+    const undoBtn = el("button", { cls: "mt-secpick mt-undo", type: "button", text: "UNDO", disabled: "disabled", "aria-label": "Undo the last arrangement change" }, secBar);
+    undoBtn.addEventListener("click", () => undoArr());
     const arrG = el("div", { cls: "mt-arr" }, arrBox);
     const secEls = [], emEls = [], lyEls = [];
     el("div", { cls: "rl", text: "BAR" }, arrG);
     for (let b = 0; b < BARS; b++) {
       const bt = el("button", { cls: "mt-sec", type: "button", text: "", "aria-label": "Bar " + (b + 1) + " section" }, arrG); secEls.push(bt);
-      bt.addEventListener("click", () => { cycleSection(b); });
+      bt.addEventListener("click", () => { st.selBar = st.selBar === b ? null : b; RP.sfx("click"); onChange(); });
     }
     el("div", { cls: "elbl", text: "ENERGY" }, arrG);
     for (let b = 0; b < BARS; b++) {
@@ -12995,7 +13104,7 @@ RP.mg.register("makTracks", {
       lyEls[ri] = [];
       for (let b = 0; b < BARS; b++) {
         const ly = el("button", { cls: "mt-ly", type: "button", style: "--lc:" + ROWS[ri].col, "aria-label": ROWS[ri].name + " in bar " + (b + 1), "aria-pressed": "false" }, arrG); lyEls[ri][b] = ly;
-        ly.addEventListener("click", () => { st.layers[b][ri] = !st.layers[b][ri]; RP.sfx("blip"); onChange(); });
+        ly.addEventListener("click", () => { pushArr(); st.layers[b][ri] = !st.layers[b][ri]; RP.sfx("blip"); onChange(); });
       }
     });
 
@@ -13161,9 +13270,17 @@ RP.mg.register("makTracks", {
       onChange(rid);
     }
     function clearRow(rid) { pat[rid].fill(0); refreshGrid(); onChange(rid); }
-    function cycleSection(b) {
-      const i = SEC_ORDER.indexOf(st.arr[b]); st.arr[b] = SEC_ORDER[(i + 1) % SEC_ORDER.length];
-      st.layers[b] = RID.map(r => SECS[st.arr[b]].layers.indexOf(r) >= 0); RP.sfx("blip"); onChange();
+    /* arrangement edits: pick a bar, then pick what it becomes (no blind cycling); every change can be undone */
+    const undoStack = [];
+    function pushArr() { undoStack.push({ arr: st.arr.slice(), layers: st.layers.map(l => l.slice()) }); if (undoStack.length > 40) undoStack.shift(); }
+    function setSection(b, k) {
+      if (b == null || st.arr[b] === k) return;
+      pushArr(); st.arr[b] = k;
+      st.layers[b] = RID.map(r => SECS[k].layers.indexOf(r) >= 0); RP.sfx("blip"); onChange("arr");
+    }
+    function undoArr() {
+      const u = undoStack.pop(); if (!u) return;
+      st.arr = u.arr; st.layers = u.layers; RP.sfx("blip"); onChange("arr");
     }
     // pointer painting (mouse): press on a cell, drag across the row
     let paint = null;
@@ -13285,9 +13402,13 @@ RP.mg.register("makTracks", {
         if (g.ok && !st.goalsDone[g.id]) { st.goalsDone[g.id] = true; if (!st.firstEval) rewardGoal(g); }
       });
       // arrangement
+      secLab.textContent = st.selBar == null ? "No bar selected. Tap a bar name below." : "BAR " + (st.selBar + 1) + " is " + SECS[st.arr[st.selBar]].name + ". Make it:";
+      secBtns.forEach((bt, k) => { bt.disabled = st.selBar == null; bt.classList.toggle("cur", st.selBar != null && st.arr[st.selBar] === SEC_ORDER[k]); });
+      undoBtn.disabled = !undoStack.length;
       for (let b = 0; b < BARS; b++) {
         const sec = SECS[st.arr[b]];
         secEls[b].textContent = sec.name; secEls[b].style.setProperty("--sc", sec.col);
+        secEls[b].classList.toggle("sel", st.selBar === b); secEls[b].setAttribute("aria-pressed", st.selBar === b ? "true" : "false");
         const e = ev.en[b], lit = Math.round(e / 10);
         const em = emEls[b]; em.style.setProperty("--ec", e >= 80 ? "#ffffff" : e >= 60 ? "#ff3fa4" : e >= 35 ? "#ffc44d" : "#39d0ff");
         [...em.querySelectorAll("i")].forEach((i, k) => i.classList.toggle("on", k < lit));
@@ -13381,6 +13502,7 @@ RP.mg.register("makTracks", {
       const inp = el("input", { type: "text", id: "mtname", maxlength: "40", value: st.name, "aria-label": "Track name", autocomplete: "off", spellcheck: "false" }, card);
       const ul = el("ul", {}, card);
       ev.list.forEach(g => el("li", { html: (g.ok ? "<b>[x]</b> " : "[ ] ") + RP.u.esc(g.t) + " <span style='color:var(--muted)'>" + RP.u.esc(g.prog) + "</span>" }, ul));
+      if (withLou && ev.tz.t < TIER_GOALS.taste[diff - 1] - 15) el("li", { html: "<span style='color:var(--amber)'>Lou isn't won over yet (" + ev.tz.t + "%). He won't sign off below " + (TIER_GOALS.taste[diff - 1] - 15) + "%.</span>" }, ul);
       const row = el("div", { cls: "row" }, card);
       const back = el("button", { cls: "btn", type: "button", text: "KEEP EDITING" }, row), go = el("button", { cls: "btn primary", type: "button", text: "BOUNCE IT" }, row);
       back.addEventListener("click", () => { m.remove(); });
@@ -13395,7 +13517,8 @@ RP.mg.register("makTracks", {
       const goalsPart = 56 * done / total;
       const energyQ = 0.6 * clamp((ev.dropMin - 40) / 50, 0, 1) + 0.4 * clamp(ev.jump / 30, 0, 1);
       const score = Math.round(clamp(goalsPart + 22 * energyQ + 22 * ev.tz.t / 100, 0, 100));
-      const res = { ok: score >= 55, score, title: st.name, track: { name: st.name, title: st.name, bpm: st.bpm, pattern: { steps: STEPS, rows: JSON.parse(JSON.stringify(pat)), voices: Object.assign({}, st.voice), arrangement: st.arr.slice(), layers: st.layers.map(l => l.slice()), swing: st.swing }, sample: rec.id, goals: done + "/" + total, energy: ev.en.slice(), lou: ev.tz.t } };
+      const louOk = !withLou || ev.tz.t >= TIER_GOALS.taste[di] - 15;   // Lou has to be at least half won over, or the track doesn't ship
+      const res = { ok: score >= 55 && louOk, score, title: st.name, track: { name: st.name, title: st.name, bpm: st.bpm, pattern: { steps: STEPS, rows: JSON.parse(JSON.stringify(pat)), voices: Object.assign({}, st.voice), arrangement: st.arr.slice(), layers: st.layers.map(l => l.slice()), swing: st.swing }, sample: rec.id, goals: done + "/" + total, energy: ev.en.slice(), lou: ev.tz.t } };
       wrap.remove(); head.remove();
       host.header("mak.Tracks", "Bounced");
       const card = el("div", { cls: "mt-card", style: "margin: 0 auto; border-color: var(--pink)" }, root);
@@ -13408,6 +13531,7 @@ RP.mg.register("makTracks", {
       const louNit = count("bass") > count("kick") ? "The bass is too loud." : count("hat") >= 10 ? "The hats are too busy." : "Leave my hi-hat alone next time.";
       let line;
       if (!withLou) line = res.ok ? "Mastered, named, ready for Pipe Hole Records." : "It needs another pass before it goes anywhere.";
+      else if (!louOk) line = "Lou, shaking his head: “No. I'm not putting my name on that. Fix the hook and the mix, kid. Then we'll talk.” (Lou's mood " + t + "%; he needed " + (TIER_GOALS.taste[di] - 15) + "%.)";
       else if (t >= 75) line = "Lou, quiet for a second: “...That's it. That's the room. I haven't heard it through speakers since '93.” He sniffs. “" + louNit + "”";
       else if (t >= 50) line = "Lou, arms folded: “It's not 1993. But it's not bad. Don't tell anyone I said that.”";
       else line = "Lou: “You put my track in a blender, kid. ...Do it again. Slower.”";
@@ -15587,7 +15711,9 @@ try {
      { faults: ["ground-hum","dead-channel","feedback","blown-tweeter","wrong-input"],
        time: seconds until doors (default scales with faults and difficulty),
        stage: "loft" | "festival", difficulty: 1..5,
-       tech: "Mo (FOH)" (the crew member who talks to you; default SKYE at the loft, NADIA (FOH) at the festival) }
+       tech: "Mo (FOH)" (the crew member who talks to you; default SKYE at the loft, NADIA (FOH) at the festival),
+       rotary: true  (the mixer has level knobs, not faders, e.g. the Taula: "FADER" becomes "LEVEL KNOB" and the scrub step
+               says "turn it all the way down and all the way up"; default: on when stage is "festival" and the player's mixer is rotary) }
    Result: { ok, score (0..100), fixed } — ok means every fault is fixed and nothing new is broken. */
 (function () {
 "use strict";
@@ -15700,6 +15826,8 @@ const CSS = `
 .sc-ladder i { background: #241d48; } .sc-ladder i.g { background: #3fd07a; } .sc-ladder i.a { background: #ffc44d; } .sc-ladder i.r { background: #ff4a5a; }
 .sc-fader { display: flex; align-items: center; gap: 6px; font-size: 16px; color: var(--muted); }
 .sc-fader input { flex: 1; min-width: 0; accent-color: var(--cyan); height: 28px; }
+.sc-fader input.dirty { outline: 2px dashed var(--amber); outline-offset: 1px; }
+.sc-scrub { font-size: 15px; line-height: 1.05; color: var(--amber); } .sc-scrub b { font-weight: 400; } .sc-scrub span { padding: 0 3px; border: 1px solid var(--amber); } .sc-scrub span.hit { background: var(--amber); color: #12061a; }
 .sc-eq { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; align-items: end; }
 .sc-eq label { display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 14px; color: var(--muted); }
 .sc-eq input { writing-mode: vertical-lr; direction: rtl; width: 100%; height: 86px; margin: 0; accent-color: var(--lime); min-width: 0; }
@@ -15810,6 +15938,9 @@ RP.mg.register("soundCheck", {
       : gearLabel("behringer_djx750", "Behringer DJX750");
     const monName = gearLabel(G.monitors || (stageId === "festival" ? "dynaudio_core_47" : "krk_rokit_5_g4"), "Booth monitor");
     const NCH = ST.nch;
+    const mixG = stageId === "festival" && G.mixer && RP.gearInfo ? RP.gearInfo(G.mixer) : null;
+    const rotary = p.rotary != null ? !!p.rotary : !!(mixG && mixG.kind === "rotary");
+    const FD = rotary ? "level knob" : "fader";
     const S = {
       stage: stageId, deck: decks,
       ch: Array.from({ length: NCH }, () => ({ input: "line", fader: 0.8, dirt: 0, last: null, sw: 0 })),
@@ -16073,7 +16204,7 @@ RP.mg.register("soundCheck", {
         if (!d.play) return;
         const c = chain(i), nm = "deck " + d.id, n0 = lines.length;
         if (c.ch.dirt >= 2) { lines.push(["bad", nm + " is silent: dead channel"]); return; }
-        if (c.ch.fader < 0.1) { lines.push(["q", nm + " is faded out: fader down"]); return; }
+        if (c.ch.fader < 0.1) { lines.push(["q", nm + " is faded out: " + FD + " down"]); return; }
         highs = true;
         if (c.thin) lines.push(["bad", nm + " is thin and very quiet: wrong input level"]);
         if (c.hot) lines.push(["bad", nm + " is loud and distorted: wrong input level"]);
@@ -16338,7 +16469,7 @@ RP.mg.register("soundCheck", {
         ladder(c, x + 2, MIX[1] + 25, 9, lv, true, 1, 1);
         R(c, x + 2, MIX[1] + 9, 3, 1, lv > 1.02 ? "#ff4a5a" : "#3a1a22");
         const kx = x + sw - 9; R(c, kx, MIX[1] + 9, 3, 3, "#8a84a8"); R(c, kx + 1, MIX[1] + 9, 1, 1, "#efeaff"); R(c, kx, MIX[1] + 14, 3, 3, "#8a84a8"); R(c, kx + 1, MIX[1] + 14, 1, 1, "#efeaff");
-        const fy = MIX[1] + 19 + Math.round((1 - ch.fader) * 6); R(c, x + sw - 5, MIX[1] + 18, 1, 9, "#0a0814"); R(c, x + sw - 7, fy, 5, 2, "#d8d0e8");
+        if (rotary) { const kx2 = x + sw - 8, ky = MIX[1] + 20; ell(c, kx2 + 2, ky + 3, 3, 3, "#8a84a8"); P(c, kx2 + 2 + Math.round((ch.fader - 0.5) * 4), ky + 1, "#efeaff"); } else { const fy = MIX[1] + 19 + Math.round((1 - ch.fader) * 6); R(c, x + sw - 5, MIX[1] + 18, 1, 9, "#0a0814"); R(c, x + sw - 7, fy, 5, 2, "#d8d0e8"); }
       }
       const mx = MIX[0] + MIX[2] - 12; R(c, mx - 1, MIX[1] + 6, 11, MIX[3] - 8, "#1d1c2a"); ladder(c, mx + 1, MIX[1] + 27, 9, M.master, true, 1, 1); ladder(c, mx + 6, MIX[1] + 27, 9, M.master, true, 1, 1);
       txt(c, "MIXER", MIX[0] + 2, MIX[1] - 8, "#a8a2c8", 1, 1);
@@ -16534,16 +16665,20 @@ RP.mg.register("soundCheck", {
             const sg = el("div", { cls: "sc-seg" }, card);
             const bp = el("button", { type: "button", "aria-pressed": "false", text: "PHONO", cls: "on-pink" }, sg), bl = el("button", { type: "button", "aria-pressed": "false", text: "LINE" }, sg);
             bp.addEventListener("click", () => { ch.input = "phono"; RP.sfx("blip"); checkFixes(); syncAll(); }); bl.addEventListener("click", () => { ch.input = "line"; RP.sfx("blip"); checkFixes(); syncAll(); });
-            const fd = el("div", { cls: "sc-fader" }, card); el("span", { text: stageId === "festival" ? "GAIN" : "FADER" }, fd);
-            const inp = el("input", { type: "range", min: "0", max: "100", step: "1", value: String(Math.round(ch.fader * 100)), "aria-label": "Channel " + (i + 1) + " fader" }, fd);
+            const fd = el("div", { cls: "sc-fader" }, card); el("span", { text: rotary ? "LEVEL KNOB" : stageId === "festival" ? "GAIN" : "FADER" }, fd);
+            const inp = el("input", { type: "range", min: "0", max: "100", step: "1", value: String(Math.round(ch.fader * 100)), "aria-label": "Channel " + (i + 1) + " " + FD }, fd);
+            /* a dirty strip shows what to do: scrub the control between its two ends, with the ends marked and the dirt left */
+            const scr = el("div", { cls: "sc-scrub" }, card);
+            const scrub = () => { if (ch.dirt > 0) { scr.style.display = ""; scr.innerHTML = "<b>DIRTY · " + "▮".repeat(ch.dirt) + "</b><br>Scrub the " + FD + " " + (rotary ? "all the way down, then all the way up" : "end to end") + ": <span class='" + (ch.last === "lo" ? "hit" : "") + "'>MIN</span> ⟷ <span class='" + (ch.last === "hi" ? "hit" : "") + "'>MAX</span>"; inp.classList.add("dirty"); } else { scr.style.display = "none"; inp.classList.remove("dirty"); } };
             inp.addEventListener("input", () => {
               const v = parseInt(inp.value, 10) / 100; ch.fader = v;
               if (ch.dirt > 0) { const zone = v < 0.12 ? "lo" : v > 0.88 ? "hi" : null; if (zone && zone !== ch.last) { if (ch.last) { ch.sw++; RP.sfx("scratch"); if (ch.sw % 2 === 0) { ch.dirt--; if (ch.dirt === 0) { checkFixes(); setMsg("CH" + (i + 1) + " is clean."); } else setMsg("It is crackling less. Keep scrubbing CH" + (i + 1) + "."); } } ch.last = zone; } }
-              syncAll(true);
+              scrub(); syncAll(true);
             });
             const sp = el("button", { cls: "kbtn", type: "button", text: "SPRAY CLEANER" }, card); sp.style.fontSize = "16px";
-            sp.addEventListener("click", () => { RP.sfx("spray"); if (ch.dirt > 0) { ch.dirt = Math.max(0, ch.dirt - 1); setMsg(ch.dirt ? "Sprayed CH" + (i + 1) + ". Now scrub the fader end to end." : "CH" + (i + 1) + " is clean."); if (!ch.dirt) checkFixes(); } else setMsg("CH" + (i + 1) + " smells like a hardware store now. Nothing was dirty."); syncAll(); });
+            sp.addEventListener("click", () => { RP.sfx("spray"); if (ch.dirt > 0) { ch.dirt = Math.max(0, ch.dirt - 1); setMsg(ch.dirt ? "Sprayed CH" + (i + 1) + ". Now scrub the " + FD + (rotary ? " all the way down and up." : " end to end.") : "CH" + (i + 1) + " is clean."); if (!ch.dirt) checkFixes(); } else setMsg("CH" + (i + 1) + " smells like a hardware store now. Nothing was dirty."); syncAll(); });
             panelSync.push(() => {
+              scrub();
               const dk = S.deck[feeds]; sm.textContent = feeds >= 0 ? "from deck " + dk.id : "free";
               bp.setAttribute("aria-pressed", String(ch.input === "phono")); bl.setAttribute("aria-pressed", String(ch.input === "line"));
               const lv = M.chLvl[i], on = Math.round(clamp(lv, 0, 1.2) * 10); cells.forEach((cl, n) => { cl.className = n < on ? (n < 6 ? "g" : n < 8 ? "a" : "r") : ""; });
@@ -24258,8 +24393,11 @@ async function sleepNow(S) {
   await RP.say("Thursday. Anniversary night.", "nar");
   RP.text("ODESSA", "Six months tonight. Kosmo's in. Doors 9. Do NOT be late. Do NOT make me regret the napkin.");
   RP.text("MARCUS", "plus 3 right??? it's your ANNIVERSARY");
+  RP.text("TWINKIE", "Brandon bought a blue USB at the bodega at 4. Took the label off. Same shade as yours, honey. He is a hugger: the pat is twice, on the jacket pocket. If I had a stick I couldn't lose, I'd keep it out of a hugger's reach. Or give him something else to take. Or put his own gold smiley on it. Advice is $4 a minute. Tonight it's free.", true);
+  S.f.a3_twinkie3 = true;
   await RP.fadeTo(0, 900);
-  await RP.lines(["Six months. Half a year of Thursdays.", "Bag. USB. Don't forget the USB. Lou will never let me live it down."]);
+  await RP.lines(["Six months. Half a year of Thursdays.", "A fourth text, from a number I never saved. Twinkie. Brandon, a blue USB, and a hug with a pat in it.",
+    "Bag. USB. Don't forget the USB. Lou will never let me live it down.", "The cat stick is in the drawer. Brandon's gold smiley stickers are on everything he owns. And Brandon is a man who hugs at the door."]);
 }
 
 async function pickBag(S) {
@@ -24287,6 +24425,7 @@ async function loulines(S) {
 async function endScene(S) {
   S.f.a3_end = true;
   RP.setClock("FRI 3:00 AM");
+  await RP.fadeTo(0, 500);   // the train scene faded to black; lift it before the end scene talks
   RP.actor("kid").face = "front";
   await RP.lines([
     "@nar Friday, 3:00 AM.",
@@ -24353,7 +24492,10 @@ RP.room({
       use: async S => {
         if (!S.f.a3_opener) return "No time to edit. Records in the bag, USB in my pocket. That's the whole plan.";
         if (S.f.a3_promo) return "I've posted enough this week. The algorithm needs a break from me.";
-        await RP.say("Time to be a person on the internet. A week of posting, practicing and digging. How do I split it?");
+        if (!S.f.a3_estateDone) { await RP.say("The posting week eats the rest of the week: Wednesday night, gone. The fair is on Sunday and the estate sale ends this week. Do the digging first."); return; }
+        await RP.say("The week is almost over. If I start posting now I won't look up until Wednesday night, and everything else on the napkin has to be done already.");
+        if ((await RP.choose(["Start the posting week", "Not yet"])) === 1) return;
+        await RP.say("A week of posting, practicing and hoping. How do I split it?");
         const wk = await RP.choose(["One proper mix, posted properly, and answer every comment", "Ten-second clips from the booth, one a day, no talking", "Tag every bar and promoter on the Lower East Side"]);
         await RP.fadeTo(1, 500);
         await RP.say("One week of posting later.", "nar");
@@ -24602,7 +24744,7 @@ async function buySnack(S) {
     if (!RP.canAfford(2)) { await RP.say("I have... " + U.fmtMoney(S.money) + ". It's the 'no' kind of money."); return; }
     RP.money(-2); RP.give(id); await RP.say(line);
   };
-  if (i === 0) await buy("a3_chips", "Salt & vinegar. The color of a bruise. Gus will love them.");
+  if (i === 0) await buy("a3_chips", "Salt & vinegar. The color of a bruise." + (S.f.a3_soundcheck ? " Gus is covered. Somebody with a beak might not be." : " Gus will love them."));
   else if (i === 1) await buy("a3_rinds", "Pork rinds. I'm not sure what my plan is, but they look confident.");
   else if (i === 2) await buy("a3_pickle", "A pickle in a bag with a splash of brine. This is how you eat in the city.");
 }
@@ -24646,15 +24788,16 @@ async function useEddie(S) {
 
 async function twinkie3(S) {
   if (S.f.a3_twinkie3) {
-    await RP.lines(["@a3_twinkie Still here, honey. Tiny shuts the door in six minutes.", "@a3_twinkie Pat, pat. Remember. A hug is the one con where you thank the thief."]);
+    await RP.lines(["@a3_twinkie Still here, honey. Tiny shuts the door in six minutes.", "@a3_twinkie You got my text? Pat, pat. Remember. A hug is the one con where you thank the thief.",
+      "@a3_twinkie Whatever you're doing about it, do it before the door. He's a hugger, not a patient one."]);
     return;
   }
   S.f.a3_twinkie3 = true;
   await RP.lines(["@a3_twinkie Look who it is. The Thursday kid. Hair's different. Same eyes. Tired.",
     "Hey, Twinkie. Know anything I should know?", "@a3_twinkie I know everything. It's the cost of not sleeping.",
     "@a3_twinkie Brandon was at the bodega at four. Bought a blue USB. Took the label off in the shop.", "@a3_twinkie Same shade as yours, honey. I notice shades. It's a gift. And a curse. Mostly a curse.",
-    "That is... a lot of detail for a USB.", "@a3_twinkie He's a hugger. Three DJs on this street, three hugs, two of them are still looking for their keys. The pat is twice, on the jacket, where you keep what matters.",
-    "He wants my USB?", "@a3_twinkie I'm not saying a word. If I had a USB I couldn't stand to lose, I wouldn't keep it where a hugger can reach. Or I'd give him something to take. Or I'd put his own face on it: the man sticks little gold smileys on everything he owns, even the stage. He'd be thrown by his own signature.",
+    "That is... a lot of detail for a USB.", "@a3_twinkie He's a hugger. The pat is twice, on the jacket, where you keep what matters.",
+    "He wants my USB?", "@a3_twinkie I'm not saying a word. If I had a stick I couldn't stand to lose, I wouldn't keep it where a hugger can reach. Or I'd give him something to take. Or I'd put his own face on it: the man sticks little gold smileys on everything he owns. There's one on his poster right there.",
     "@a3_twinkie I didn't say any of that. It's four dollars a minute for advice. Tonight I'm waiving it."]);
 }
 
@@ -24743,7 +24886,13 @@ RP.room({
     { id: "a3_marquee", name: "marquee", r: [190, 70, 80, 50], z: 19, walk: [230, 222, "back"],
       look: S => ["THURSDAYS: " + A3.billed(S) + ". That's me, if you squint, and I'm squinting.", "SATURDAYS: DJ BRANDON SHINE. NO SNEAKERS. That one's personal."], pickup: "It's bolted to the wall. Unlike my ambitions." },
     { id: "a3_brandonposter", name: "Brandon's poster", r: [360, 56, 56, 76], z: 21, walk: [388, 222, "back"],
-      look: "SATURDAYS: BRANDON SHINE. ALL NIGHT. A poster with a lot of gold and zero humility. Sunglasses at night, on paper.", pickup: "I could take it. I could also not start a war with a poster.", use: "I'd draw a mustache on it, but that's what they WANT." },
+      look: S => "SATURDAYS: BRANDON SHINE. ALL NIGHT. A poster with a lot of gold and zero humility. Sunglasses at night, on paper." + (S.f.a3_smileyTaken ? "" : " A gold smiley sticker is stuck in the bottom corner, loosely."),
+      pickup: async S => {
+        if (S.f.a3_smileyTaken || RP.has("a3_smiley") || S.f.a3_usbSticker) { await RP.say("I could take the poster. I could also not start a war with a poster. The smiley's already mine."); return; }
+        S.f.a3_smileyTaken = true; RP.give("a3_smiley"); RP.sfx("click");
+        await RP.say("I peel the gold smiley off the corner of the poster. It comes away clean. Brandon will never notice. Brandon will absolutely notice.");
+      },
+      use: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a3_brandonposter").pickup) },
     { id: "a3_flyers", name: "flyers", rects: [[170, 128, 20, 28], [426, 76, 28, 38], [450, 102, 26, 34], [406, 116, 22, 30]], z: 17, walk: [200, 222, "back"],
       look: "Wheat-pasted flyers three layers deep. A graveyard of Thursdays. One says 'SOUL CLAP' and one says 'HOUSE' and none of them say my name correctly.", pickup: "They've bonded to the wall. They live here now." },
     { id: "a3_bodega", name: "Sunrise Deli", rects: [[6, 104, 154, 70]], z: 12, walk: [90, 226, "back"],
@@ -24989,7 +25138,12 @@ RP.room({
     { id: "a3_brandon", name: "DJ Brandon Shine", z: 80, look: "DJ Brandon Shine. Gold vest, sunglasses indoors, a tan that's not from outdoors. His smile arrives half a second before the rest of him.",
       talk: S => A3.brandonTalk(S), give: (S, item) => A3.brandonGive(S, item) },
     { id: "a3_marcus", name: "Marcus", z: 80, look: "Marcus, plus three, dancing in a way that means he's been in the building forty seconds.",
-      talk: ["Marcus! You came!", "@a3_marcus I came! My friend came! The guy from the cab came!", "He's very into the music. He's holding a drink he didn't pay for."] },
+      talk: async S => {
+        await RP.lines(["Marcus! You came!", "@a3_marcus I came! My friends came! The guy from the cab came!", "He's very into the music. He's holding a drink he didn't pay for."]);
+        if (!S.f.a3_marcusTab) { S.f.a3_marcusTab = true; await RP.lines(["@a3_marcus Oh, I told the bar it's all on you. It's your anniversary! You're rich! Odessa said she'd cover half. Odessa said a lot of things.", "That's the plus three. They didn't come free."]); }
+        if (S.f.a3_swapFound && !S.f.a3_feudOver && !S.f.a3_brandonDone) await RP.lines(["@a3_marcus Dee tended bar for six years. She says two bartenders at war always share one record. Find it, put it on the bar player, and watch them fold."]);
+        else await RP.say("Marcus pats the air near my shoulder, the way you do with a friend who's about to be famous.", "nar");
+      } },
     { id: "a3_h_foh", name: "sound desk", r: [432, 188, 100, 28], z: 30, walk: [448, 220, "back"],
       look: "Gus's front-of-house desk: forty faders, a laptop, and a graveyard of snack wrappers. It looks like a spaceship that crashed into a vending machine.",
       use: "Gus looks at my hand. At the desk. At my hand. I withdraw it.", pickup: "Gus looks at me. I put it down." },
@@ -25427,7 +25581,7 @@ A3.hallEnter = async function (S, from) {
   // ---- the week: the club in daylight
   if (S.f.a3_week && !S.f.a3_thu3 && !S.f.a3_weekHall) {
     S.f.a3_weekHall = true;
-    await lines(["The Halcyon Room in daylight. Work lights, mop buckets, and chairs upside-down on tables. It looks like a club that's been caught with its pants down.", "@a3_odessa Don't look at it. It doesn't like being looked at."]);
+    await lines(["The Halcyon Room with the work lights on. Mop buckets, and chairs upside-down on tables. It looks like a club that's been caught with its pants down.", "@a3_odessa Don't look at it. It doesn't like being looked at."]);
     return;
   }
   // ---- Night 3 arrival: Brandon's big hug
@@ -25437,15 +25591,37 @@ A3.hallEnter = async function (S, from) {
     await lines(["@nar Anniversary night. Six months of Thursdays.", "The room's filling fast. The banner says '6 MONTHS.' It doesn't say my name. It's for the room. It's still my favorite banner.",
       "@a3_odessa Six months. You've been late zero times. I've never had a DJ be early six months in a row.", "@a3_odessa Kosmo's here. He's in the booth. Don't speak unless spoken to. And if spoken to, don't speak too much.",
       "@a3_brandon THERE he is! The Thursday kid!"]);
-    AC("a3_brandon").x = 150; AC("a3_brandon").y = 232;
-    AC("a3_brandon").face = "right";
-    await lines(["@a3_brandon Six months! Big night! Come here, come here, I'm a hugger.", "Brandon. Uh. Hi."]);
-    RP.sfx("whoosh"); await RP.wait(500);
+    await A3.hugApproach(S);
     await A3.hug(S);
     await say("Kosmo's in the booth. Let me go say hi. Carefully.");
   }
   // ---- Night 3: Brandon's own plan, back from the booth
   if (S.f.a3_foiled === "cat" && S.f.a3_swapFound && !S.f.a3_brandonDone) await A3.catBackfire(S);
+};
+
+/* Brandon crosses the floor with his arms already open; the player gets a moment to act on Twinkie's hint before he arrives */
+A3.hugApproach = async function (S) {
+  const b = AC("a3_brandon");
+  b.x = 470; b.y = 226; b.face = "left";
+  await lines(["Across the floor, a gold vest is parting the crowd. Arms open. Sunglasses on, indoors, at night.", "@a3_brandon Six months! Big night! Come here, come here, I'm a hugger!"]);
+  await RP.npcWalk("a3_brandon", 330, 226, "left");
+  await say("He's still twenty feet away and already smiling at my jacket.");
+  for (let guard = 0; guard < 4; guard++) {
+    const opts = [], acts = [];
+    if (RP.has("a3_usb") && !S.f.a3_usbHidden) { opts.push("Slip the real USB into a Sylvester sleeve in the bag"); acts.push("hide"); }
+    if (RP.has("a3_usb") && RP.has("a3_smiley") && !S.f.a3_usbSticker) { opts.push("Press the gold smiley onto the USB"); acts.push("sticker"); }
+    if (!acts.length) break;
+    opts.push("Let him come");
+    const i = await RP.choose(opts);
+    if (i >= acts.length) break;
+    if (acts[i] === "hide") {
+      S.f.a3_usbHidden = true;
+      await say(RP.has("a3_usb_old") ? "The real stick goes between two Sylvesters. The old cat stick stays in the pocket, looking important." : "The real stick goes between two Sylvesters. My pocket is now just a pocket.");
+    } else await A3.stickUsb(S);
+  }
+  await RP.npcWalk("a3_brandon", 150, 228, "left");
+  await lines(["He arrives. Arms first."]);
+  RP.sfx("whoosh"); await RP.wait(500);
 };
 
 /* the hug: the USB is either in the jacket pocket (swapped), tucked in the bag with the old cat stick as a decoy (Brandon takes the cat), in the bag alone (empty pocket) or wearing his own sticker */
@@ -25459,7 +25635,7 @@ A3.hug = async function (S) {
   if (route === "swap") {
     await lines(["@a3_brandon Break a leg. Both. Whichever.", "That was the longest hug I've had since I was nine.", "He smells like a hotel gift shop. And he patted my jacket twice. Weird. Probably a hugger thing."
       + (S.f.a3_twinkie3 ? " Twinkie said he was a hugger. Twinkie said a lot of things. I filed it under 'Twinkie.'" : "")]);
-    if (RP.has("a3_usb_old")) await say("The old cat stick is still in my pocket, with the real one. He took the one with the better posture.");
+    if (RP.has("a3_usb_old")) await say("The old cat stick is still on me, untouched. He took the one with the better posture.");
     S.f.a3_swap = true;
     await RP.npcWalk("a3_brandon", 214, 222, "left");
     return;
@@ -25561,7 +25737,7 @@ async function night1Set(S) {
   await RP.fadeTo(1, 700);
   S.f.a3_week = true; S.f.noTravel = false; S.f.a3_floor = null;
   RP.unlock("a3_loc_deepcuts");
-  RP.text("RAY", "Deep Cuts. Tomorrow. Got something you're too young for. -R");
+  RP.text("RAY", "Deep Cuts. Today, after lunch. Got something you're too young for. -R");
   RP.text("EDDIE TWO-TIMES", "Heard you got paid. Two-time deal on those CDJ-900s. Come to the van. -E2T", true);
   RP.setClock("FRI 1:20 PM");
   await RP.goto("a3_apartment", 560, 232, "left");
@@ -25573,7 +25749,7 @@ A3.boothUse = async function (S) {
   const gear = RP.actor("kid");
   // ---------- Night 1
   if (!S.f.a3_thu3) {
-    if (S.f.a3_week) { await say("The booth in daylight: nobody's here, and the gear's asleep. It's a better look for it, honestly."); return; }
+    if (S.f.a3_week) { await say("The booth under work lights: nobody's here, and the gear's asleep. It's a better look for it, honestly."); return; }
     if (!S.f.a3_soundcheck) { await lines(["The booth monitors are dead. The LEDs are asleep.", "Gus has to wake them. Gus is out at the desk. Gus responds to snacks."]); return; }
     await night1Set(S); return;
   }
@@ -25590,7 +25766,7 @@ A3.boothUse = async function (S) {
 };
 
 A3.usbIn = async function (S) {
-  if (!S.f.a3_thu3) { await say("The USB's my backup. Vinyl first; tracks only if a record skips. I'll plug it in at the booth if I need it."); return; }
+  if (!S.f.a3_thu3) { await say("The USB's my backup. Vinyl first; tracks only if a record skips. I'll plug it in if I need it."); return; }
   if (S.f.a3_usbHidden) { await say("It's in the bag, in a Sylvester sleeve. I'll fish it out when I need it."); return; }
   if (S.f.a3_swap && !S.f.a3_usbBack) { await lines(["I plug it in and cue the first track. 'SUMMER OF SHINE.' It's still Brandon.", "I unplug it before the CDJ catches 'Shine.'"]); return; }
   await say("My real USB's back in my pocket. I'll play vinyl and keep it as a backup.");
@@ -25623,26 +25799,32 @@ async function anniversarySet(S) {
   if (shuts.length < 2) shuts = shuts.concat(take(pool.filter(id => !shuts.includes(id) && !opens.includes(id)), 2 - shuts.length));
   await lines(["Everything I own is in the bag. The set only needs two decisions made properly: how it starts, and how it ends. The middle takes care of itself if the first record is honest.", "The first record."]);
   const op = opens[await RP.choose(opens.map(nameOf))];
-  await lines(["Good. A room handed back by a legend wants a hand on the shoulder, not a shove.", "And the last one, for whoever's still standing at ten to one."]);
+  await lines(["Noted. And the last one, for whoever's still standing at ten to one."]);
   const cl = shuts[await RP.choose(shuts.map(nameOf))];
   const spread = (a, n) => a.length <= n ? a : Array.from({ length: n }, (_, i) => a[Math.round(i * (a.length - 1) / (n - 1))]);
   const mid = spread(pool.filter(id => id !== op && id !== cl).sort((a, b) => RP.rec(a).energy - RP.rec(b).energy || RP.rec(a).bpm - RP.rec(b).bpm), 4);
-  const order = [op].concat(mid.slice(0, 3), RP.hasRecord("white_nyc93") ? ["white_nyc93"] : [], mid.slice(3), RP.hasRecord(GRAIL) ? [GRAIL] : [], [cl]);
-  S.f.a3_setDone = true;
-  RP.followers(60 + 4 * (S.f.a3_gems == null ? 8 : S.f.a3_gems));   // Hal's stars are what the set is made of
+  const hasGrail = RP.hasRecord(GRAIL), hasWhite = RP.hasRecord("white_nyc93");
+  let grailAt = "bag";
+  if (hasGrail) {
+    await lines(["One more sleeve in the bag, marked 'FOR COMPANY' in Hal's hand. Loose Joints. 'Is It All Over My Face?' Larry Levan's remix, the one everyone knows. Hal kept it for sixty years for someone who would play it.", "When does it come out?"]);
+    grailAt = ["peak", "last", "bag"][await RP.choose(["The peak, after the white label, with the room already up", "After " + nameOf(cl) + ", as the very last record", "Keep it in the bag. Some records are for company"])];
+  }
+  const order = [op].concat(mid.slice(0, 3), hasWhite ? ["white_nyc93"] : [], grailAt === "peak" ? [GRAIL] : [], mid.slice(3), [cl], grailAt === "last" ? [GRAIL] : []);
+  S.f.a3_setDone = true; S.f.a3_grailAt = grailAt;
+  const hot = id => RP.rec(id).energy >= 4, nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");
+  RP.followers(60 + 4 * (S.f.a3_gems == null ? 8 : S.f.a3_gems) + (hot(cl) ? 10 : 15) + (hasGrail && grailAt !== "bag" ? 30 : 0));   // Hal's stars are what the set is made of
   RP.setClock("FRI 1:15 AM");
-  const hasGrail = RP.hasRecord(GRAIL);
-  const ids = order.filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");
-  const wi = ids.indexOf("white_nyc93"), gi = ids.indexOf(GRAIL);
-  const setLines = ["The first record drops" + (ids[0] ? ": " + nm(ids[0]) : "") + ". The room settles like a sigh."];
-  if (ids.length >= 3) setLines.push("Then " + nm(ids[1]) + ", then " + nm(ids[2]) + ". Build, don't jump. For once, I don't jump.");
-  setLines.push(wi >= 0 && wi < 3 ? "The white label is Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud."
-    : wi >= 0 || !ids.length ? "Somewhere in there, something nobody in here has heard: the white label. Lou's 1993. The room goes quiet for a beat, then loud."
-    : "Then one record that isn't on the plan: the white label. Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud.");
-  await lines(setLines);
-  if (hasGrail) await lines([(gi >= 0 && gi < ids.length - 1 ? "When its turn comes, I pull out" : "For the last record I pull out") + " the one sleeve in the bag that says 'FOR COMPANY.' Loose Joints. 'Is It All Over My Face?' Larry Levan's remix, the one everyone knows. On the Technics' cousin in the booth.",
-    "Somebody screams. Somebody cries. Somebody films it, which is the same thing."]);
-  await lines(["I send them home on " + nm(cl) + ", just as planned. The lights come up slowly. Nobody leaves."]);
+  const ids = order.filter(id => id && RP.rec(id));
+  await lines(["The first record is " + nameOf(op) + "." + (hot(op) ? " A hot start: the room is a half step behind me for a minute, then catches up. Nobody tells me it was risky." : " It lands like a hand on the shoulder. The room settles like a sigh.")]);
+  const mids = ids.filter(id => id !== op && id !== cl && id !== GRAIL && id !== "white_nyc93").slice(0, 3);
+  if (mids.length) await lines(["Then " + mids.map(nm).join(", then ") + ". Build, don't jump. For once, I don't jump."]);
+  if (hasWhite) await lines([ids.indexOf("white_nyc93") < 4 ? "The white label comes early, Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud." : "Then the white label, Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud."]);
+  if (grailAt === "peak") await lines(["Loose Joints, with the room already up. Somebody screams. Somebody cries. Somebody films it, which is the same thing. Then I have to land the plane, and the plane is " + nm(cl) + "."]);
+  await lines(hot(cl) ? ["The closer is " + nameOf(cl) + ", and I don't ease off. The floor won't let me. Nobody checks a coat."]
+    : ["The closer is " + nameOf(cl) + ". The lights come up slowly. The floor sways home, coats coming out one slow arm at a time."]);
+  if (grailAt === "last") await lines(["Then I pull out the sleeve marked 'FOR COMPANY.' Loose Joints. Nobody had left. Everybody screams. Somebody cries. Somebody films it, which is the same thing."]);
+  if (grailAt === "bag") await say("Somebody asks about the record in the bag with the handwriting on it. I tell them next time. Hal would have wanted somebody to have a reason to come back.");
+  if (grailAt !== "bag" && hasGrail) await say("Hal's record, played to a room, as promised. Somewhere in Woodside a parakeet is smug about it.");
   RP.sfx("cheer");
   S.f.a3_vegaHere = true;
   await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend.", "@a3_dj_louie_vega Woman by the door, black coat, filming you since the white label. Berlin accent. She tipped her head at the booth. I know that head tip. That's a booker."]);
@@ -25655,7 +25837,7 @@ async function anniversarySet(S) {
   RP.money(TAB - fine);
   await lines(["@a3_marcusoff That was... the best night of my life. And I've been to a lot of nights.", "I'm going to cry. In front of Marcus. In front of Rico, Dee and the guy from the cab."]);
   RP.setClock("FRI 1:35 AM");
-  await lines(["Twenty minutes of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ.' Odessa covers half. My half is the envelope: two hundred dollars.",
+  await lines(["Twenty minutes of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ': Marcus's plus three, as promised, on my name. Odessa covers half. My half is the envelope: two hundred dollars.",
     "I hand Nico the envelope without opening it. I just played the best set of my life for free.", "@nar Marcus, counting his change: 'Trains are a mess, man. If your card's dead, find the oranges guy on the Delancey platform. He swipes people through. Takes payment in fruit.'"]);
   RP.money(-Math.min(tab, S.money));
   if (S.f.a3_tabExtra) await say("Brandon's sixty is on it too. A man can build a whole bar tab out of one hug.");
@@ -25711,7 +25893,10 @@ A3.odessaTalk = async function (S) {
     await say("Odessa. Where am I on the napkin?");
     if (left.length) { await say("Still on the list: " + left.join("; ") + ".", "a3_odessa"); await say("And do it before the anniversary. After that, nobody's counting.", "a3_odessa"); }
     else await say("You're done. Go home. Sleep. Come back Thursday. I want you rested and terrified.", "a3_odessa");
-    if ((S.f.a3_shifts || 0) < 2) { const j = await RP.choose(["Odessa, I'm a bit short. Any hours going?", "No, that's all"]); if (j === 0) await A3.shift(S); }
+    if ((S.f.a3_shifts || 0) < 2) {
+      if (S.money < 150) await lines(["@a3_odessa And you're counting coins with your eyes. I have a walk-in that needs stacking, " + U.fmtMoney(55) + " cash for four hours."]);
+      const j = await RP.choose(["Odessa, I'm a bit short. Any hours going?", "No, that's all"]); if (j === 0) await A3.shift(S);
+    }
     return;
   }
   if (!S.f.a3_swapFound) { await lines(["@a3_odessa Go say hi to Kosmo. Say it once. And don't say 'big fan.' He hates that."]); return; }
@@ -25731,7 +25916,7 @@ A3.shift = async function (S) {
   const n = S.f.a3_shifts || 0;
   await lines(["@a3_odessa Weekday delivery. Eight kegs, one pallet, no complaints. Fifty-five dollars and the satisfaction of a clean walk-in.", "I take it. It beats owing Eddie."]);
   await RP.fadeTo(1, 500);
-  A3.clockTo(S, n ? "WED 6:00 PM" : "TUE 6:00 PM");
+  A3.clockTo(S, S.f.a3_fairSeen ? (n ? "TUE 6:00 PM" : "MON 6:00 PM") : (n ? "SAT 6:00 PM" : "FRI 6:00 PM"));
   await lines(["Four hours in the walk-in. Nico stacks one end, Bex stacks the other, and I am the only line of communication between them.", "@a3_nico Tell her the lemons go on the left.", "@a3_bex Tell him the lemons are on the right.",
     "Lemons are the only thing in this building that has ever been both. I carry nine messages and about six pounds of citrus."]);
   await RP.fadeTo(0, 500);
@@ -26154,7 +26339,12 @@ async function mortTalk(S) {
   await RP.say("Mmph.", "a3_mort");
   await RP.say("Ray sent me.", "kid");
   await RP.say("Ray sends everybody. Ray sends people to the DMV. You got anything for me, or are you here to look sad?", "a3_mort");
-  if (!RP.has("a3_coffee")) { await RP.lines(["I... have a charming smile?", "@a3_mort Smile's free. Everybody has one. Come back with something worth the walk.", "He's not a talker. He's a grunter. Ray said to bring something. A coffee, maybe?"]); return; }
+  if (!RP.has("a3_coffee")) { await RP.lines(["I... have a charming smile?", "@a3_mort Smile's free. Everybody has one. Come back with something worth the walk.", "He's not a talker. He's a grunter. Ray said to bring something. A coffee, maybe?"]); 
+    if ((S.f.a3_sold || 0) < 2 && S.money < 200) {
+      await RP.lines(["@a3_mort ...Light in the wallet, by the look of the bag. I buy records. Sixty cents on the dollar, no haggling, no feelings."]);
+      if ((await RP.choose(["Mort, are you buying? I could part with a record.", "No, thanks"])) === 0) await sellToMort(S);
+    }
+    return; }
   await mortCoffee(S);
 }
 const NO_SELL = ["sylvester_you_make_me_feel_mighty_real", "white_nyc93", "everything_but_the_girl_missing", "loose_joints_is_it_all_over_my_face", "mood_ii_swing_closer"];
@@ -26171,7 +26361,11 @@ async function sellToMort(S) {
 }
 async function mortCoffee(S) {
   RP.take("a3_coffee");
-  await RP.lines(["Here. A coffee. It's from the PTA table.", "@a3_mort ...Black?", "It's black. Like my future.", "@a3_mort *sips* ...Terrible. Thank you. Sit down, you look nervous.",
+  const kind = S.f.a3_coffeeKind || 0;
+  await RP.lines(["Here. A coffee. It's from the PTA table."].concat(kind === 1 ? ["@a3_mort ...Cream?", "She said it was a day for cream.", "@a3_mort *sips* ...Soft. Terrible. Thank you. Sit down, you look nervous."]
+    : kind === 2 ? ["@a3_mort What's in it?", "A surprise. Cinnamon, probably.", "@a3_mort *sips* ...Probably. Terrible. Thank you. Sit down, you look nervous."]
+    : ["@a3_mort ...Black?", "It's black. Like my future.", "@a3_mort *sips* ...Terrible. Thank you. Sit down, you look nervous."]));
+  await RP.lines([
     "@a3_mort Pruitt. Hal Pruitt. Sixty years of records in a house in Woodside. He had a clean West End copy of that one. Wouldn't sell. Said it was 'for company.'",
     "@a3_mort He passed in March. The niece is emptying the house this week. Whole collection. Everything. She just wants it gone.",
     "@a3_mort Priya's been bugging me for the address for a week. I told her I don't know it. I lied. Go. Quickly.",
@@ -26201,10 +26395,12 @@ async function buyCoffee(S) {
   if (RP.has("a3_coffee")) { await RP.say("I already have one. Two coffees means I've made a bad decision."); return; }
   await RP.say("A coffee, please.", "kid");
   await RP.say("Five dollars, hon. It's for the gym floor. Black, cream or 'surprise'?", "a3_pta");
+  const i = await RP.choose(["Black", "Cream", "Surprise me", "Never mind"]);
+  if (i === 3) return;
   if (!RP.canAfford(5)) { await RP.say("I'm broke. Even PTA coffee wants five dollars."); return; }
-  RP.money(-5); RP.give("a3_coffee");
-  await RP.say("Black. A strong coffee. For a strong... customer.");
-  await RP.say("Don't flatter me, you'll get a bigger lemon bar.", "a3_pta");
+  RP.money(-5); RP.give("a3_coffee"); S.f.a3_coffeeKind = i;
+  await RP.say(["Black. A strong coffee. For a strong... customer.", "Cream. A coffee for a man who has made peace.", "'Surprise.' She adds something from a jar marked 'cinnamon, probably.'"][i]);
+  await RP.say(i === 0 ? "Don't flatter me, you'll get a bigger lemon bar." : "Careful, hon. Mort's particular.", "a3_pta");
 }
 RP.item("a3_coffee", { name: "PTA coffee", short: "Coffee", icon: c => { U.R(c, 10, 8, 12, 13, "#efeaf6"); U.R(c, 10, 8, 12, 2, "#ffffff"); U.R(c, 11, 10, 10, 3, "#4a2a1a"); U.R(c, 22, 11, 4, 6, "#efeaf6"); U.R(c, 12, 4, 1, 3, "#c8c4d8"); U.R(c, 16, 3, 1, 4, "#c8c4d8"); },
   look: "A paper cup of PTA coffee. Strong, terrible, and the last thing standing between me and Mort's 'mmph.'", use: "I'd drink it, but I need it for Mort." });
@@ -26236,7 +26432,7 @@ RP.room({
     { crowd: { n: 4, rect: [90, 208, 470, 12], seed: 41, face: "back", act: "stand", scale: 0.95 } }
   ],
   enter: async (S, from) => {
-    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; A3.clockTo(S, "SUN 10:00 AM"); await RP.lines(["The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "The kid on the three-dollar cash box sees my record bag, decides I'm a vendor and waves me in. I don't correct him.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
+    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; A3.clockTo(S, "SUN 10:00 AM"); await RP.lines(["The record fair only runs on Sundays, so the weekend goes by waiting for it. Sunday, ten AM.", "The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "The kid on the three-dollar cash box sees my record bag, decides I'm a vendor and waves me in. I don't correct him.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
   },
   hotspots: [
     { id: "a3_f_door", name: "door", r: [4, 38, 54, 114], z: 20, walk: [66, 214, "left"], look: "The gym door. A hand-lettered sign says 'RECORD FAIR: $3, CASH ONLY.' A second sign says 'NO RUNNING.' Nobody's running. Everyone's walking quickly. The cash-box kid thinks I'm a vendor. The bag gets me in everywhere.", exit: S => "travel" },
@@ -26633,21 +26829,26 @@ function update(dt, S, t) {
   }
 }
 
+RP.item("a3_orange", { name: "orange", short: "Orange", icon: c => { ell(c, 16, 17, 9, 9, "#e8802a"); ell(c, 14, 14, 3, 3, "#ffb060"); R(c, 15, 6, 3, 3, "#4a8a2a"); },
+  look: "An orange, the price of a swipe. It is, to be fair, the best-value fare in the system.", use: "I'll eat it on the train. A fare, then a snack." });
+
 async function runTrain(S) {
-  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard.", "Two minutes ago a girl in a hoodie got a swipe out of him, and he took payment in a segment. Rico was right. The J has a guy."]);
+  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard.", "Two minutes ago a girl in a hoodie got a swipe out of him, and he took payment in a segment. Marcus did say it: the J has a guy."]);
   const i = await RP.choose(["Jump the turnstile with a bag of records on my shoulder", "Order a car on my phone", "Ask the man with the oranges for a swipe"]);
-  if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); }
+  if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); RP.give("a3_orange"); }
   else if (i === 0) {
     const fine = Math.min(S.money, 50);
     await RP.lines(["I get one leg over. The bag, forty pounds of vinyl, does not. A transit cop at the far end of the platform lifts one eyebrow, then walks the whole platform to make a point of it.",
       fine ? "@nar 'Fifty dollars or a summons, your call.' I pay " + U.fmtMoney(fine) + ", which is the rent's first bite, and he writes the receipt in the tiniest handwriting." : "@nar 'Fifty dollars or a summons.' I turn out my pockets. There is nothing in them but lint and three percent. He sighs and writes 'warning' in the box.",
       "The man with the oranges has watched all of it. He walks over, swipes me through, and says nothing. Then, 'In oranges.'", "I take the orange."]);
+    RP.give("a3_orange");
     if (fine) { RP.money(-fine); S.f.a3_ticket = fine; }
   } else {
     const fee = Math.min(S.money, 6);
     await RP.lines(["The app takes forty seconds to open. It quotes $61 for Bushwick at this hour. At the word 'confirm,' the phone gives up and goes black.", "Three percent was optimistic. " + (fee ? "The app has already charged me " + U.fmtMoney(fee) + " for the privilege of failing to confirm." : "It would have charged me for the privilege, if I'd had it."),
       "The J pulls in, opens its doors, shuts them, and leaves while I'm shaking the phone. The next is a rumor. Seventeen minutes, a bench, and a sleeping man's snore like a bad subwoofer.",
       "The man with the oranges walks over, swipes me through for the next one, and says nothing. Then, 'In oranges.'", "I take the orange."]);
+    RP.give("a3_orange");
     if (fee) RP.money(-fee);
     S.f.a3_missedJ = true;
   }
@@ -26661,7 +26862,7 @@ async function runTrain(S) {
   await RP.fadeTo(1, 1200);
   trainState = 0; doorsOpen = false;
   await RP.goto("a3_apartment", 560, 232, "left");
-  await RP.fadeTo(0, 600);
+  if (!S.f.a3_end) await RP.fadeTo(0, 600);   // the end scene (inside that goto) has already lifted the fade, run the level card and started the next act
   return true;
 }
 A3.runTrain = runTrain;
@@ -26806,7 +27007,7 @@ const WALK3 = [
   ["talk", "hot:a3_mort"],                                          // no coffee: grunts
   ["talk", "hot:a3_priya"], ["talk", "hot:a3_dj_danny_krivit"], ["talk", "hot:a3_vendor"],
   ["look", "hot:a3_f_cork"], ["pickup", "hot:a3_f_cork"],
-  ["talk", "hot:a3_pta"],
+  ans([0]), ["talk", "hot:a3_pta"],                                  // black coffee
   ["expect", "RP.has('a3_coffee') && S.f.a3_clue3 && RP.has('a3_flyer')", "coffee bought, flyer in the pocket"],
   ["give", "hot:a3_mort", "a3_coffee"],
   ["expect", "S.f.a3_clue2 && S.f.a3_hunt && S.f.a3_knowHal && S.unlocked.includes('a3_loc_estate')", "the three clues add up: the Pruitt house"],
@@ -26833,7 +27034,7 @@ const WALK3 = [
   ["expect", "S.room === 'a3_apartment'", "home"],
   ["use", "hot:a3_bed"],                                            // promo still missing
   ["expect", "!S.f.a3_thu3", "bed refuses: promo missing"],
-  ans([1]), ["use", "hot:a3_laptop"],                                // the posting week: a clip a day
+  ans([0, 1]), ["use", "hot:a3_laptop"],                                // the posting week: a clip a day
   ["expect", "S.f.a3_promo && S.followers >= 600", "promo week done"],
   ["use", "hot:a3_bed"],
   ["expect", "S.f.a3_thu3 && S.msgs.length >= 4", "Thursday again: anniversary night"],
@@ -26859,7 +27060,7 @@ const WALK3 = [
   ["use", "hot:a3_h_stage"],
   mg({ ok: true, score: 80, played: [] }), ["use", "hot:a3_b_cdjs"],       // crowd.Read: the room Kosmo warmed up
   ["expect", "S.f.a3_kosmoDone", "followed Kosmo Delacroix"],
-  ans([0, 0, 2]), ["use", "hot:a3_b_cdjs"],                         // opener, closer -> set -> Saturday -> platform (ask the man with the oranges) -> home -> ending
+  ans([0, 0, 0, 2]), ["use", "hot:a3_b_cdjs"],                      // opener, closer, the grail at the peak -> set -> Saturday -> platform (ask the man with the oranges) -> home -> ending
   ["expect", "S.f.a3_setDone && S.f.a3_saturday && S.gear.monitors === 'dynaudio_bm5_mkiii'", "anniversary set, Saturday, Dynaudios"],
   ["expect", "S.f.a3_train && S.f.a3_email", "home on the last train, the email arrived"],
   ["expect", "S.done.includes(3)", "act 3 complete"]
@@ -26893,7 +27094,7 @@ RP.walkthroughs.act3alt = [
   ["travel", "a3_loc_deepcuts"],
   ans(["something for me", "Later"]), ["talk", "hot:a3_ray"],
   ["travel", "a3_loc_fair"],
-  ["talk", "hot:a3_pta"],
+  ans([1]), ["talk", "hot:a3_pta"],                                  // cream
   ["look", "hot:a3_f_cork"],
   ["give", "hot:a3_mort", "a3_coffee"],
   ["expect", "S.f.a3_hunt && S.f.a3_knowHal && !RP.has('a3_flyer')", "hunt solved; no flyer taken"],
@@ -26910,7 +27111,7 @@ RP.walkthroughs.act3alt = [
   ["pickup", "hot:a3_e_platter"], ["pickup", "hot:a3_e_tt"],
   ["expect", "S.f.a3_estateDone", "estate done"],
   ["travel", "a3_loc_apartment"],
-  ans([2]), ["use", "hot:a3_laptop"],                               // tag every bar: a $40 fine
+  ans([0, 2]), ["use", "hot:a3_laptop"],                               // tag every bar: a $40 fine
   ["expect", "S.f.a3_promo && S.f.a3_fines === 40", "tags cost a fine"],
   ["use", "hot:a3_bed"],
   ["expect", "S.f.a3_thu3", "Thursday"],
@@ -26933,7 +27134,7 @@ RP.walkthroughs.act3alt = [
   ["use", "hot:a3_h_stage"],
   mg({ ok: true, score: 80, played: [] }), ["use", "hot:a3_b_cdjs"],
   ["expect", "S.f.a3_kosmoDone", "followed Kosmo"],
-  ans([0, 0, 0]), ["use", "hot:a3_b_cdjs"],                         // opener, closer, jump the turnstile
+  ans([0, 0, 1, 0]), ["use", "hot:a3_b_cdjs"],                      // opener, closer, the grail last, jump the turnstile
   ["expect", "S.f.a3_setDone && S.f.a3_saturday && S.f.a3_train && S.f.a3_ticket !== undefined", "set, Saturday, a ticket on the way home"],
   ["expect", "S.f.a3_email && S.done.includes(3)", "act 3 complete"]
 ];
@@ -27130,6 +27331,9 @@ A4.sellRecord = async function (S, price) {
   return L[i];
 };
 /* the rider Ingrid wrote into the contract: water, towels, a vegetable that is not a pickle */
+/* the checked-bag fee at the desk (Ingrid warns about it; stuffing the jacket and tote with records takes $25 off) */
+A4.BAGFEE = { business: 40, economy: 75, "economy-direct": 75 };
+A4.bagFee = S => S.f.a4_lightBag && S.f.a4_cls === "business" ? 0 : Math.max(0, (A4.BAGFEE[S.f.a4_cls] || 95) - (S.f.a4_lightBag ? 25 : 0));   /* a thin deal (no class named) pays the walk-up rate */
 A4.riderHave = S => ["a4_rWater", "a4_rTowel", "a4_rVeg"].filter(k => S.f[k]).length;
 
 /* ------------------------------------------------------------------ the act */
@@ -27141,7 +27345,7 @@ RP.defineAct({
     Object.keys(S.f).forEach(k => { if (k.indexOf("a4_") === 0) delete S.f[k]; });
     S.f.noTravel = false; S.f.time = "dusk";
     if (!carry) {
-      S.money = 150; S.followers = 2500;
+      S.money = 80; S.followers = 2500;
       S.records = A4.BASE_RECORDS.slice();
       S.gear = { decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk2", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" };
     } else {
@@ -27150,7 +27354,7 @@ RP.defineAct({
       S.followers = Math.max(S.followers || 0, 2500);
       S.gear = Object.assign({ decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk2", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" }, S.gear);
     }
-    if (carry) S.money = Math.max(120, Math.min(S.money || 0, 220));      /* tight on purpose: rent, the MK7s and a deposit ate the rest */
+    if (carry) S.money = Math.max(70, Math.min(S.money || 0, 80));        /* tight on purpose: rent, the MK7s and a deposit ate the rest */
     S.inv = ["phone", "a4_white"];
     S.clock = "THU 4:10 PM";
     S.unlocked = ["a4_loc_studio"];
@@ -27192,14 +27396,14 @@ RP.item("a4_white", { name: "white label \"NYC 93\"", short: "NYC 93",
   use: "It needs a turntable. Luckily I own two good ones now. Still can't believe that sentence." });
 RP.item("a4_rider", { name: "Ingrid's rider", short: "Rider",
   icon: c => { R(c, 7, 3, 18, 22, "#efeaf6"); R(c, 7, 3, 18, 3, "#7ad8f0"); for (let y = 9; y < 22; y += 4) { R(c, 10, y, 3, 2, "#55516a"); R(c, 15, y, 7, 1, "#55516a"); } },
-  look: S => { const st = (f, id, no) => S.f[f] ? "with Katja" : RP.has(id) ? "in my pocket" : no; return "Ingrid's rider, texted. Water: " + st("a4_rWater", "a4_water", "missing") + ". Towels: " + st("a4_rTowel", "a4_towel", "missing") + ". One vegetable, \"NOT a pickle\": " + st("a4_rVeg", "a4_veg", "missing") + ". Katja counts it at Halle Neun, and every miss comes off the fee."; },
+  look: S => { const st = (f, id, no) => S.f[f] ? "with Katja" : RP.has(id) ? "in my pocket" : no; return "Ingrid's rider, texted. To bring: water (" + st("a4_rWater", "a4_water", "still to find") + "), a towel (" + st("a4_rTowel", "a4_towel", "still to find") + "), one vegetable, \"NOT a pickle\" (" + st("a4_rVeg", "a4_veg", "still to find") + "). Anywhere on the way counts: the airport snack machine, the drinks cart, the Späti by the arch in Berlin. Katja counts it at Halle Neun, and every miss comes off the fee."; },
   use: "Katja checks it, not me. I hand over what I've got, and the club does the arithmetic on what I haven't." });
 RP.item("a4_water", { name: "bottle of water", short: "Water",
   icon: c => { R(c, 12, 8, 8, 16, "#9fd8f0"); R(c, 13, 4, 6, 5, "#9fd8f0"); R(c, 14, 2, 4, 3, "#2f62b8"); R(c, 12, 14, 8, 4, "#efeaf6"); R(c, 13, 9, 1, 13, "#d8f4ff"); },
   look: "Still water, in a bottle, for money. In Brooklyn the tap is free and tastes like a pipe. Today I'm cultured.", use: "It's for the rider. If I drink it, Katja gets a lecture instead of a bottle." });
-RP.item("a4_towel", { name: S => S.f.a4_towelKind === "dish" ? "dish towel" : "hot towel", short: "Towel",
+RP.item("a4_towel", { name: "towel", short: "Towel",
   icon: c => { R(c, 6, 10, 20, 12, "#efeaf6"); R(c, 6, 10, 20, 2, "#ffffff"); R(c, 6, 20, 20, 2, "#c8c4d8"); for (let x = 9; x < 24; x += 5) R(c, x, 13, 1, 6, "#d8d4e8"); P(c, 10, 6, "#c8c4d8"); P(c, 16, 5, "#c8c4d8"); P(c, 21, 6, "#c8c4d8"); },
-  look: S => S.f.a4_towelKind === "dish" ? "A Geschirrtuch with a Berlin bear on it, bought from a man in an apron. It's a towel. Katja can argue the rest." : "A rolled towel, already losing its heat. Airlines hand out heat the way banks hand out interest.", use: "Wiping my face with the rider would be a fine way to start a fee dispute." });
+  look: S => S.f.a4_towelKind === "dish" ? "A towel with a Berlin bear on it (a Geschirrtuch, to Germans), bought from a man in an apron. It's a towel. Katja can argue the rest." : "A towel from the airline, rolled, already losing its heat. Airlines hand out heat the way banks hand out interest.", use: "Wiping my face with the rider would be a fine way to start a fee dispute." });
 RP.item("a4_veg", { name: S => S.f.a4_vegKind === "carrot" ? "carrot" : "celery stick", short: S => S.f.a4_vegKind === "carrot" ? "Carrot" : "Celery",
   icon: (c, S) => { if (S.f.a4_vegKind === "carrot") { RP.u.poly(c, [[8, 10], [24, 8], [10, 16]], "#e8822a"); R(c, 22, 6, 4, 2, "#5a9a2a"); P(c, 26, 5, "#5a9a2a"); } else { R(c, 14, 6, 4, 20, "#9be15d"); R(c, 14, 6, 1, 20, "#d8ff9a"); R(c, 12, 3, 2, 4, "#5a9a2a"); R(c, 18, 3, 2, 4, "#5a9a2a"); } },
   iconKey: S => S.f.a4_vegKind === "carrot" ? 1 : 0,
@@ -27210,7 +27414,7 @@ RP.item("a4_pickle", { name: "pickle in a pouch", short: "Pickle",
   look: "\"Dill Deal\": a sealed pickle, \"100% pickle.\" The rider said NOT a pickle. In capital letters. I read them. I bought it anyway.", use: "It's a pickle. The rider banned the one thing I'm holding. I have a type." });
 RP.item("a4_mate", { name: "Club-Mate", short: "Mate",
   icon: c => { R(c, 12, 6, 8, 18, "#3a5a2a"); R(c, 13, 3, 6, 4, "#3a5a2a"); R(c, 14, 2, 4, 2, "#c8a030"); R(c, 12, 12, 8, 6, "#efe6d0"); R(c, 14, 14, 4, 2, "#c0302c"); R(c, 13, 7, 1, 15, "#6a9a4a"); },
-  look: "Club-Mate, cold, in a brown bottle. Berlin runs on it: three times the caffeine, twice the regret.", use: "Not for me. There's a man at a steel door who's been standing in the rain since the power plant closed." });
+  look: "Club-Mate, cold, in a brown bottle. Berlin runs on it: three times the caffeine, twice the regret.", use: "Not for me. There's a man at a steel door who's been standing in the rain since the power plant closed. And a woman inside with a clipboard who looks like she could use one." });
 
 RP.item("a4_passport", { name: "passport", short: "Passport",
   icon: c => { R(c, 8, 3, 16, 20, "#1d2a5a"); R(c, 8, 3, 16, 1, "#3a4a8a"); R(c, 8, 22, 16, 1, "#0e1630"); ell(c, 16, 11, 4, 4, "#c8a030"); ell(c, 16, 11, 2, 2, "#1d2a5a"); R(c, 11, 18, 10, 1, "#c8a030"); },
@@ -27490,7 +27694,7 @@ function light(S) {
 
 /* ------------------------------------------------------------------ scenes */
 const REPLY = S => ["Hi " + A4.dj(S) + ",", "Ingrid Falk again, Halle Neun. In the spring I said I would be in touch. This is me, in touch. In Berlin, six months is prompt.",
-  "The offer: Saturday, two a.m., the main room, after our headliner. I won't say who. You would only get nervous.",
+  "The offer: Saturday, two a.m., the main room, after our headliner. I won't say who. You would only get nervous. Our floor peaks at three, so you are the one who builds it.",
   "One problem: nobody books a DJ who has nothing out. Do you have a release?", "P.S. Bring your passport. You would be amazed how many don't.", "Grüße, Ingrid Falk, Nachtwerk Booking"];
 
 async function readEmail(S) {
@@ -27703,8 +27907,9 @@ async function ingridCall(S) {
     "The rider: water, towels, and a vegetable that is not a pickle.",
     "@kid And no exposure?", "No exposure. We have an exposure budget. I'm saving it for the tourists.",
     "Katja checks the rider at the door of the booth. Bring it yourself. Nachtwerk's rider budget is an urban legend, and every item you miss comes off your fee.",
-    "@kid I thought a rider meant the club buys it.", "In theory. Bring it. Also bring cash: I book the flight, I do not book your luggage."]);
-  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 8:55 AM, Terminal 4. Lands 10:55 PM Berlin time. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Rider: water, towels, 1 vegetable (NOT a pickle). Katja counts it. Passport!!", false);
+    "@kid I thought a rider meant the club buys it.", "In theory. Bring it. Also bring cash: I book the flight, I do not book your luggage.",
+    "The desk charges $" + A4.bagFee(S) + " for a bag over twenty-three kilos. Records weigh what records weigh. Plan for it, or plan your pockets."]);
+  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 8:55 AM, Terminal 4. Lands 10:55 PM Berlin time. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Rider: water, towels, 1 vegetable (NOT a pickle). Katja counts it. Bag over 23 kg = $" + A4.bagFee(S) + " at the desk. Passport!!", false);
   RP.give("a4_rider");
   A4.callOff(S);
   RP.setClock("FRI 11:58 AM");
@@ -27834,8 +28039,11 @@ async function openRayBox(S) {
 async function packBag(S) {
   if (S.f.a4_packed) return "I've got the bag.";
   if (!S.f.a4_rayBox) { await RP.say("It's empty. The Berlin records are in Ray's box, by the door."); return; }
+  await RP.lines(["Records in. It weighs about as much as a medium dog. A heavy one.", "Ingrid said the desk charges by the kilo over twenty-three. Ray's note, on the back: \"The airline weighs the bag. It doesn't weigh the kid.\""]);
+  const i = await RP.choose(["Stuff the bomber's pockets and a tote with the heaviest ones (about $25 off the fee)", "Everything in the bag, zipper up"]);
   S.f.a4_packed = true; RP.give("a4_bag");
-  await RP.lines(["Records in. Zipper up. It weighs about as much as a medium dog.", "Every record I own that matters is in here. If it gets lost, I'm done."]);
+  if (i === 0) { S.f.a4_lightBag = true; await RP.lines(["Twelve records in the jacket, six in a tote. I clink when I turn. The bag drops to a medium dog.", "I look like a man smuggling a very flat pizza. That's fine. It's only until the scale."]); }
+  else await RP.lines(["Zipper up. Every record I own that matters is in here. If it gets lost, I'm done."]);
 }
 function leaveCheck(S) {
   if (!S.f.a4_deal) return S.f.a4_email ? "Ingrid hasn't confirmed anything yet. First the record, then the money, then the airport." : "I'm not going anywhere before I read that email. It's from Berlin. It has an umlaut. It could be important.";
@@ -27859,7 +28067,7 @@ A4.wtStudio = [
   ["mg", { ok: true, score: 82, track: { name: "NYC 93 (Pipe Hole Remix)", bpm: 122 } }],
   ["use", "hot:a4_sampler"], ["expect", "S.f.a4_track", "track made"],
   ["answers", [0]], ["use", "hot:a4_hole", "phone"], ["run", async (S, RP) => { RP.test.answers.length = 0; }], ["expect", "RP.has('a4_photo')", "cover photo"],
-  ["mg", { ok: true, score: 74, deal: { fee: 1800 } }],
+  ["mg", { ok: true, score: 74, deal: { fee: 1800, flights: "economy" } }],
   ["use", "hot:a4_laptop"], ["expect", "S.f.a4_released && S.f.a4_viral && S.f.a4_deal && RP.has('a4_rider')", "released, spread, booked; the rider is in my pocket"],
   ["use", "hot:a4_door"], ["expect", "S.room === 'a4_studio'", "not leaving without the bag"],
   ["pickup", "hot:a4_bag"], ["expect", "RP.has('a4_bag')", "bag packed"],
@@ -28007,19 +28215,21 @@ async function checkInPassport(S) {
   RP.sfx("typing");
   await RP.say("Got a boarding pass. Seat 23A, a window. I'll be the one pressing my face against it.");
 }
-const BAGFEE = { business: 40, economy: 75, "economy-direct": 75 };
-const bagFee = S => BAGFEE[S.f.a4_cls] || 95;           /* a thin deal (no class named) pays the walk-up rate */
+const BAGFEE = A4.BAGFEE, bagFee = A4.bagFee;
 async function checkInBag(S) {
   if (!S.f.a4_checkedPass) { await RP.say("Passport first, hon. I can't tag a bag with no person attached.", "a4_dolores"); return; }
   if (S.f.a4_bagChecked) return "She's already got the bag. I could feel it go. Somewhere a conveyor is doing the thing it does.";
   const fee = bagFee(S), biz = S.f.a4_cls === "business";
-  await RP.lines(["@a4_dolores Up on the scale. ...Thirty-eight kilos.", "It's records.", "@a4_dolores It's thirty-eight kilos of records. Limit's twenty-three" + (biz ? ", but business gets thirty-two, so you're six over" : "") + ". " + (BAGFEE[S.f.a4_cls] ? "Overweight is $" + fee + "." : "Your fare has no bag in it at all, so that's the walk-up rate: $" + fee + ".")]);
+  const lt = !!S.f.a4_lightBag;
+  await RP.lines(["@a4_dolores Up on the scale. ..." + (lt ? "Thirty-one kilos. And your jacket is walking funny." : "Thirty-eight kilos."), "It's records.",
+    "@a4_dolores It's " + (lt ? "thirty-one kilos of records, plus a jacket with opinions" : "thirty-eight kilos of records") + ". Limit's twenty-three" + (biz ? ", but business gets thirty-two" + (fee ? ", so you're " + (lt ? "nearly" : "six") + " over" : ", so you're under") : "") + ". " +
+    (!fee ? "Fine. Nothing to pay. I'm as surprised as you are." : BAGFEE[S.f.a4_cls] ? "Overweight is $" + fee + "." : "Your fare has no bag in it at all, so that's the walk-up rate: $" + fee + ".")]);
   if (!RP.canAfford(fee)) {
     await RP.lines(["I check my wallet. $" + S.money + " is not $" + fee + ".", "@a4_dolores Cash or card, hon. I don't do charity and I don't do IOUs. Step aside, there's a line.",
       "(The man in the Hawaiian shirt by the seats has been admiring my sleeves for ten minutes. A record or two would cover it.)"]);
     return;
   }
-  RP.money(-fee); await RP.say("$" + fee + ". For the privilege of being separated from my career.");
+  if (fee) { RP.money(-fee); await RP.say("$" + fee + ". For the privilege of being separated from my career."); }
   await RP.lines(["@a4_dolores Berlin. BER. Sticker on, tag on. Claim tag's yours. Don't lose it.", "@a4_dolores Name on the tag: \"" + tagName(S) + ".\" It's how it's always been."]);
   RP.take("a4_bag"); RP.give("a4_claim");
   S.f.a4_bagChecked = true; S.f.noTravel = true; S.f.a4_beltT = performance.now(); S.f.a4_beltDone = false;
@@ -28042,7 +28252,7 @@ async function doloresTalk(S) {
 /* ------------------------------------------------------------------ vending */
 async function vend(S) {
   const i = await RP.choose(["Potato chips ($3)", "Beef jerky ($4)", "Spring water ($3)", "Dill pickle ($3)", "Never mind"]);
-  if (i === 4) return;
+  if (i === 4) return "end";
   const price = [3, 4, 3, 3][i];
   if (i === 1 && S.f.a4_jerky) { await RP.say("I've already bought my jerky. The machine and I are even."); return; }
   if (i === 2 && S.f.a4_waterBought) { await RP.say("I've got a bottle. One bottle of water is a plan. Two is a personality."); return; }
@@ -28063,7 +28273,7 @@ async function collectorTalk(S) {
   await RP.convo([
     { text: "I could sell you a record. ($40)", run: async () => {
       const id = await A4.sellRecord(S, 40);
-      if (!id) return;
+      if (!id) return "end";
       const r = RP.rec(id);
       await RP.lines(["@a4_gil " + r.title + ". Hm. First pressing? No? ...Fine. Forty. Crisp, folded, a bit warm.", "It was a good record. It's now a good record in a tote bag in seat 14C. That's called a career move."]);
       return "end";
@@ -28105,7 +28315,7 @@ RP.room({
       },
       pickup: "I'm not picking up Dolores. She has a lanyard and a union.", push: "Not the check-in agent. Never the check-in agent." },
     { id: "a4_counter", name: "check-in counter", r: [92, 150, 176, 52], z: 30, walk: [188, 218, "back"],
-      look: "TransAtlantis check-in. The motto behind it says \"We Get You There. Eventually.\" At least they're honest.", use: S => doloresTalk(S), pickup: "Not without a forklift and a lawyer.",
+      look: S => "TransAtlantis check-in. The motto behind it says \"We Get You There. Eventually.\" At least they're honest. A card on the desk, small print: \"Checked bags over 23 kg: $" + (BAGFEE[S.f.a4_cls] || 95) + ". Cash or card. No exceptions, no stories.\"", use: S => doloresTalk(S), pickup: "Not without a forklift and a lawyer.",
       give: async (S, item) => item === "a4_passport" ? checkInPassport(S) : item === "a4_bag" ? checkInBag(S) : "Hand it to Dolores. The counter doesn't have hands." },
     { id: "a4_belt", name: "bag drop belt", r: [52, 108, 52, 44], z: 35, walk: [120, 220, "back"], look: "The bag drop. A black conveyor into a hole lined with rubber flaps. It leads to the airport's inner life. None of it good.", use: "Don't ride it. I saw a guy try once. He works in Baggage Services now.", push: "Pushing it wouldn't make anything faster. That's the whole point of a belt.", pickup: "You can't pick up a conveyor. I've tried with the one at the grocery store." },
     { id: "a4_board", name: "departures board", r: [292, 14, 240, 72], z: 25, walk: [410, 214, "back"],
@@ -28757,12 +28967,12 @@ async function kosmoTalk(S) {
   ]);
 }
 async function cartAsk(S) {
-  const i = await RP.choose(["A hot towel", "Tomato juice ($4)", "Pretzels ($3)", "Never mind"]);
-  if (i === 3) return;
+  const i = await RP.choose(["A towel (free)", "Tomato juice ($4)", "Pretzels ($3)", "Never mind"]);
+  if (i === 3) return "end";
   if (i === 0) {
     if (RP.has("a4_towel") || S.f.a4_rTowel) { await RP.lines(["@a4_marguerite One towel per passenger, sir. It's policy, and also a vow."]); return; }
     RP.give("a4_towel");
-    await RP.lines(["@a4_marguerite Hot towel. Economy gets it lukewarm and with a look.", "She tongs one out of a steel tray. It steams like a small, clean ghost.", "The rider says towels. Plural. I'll take what the airline calls plural."]);
+    await RP.lines(["@a4_marguerite Towel. Economy gets it lukewarm and with a look.", "She tongs one out of a steel tray. It steams like a small, clean ghost.", "The rider says towels. Plural. I'll take what the airline calls plural."]);
     return;
   }
   const price = i === 1 ? 4 : 3;
@@ -28798,6 +29008,11 @@ async function giveBag(S) {
 }
 async function takeSeat(S) {
   if (!RP.has("a4_bag") && !S.f.a4_kosmoBag) { await RP.say("Without the bag? No. Without the bag, I'm not even sure this is my seat."); return; }
+  if (!RP.has("a4_bag") && S.f.a4_kosmoBag) {
+    const need = [!(RP.has("a4_towel") || S.f.a4_rTowel) && "a towel", !(RP.has("a4_veg") || S.f.a4_rVeg) && "a vegetable", !(RP.has("a4_water") || S.f.a4_rWater) && "water"].filter(Boolean);
+    const j = await RP.choose(["Sit down. The plane leaves when I sit: next stop Berlin" + (need.length ? " (the cart stays behind; rider still short: " + need.join(", ") + ")" : ""), "Not yet"]);
+    if (j !== 0) return;
+  }
   if (RP.has("a4_bag")) { await RP.lines(["I sit with the bag on my lap.", "@a4_marguerite Sir. The bag.", "It's on my lap.", "@a4_marguerite It doesn't fit under the seat. It doesn't fit anywhere. It goes in the hold or on a seat.", "A seat. I need a seat. Wait. Kosmo's got a free one."]); return; }
   await RP.walkTo(358, 226, "back");
   RP.place("kid", 358, 196, "front"); RP.actor("kid").act = "sit";
@@ -28856,11 +29071,11 @@ RP.room({
     { id: "a4_emptyseat", name: "empty seat", r: [146, 100, 64, 100], z: 40, walk: [178, 232, "back"], vis: S => !S.f.a4_kosmoBag,
       look: "An empty seat next to Kosmo. A luxury seat, without a person. It's bigger than my first apartment.", use: "Not mine. Kosmo bought it. I'd need to ask him.", pickup: "You can't pick up a seat. Not even a very nice one." },
     { id: "a4_bagseat", name: "my record bag", r: [163, 156, 36, 30], z: 66, vis: S => !!S.f.a4_kosmoBag, walk: [178, 232, "back"], look: "My record bag, buckled into Kosmo's spare seat like a VIP. It's got its own seatbelt.", pickup: "Not yet. It's settled in. It'll be mine when we land.", use: "Leave it be. It's asleep." },
-    { id: "a4_myseat", name: "seat 23A", r: [326, 100, 64, 100], z: 40, walk: [358, 232, "back"], look: "23A. A window seat. My knees are about to have a very personal relationship with the seat in front.",
+    { id: "a4_myseat", name: "seat 23A", r: [326, 100, 64, 100], z: 40, walk: [358, 232, "back"], look: "23A. A window seat. My knees are about to have a very personal relationship with the seat in front. Once I sit, the doors close and the plane goes.",
       use: S => takeSeat(S), open: S => takeSeat(S), pickup: "It's an airplane seat. They're attached to the plane. And the plane is attached to the sky." },
     { id: "a4_bin", name: "overhead bin", r: [270, 8, 180, 50], z: 20, walk: [358, 232, "back"], look: "The overhead bin above 23A. Stuffed with duty-free bags, a guitar, a pillow and someone's emotional baggage. It will not take my bag.", open: "Full. It opens, takes one look at me and slams shut.", pickup: "It's the bin. I'm not carrying the bin.", push: "It's wedged. It'd take a crowbar and a sense of shame." },
     { id: "a4_windows", name: "windows", rects: [[72, 74, 32, 42], [162, 74, 32, 42], [252, 74, 32, 42], [342, 74, 32, 42], [432, 74, 32, 42], [522, 74, 32, 42]], z: 20, walk: [358, 232, "back"], look: S => S.f.a4_flown ? "Oval windows full of night. And on the right, a wing, blinking red, like it knows something." : "Oval windows: tarmac, a morning sky, a man waving two orange sticks. On the right, a wing. It's blinking red, like it knows something.", open: "It doesn't open. In an hour, that will be a relief." },
-    { id: "a4_cart", name: "service cart", r: [560, 190, 62, 64], z: 60, walk: [540, 238, "right"], look: "The drinks cart. Tiny bottles, tiny dreams, a steel tray of hot towels and a tomato juice with a celery stick standing in it like a flag. Marguerite pushes it like it owes her money.", use: S => cartAsk(S), talk: S => cartAsk(S),  pickup: "It's the airline's. And I don't want those pretzels that badly." },
+    { id: "a4_cart", name: "service cart", r: [560, 190, 62, 64], z: 60, walk: [540, 238, "right"], look: "The drinks cart. Tiny bottles, tiny dreams, a steel tray of rolled towels and a tomato juice with a celery stick standing in it like a flag. Marguerite pushes it like it owes her money.", use: S => cartAsk(S), talk: S => cartAsk(S),  pickup: "It's the airline's. And I don't want those pretzels that badly." },
     { id: "a4_door", name: "exit door", r: [4, 62, 46, 156], z: 20, walk: [58, 232, "left"], look: "The cabin door. Through it, the jet bridge. Behind me, New York. Ahead of me, a bag with a seatbelt.", exit: "No going back. Not until Berlin. Possibly not even then." },
     { id: "a4_floor", name: "aisle", r: [8, 224, 620, 28], z: 5, floor: true, look: "The aisle. A strip of carpet with the dignity of a thousand rolling suitcases." }
   ],
@@ -28969,7 +29184,7 @@ async function stagRescue(S) {
 }
 async function stagSell(S) {
   const id = await A4.sellRecord(S, 20);
-  if (!id) return;
+  if (!id) return "end";
   const r = RP.rec(id);
   await RP.lines(["@a4_stag1 " + r.title + "! We don't have a turntable, but we have a speaker and a plan! Twenty dollars! Prost!", "He hands me a twenty with a beer ring on it. Berlin pays in beer rings."]);
 }
@@ -28984,7 +29199,7 @@ async function buyTicket(S) {
     return;
   }
   const i = await RP.choose(["Zones A and B ($3.50)", "Zones B and C ($3.50)", "Zones A, B and C ($4.90)", "Day pass, all zones ($9.00)", "Never mind"]);
-  if (i === 4) return;
+  if (i === 4) return "end";
   const prices = [3.5, 3.5, 4.9, 9];
   if (!RP.canAfford(prices[i])) { await RP.say("Declined. A ticket machine just declined me. At an airport. In Germany."); if (!RP.canAfford(4.9)) await stagRescue(S); return; }
   RP.money(-prices[i]); RP.sfx("coin"); RP.give("a4_ticket"); S.f.a4_ticket = true;
@@ -29296,7 +29511,7 @@ async function kemalTalk(S) {
     { text: "Mind if I play a record on your deck?", when: S => RP.has("a4_bag") && (S.f.a4_busks || 0) < 2, run: () => busk(S) },
     { text: "Would you buy a record? ($25)", run: async () => {
       const id = await A4.sellRecord(S, 25);
-      if (!id) return;
+      if (!id) return "end";
       await RP.lines(["@a4_kemal " + RP.rec(id).title + ". For the wall behind the till. Sleeve only, normally. But vinyl too? Okay, twenty-five. Don't tell my wife I paid.", "It leaves the crate for good. A good home, behind a till, near a man who never stops talking."]);
     } },
     { text: "Just looking.", end: true }
@@ -29307,8 +29522,8 @@ async function spaetiShop(S) {
     S.f.a4_kemalRider = true;
     await RP.lines(["@a4_kemal Water, a vegetable, a towel. Katja's rider, yes? Everybody who plays the Halle comes to me in a panic at one a.m.", "@a4_kemal The last American brought a pickle. Katja held it up like a verdict. Don't be the pickle."]);
   }
-  const i = await RP.choose(["Bottle of water ($2)", "Carrot ($1.50)", "Dish towel ($4)", "Club-Mate ($2)", "Never mind"]);
-  if (i === 4) return;
+  const i = await RP.choose(["Bottle of water ($2)", "Carrot ($1.50)", "Towel ($4)", "Club-Mate ($2)", "Never mind"]);
+  if (i === 4) return "end";
   const price = [2, 1.5, 4, 2][i];
   if (i === 0 && (RP.has("a4_water") || S.f.a4_rWater)) { await RP.say("I already have water. Kemal looks relieved on behalf of his stock."); return; }
   if (i === 1 && (RP.has("a4_veg") || S.f.a4_rVeg)) { await RP.say("I've got a vegetable. One is plenty. Two is a salad, and salads are not on the rider."); return; }
@@ -29324,7 +29539,7 @@ async function spaetiShop(S) {
 async function busk(S) {
   const ids = ["white_nyc93"].concat(A4.sellable(S).slice(-2));
   const i = await RP.choose(ids.map(id => RP.rec(id).artist + " - " + RP.rec(id).title).concat(["Never mind"]));
-  if (i >= ids.length) return;
+  if (i >= ids.length) return "end";
   const tip = ids[i] === "white_nyc93" ? 18 : 10;
   S.f.a4_busks = (S.f.a4_busks || 0) + 1;
   await RP.lines(["@a4_kemal The deck is under the till. Needle's a bit gray. Like me.", "I set the record on a turntable behind a kiosk in the rain, and for three minutes a street in Berlin turns into a dance floor with a bike rack.",
@@ -29530,7 +29745,12 @@ async function runQuiz(S) {
   return true;
 }
 async function giveMate(S) {
-  if (S.f.a4_quizDone) return "He's already let me in. He looks at the bottle, then at me. \"Later,\" he says, which in Sven is a warm gesture.";
+  if (S.f.a4_quizDone && !S.f.a4_mateGiven) {
+    S.f.a4_mateGiven = true; RP.take("a4_mate");
+    await RP.lines(["I hold out the Club-Mate anyway. Sven looks at it, then at the door he has already opened.", "@a4_sven ...Nobody brings the door a drink after the door has let them in. That is how I know it is real.", "(He tucks it in his coat like contraband. Behind me, I think I hear him smile. It sounds like a hinge.)"]);
+    return;
+  }
+  if (S.f.a4_quizDone) return "He has the bottle already. \"Later,\" he says, which in Sven is a warm gesture.";
   if (S.f.a4_mateGiven) return "He has the bottle. Anything more would be a bribe, and he's very sure he's above those.";
   S.f.a4_mateGiven = true; RP.take("a4_mate"); S.f.a4_q1 = true;
   await RP.lines(["I hold out the Club-Mate. Sven looks at it for four full seconds, the way a cliff looks at a rowing boat.", "@a4_sven ...Nobody brings the door a drink. In nineteen years.", "@a4_sven (he opens it with a thumb) Question one, you have answered. Do not make me regret it."]);
@@ -29707,6 +29927,11 @@ async function riderHand(S, only) {
   if (!any && only) await RP.say("She already has that. A second water is not a second chance.");
   return any;
 }
+async function giveKatjaMate(S) {
+  if (!RP.has("a4_mate")) return;
+  RP.take("a4_mate"); S.f.a4_mateGiven = true; RP.money(10);
+  await RP.lines(["@a4_katja A Club-Mate. Nobody brings the clipboard a drink.", "@a4_katja (she drinks a third of it standing, eyes on the floor) Not on the rider. Not on the spreadsheet. I'll make a column.", "(She peels a ten from the till and puts it in my hand without looking. \"Mate costs two. I round up.\")"]);
+}
 async function katjaTalk(S) {
   if (S.f.a4_setDone) { await RP.lines(["@a4_katja You played. They stayed. That's all I ask.", "@a4_katja Come back next year. Maybe sooner. I'll pretend I never said that."]); return; }
   S.f.a4_katjaTalked = true;
@@ -29807,7 +30032,7 @@ RP.room({
       talk: S => S.f.a4_setDone ? "He nods once, eyes on the room. That's the whole conversation. I'm okay with it." : RP.lines(["I'm a big fan. I... really...", "(He glances over, nods once, and goes back to the decks.)", "That counts as a full conversation. I'm putting it on my résumé."]),
       give: "He's mid-set. Nobody hands a DJ a record mid-set. Unless it's love.", pickup: "I'd like to keep my arms. And his headphones.", push: "No. Never push a DJ mid-set." },
     { id: "a4_katja", name: "Katja", look: "Katja, who runs the room. Black jacket, ponytail, a clipboard and a headset she doesn't use. She looks at me like she's computing a very small, very exact number.",
-      talk: S => katjaTalk(S), give: (S, item) => S.f.a4_setDone ? "The set's done. She doesn't take things. She hands them out." : ["a4_water", "a4_towel", "a4_veg", "a4_pickle"].includes(item) ? riderHand(S, item) : "She doesn't take things. She hands them out.", pickup: "She'd have me escorted out. By Sven.", push: "I'd rather push my luck. And I'm about to." },
+      talk: S => katjaTalk(S), give: (S, item) => item === "a4_mate" ? giveKatjaMate(S) : S.f.a4_setDone ? "The set's done. She doesn't take things. She hands them out." : ["a4_water", "a4_towel", "a4_veg", "a4_pickle"].includes(item) ? riderHand(S, item) : "She doesn't take things. She hands them out.", pickup: "She'd have me escorted out. By Sven.", push: "I'd rather push my luck. And I'm about to." },
     { id: "a4_booth", name: "DJ booth", r: [183, 94, 274, 92], z: 40, walk: [330, 218, "back"],
       look: "A raised booth: two Pioneer DJ CDJ-3000s and a four-channel mixer, a Technics for the vinyl people. A red scrim says H9. I'm about to stand behind that.",
       use: S => startSet(S), open: S => startSet(S), push: "I'd rather push a button than the booth.", pickup: "It's bolted to the concrete. Or the concrete's bolted to it." },
@@ -30201,14 +30426,16 @@ const A4 = RP.a4;
 
 const jfk = [
   ["expect", "S.room === 'a4_jfk'", "at JFK"],
-  ["look", "hot:a4_board"], ["look", "hot:a4_cart"], ["use", "hot:a4_vend"], ["look", "hot:a4_pax2"], ["look", "inv:a4_rider"], ["run", async (S, RP) => { RP.test.m0 = S.money; }], ["expect", "S.money <= 220", "a tight start: $150 less the cab to JFK, never more than $220"],                          // (empty answer queue: picks the last option = Never mind)
+  ["look", "hot:a4_board"], ["look", "hot:a4_cart"], ["use", "hot:a4_vend"], ["look", "hot:a4_pax2"], ["look", "inv:a4_rider"], ["run", async (S, RP) => { RP.test.m0 = S.money; }], ["expect", "S.money <= 80", "a tight start: $80 less the cab to JFK, never more"],                          // (empty answer queue: picks the last option = Never mind)
   ["pickup", "hot:a4_forms"], ["expect", "!RP.has('a4_form')", "no form before the airline tells me I'm in trouble"],
   ["use", "hot:a4_door_bag"], ["expect", "S.room === 'a4_jfk'", "Baggage Services is closed to me before check-in"],
   ["give", "hot:a4_dolores", "a4_bag"], ["expect", "!S.f.a4_bagChecked", "passport first"],
   ["give", "hot:a4_dolores", "a4_passport"], ["expect", "RP.has('a4_boarding')", "boarding pass"],
+  ["give", "hot:a4_dolores", "a4_bag"], ["expect", "!S.f.a4_bagChecked && S.money < 75", "the $75 overweight fee is more than the wallet holds: the pinch"],
+  ["answers", [0, 0]], ["talk", "hot:a4_pax2"], ["expect", "S.f.a4_sold === 1 && S.money > 75", "recovery: one house record to the man in the Hawaiian shirt ($40)"],
   ["give", "hot:a4_dolores", "a4_bag"],
   ["expect", "S.f.a4_bagChecked && RP.has('a4_claim') && S.f.a4_msgBag && !RP.has('a4_bag') && S.f.noTravel", "bag checked, claim tag, message, travel blocked"],
-  ["expect", "S.money === RP.test.m0 - 95", "the walk-up bag fee cost $95"],
+  ["expect", "S.money === RP.test.m0 + 40 - 75", "the overweight fee cost $75"],
   ["pickup", "hot:a4_forms"], ["expect", "RP.has('a4_form')", "Form 7B"],
   ["answers", [1]], ["use", "hot:a4_vend"], ["expect", "RP.has('a4_jerky')", "jerky"],
   ["answers", [2]], ["use", "hot:a4_vend"], ["expect", "RP.has('a4_water')", "rider item 1: water ($3)"],
@@ -30234,9 +30461,10 @@ const plane = [
   ["use", "hot:a4_myseat"], ["expect", "S.room === 'a4_plane' && !S.f.a4_flown", "can't sit with the bag on my lap"],
   ["talk", "hot:a4_marguerite"], ["look", "hot:a4_cart"],
   ["answers", [0]], ["use", "hot:a4_cart"], ["answers", [1]], ["use", "hot:a4_cart"], ["expect", "RP.has('a4_towel') && RP.has('a4_veg') && S.f.a4_vegKind === 'celery'", "rider items 2 and 3 from the cart: hot towel, celery from the tomato juice"],
-  ["talk", "hot:a4_kosmo"], ["expect", "!S.f.a4_kosmoLoan", "Kosmo lends nothing to a man with $40 or more"],
+  ["talk", "hot:a4_kosmo"], ["expect", "!S.f.a4_kosmoLoan", "Kosmo only lends against a joke, and no joke was offered"],
   ["give", "hot:a4_kosmo", "a4_bag"], ["expect", "S.f.a4_kosmoBag && !RP.has('a4_bag')", "bag on Kosmo's spare seat"],
-  ["use", "hot:a4_myseat"], ["expect", "S.room === 'a4_ber_platform' && RP.has('a4_bag') && S.f.a4_landed", "landed in Berlin with the bag"]
+  ["answers", [1]], ["use", "hot:a4_myseat"], ["expect", "S.room === 'a4_plane' && !S.f.a4_flown", "sitting asks first: Not yet"],
+  ["answers", [0]], ["use", "hot:a4_myseat"], ["expect", "S.room === 'a4_ber_platform' && RP.has('a4_bag') && S.f.a4_landed", "landed in Berlin with the bag"]
 ];
 const platform = [
   ["use", "hot:a4_train"], ["expect", "!S.f.a4_trainDone", "no ticket, no train"],
@@ -30514,8 +30742,11 @@ function howTo(p) {
    ["Keys:", " L look, P pick up, U use, O open, T talk, G give, Esc to cancel. H (or Tab) shows what you can click."],
    ["Mini-games", " explain their own controls. You can replay any of them from the Mini-Game Arcade."]].forEach(([b, t]) => { const q = el("p", {}, p); el("b", { text: b }, q); q.appendChild(document.createTextNode(t)); });
 }
+const REPO_URL = "https://github.com/CarlosFranzetti/Repartee";
 function credits(p) {
   el("h3", { text: "RE:PARTEÉ" }, p);
+  el("p", { text: "A game by Carlos Franzetti." }, p);
+  el("a", { href: REPO_URL, text: "github.com/CarlosFranzetti/Repartee", target: "_blank", rel: "noopener" }, el("p", {}, p));
   el("p", { text: "Inspired by Maniac Mansion, Zak McKracken and the Alien Mindbenders, and The Secret of Monkey Island." }, p);
   el("p", { text: "All graphics are drawn in code and all music is synthesized live in your browser. No samples, no recordings." }, p);
   el("h3", { text: "REAL RECORDS, REAL PEOPLE" }, p);
@@ -30650,6 +30881,8 @@ RP.ending = async function () {
   el("p", { text: (S.name || "You") + ": from a milk crate of records and a crackling mixer to a festival headline." }, box);
   el("p", { text: S.records.length + " records in the crate. " + S.followers.toLocaleString("en-US") + " fans. " + RP.u.fmtMoney(S.money) + " in the bank (for now)." }, box);
   el("p", { text: "Thanks for playing. Go dig something." }, box);
+  el("p", { cls: "small", text: "A game by Carlos Franzetti" }, box);
+  el("a", { href: REPO_URL, text: "github.com/CarlosFranzetti/Repartee", target: "_blank", rel: "noopener" }, el("p", { cls: "small" }, box));
   const row = el("div", { cls: "erow" }, box);
   const b = el("button", { cls: "btn primary", type: "button", text: "BACK TO TITLE" }, row);
   await new Promise(r => b.addEventListener("click", r));
