@@ -17,7 +17,7 @@
 - [ ] **Secret streaming patch (real audio for the records).** A hidden option, unlocked on the title screen by the tap
       code JUKEBOX ×3, CREDITS ×2, JUKEBOX ×3 (owner confirmed); public on the live site for now (owner's call); the
       screen flashes and the patch turns on (also toggleable in options). With it on, playing a record in the jukebox,
-      or anywhere else a record plays, streams the real track's audio instead of the synthesized loop, using the
+      or anywhere else a record plays, streams the real track's audio only (no video shown, owner's call) instead of the synthesized loop, using the
       lookup and fallback approach from the owner's Discogs streaming repo (add it to the session when starting).
       Stretch goal: line the streamed audio up with the mini-games (the right part of the track, near the right BPM).
       Before building: check the terms of the audio source (YouTube's terms restrict audio-only playback and hidden
