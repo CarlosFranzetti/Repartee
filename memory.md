@@ -39,6 +39,16 @@ mini-games. Phase 1 (story sense, all levels) is done. Owner's decisions: money 
 Phase 2 (the plan's list) is done too: see `docs/GAME_ANALYSIS.md`, Progress. Walkthroughs now include `act3alt` and
 `act5alt`. Phase 3 = fresh blind playtests and length check (not started).
 
+**Streaming patch (2026-11-03, owner's call).** `src/core/stream.js`. Unlock on the title logo: 3 taps on "re:", 2 on
+"parteé", 3 on "re:" (the screen flashes; a toggle then sits under HOW TO PLAY). With it on, the jukebox and story
+record plays fetch a 30-second official preview from Apple's public iTunes Search API in the browser (no server, no
+key; the owner rejected depending on the discogs-stream Supabase functions, and the game, a static site, cannot
+resolve YouTube audio itself). The matcher prefers originals over remixes; failures fall back to the loop; mini-games
+always get synth loops. For a full-length path later, `src/data/stream_ids.js` + `tools/stream-ids.mjs` give a
+YouTube id per record (run from a machine that reaches YouTube; this sandbox cannot). itunes.apple.com is also blocked
+from the sandbox, so the live call is unverified here; the owner should play a jukebox record in a browser.
+Tagline is now "One questionable decision at a time."
+
 **Open work (next).** All Level 3-5 findings from the blind takes, the story audit and the sweeps are fixed on the
 work branch (see `docs/PLAYTEST_LOG.md`); two small items remain open there. Every walkthrough, the full Level 1-5 run,
 smoke, perf (0 of 49 rooms over budget) and contrast pass on the rebuilt `dist/`. Next: open a PR, merge, deploy and
