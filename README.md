@@ -73,6 +73,8 @@ Mini-games:
 
 On a portrait phone the verbs and inventory drop under the scene at touch size.
 
+There is a hidden extra on the title screen that plays official previews of the real records; the walkthrough's appendix says how.
+
 Stuck? [`docs/WALKTHROUGH.md`](docs/WALKTHROUGH.md) (also as [a PDF](docs/WALKTHROUGH.pdf)) gives away every puzzle.
 
 Docs for contributors: [`docs/ENGINE_API.md`](docs/ENGINE_API.md), [`docs/STORY.md`](docs/STORY.md),

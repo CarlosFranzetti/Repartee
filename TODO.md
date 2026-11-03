@@ -14,10 +14,13 @@
 
 ## Later
 
-- [x] **Secret streaming patch.** Built 2026-11-03 (`src/core/stream.js`): tapping the title logo (3 on "re:", 2 on "parteé",
-      3 on "re:") flashes the screen and turns it on (a toggle then appears under HOW TO PLAY). The jukebox and the
-      story's record plays stream the real track, audio only, through the public functions of the owner's
-      discogs-stream project (youtube-search, then yt-dlp-audio, then invidious-audio), falling back to the built-in
-      loop if anything fails. Mini-games always keep the synthesized loops, so beat.Match is untouched. Streams start a
-      third of the way into the track. Not yet verified against the live functions (this sandbox cannot reach
-      supabase.co); check in a browser.
+- [x] **Secret streaming patch.** Built 2026-11-03 (`src/core/stream.js`): tapping the title logo (3 on "re:", 2 on
+      "parteé", 3 on "re:") flashes the screen and turns it on (a toggle then appears under HOW TO PLAY). The jukebox
+      and the story's record plays then play the actual record: official 30-second previews from Apple's public
+      iTunes Search API, straight from the browser (no server, no key, licensed), audio only, looping until stopped;
+      anything that fails falls back to the built-in loop. Mini-games always keep the synthesized loops, so beat.Match
+      is untouched. The owner chose previews over YouTube audio (which needs a server to resolve).
+- [ ] **Full-length streaming (later).** `src/data/stream_ids.js` holds a YouTube video id per record (empty until
+      `node tools/stream-ids.mjs` is run from a machine that reaches youtube.com; hand-fix bad matches). On top of it,
+      add either an embedded player (video present, terms to check) or a serverless function on the game's own Vercel
+      project that resolves a video id to audio (the stream repo's yt-dlp-audio, moved in-house). Not started.
