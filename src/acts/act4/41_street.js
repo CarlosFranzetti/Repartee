@@ -183,29 +183,62 @@ async function kemalTalk(S) {
     { text: "Tell me about Sven.", when: S => !S.f.a4_doorHint, run: async () => {
       S.f.a4_doorHint = true;
       await RP.lines(["@a4_kemal Sven? He's been on the door since the place was a power plant. Or since before. He likes records. Real ones.",
-        "@a4_kemal He doesn't care if you're a DJ. He cares if you know the records. Labels. Years. The sleeve.", "@a4_kemal Read your sleeves, my friend. Read them in your bag, on the train, in the shower. He'll ask.",
+        "@a4_kemal He doesn't care if you're a DJ. He cares if you know the records. Labels. Years. The sleeve.", "@a4_kemal Read your sleeves, my friend. Read them in your bag, on the train, in the shower. He'll ask.", "@a4_kemal He stands in that rain all night. Nobody brings the door a drink. A Club-Mate, maybe. Just saying.",
         "(Note to self: the crate in the phone menu has a fact for every record. Read the facts.)"]);
     } },
     { text: "I have some empties for the Pfand.", when: S => RP.has("a4_bottles") && !S.f.a4_pfand, run: async () => {
-      S.f.a4_pfand = true; RP.take("a4_bottles"); RP.money(0.48);
-      await RP.lines(["@a4_kemal Pfand! Eight cents a bottle. Six bottles. Forty-eight cents. Don't spend it all at once.", "@a4_kemal You are a professional. You are going to do very well in Berlin."]);
+      const beer = S.f.a4_nBeer || 0, plastic = S.f.a4_nPlastic || 0, pay = Math.round((beer * 0.08 + plastic * 0.25) * 100) / 100;
+      S.f.a4_pfand = true; RP.take("a4_bottles"); S.f.a4_nBeer = 0; S.f.a4_nPlastic = 0; RP.money(pay);
+      await RP.lines(["@a4_kemal Pfand! " + (beer ? "Beer bottles, eight cents. " : "") + (plastic ? "One-way plastic, a quarter. " : "") + "Total: " + (pay < 1 ? (Math.round(pay * 100) + " cents") : "$" + pay.toFixed(2)) + ". Don't spend it all at once.", "@a4_kemal You are a professional. You are going to do very well in Berlin."]);
     } },
-    { text: "I'll take a mate drink. ($2)", when: S => !S.f.a4_mate, run: async () => {
-      if (!RP.canAfford(2)) { await RP.say("I can't afford it. I'm about to play for money and I can't buy a drink. Typical."); return; }
-      S.f.a4_mate = true; RP.money(-2);
-      await RP.lines(["@a4_kemal Club-style. Mate and ice. It has 3x the caffeine and 2x the regret.", "I drink it standing up. My heart does a flip. I understand Berlin now."]);
+    { text: "What do you sell?", run: () => spaetiShop(S) },
+    { text: "Mind if I play a record on your deck?", when: S => RP.has("a4_bag") && (S.f.a4_busks || 0) < 2, run: () => busk(S) },
+    { text: "Would you buy a record? ($25)", run: async () => {
+      const id = await A4.sellRecord(S, 25);
+      if (!id) return;
+      await RP.lines(["@a4_kemal " + RP.rec(id).title + ". For the wall behind the till. Sleeve only, normally. But vinyl too? Okay, twenty-five. Don't tell my wife I paid.", "It leaves the crate for good. A good home, behind a till, near a man who never stops talking."]);
     } },
     { text: "Just looking.", end: true }
   ]);
 }
+async function spaetiShop(S) {
+  if (!S.f.a4_kemalRider) {
+    S.f.a4_kemalRider = true;
+    await RP.lines(["@a4_kemal Water, a vegetable, a towel. Katja's rider, yes? Everybody who plays the Halle comes to me in a panic at one a.m.", "@a4_kemal The last American brought a pickle. Katja held it up like a verdict. Don't be the pickle."]);
+  }
+  const i = await RP.choose(["Bottle of water ($2)", "Carrot ($1.50)", "Dish towel ($4)", "Club-Mate ($2)", "Never mind"]);
+  if (i === 4) return;
+  const price = [2, 1.5, 4, 2][i];
+  if (i === 0 && (RP.has("a4_water") || S.f.a4_rWater)) { await RP.say("I already have water. Kemal looks relieved on behalf of his stock."); return; }
+  if (i === 1 && (RP.has("a4_veg") || S.f.a4_rVeg)) { await RP.say("I've got a vegetable. One is plenty. Two is a salad, and salads are not on the rider."); return; }
+  if (i === 2 && (RP.has("a4_towel") || S.f.a4_rTowel)) { await RP.say("I've got a towel. I'm set for towels. I'm a towel person now."); return; }
+  if (i === 3 && S.f.a4_mateBought) { await RP.say("I've got a mate. One is a drink. Two is a lifestyle."); return; }
+  if (!RP.canAfford(price)) { await RP.lines(["@a4_kemal Cash. Or bottles. Or a record, if you have a heart.", "(Bottles from the curb and the platform bin, a busked record, or a record to the till: Berlin has a way to pay for everything.)"]); return; }
+  RP.money(-price); RP.sfx("coin");
+  if (i === 0) { RP.give("a4_water"); await RP.lines(["@a4_kemal Wasser. Still. Don't ask for sparkling at this hour. Sparkling is a Sunday decision.", "Water: the Späti's way. Two dollars, and it's cold. The JFK one was three and tasted of a mountain."]); }
+  else if (i === 1) { RP.give("a4_veg"); S.f.a4_vegKind = "carrot"; await RP.lines(["@a4_kemal Karotte. From the box in the back. I sell it to people who ask no questions.", "A vegetable. Not a pickle. I wave it at the neon like a trophy."]); }
+  else if (i === 2) { RP.give("a4_towel"); S.f.a4_towelKind = "dish"; await RP.lines(["@a4_kemal Geschirrtuch. For dishes. With a bear. Everybody in Berlin has a bear.", "It is a towel. Katja said towels. Nobody said bath."]); }
+  else { RP.give("a4_mate"); S.f.a4_mateBought = true; await RP.lines(["@a4_kemal Club-Mate. Ice-cold. Three times the caffeine, twice the regret.", "I hold it. Two dollars. This is not for me. There's a man at a steel door who has probably never been offered a drink in his life."]); }
+}
+async function busk(S) {
+  const ids = ["white_nyc93"].concat(A4.sellable(S).slice(-2));
+  const i = await RP.choose(ids.map(id => RP.rec(id).artist + " - " + RP.rec(id).title).concat(["Never mind"]));
+  if (i >= ids.length) return;
+  const tip = ids[i] === "white_nyc93" ? 18 : 10;
+  S.f.a4_busks = (S.f.a4_busks || 0) + 1;
+  await RP.lines(["@a4_kemal The deck is under the till. Needle's a bit gray. Like me.", "I set the record on a turntable behind a kiosk in the rain, and for three minutes a street in Berlin turns into a dance floor with a bike rack.",
+    ids[i] === "white_nyc93" ? "Two people stop to ask what it is. I say: a white label. They say: of course. They tip as if a priest had asked." : "A man in a raincoat nods once. A woman puts a coin in the Pfand cup. The kiosk is, briefly, a venue.",
+    S.f.a4_busks >= 2 ? "@a4_kemal Two records. That is the limit. My neighbours are Berlin people. Berlin people have rules about noise after two." : "@a4_kemal Not bad. You can do this once more. Then the neighbours call it a disturbance."]);
+  RP.money(tip);
+}
 async function pickBottles(S) {
   if (S.f.a4_bottlesTaken) return "I've got them all. There's a bag of six empties on me. The rest of the city can wait.";
-  S.f.a4_bottlesTaken = true; RP.give("a4_bottles");
+  S.f.a4_bottlesTaken = true; S.f.a4_nBeer = 6; RP.give("a4_bottles");
   await RP.lines(["Six empty bottles on the curb. A nice gesture, in Berlin, to take them.", "Pfand: the Späti pays 8 cents a bottle. Capitalism, but green. And small."]);
 }
 RP.item("a4_bottles", { name: "empty bottles", short: "Bottles",
   icon: c => { for (let i = 0; i < 4; i++) { R(c, 6 + i * 6, 8, 4, 12, "#3a7a3a"); R(c, 7 + i * 6, 4, 2, 5, "#3a7a3a"); R(c, 7 + i * 6, 3, 2, 1, "#c8c4d8"); R(c, 6 + i * 6, 9, 1, 10, "#8aca8a"); } },
-  look: "Six empty beer bottles. Eight cents each at the Späti. In Berlin, trash is currency. Loose change, but currency.", use: "I'll hand them to the Späti guy. Nobody drinks from a stranger's bottle." });
+  look: S => "Empty bottles, " + [S.f.a4_nBeer ? S.f.a4_nBeer + " glass beer bottles (8 cents each)" : "", S.f.a4_nPlastic ? S.f.a4_nPlastic + " one-way plastic ones (a quarter each)" : ""].filter(Boolean).join(" and ") + ". In Berlin, trash is currency. Loose change, but currency.", use: "I'll hand them to the Späti guy. Nobody drinks from a stranger's bottle." });
 
 /* ------------------------------------------------------------------ the room */
 RP.room({
@@ -231,7 +264,7 @@ RP.room({
   hotspots: [
     { id: "a4_kemal", name: "Kemal", look: "Kemal, the Späti guy: apron, mustache, steam-rising mug. He's been awake as long as the neon has.",
       talk: S => kemalTalk(S), give: (S, item) => item === "a4_bottles" ? kemalTalk(S) : "He's a Späti guy. He sells things. He doesn't take anything but money and bottles.", pickup: "He'd sell me back to myself at a markup.", push: "He's behind the counter. I'm on the street. We have an understanding." },
-    { id: "a4_spaeti", name: "Späti", rects: [[124, 104, 212, 74]], z: 20, walk: [252, 206, "back"], look: "A Späti: Berlin's all-night kiosk. Beer, mate, chips, SIM cards and philosophy. It's open at 1 AM like it's open at noon.", open: "It's open. It's always open. That's the Späti way.", use: "I could browse. But I don't have a Berlin plan beyond \"get in the door.\"" },
+    { id: "a4_spaeti", name: "Späti", rects: [[124, 104, 212, 74]], z: 20, walk: [252, 206, "back"], look: "A Späti: Berlin's all-night kiosk. Beer, mate, chips, SIM cards and philosophy. It's open at 1 AM like it's open at noon.", open: "It's open. It's always open. That's the Späti way.", use: S => spaetiShop(S) },
     { id: "a4_neon", name: "SPÄTI sign", r: [168, 78, 124, 26], z: 40, walk: [250, 206, "back"], look: "SPÄTI, in pink neon, with the umlaut doing most of the lifting. It flickers every few seconds like it's thinking." },
     { id: "a4_crates", name: "bottle crates", r: [134, 150, 50, 28], z: 50, walk: [160, 210, "back"], look: "Crates of bottles outside the Späti. In Berlin, the street is a storage room.", pickup: "That's their inventory, not mine. I'm not getting anyone shot over beer.", push: "They're heavy. And someone's counting." },
     { id: "a4_bench", name: "bench", r: [186, 168, 62, 30], z: 40, walk: [216, 208, "back"], look: "A wooden bench with two beer bottles on it, a view of the rain and nobody's regrets.", use: "If I sit, I'll miss my slot. And the bench has seen things.", pickup: "It's bolted to the sidewalk. And apparently to the culture." },

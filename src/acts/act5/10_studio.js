@@ -151,7 +151,7 @@ function lightMap(S) {
 /* ------------------------------------------------------------------------------------------ scripts */
 const REMAIN = S => {
   const out = [];
-  if (A5.day(S) === 1 && !S.f.a5_gearDone) out.push("the rig (Lacquer & Wire, Williamsburg)");
+  if (A5.day(S) === 1 && !S.f.a5_gearMixer) out.push("the Taula (Lacquer & Wire, Williamsburg)");
   if (A5.day(S) === 2) {
     if (!S.f.a5_interviewDone) out.push("the Radio Harbor interview (10 AM)");
     if (!S.f.a5_guestDone) out.push("wristbands and the guest list at the gate");
@@ -168,6 +168,13 @@ async function sleepNow(S) {
   if (day >= 3) { await RP.say("No sleeping. Tonight I sleep when it's over. Or never. Probably never."); return; }
   await RP.walkTo(150, 224, "back");
   if (day === 1) {
+    if (!S.f.a5_gearDone) {
+      const left = [!S.f.a5_gearDecks ? "decks" : "", !S.f.a5_gearMonitors ? "monitors" : ""].filter(Boolean).join(" and ");
+      const ch = await RP.choose(["Sleep on it. My old " + left + " will do, for now.", "Not yet. More shopping."]);
+      if (ch !== 0) { await RP.say("Not yet. The shop is open tomorrow too, but I'd rather sleep knowing."); return; }
+      S.f.a5_gearDone = true; S.f.a5_gearSlept = true;
+      await RP.say("Old " + left + " it is. They have carried me this far. I tell them so.");
+    }
     await RP.say("The rig is on its way. The rest is tomorrow. Night, Gerald.");
     await RP.fadeTo(1, 900);
     A5.setDay(S, 2, "FRI 8:40 AM", "day"); S.f.a5_slept2 = true;
@@ -196,7 +203,7 @@ async function sleepNow(S) {
     "I can't eat. My stomach has become a subwoofer.",
     "@a5_margo Then take the water. Go. And remember: you're not on until 11:45. Don't peak at lunch."
   ]);
-  RP.text("MARGO (MGR)", "SAT: you're at the gate. Pass in your pocket. Soundcheck 4 PM main stage. Find Roz (stage manager). Do NOT find Axl.", false);
+  RP.text("MARGO (MGR)", "SAT: you're at the gate. Pass in your pocket (fix the typo before Gloria sees it). Backstage: Roz, the soundcheck at the main stage, Axl's slot-swap. Any order. Do NOT say 'Axl who'.", false);
 }
 
 async function wardrobe(S) {
@@ -320,7 +327,7 @@ RP.room({
       use: "I'll turn them up Saturday. Tonight, Lou's program.", pickup: "On a wall shelf, held by prayers and two screws." },
     { id: "a5_foam", name: "acoustic foam", r: [362, 24, 240, 40], z: 14, walk: [470, 214, "back"], look: "Acoustic foam. Lou says it makes my room sound \"like a dentist's office.\" It has a certain... clean silence." },
     { id: "a5_boxes", name: "delivery boxes", r: [510, 168, 78, 62], z: 41, vis: S => !!S.f.a5_gearDone, walk: [530, 236, "back"],
-      look: "The rig, delivered: CDJ-3000s, Dynaudio, the Taula. Mercè's boxes say LACQUER & WIRE in gold. Eddie's box says FRAGILE ARTIST. I'm hoping that's a joke.",
+      look: S => { const r = A5.rig(S); return "The rig, delivered: " + [r.cdj3 ? "CDJ-3000s" : r.honestDecks ? "used 900NXS decks" : "", r.core ? "Dynaudio Core 47s" : r.honestMon ? "scuffed Rokit 5s" : "", r.taula ? "the Taula" : ""].filter(Boolean).join(", ") + ". Mercè's boxes say LACQUER & WIRE in gold. Eddie's box says FRAGILE ARTIST. I'm hoping that's a joke."; },
       open: "It's all unpacked. I stacked the boxes because I'm that kind of person.", pickup: "Too heavy. Also: I like a view." },
     { id: "a5_shelf", name: "record shelf", r: [6, 38, 96, 66], z: 14, walk: [60, 216, "back"], look: "The overflow shelf. Records that didn't make the crate, and one that made it and came back. I don't talk about that one.", pickup: "If I pull one, the whole shelf has a conversation with the floor." },
     { id: "a5_rug", name: "rug", r: [352, 220, 236, 26], z: 8, floor: true, look: "A purple rug. It ties the room together. Nothing else does." },

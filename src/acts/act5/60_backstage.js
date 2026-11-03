@@ -112,38 +112,35 @@ async function rozTalk(S) {
   const p = ph(S);
   if (!S.f.a5_rozMet) {
     S.f.a5_rozMet = true;
-    RP.setClock("SAT 3:40 PM");
+    if (!S.f.a5_soundDone && !S.f.a5_axlDone) RP.setClock("SAT 3:40 PM");
     await RP.lines([
       "@a5_roz You're the headliner. Roz. Stage manager. I run everything that isn't on fire. Don't make me add fire.",
-      "@a5_roz Soundcheck's at four, main stage. Wings are east, past the steps. Mo's on the desk. He talks through the talkback. Don't be rude to Mo.",
+      "@a5_roz Soundcheck's the main stage booth. Wings are east, past the steps. Mo's on the desk. He talks through the talkback. Don't be rude to Mo.",
       "@a5_roz Your name's on my board right. I reprinted it. Brian did the first batch.",
       "Brian's been busy.",
       "@a5_roz Brian's been told. I'm calling you \"Headliner\" anyway. It's easier."
     ]);
+  }
+  if (p >= 3) { await RP.lines(["@a5_roz Wings. Now. I'll explain on the way."]); return; }
+  if (p === 2) { await RP.lines(["@a5_roz Axl's on at ten-fifteen. You've got the wings at eleven-fifteen. Stay warm. Stay hydrated. Stay out of my way."]); return; }
+  if (!S.f.a5_axlAsked) {
+    S.f.a5_axlAsked = true;
+    await RP.lines([
+      "@a5_roz Axl's agent emailed. They want a swap: you at nine, him at midnight. \"Streaming numbers.\"",
+      "@a5_roz I said it's not my call. Whit said \"synergy.\" That's the entire conversation we've had in the last hour.",
+      "@a5_roz He's in the gold trailer. He doesn't open the door without a green smoothie. It's in catering. Soundcheck with Mo can go before or after, as long as it's before dark."
+    ]);
+    RP.text("MARGO (MGR)", "Axl wants to swap slots. DON'T agree. Go see him. Bring his smoothie (catering). Be kind, be firm, be fast. Soundcheck whenever.", false);
     return;
   }
-  if (p === 0) { await RP.lines(["@a5_roz Four o'clock. Main stage. Through the wings. Don't touch anything that has a cable. Everything has a cable."]); return; }
-  if (p === 1) {
-    if (!S.f.a5_axlAsked) {
-      S.f.a5_axlAsked = true;
-      await RP.lines([
-        "@a5_roz Soundcheck went fine. Mo's smiling, which is weather. Anyway.",
-        "@a5_roz Axl's agent emailed. They want a swap: you at nine, him at midnight. \"Streaming numbers.\"",
-        "@a5_roz I said it's not my call. Whit said \"synergy.\" That's the entire conversation we've had in the last hour.",
-        "@a5_roz He's in the gold trailer. Don't go in empty-handed. He doesn't open the door without a green smoothie. It's in catering."
-      ]);
-      RP.text("MARGO (MGR)", "Axl wants to swap slots. DON'T agree. Go see him. Bring his smoothie (catering). Be kind, be firm, be fast.", false);
-      return;
-    }
-    await RP.lines(["@a5_roz Gold trailer. Smoothie from catering. The door doesn't open without it. And it doesn't open twice."]); return;
-  }
-  if (p === 2) { await RP.lines(["@a5_roz Axl's on at ten-fifteen. You've got the wings at eleven-fifteen. Stay warm. Stay hydrated. Stay out of my way."]); return; }
-  await RP.lines(["@a5_roz Wings. Now. I'll explain on the way."]);
+  const sd = !!S.f.a5_soundDone, ad = !!S.f.a5_axlDone;
+  if (!sd && !ad) await RP.lines(["@a5_roz Two things before dark: soundcheck with Mo, and Axl. Either first. The gold door doesn't open without the smoothie, and it doesn't open twice."]);
+  else if (sd) await RP.lines(["@a5_roz Soundcheck's done. Mo's pleased, so don't touch anything. Axl's still sitting on your slot. Gold trailer. Smoothie from catering."]);
+  else await RP.lines(["@a5_roz Axl's handled. Mo's waiting at the booth. Go before the doors open and the field fills."]);
 }
 async function catererTalk(S) {
   if (!S.f.a5_smoothie) {
-    if (!S.f.a5_axlAsked) { await RP.lines(["@a5_caterer Help yourself. Pasta, sandwiches, fruit. Artists eat free. It's the one time in your life.", "(There's a green smoothie at the end with a label. I don't want to touch it. It's labeled AXL.)"]); return; }
-    await RP.lines(["@a5_caterer That's his. Axl's. Green, no ice, no seeds. He's rung the bell nine times. Take it, please, and go.", "@a5_caterer Tell him it's \"fresh.\" It's not. It's from yesterday, but with a different label."]);
+    await RP.lines(["@a5_caterer That's his. Axl's. Green, no ice, no seeds. He's rung the bell nine times. He won't open the gold door without it. Take it, please, and go.", "@a5_caterer Tell him it's \"fresh.\" It's not. It's from yesterday, but with a different label."]);
     RP.give("a5_smoothie"); S.f.a5_smoothie = true; RP.sfx("pickup"); RP.refreshInv();
     await RP.say("The caterer pushes the smoothie into my hands. It's cold. It's green. It's judging me.");
     return;
@@ -152,7 +149,6 @@ async function catererTalk(S) {
 }
 async function axlDoor(S) {
   if (S.f.a5_axlDone) { await RP.say("The gold door's closed. Axl's in there, being himself in private."); return; }
-  if (!S.f.a5_axlAsked) { await RP.lines(["A gold door with a plaque that says AXL VANTA — DO NOT KNOCK.", "(I should talk to Roz first. And bring something.)"]); return; }
   if (!RP.has("a5_smoothie")) {
     RP.sfx("knock");
     await RP.lines(["I knock.", "@a5_axlDoor IS THAT MY SMOOTHIE?", "Not yet.", "@a5_axlDoor THEN WHY ARE YOU KNOCKING?", "(Fair. I need the smoothie. Catering.)"]);

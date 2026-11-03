@@ -165,10 +165,11 @@ async function marcusTalk(S) {
 
 async function margoTalk(S) {
   await RP.lines([
-    "@a5_margoT Eleven forty-five. Soundcheck at four. Axl has a trailer the size of Delaware.",
+    "@a5_margoT Eleven forty-five. Soundcheck at four, whenever you fit it in. Axl has a trailer the size of Delaware.",
     "@a5_margoT Your pass is wrong. The printer was run by an intern named Brian. Don't let Gloria see it.",
     "@a5_margoT If there's a problem, call me. If there's a disaster, text me. If there's a miracle, don't tell me. I'll jinx it."
   ]);
+  if (S.f.a5_feeAdvance) await RP.lines(["@a5_margoT And the advance I gave you is on tonight's invoice, with ten percent. I'm not a charity. I'm a firm."]);
 }
 async function margoIntro(S) {
   S.f.a5_metMargo = true; S.f.noTravel = true;
@@ -179,9 +180,9 @@ async function margoIntro(S) {
     "@a5_margoT Axl plays ten-fifteen to eleven-thirty. You're eleven forty-five. Headline. Closer. The only slot that matters.",
     "@a5_margoT Backstage is east, past the lawn. Gloria guards the fence. Your pass has a typo. Brian did it.",
     "Brian?",
-    "@a5_margoT The intern. It's a whole thing. Fix it before Gloria sees. Ray might have a Sharpie. Ray has everything."
+    "@a5_margoT The intern. It's a whole thing. Fix it before Gloria sees. It's laminated, so it needs permanent ink. Find whoever prices things by hand. Ray, probably. Ray has everything."
   ]);
-  RP.text("MARGO (MGR)", "SAT: you're in. Backstage via the east gate. Pass: fix the typo (Sharpie, Ray). 4 PM soundcheck, main stage. 11:45 PM you headline. Breathe.", true);
+  RP.text("MARGO (MGR)", "SAT: you're in. Backstage via the east gate. Pass: fix the typo (laminate: permanent ink, Ray prices by hand). Then backstage: soundcheck, Axl's smoothie, Axl. Any order. 11:45 PM you headline. Breathe.", true);
 }
 
 /* ---------------------------------------------------------------------------------------- room */

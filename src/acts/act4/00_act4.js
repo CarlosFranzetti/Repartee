@@ -174,6 +174,20 @@ A4.sleeveIcon = (c, id, ox, oy) => {
   RP.sleeve(cv.getContext("2d"), RP.rec(id), 0, 0, 20); c.drawImage(cv, ox || 6, oy || 2);
 };
 
+/* ------------------------------------------------------------------ money helpers */
+/* Selling a crate record is the honest way out when cash runs short. Only house classics go: never the white label or the Berlin records. */
+A4.sellable = S => (S.records || []).filter(id => id !== "white_nyc93" && A4.BASE_RECORDS.includes(id));
+A4.sellRecord = async function (S, price) {
+  const L = A4.sellable(S).slice(-3);
+  if (!L.length) { await RP.say("Nothing left in the crate I could part with. What's left is the white label and the Berlin records, and those are the job."); return null; }
+  const i = await RP.choose(L.map(id => { const r = RP.rec(id); return r.artist + " - " + r.title + " ($" + price + ", gone for good)"; }).concat(["Never mind"]));
+  if (i >= L.length) return null;
+  RP.removeRecord(L[i]); RP.money(price); S.f.a4_sold = (S.f.a4_sold || 0) + 1;
+  return L[i];
+};
+/* the rider Ingrid wrote into the contract: water, towels, a vegetable that is not a pickle */
+A4.riderHave = S => ["a4_rWater", "a4_rTowel", "a4_rVeg"].filter(k => S.f[k]).length;
+
 /* ------------------------------------------------------------------ the act */
 RP.defineAct({
   n: 4, id: "act4", title: "TOURING DJ", sub: "Bushwick, then Berlin",
@@ -183,7 +197,7 @@ RP.defineAct({
     Object.keys(S.f).forEach(k => { if (k.indexOf("a4_") === 0) delete S.f[k]; });
     S.f.noTravel = false; S.f.time = "dusk";
     if (!carry) {
-      S.money = 600; S.followers = 2500;
+      S.money = 150; S.followers = 2500;
       S.records = A4.BASE_RECORDS.slice();
       S.gear = { decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk2", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" };
     } else {
@@ -192,7 +206,7 @@ RP.defineAct({
       S.followers = Math.max(S.followers || 0, 2500);
       S.gear = Object.assign({ decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk2", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" }, S.gear);
     }
-    if (!S.money || S.money < 200) S.money = Math.max(S.money || 0, 600);
+    if (carry) S.money = Math.max(120, Math.min(S.money || 0, 220));      /* tight on purpose: rent, the MK7s and a deposit ate the rest */
     S.inv = ["phone", "a4_white"];
     S.clock = "THU 4:10 PM";
     S.unlocked = ["a4_loc_studio"];
@@ -209,6 +223,7 @@ RP.defineAct({
       "My own pair of Technics SL-1210MK7s, bought with Halcyon money. I pet them when nobody's looking.",
       "Hal Pruitt's old MK2s from Queens sit under the desk as spares. The Loose Joints is on the shelf in its FOR COMPANY sleeve. I haven't played it since the anniversary. Some records you keep.",
       "Thursdays at the Halcyon are good. Two hundred people, a booth that knows my name, Odessa's lipstick napkins. It's comfortable, and comfortable is how a person ends up with a plaque on a wall.",
+      "The account says $" + S.money + ". Rent, the MK7s and a deposit ate the rest. Berlin is a place you survive, not afford.",
       "And an email I've read nine times. Ingrid Falk, Berlin, again. Berlin is the jump. It's on the laptop."
     ]);
   },
@@ -231,6 +246,28 @@ RP.item("a4_white", { name: "white label \"NYC 93\"", short: "NYC 93",
   icon: c => { I.record(c, "#f4f0ea"); P(c, 15, 11, "#1d1622"); P(c, 17, 11, "#1d1622"); P(c, 16, 13, "#1d1622"); },
   look: "Lou's white label. Just \"NYC 93\" in marker. Twelve inches of a Saturday in 1993.",
   use: "It needs a turntable. Luckily I own two good ones now. Still can't believe that sentence." });
+RP.item("a4_rider", { name: "Ingrid's rider", short: "Rider",
+  icon: c => { R(c, 7, 3, 18, 22, "#efeaf6"); R(c, 7, 3, 18, 3, "#7ad8f0"); for (let y = 9; y < 22; y += 4) { R(c, 10, y, 3, 2, "#55516a"); R(c, 15, y, 7, 1, "#55516a"); } },
+  look: S => { const st = (f, id, no) => S.f[f] ? "with Katja" : RP.has(id) ? "in my pocket" : no; return "Ingrid's rider, texted. Water: " + st("a4_rWater", "a4_water", "missing") + ". Towels: " + st("a4_rTowel", "a4_towel", "missing") + ". One vegetable, \"NOT a pickle\": " + st("a4_rVeg", "a4_veg", "missing") + ". Katja counts it at Halle Neun, and every miss comes off the fee."; },
+  use: "Katja checks it, not me. I hand over what I've got, and the club does the arithmetic on what I haven't." });
+RP.item("a4_water", { name: "bottle of water", short: "Water",
+  icon: c => { R(c, 12, 8, 8, 16, "#9fd8f0"); R(c, 13, 4, 6, 5, "#9fd8f0"); R(c, 14, 2, 4, 3, "#2f62b8"); R(c, 12, 14, 8, 4, "#efeaf6"); R(c, 13, 9, 1, 13, "#d8f4ff"); },
+  look: "Still water, in a bottle, for money. In Brooklyn the tap is free and tastes like a pipe. Today I'm cultured.", use: "It's for the rider. If I drink it, Katja gets a lecture instead of a bottle." });
+RP.item("a4_towel", { name: S => S.f.a4_towelKind === "dish" ? "dish towel" : "hot towel", short: "Towel",
+  icon: c => { R(c, 6, 10, 20, 12, "#efeaf6"); R(c, 6, 10, 20, 2, "#ffffff"); R(c, 6, 20, 20, 2, "#c8c4d8"); for (let x = 9; x < 24; x += 5) R(c, x, 13, 1, 6, "#d8d4e8"); P(c, 10, 6, "#c8c4d8"); P(c, 16, 5, "#c8c4d8"); P(c, 21, 6, "#c8c4d8"); },
+  look: S => S.f.a4_towelKind === "dish" ? "A Geschirrtuch with a Berlin bear on it, bought from a man in an apron. It's a towel. Katja can argue the rest." : "A rolled towel, already losing its heat. Airlines hand out heat the way banks hand out interest.", use: "Wiping my face with the rider would be a fine way to start a fee dispute." });
+RP.item("a4_veg", { name: S => S.f.a4_vegKind === "carrot" ? "carrot" : "celery stick", short: S => S.f.a4_vegKind === "carrot" ? "Carrot" : "Celery",
+  icon: (c, S) => { if (S.f.a4_vegKind === "carrot") { RP.u.poly(c, [[8, 10], [24, 8], [10, 16]], "#e8822a"); R(c, 22, 6, 4, 2, "#5a9a2a"); P(c, 26, 5, "#5a9a2a"); } else { R(c, 14, 6, 4, 20, "#9be15d"); R(c, 14, 6, 1, 20, "#d8ff9a"); R(c, 12, 3, 2, 4, "#5a9a2a"); R(c, 18, 3, 2, 4, "#5a9a2a"); } },
+  iconKey: S => S.f.a4_vegKind === "carrot" ? 1 : 0,
+  look: S => S.f.a4_vegKind === "carrot" ? "A carrot, bought loose from a man who didn't ask why. It's a vegetable. It is not a pickle. On paper that's the whole job." : "A celery stick, liberated from a tomato juice. A vegetable, and not a pickle: two of the three things the rider asks.",
+  use: "It goes to Katja. Eating it would be an own goal." });
+RP.item("a4_pickle", { name: "pickle in a pouch", short: "Pickle",
+  icon: c => { R(c, 5, 8, 22, 14, "#3a7a3a"); R(c, 5, 8, 22, 2, "#6aba5a"); ell(c, 16, 15, 7, 3, "#9be15d"); R(c, 7, 20, 18, 2, "#255a25"); P(c, 14, 14, "#255a25"); P(c, 18, 16, "#255a25"); },
+  look: "\"Dill Deal\": a sealed pickle, \"100% pickle.\" The rider said NOT a pickle. In capital letters. I read them. I bought it anyway.", use: "It's a pickle. The rider banned the one thing I'm holding. I have a type." });
+RP.item("a4_mate", { name: "Club-Mate", short: "Mate",
+  icon: c => { R(c, 12, 6, 8, 18, "#3a5a2a"); R(c, 13, 3, 6, 4, "#3a5a2a"); R(c, 14, 2, 4, 2, "#c8a030"); R(c, 12, 12, 8, 6, "#efe6d0"); R(c, 14, 14, 4, 2, "#c0302c"); R(c, 13, 7, 1, 15, "#6a9a4a"); },
+  look: "Club-Mate, cold, in a brown bottle. Berlin runs on it: three times the caffeine, twice the regret.", use: "Not for me. There's a man at a steel door who's been standing in the rain since the power plant closed." });
+
 RP.item("a4_passport", { name: "passport", short: "Passport",
   icon: c => { R(c, 8, 3, 16, 20, "#1d2a5a"); R(c, 8, 3, 16, 1, "#3a4a8a"); R(c, 8, 22, 16, 1, "#0e1630"); ell(c, 16, 11, 4, 4, "#c8a030"); ell(c, 16, 11, 2, 2, "#1d2a5a"); R(c, 11, 18, 10, 1, "#c8a030"); },
   look: "My passport. The photo is from 2019. I had a plan back then and a haircut to match.",
@@ -255,10 +292,10 @@ RP.item("a4_jerky", { name: "beef jerky", short: "Jerky",
   icon: c => { R(c, 6, 4, 20, 17, "#c0302c"); R(c, 6, 4, 20, 2, "#e05a4a"); R(c, 6, 19, 20, 2, "#8a1a1a"); ell(c, 16, 12, 5, 4, "#7a3a1a"); ell(c, 15, 11, 3, 2, "#a8603a"); R(c, 9, 7, 14, 1, "#ffd23f"); },
   look: "\"Chewy Wowie\" beef jerky. The bag says \"Now with 22% real jerky.\" The other 78% is a secret.",
   use: "I'm not that hungry. I'm barely that curious." });
-RP.item("a4_ticket", { name: S => S.f.a4_validated ? "train ticket (validated)" : "train ticket", short: "Ticket",
+RP.item("a4_ticket", { name: S => "train ticket" + (S.f.a4_wrongZone || S.f.a4_validated ? " (" + [S.f.a4_wrongZone ? "zones " + S.f.a4_wrongKind : "", S.f.a4_validated ? "validated" : ""].filter(Boolean).join(", ") + ")" : ""), short: "Ticket",
   icon: (c, S) => { R(c, 4, 6, 24, 13, "#efeaf6"); R(c, 4, 6, 24, 3, "#c0302c"); R(c, 7, 11, 12, 1, "#55516a"); R(c, 7, 14, 8, 1, "#55516a"); if (S.f.a4_validated) { R(c, 20, 11, 7, 6, "#3fa66a"); P(c, 22, 14, "#17131f"); P(c, 23, 15, "#17131f"); P(c, 24, 14, "#17131f"); } },
   iconKey: S => S.f.a4_validated ? 1 : 0,
-  look: S => S.f.a4_validated ? "Airport train ticket, zones ABC, validated. In Germany a ticket that isn't stamped is just a nice piece of paper." : "A train ticket, zones ABC. It says it's valid once it's validated. I think that means stamped. By a machine. Somewhere.",
+  look: S => S.f.a4_wrongZone ? "Airport train ticket, zones " + S.f.a4_wrongKind + (S.f.a4_validated ? ", stamped" : ", not yet stamped") + ". The airport is zone C. This is a ticket for the nice parts of town, and the machine on the platform sells the missing zone." : S.f.a4_validated ? "Airport train ticket, zones ABC, validated. In Germany a ticket that isn't stamped is just a nice piece of paper." : "A train ticket, zones ABC. It says it's valid once it's validated. I think that means stamped. By a machine. Somewhere.",
   use: "It needs the little red validator by the stairs." });
 RP.item("a4_photo", { name: "photo of the hole", short: "Hole pic",
   icon: c => { R(c, 6, 3, 20, 18, "#efeaf6"); R(c, 8, 5, 16, 12, "#6a5a7a"); ell(c, 16, 11, 4, 3, "#0e0a14"); ell(c, 16, 11, 5, 4, "#9a8aa8"); ell(c, 16, 11, 3, 2, "#0e0a14"); R(c, 8, 18, 16, 2, "#efeaf6"); },

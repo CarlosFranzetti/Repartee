@@ -109,9 +109,9 @@ async function simpleTalk(S, who) {
     marcus: [A5.guest(S).pier, "It counts, Marcus.", "@marcus PLUS THIRTY. It was a state of mind. It's always been a state of mind."],
     ray: ["@ray You didn't peak early. You peaked right. That's the whole job.", "Is that praise, Ray?", "@ray It's a medical observation. Don't tell anyone."],
     twinkie: ["@twinkie Honey, I remember everything. I'm going to remember the last bar for a while.", "@twinkie Sit. The sunrise is the best part. The rest was buildup."],
-    eddie: ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie An invoice for introductions. Two-time. I'll take it in spirit."],
+    eddie: S.f.a5_soldRecs ? ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie An invoice for introductions. Two-time. I'll take it in spirit. Also: I'm keeping the " + (S.f.a5_soldTitle || "records") + ". It's in my van. It's happy. You can have it back at the Eddie price."] : ["@eddie Two-time deal! You pay once in the morning, once in the evening!", "Eddie, what's this?", "@eddie An invoice for introductions. Two-time. I'll take it in spirit."],
     jess: S.f.a5_biscuit ? ["@jess Mr. Whiskers has been staring at that cat next to Lou for an hour.", "Biscuit's staring back.", "@jess Nobody's blinking. It's the loudest thing at this festival."] : ["@jess Mr. Whiskers slept through the whole set. That's the highest compliment he gives.", S.f.a5_whiskersShout ? "@jess And you said his name. He blinked at me. Slowly." : "@jess He'd have loved a shout-out. Next time."],
-    margo: S.f.a5_axlAngry ? ["@a5_margoT The headline slot did four hundred thousand views by sunrise. The \"Axl who\" clip did two million.", "That was a bit, Margo.", "@a5_margoT It's also a merch line. I invoiced the sunrise and the clip. Don't stand near me, I'm a manager."] : ["@a5_margoT The headline slot did four hundred thousand views by sunrise. I invoiced the sunrise.", "@a5_margoT I'm proud of you. Once. Then back to being a manager."],
+    margo: S.f.a5_feeAdvance ? ["@a5_margoT The fee cleared. Less the fifteen hundred I advanced you, less ten percent handling, less the invoice for the sunrise. You are in the black. Barely. Spiritually, enormously.", "That's the most honest paycheck I've had."] : S.f.a5_axlAngry ? ["@a5_margoT The headline slot did four hundred thousand views by sunrise. The \"Axl who\" clip did two million.", "That was a bit, Margo.", "@a5_margoT It's also a merch line. I invoiced the sunrise and the clip. Don't stand near me, I'm a manager."] : ["@a5_margoT The headline slot did four hundred thousand views by sunrise. I invoiced the sunrise.", "@a5_margoT I'm proud of you. Once. Then back to being a manager."],
     kosmo: ["@kosmo " + nm(S) + ". I said it right. I'll say it right again.", "Thanks, Kosmo.", "@kosmo Don't thank me. Thank the record you kept."]
   }[who];
   await RP.lines(L);
@@ -132,7 +132,7 @@ async function finale(S) {
     "It's still a whole thing."
   ]);
   const checks = [
-    [!!S.f.a5_gearDone, "Bought the rig: Taula 4 MR, Core 47s, CDJ-3000s"],
+    [!!S.f.a5_gearDone, "Built the rig: " + ["Taula 4 MR", A5.rig(S).core ? "Core 47s" : A5.rig(S).honestMon ? "scuffed Rokits" : "the old BM5s", A5.rig(S).cdj3 ? "CDJ-3000s" : A5.rig(S).honestDecks ? "used 900NXS" : "the old CDJ-900s"].join(", ")],
     [!!S.f.a5_interviewDone, "Radio Harbor interview (Dante: \"next week\", live)"],
     [!!S.f.a5_guestDone, "Marcus's \"plus thirty\" handled (" + A5.guest(S).nw + " got in)"],
     [!!S.f.a5_soundDone, "Soundcheck on the main stage"],

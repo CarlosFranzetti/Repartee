@@ -166,6 +166,7 @@ async function rayTalk(S) {
     } },
     { text: "Think my crate's okay?", once: true, run: async () => {
       A5.ensureCrate(S);
+      if (S.f.a5_soldRecs) await RP.lines(["@ray ...Where's the " + (S.f.a5_soldTitle || "Phuture") + "? There's a gap in the crate the size of a record.", "I sold it. To Eddie. For the Taula.", "@ray To EDDIE. Fine. I'll buy it back from him tonight. At the Eddie price. Which is double. Which is the point of Eddie."]);
       await RP.lines(["@ray Let me see. ...Fine. It's got everything I'd tell you to bring, except my opinion. Which is free.", "@ray Take the white label to the stage. Lou's record. That's the one the whole thing's been about."]);
     } },
     { text: "See you later, Ray.", end: true, run: async () => { await RP.say("Don't die on stage. It's a mess for the crew.", "ray"); } }
@@ -221,6 +222,7 @@ async function jessTalk(S) {
   ]);
 }
 async function eddieTalk(S) {
+  if (S.f.a5_radioPlug) await RP.lines(["@eddie SPIRIT WATER! The kid read my ad on the radio! Thirty seconds! Sales are up one bottle!", "That was me. I'm the bottle."]);
   await RP.lines(["@eddie WATER! Nine dollars! A two-time deal: you pay nine now, nine in spirit.", "Eddie, I've got a sixteen-hundred-dollar mixer and I can't afford a water."]);
   const i = await RP.choose(["Buy a water ($9)", "No thanks"]);
   if (i === 0) {
@@ -242,11 +244,14 @@ async function gloriaTalk(S) {
       "It's the same person.",
       "@a5_gloria Could be a twin. I've seen twins. Twins use the same pass. This is a different name.",
       "It's a typo. An intern named Brian...",
-      "@a5_gloria I don't care if it's Brian or Gerald. A wrong pass is a prank. Fix it or beat it."
+      "@a5_gloria I don't care if it's Brian or Gerald. A wrong pass is a prank. Fix it or beat it.",
+      "(It's laminated. I need permanent ink. Who here writes on everything?)"
     ]);
+    S.f.a5_clueInk = true;
     return;
   }
-  await RP.lines(["@a5_gloria Still wrong. I'm not moving.", "Right. Fix the pass. I need something that writes."]);
+  S.f.a5_clueInk = true;
+  await RP.lines(["@a5_gloria Still wrong. I'm not moving.", "Right. Fix the pass. I need something that writes.", "@a5_gloria On laminate? Ballpoint skates. It needs permanent ink. Find someone around here who prices things by hand. They'll have the right pen."]);
 }
 async function showPass(S) {
   if (!RP.has("a5_pass")) { await RP.say("My pass. It's in my pocket. No, it's... never mind. I have it."); return; }
@@ -301,6 +306,7 @@ RP.room({
     { id: "a5_wtruck2", name: "dumpling truck", r: [156, 118, 128, 100], z: 15, walk: [218, 238, "back"], look: "DUMPLINGS. Steam, a cheerful guy in an apron, and a queue that smells like heaven. I'd murder for a pork bun. I'm saving it for after the set.", use: "After the set. I need to be able to feel my hands.", talk: "The dumpling guy waves and gives me a thumbs-up. That's more affection than I've had in 24 hours.", pickup: "Absolutely not. Absolutely yes. After the set." },
     { id: "a5_wmerch", name: "merch tent", r: [298, 124, 116, 94], z: 15, walk: [356, 238, "back"], look: "HARBOR LIGHTS MERCH. Tees, hats, tote bags. There's a shirt with my face on it. I stand next to it. It's weirdly flattering. And a little bit horrifying.", use: "The shirt costs $45. I'm the headliner. I'm told it's retail.", pickup: "I'd need to pay for it. I'm still not used to being on both ends of the price tag.", talk: "The merch person says \"yes?\" I say \"nothing.\" We're both in agreement." },
     { id: "ray", name: "Ray", talk: S => rayTalk(S), look: "Ray, of Deep Cuts. Same beard, same glasses, same expression of pity for everything you've ever bought.", give: (S, item) => "Ray: \"I don't want it. I have everything I want. It's a curse.\"", pickup: "Ray's bigger than he looks. He's all opinions.", use: "I can't use Ray. Nobody's ever managed it." },
+    { id: "a5_wsharpies", name: "Ray's price mug", r: [452, 196, 34, 18], z: 40, walk: [472, 236, "back"], look: "A coffee mug of black Sharpies on Ray's counter. Every sticker in every bin is hand-priced in permanent ink. Ray prices things by hand and believes in it.", pickup: "Ray watches the mug the way Gloria watches the gate. I should ask him.", use: "They're Ray's. Ray has opinions about who uses them.", talk: "\"Hello, pens.\" Ray: \"Ask me, not the pens.\"" },
     { id: "a5_wray", name: "Deep Cuts pop-up", r: [428, 120, 136, 98], z: 15, walk: [496, 236, "back"], look: "Deep Cuts, pop-up edition: bins of records, price cards in Ray's handwriting, and a neon sign Ray says he \"didn't buy, it just arrived.\"", pickup: "Ray's watching. Ray's always watching. And he'll charge me for the look.", use: "I have a crate. I have a lot of records. I'm not allowed to buy any more. Margo has views.", open: "The bins are open. They've been open since 1993. I'll look through them after the set." },
     { id: "a5_wbar", name: "Harbor Bar", r: [580, 116, 124, 102], z: 15, walk: [650, 236, "back"], look: "HARBOR BAR: 1 TICKET. A shelf of bottles, a stack of tickets, a tower of cups, and a woman in mesh who knows everything.", use: "I'm not drinking before my set. I'm a professional. I'm a very nervous professional.", pickup: "The tickets are guarded by a woman who remembers everything. Hands off." },
     { id: "twinkie", name: "Twinkie", talk: S => twinkieTalk(S), look: "Twinkie. Mesh top, pink skirt, shades at night. The only person I know who's been at every after-party and still looks awake.", give: (S, item) => "Twinkie: \"I'll remember that you tried.\"", pickup: "Twinkie remembers. Twinkie will remember this too.", use: "I can't use Twinkie. I can only be used BY Twinkie." },

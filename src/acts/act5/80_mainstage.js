@@ -131,16 +131,27 @@ async function soundcheck(S) {
     "@a5_foh Four faults on the sheet. Ground hum, a dead channel, feedback, and somebody patched a deck into the wrong input.",
     "@a5_foh Fix them. You have the sheet, the cables and one hand on the mixer. I'll be shouting suggestions. They're unhelpful."
   ]);
-  const res = await A5.play("soundCheck", { faults: ["ground-hum", "dead-channel", "feedback", "wrong-input"], stage: "festival", tech: "Mo (FOH)", difficulty: 3 }, { skipLabel: "Hand it to Mo" });
+  const rig = A5.rig(S);
+  const res = await A5.play("soundCheck", { faults: ["ground-hum", "dead-channel", "feedback", "wrong-input"], stage: "festival", tech: "Mo (FOH)", difficulty: rig.core ? 2 : 3 }, { skipLabel: "Hand it to Mo" });
   S.f.a5_soundDone = true; S.f.a5_soundFixed = res.fixed != null ? res.fixed : (res.ok ? 4 : 2);
   const good = res.ok && !res.skipped;
   RP.sfx(good ? "success" : "buzz");
-  RP.setClock("SAT 5:20 PM"); S.f.a5_phase = Math.max(S.f.a5_phase || 0, 1);
-  if (good) await RP.lines(["@a5_foh ...That's clean. That's the cleanest check I've heard all weekend. I'm not smiling. It's a facial thing.", "@a5_foh You're good. The Taula goes to the mixer; the monitors are a dream. Go eat something. Doors at six."]);
-  else await RP.lines(["@a5_foh It's... fine. There's a little hum on channel four. I'll hide it. Tonight we ride the faders.", "@a5_foh You're good enough. Go eat something. Doors at six."]);
+  if (!S.f.a5_axlDone) RP.setClock("SAT 5:20 PM");
+  if (good) await RP.lines(["@a5_foh ...That's clean. That's the cleanest check I've heard all weekend. I'm not smiling. It's a facial thing.", rig.taula ? "@a5_foh The Taula's a joy to patch. No sync, no screens, nothing to lie to me." : "@a5_foh You're good."]);
+  else await RP.lines(["@a5_foh It's... fine. There's a little hum on channel four. I'll hide it. Tonight we ride the faders.", "@a5_foh You're good enough."]);
+  await RP.lines([
+    rig.core ? "@a5_foh Those Core 47s in your wedge mix are the cleanest feed I've had all year. You'll hear everything. Including your mistakes." : rig.honestMon ? "@a5_foh Your wedges are Rokits. Bright up top, thin underneath. I'll ride the sub for you. Don't count on a miracle." : "@a5_foh Your monitors are BM5s? Lovely in a bedroom. On this stage the low end gets thin. I'll compensate where I can.",
+    rig.cdj3 ? "@a5_foh And the CDJ-3000s read clean from the back. Nice touch." : "@a5_foh And the deck pair's older. The pitch fader on the left one has a dead spot. Mind it."
+  ]);
   RP.relight();
-  await RP.say("Doors at six. Axl at ten-fifteen. Me at eleven forty-five. Plenty of time to be quietly terrified.");
-  RP.text("MARGO (MGR)", "Soundcheck: " + (good ? "great" : "ok") + ". Now: Axl wants your slot. Roz has the details. Backstage. Go.", true);
+  const dark = A5.nightfall(S);
+  if (dark) {
+    await RP.lines(["The sun is going down behind the stage. The gates have opened. I can hear the field filling up like a bath.", "Axl at ten-fifteen. Me at eleven forty-five. Plenty of time to be quietly terrified."]);
+    RP.text("MARGO (MGR)", "Soundcheck: " + (good ? "great" : "ok") + ". Gates are open. Backstage. Lou and Marcus are on their way in.", true);
+  } else {
+    await RP.say("Doors at six. Axl at ten-fifteen. Me at eleven forty-five. Plenty of time to be quietly terrified.");
+    RP.text("MARGO (MGR)", "Soundcheck: " + (good ? "great" : "ok") + ". Now: Axl wants your slot. Roz has the details. Backstage. Go.", true);
+  }
 }
 
 async function boothUse(S) {
@@ -176,11 +187,12 @@ async function headlineSet(S) {
   /* the crate: your opener and closer, the middle of the pool, a closer always on hand, and Ray's white label */
   const crate = [OPEN[oi], "peech_boys_dont_make_me_wait", "nuyorican_soul_runaway", "masters_at_work_blood_vibes_the_ha_dance", "marshall_jefferson_move_your_body", "bucketheads_the_bomb", "david_morales_presents_the_face_needin_u", CLOSE[ci], "mood_ii_swing_closer", "white_nyc93"];
   const crateIds = crate.filter((id, k) => crate.indexOf(id) === k && (id === "white_nyc93" || RP.rec(id)));
-  const cr = await A5.play("crowdRead", { records: crateIds, crowd: "festival", rounds: 5, goal: 4, difficulty: 3, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
+  const cr = await A5.play("crowdRead", { records: crateIds, crowd: "festival", rounds: 5, goal: 4, difficulty: A5.rig(S).cdj3 ? 3 : 4, venue: "HARBOR LIGHTS" }, { skipLabel: "Ride it out" });
   S.f.a5_setCrowd = cr.score != null ? cr.score : 70;
   S.f.a5_pyro = true; RP.flash("#ffffff", 220); RP.sfx("cheer");
   await RP.lines([
     cr.ok && !cr.skipped ? "The field's moving like one animal. The whole crowd's one big pulse. This is it. This is the thing." : "It wasn't perfect. The crowd's a patient animal, and they forgave me. Mostly.",
+    A5.rig(S).cdj3 ? "The CDJ-3000 waveform shows me the drop a bar early. Nobody in the field knows I'm cheating." : "No waveform to lean on. I mix by ear and by the dead spot in the left pitch fader. The field forgives, mostly.",
     "@a5_crowd (roaring) " + nm + "! " + nm + "! " + nm + "!",
     "They know my name. They actually know my name."
   ]);
@@ -216,6 +228,7 @@ async function headlineSet(S) {
     "@lou Kid. Thank you."
   ]);
   if (S.f.a5_whiskersShout) await RP.lines(["And Mr. Whiskers: this one's for you. Slow blink, buddy.", "(Somewhere in the crowd, a bubble carrier is lifted over the barricade. Mr. Whiskers blinks. Slowly.)"]);
+  if (S.f.a5_radioPlug) await RP.lines(["(Near the barricade, a bottle goes up in the lights. SPIRIT WATER. Eddie has his own banner. It says: AS HEARD ON THE RADIO.)"]);
   await RP.lines(["Thank you, Harbor Lights. I'm " + nm + ". I started in a bedroom. I'm still in a bedroom. It just got a lot of people."]);
   /* 5. Kosmo, finally */
   const kos = RP.actor("kosmo");

@@ -108,9 +108,43 @@ async function kosmoTalk(S) {
       await giveBag(S);
     } },
     { text: "Great set at the Halcyon, Kosmo.", when: S => !S.f.a4_kosmoPraise, run: async () => { S.f.a4_kosmoPraise = true; await RP.lines(["@a4_kosmo Of course it was. I remember it fondly. It was... last week? A basement? A large place. With... acoustics.", "Six months ago. I played after you.", "@a4_kosmo Yes. That. Wonderful people. Who are you, again?"]); } },
+    { text: "Kosmo, could you lend me a little cash?", when: S => !S.f.a4_kosmoLoan, run: () => kosmoLoan(S) },
     { text: "Where are you headed?", run: () => RP.lines(["@a4_kosmo Berlin. They hold me in a different kind of reverence there. They're mostly quiet about it. A booker named Falk books me a Sunday brunch there every year, and she books my seat, which is why I'm on this plane and not a better one.", "@a4_kosmo And you, Brenton? What brings you?", "A booking. Halle Neun.", "@a4_kosmo (pause) I... don't know it. How lovely."]) },
     { text: "Never mind. Sleep well.", end: true }
   ]);
+}
+async function cartAsk(S) {
+  const i = await RP.choose(["A hot towel", "Tomato juice ($4)", "Pretzels ($3)", "Never mind"]);
+  if (i === 3) return;
+  if (i === 0) {
+    if (RP.has("a4_towel") || S.f.a4_rTowel) { await RP.lines(["@a4_marguerite One towel per passenger, sir. It's policy, and also a vow."]); return; }
+    RP.give("a4_towel");
+    await RP.lines(["@a4_marguerite Hot towel. Economy gets it lukewarm and with a look.", "She tongs one out of a steel tray. It steams like a small, clean ghost.", "The rider says towels. Plural. I'll take what the airline calls plural."]);
+    return;
+  }
+  const price = i === 1 ? 4 : 3;
+  if (!RP.canAfford(price)) { await RP.lines(["@a4_marguerite The card reader is resting, sir. Cash.", "I look at my cash. It looks back. We both feel bad."]); return; }
+  RP.money(-price); RP.sfx("coin");
+  if (i === 2) { await RP.lines(["Pretzels. A tiny bag of tiny knots. Salt for the soul, three dollars for the wallet."]); return; }
+  await RP.lines(["@a4_marguerite Tomato juice. Pepper? Celery?", "Celery. Definitely celery."]);
+  if (RP.has("a4_veg") || S.f.a4_rVeg) { await RP.say("I already hold a vegetable. I drink the juice with the dignity of a man who overbought."); return; }
+  RP.give("a4_veg"); S.f.a4_vegKind = "celery";
+  await RP.lines(["The celery stands in the cup like a tiny green flag. I drink the juice. I keep the flag.", "A vegetable that is not a pickle. That's one item off the rider and four dollars off the account."]);
+}
+async function kosmoLoan(S) {
+  if (S.f.a4_kosmoLoan) { await RP.lines(["@a4_kosmo Brenton. We have discussed money. It was beneath both of us. Go back to sleep."]); return; }
+  if (S.money >= 40) { await RP.lines(["@a4_kosmo (lifts the mask a centimetre) You have a wallet. I can hear it. People with a wallet do not borrow from a legend. They tip one."]); return; }
+  await RP.lines(["@a4_kosmo (a long sigh) Money. I do not carry money, Brenton. I carry people who carry money.", "@a4_kosmo But I have been woken, and a woken legend likes to be amused. Make me laugh and something may fall out of my robe."]);
+  for (;;) {
+    const j = await RP.choose(["How many Kosmos does it take to change a bulb? One. He holds it, and the world revolves around him.", "A DJ walks into a bar. The bartender says: \"Why the long fade?\"", "Lend it or I tell everyone you play the brunch gig.", "Never mind. Sleep well."]);
+    if (j === 3) { await RP.say("Some other time. Possibly after I've stopped being proud."); return; }
+    if (j === 0) {
+      S.f.a4_kosmoLoan = true; RP.money(60);
+      await RP.lines(["@a4_kosmo (a pause. A wheeze. The mask slips.) ...The world revolves. Hm. That is the first joke about me I have heard that is also accurate.", "@a4_kosmo (three crumpled twenties appear from the sleeve of his robe) This never happened. And it is not a loan. A loan has paperwork. This is a tip for the work of making me laugh.", "Sixty dollars, in a silk robe's worth of warm. Kosmo, patron saint of the bad month."]);
+      return;
+    }
+    await RP.lines(j === 1 ? ["@a4_kosmo I invented the long fade, Brenton. In a basement. You were a rumour.", "@a4_kosmo Next."] : ["@a4_kosmo That is blackmail. It is also accurate. I will not be paying it.", "@a4_kosmo Next."]);
+  }
 }
 async function giveBag(S) {
   if (!RP.has("a4_bag")) return;
@@ -183,7 +217,7 @@ RP.room({
       use: S => takeSeat(S), open: S => takeSeat(S), pickup: "It's an airplane seat. They're attached to the plane. And the plane is attached to the sky." },
     { id: "a4_bin", name: "overhead bin", r: [270, 8, 180, 50], z: 20, walk: [358, 232, "back"], look: "The overhead bin above 23A. Stuffed with duty-free bags, a guitar, a pillow and someone's emotional baggage. It will not take my bag.", open: "Full. It opens, takes one look at me and slams shut.", pickup: "It's the bin. I'm not carrying the bin.", push: "It's wedged. It'd take a crowbar and a sense of shame." },
     { id: "a4_windows", name: "windows", rects: [[72, 74, 32, 42], [162, 74, 32, 42], [252, 74, 32, 42], [342, 74, 32, 42], [432, 74, 32, 42], [522, 74, 32, 42]], z: 20, walk: [358, 232, "back"], look: S => S.f.a4_flown ? "Oval windows full of night. And on the right, a wing, blinking red, like it knows something." : "Oval windows: tarmac, a morning sky, a man waving two orange sticks. On the right, a wing. It's blinking red, like it knows something.", open: "It doesn't open. In an hour, that will be a relief." },
-    { id: "a4_cart", name: "service cart", r: [560, 190, 62, 64], z: 60, walk: [540, 238, "right"], look: "The drinks cart. A rolling bar of tiny bottles and tiny dreams. Marguerite pushes it like it owes her money.", use: "\"Tomato juice?\" Nobody asks for it on the ground. In the air, it's wine.", pickup: "It's the airline's. And I don't want those pretzels that badly." },
+    { id: "a4_cart", name: "service cart", r: [560, 190, 62, 64], z: 60, walk: [540, 238, "right"], look: "The drinks cart. Tiny bottles, tiny dreams, a steel tray of hot towels and a tomato juice with a celery stick standing in it like a flag. Marguerite pushes it like it owes her money.", use: S => cartAsk(S), talk: S => cartAsk(S),  pickup: "It's the airline's. And I don't want those pretzels that badly." },
     { id: "a4_door", name: "exit door", r: [4, 62, 46, 156], z: 20, walk: [58, 232, "left"], look: "The cabin door. Through it, the jet bridge. Behind me, New York. Ahead of me, a bag with a seatbelt.", exit: "No going back. Not until Berlin. Possibly not even then." },
     { id: "a4_floor", name: "aisle", r: [8, 224, 620, 28], z: 5, floor: true, look: "The aisle. A strip of carpet with the dignity of a thousand rolling suitcases." }
   ],

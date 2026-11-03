@@ -104,8 +104,7 @@ async function axlScene(S) {
     "@axl There's ONE. Look at the poster. My name's bigger. I've got a billion streams. A billion! Do you know what a billion is?",
     "It's a lot of lonely people with headphones.",
     "@axl ...That's very rude. Also correct. Keep going.",
-    "Your agent emailed Roz. They want to move me to nine and you to midnight.",
-    "@axl The algorithm says I close. The algorithm's rarely wrong. It's said so."
+    ...(S.f.a5_axlAsked ? ["Your agent emailed Roz. They want to move me to nine and you to midnight.", "@axl The algorithm says I close. The algorithm's rarely wrong. It's said so."] : ["@axl My agent says the algorithm wants me at midnight and you at nine. Tell me you're here to agree.", "I'm here to talk about that. My slot is eleven forty-five.", "@axl The algorithm says I close. The algorithm's rarely wrong. It's said so."])
   ]);
   /* choose how to handle it: the smart move makes the early finish his idea; Twinkie's intel is the other way in */
   const opts = ["Hold the line: \"11:45 is in my contract.\"", "Flatter him: \"You're the reason I started.\"", "Sell it: \"A real headliner walks off on the high. Leave them begging at 11:30, and the encore is all anyone remembers.\""];
@@ -140,8 +139,10 @@ async function axlScene(S) {
       "@axl Same thing, with better lighting."
     ]);
   }
-  S.f.a5_phase = 2; RP.setClock("SAT 9:40 PM"); RP.relight();
+  if (!S.f.a5_soundDone) RP.setClock("SAT 6:20 PM");
+  const dark = A5.nightfall(S);
   await RP.lines(["@axl Out. And take the empty cup. I mean it."]);
+  if (!dark) await RP.say("Axl's done. The soundcheck's still waiting for me at the main stage, and the afternoon is running out.");
   await RP.goto("a5_backstage", 462, 234, "back");
 }
 

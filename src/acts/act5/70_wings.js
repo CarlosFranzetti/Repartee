@@ -129,8 +129,7 @@ async function overrun(S) {
 }
 
 async function rozWings(S) {
-  if (ph(S) === 0) { await RP.lines(["@a5_roz Stage is that way. Booth, center. Mo's on the talkback. Check it, then get out of my wings."]); return; }
-  if (ph(S) === 1) { await RP.lines(["@a5_roz Soundcheck's done. Mo's pleased, so don't touch anything. Find out what Axl's people want, then come back."]); return; }
+  if (ph(S) < 2) { await RP.lines(S.f.a5_soundDone ? ["@a5_roz Soundcheck's done. Mo's pleased, so don't touch anything. Axl's still on your slot. Gold trailer, smoothie, then come back."] : ["@a5_roz Stage is that way. Booth, center. Mo's on the talkback. Check it, then get out of my wings. Axl's door can wait or not. Your call."]); return; }
   if (S.f.a5_overrunDone) { await RP.lines(["@a5_roz Go. Up the stairs. Be good. Don't peak early."]); return; }
   if (!S.f.a5_louArrived) { await RP.lines(["@a5_roz It's not time. Axl's on at ten-fifteen. Come back when you've seen Lou."]); return; }
   await overrun(S);
@@ -177,7 +176,7 @@ RP.room({
   ],
   enter: async (S, from) => {
     if (ph(S) === 2 && !S.f.a5_overrunDone && S.f.a5_louArrived) { await overrun(S); return; }
-    if (S.f.a5_phase === 0 || S.f.a5_phase === 1) {
+    if (ph(S) < 2) {
       if (!S.f.a5_wingsSeen) { S.f.a5_wingsSeen = true; await RP.lines(["The wings, in daylight: gaffer tape, road cases, a stage so big I have to sit down. I don't. I stay standing.", "The stage is out there. I'll go check my gear."]); }
     }
   },

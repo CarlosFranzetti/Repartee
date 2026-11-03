@@ -76,18 +76,37 @@ function light(S) {
 }
 
 /* ------------------------------------------------------------------ puzzle */
+async function stagRescue(S) {
+  await RP.lines(["@a4_stag1 (from the dance floor, ten feet away) AMERIKA! No money? Pah! Sell me a record! Twenty dollars! For the party!", "(The stag party has a speaker, a crown and no music. A record is a record. Twenty dollars buys me a ticket and leaves the crate lighter.)"]);
+  await stagSell(S);
+}
+async function stagSell(S) {
+  const id = await A4.sellRecord(S, 20);
+  if (!id) return;
+  const r = RP.rec(id);
+  await RP.lines(["@a4_stag1 " + r.title + "! We don't have a turntable, but we have a speaker and a plan! Twenty dollars! Prost!", "He hands me a twenty with a beer ring on it. Berlin pays in beer rings."]);
+}
 async function buyTicket(S) {
-  if (RP.has("a4_ticket")) { await RP.say("I've got a ticket. Now I just need to stamp it. In Germany, the stamp is the ticket."); return; }
+  if (RP.has("a4_ticket")) {
+    if (!S.f.a4_wrongZone) { await RP.say("I've got a ticket. Now I just need to stamp it. In Germany, the stamp is the ticket."); return; }
+    const j = await RP.choose(["Upgrade to zones A, B and C ($2.00)", "Leave it"]);
+    if (j !== 0) return;
+    if (!RP.canAfford(2)) { await RP.say("Declined. I can't even afford to fix my mistake. That's a talent."); if (!RP.canAfford(2)) await stagRescue(S); return; }
+    RP.money(-2); RP.sfx("coin"); S.f.a4_wrongZone = false; S.f.a4_validated = false; RP.refreshInv();
+    await RP.lines(["Nachlösen: the machine takes my ticket's measure, sells me the zone I was missing and voids the old stamp.", "Zones ABC. It wants a fresh stamp. Two dollars and a lesson: cheaper than the lesson an inspector gives."]);
+    return;
+  }
   const i = await RP.choose(["Zones A and B ($3.50)", "Zones B and C ($3.50)", "Zones A, B and C ($4.90)", "Day pass, all zones ($9.00)", "Never mind"]);
   if (i === 4) return;
   const prices = [3.5, 3.5, 4.9, 9];
-  if (!RP.canAfford(prices[i])) { await RP.say("Declined. A ticket machine just declined me. At an airport. In Germany."); return; }
+  if (!RP.canAfford(prices[i])) { await RP.say("Declined. A ticket machine just declined me. At an airport. In Germany."); if (!RP.canAfford(4.9)) await stagRescue(S); return; }
+  RP.money(-prices[i]); RP.sfx("coin"); RP.give("a4_ticket"); S.f.a4_ticket = true;
+  S.f.a4_wrongZone = i < 2; S.f.a4_wrongKind = i === 0 ? "AB" : "BC";
   if (i === 2 || i === 3) {
-    RP.money(-prices[i]); RP.sfx("coin"); RP.give("a4_ticket"); S.f.a4_ticket = true;
     await RP.lines([i === 2 ? "ABC. The airport's in zone C, so it's the one that gets me to the city." : "The day pass. It's overkill. But I'm not going to explain 'zones' to a ticket machine.", "The ticket prints. \"Gültig nach Entwertung\": valid after validation. That's German for \"it's not a ticket yet.\""]);
   } else {
-    await RP.lines(["The machine thinks. And prints. And spits out: \"UNGÜLTIG FÜR DIESE ZONE.\" It gives me nothing and takes nothing. A fair deal.",
-      "The airport's in zone C. I need the one that gets there."]);
+    await RP.lines(["The machine thinks, takes my money and prints a ticket. \"GÜLTIG: " + S.f.a4_wrongKind + ".\" It looks like a ticket. It feels like a ticket. It's a ticket to the nicest parts of town.",
+      "Hang on. The network map says YOU ARE HERE: C. A ticket without C is a nice piece of paper with a time limit. I can still fix it at the machine."]);
   }
 }
 async function validate(S) {
@@ -103,6 +122,13 @@ async function boardTrain(S) {
   await RP.walkTo(240, 224, "back");
   RP.setClock("SUN 12:07 AM");
   await RP.lines(["The doors close. The train hums. It's 12:07 exactly. The Germans are a precise people.", "@a4_pa FEX nach Berlin Hauptbahnhof. Nächster Halt: Ostkreuz. Next stop: Ostkreuz. Please mind the gap and your record bag."]);
+  if (S.f.a4_wrongZone) {
+    const pay = Math.min(45, Math.max(0, S.money));
+    await RP.lines(["Two stops in, a man in a hoodie holds up a badge. \"Fahrscheinkontrolle.\" Ticket control. He reads mine twice.", "@a4_pa Zone C, Flughafen. Ihr Ticket ist AB. Erhöhtes Beförderungsentgelt: sixty dollars. Or forty-five, if you don't argue and you pay cash.",
+      pay >= 45 ? "I don't argue. I pay forty-five. It's the most efficient transaction in Germany so far, and I'm the product." : "I show him my wallet. He counts it with his eyes. \"Dann eben das,\" he says, and takes every note I have, $" + pay + ". The rest he forgives, because paperwork is also a cost."]);
+    RP.money(-pay);
+    S.f.a4_wrongZone = false; S.f.a4_fined = true;
+  }
   await RP.lines(["Phone: 18%. Bag: heavy. Halle Neun: somewhere east, across a city I have never seen.", "The FEX map says change at Ostkreuz for the last S-Bahn east, 12:31. The phone says a night bus beats it by six minutes. The phone is at 18%."]);
   const i = await RP.choose(["Change at Ostkreuz, like the map says", "Trust the phone and the night bus", "Stay on to the Hauptbahnhof and find a taxi"]);
   const ok = i === 0;
@@ -140,7 +166,11 @@ RP.room({
   ],
   self: { look: "Tour bomber, headphones, a record bag that weighs more than my nerves. A bleary traveler in an underground station at midnight.", talk: "\"Okay. You've got this.\" The station echoes it back. Even the echo sounds doubtful." },
   hotspots: [
-    { id: "a4_stag1", name: "stag party guy", look: "A guy in a hi-vis vest with a plastic crown. He's dancing like the ground is on fire, and he's happy about it.", talk: async () => { await RP.lines(["@a4_stag1 HALLO! AMERIKA! You want beer?", "I want a train.", "@a4_stag1 Same! Ha! We're ALSO trying to get to a club!", "@a4_stag1 It's called Halle Neun! We won't get in! Sven doesn't like our vests!"]); }, pickup: "He's dancing. I'd get a vest in the face.", push: "He's already doing a great job of that himself." },
+    { id: "a4_stag1", name: "stag party guy", look: "A guy in a hi-vis vest with a plastic crown. He's dancing like the ground is on fire, and he's happy about it. A phone speaker by his foot is playing nothing at full volume.",
+      talk: async S => {
+        if (!S.f.a4_stagMet) { S.f.a4_stagMet = true; await RP.lines(["@a4_stag1 HALLO! AMERIKA! You want beer?", "I want a train.", "@a4_stag1 Same! Ha! We're ALSO trying to get to a club!", "@a4_stag1 It's called Halle Neun! We won't get in! Sven doesn't like our vests!", "@a4_stag1 We have a speaker! We have no music! Do you have music?"]); }
+        await RP.convo([{ text: "I could sell you a record. ($20)", run: async () => { await stagSell(S); return "end"; } }, { text: "Just admiring the crown.", end: true }]);
+      }, pickup: "He's dancing. I'd get a vest in the face.", push: "He's already doing a great job of that himself." },
     { id: "a4_stag3", name: "stag party guy", look: "Another vest. Another crown. He's singing something in German that sounds both beautiful and unforgivable.", talk: "He sings LA LA LAAA at me, in a key I don't recognize. No further information.", pickup: "He's mid-dance. I'm not getting involved." },
     { id: "a4_stag2", name: "stag party guy", look: "The third stag, in the vest of someone who lost the vote. He's watching his phone like it owes him money.", talk: async () => { await RP.lines(["@a4_stag2 Don't talk to Jürgen. He's engaged to a ghost.", "I wasn't going to.", "@a4_stag2 Smart. Take the FEX. The express. The last one is the fast one."]); }, pickup: "He'd smile at me. I don't know if I'm ready for that." },
     { id: "a4_tmachine", name: "ticket machine", r: [30, 132, 56, 82], z: 50, walk: [72, 222, "back"],
@@ -152,11 +182,13 @@ RP.room({
     { id: "a4_board", name: "departures board", r: [214, 14, 216, 44], z: 25, walk: [320, 220, "back"],
       look: "00:07, FEX to Hauptbahnhof via Ostkreuz, platform 1, PÜNKTLICH. Everything else is also punctual. It's hard to hate them.", use: "The board doesn't take requests. It just takes the time.", pickup: "It's bolted to the wall. And to the Prussian worldview." },
     { id: "a4_map", name: "network map", r: [480, 52, 52, 58], z: 25, walk: [500, 220, "back"],
-      look: "A map of colored lines, a bulb of overlapping zones. YOU ARE HERE (C). I suppose that's the first thing it got right.", use: "I'd study it, but the lines look like a bowl of spaghetti with ambitions." },
+      look: "A map of colored lines, a bulb of overlapping zones. YOU ARE HERE (C): the airport is out in zone C, and the city is the other end of the line. I suppose that's the first thing it got right.", use: "I'd study it, but the lines look like a bowl of spaghetti with ambitions." },
     { id: "a4_poster", name: "Halle Neun poster", r: [40, 34, 58, 78], z: 20, walk: [70, 220, "back"],
       look: "\"HALLE NEUN: SA - TECHNO. KEIN SMALL TALK.\" Black, white, one red dot. In Berlin even the posters don't smile.", pickup: "It's wheat-pasted. Pulling it would take the wall with it." },
     { id: "a4_bench", name: "bench", r: [520, 168, 92, 38], z: 15, walk: [560, 228, "back"], look: "A metal bench with a view of tracks. A man on it is asleep. Possibly dead. Probably German.", use: "If I sit, I'll miss the last train. And the first. And possibly the entire weekend.", pickup: "Bolted down. Germany bolts everything down." },
-    { id: "a4_bin", name: "trash can", r: [594, 180, 24, 34], z: 45, walk: [580, 234, "right"], look: "A red recycling bin with five colors of slots. I put a ticket stub in the green one. Or the yellow. A man frowns." },
+    { id: "a4_bin", name: "trash can", r: [594, 180, 24, 34], z: 45, walk: [580, 234, "right"], look: S => S.f.a4_binTaken ? "A red recycling bin with five colors of slots. I've taken the plastic bottles. A man frowns at me out of principle." : "A red recycling bin with five colors of slots. In the plastic slot, eight bottles lean on each other: the one-way kind. Berlin pays a quarter on those. A man frowns.",
+      pickup: S => { if (S.f.a4_binTaken) return "I've emptied it. The rest is a banana peel and a sense of civic duty."; S.f.a4_binTaken = true; S.f.a4_nPlastic = 8; RP.give("a4_bottles"); return "Eight one-way bottles, a quarter each. Capitalism, but on a bin. Whoever redeems them will be at a Späti, not on a train platform."; },
+      use: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a4_bin").pickup) },
     { id: "a4_tracks", name: "tracks", r: [0, 128, 640, 42], z: 5, walk: [320, 226, "back"], look: "Two tracks, rails shining, an electrified third rail. There's a sign: \"NICHT BETRETEN.\" I assume that's \"don't be an idiot.\"", use: "I'm not going down there. They'd put me in a very serious German form.", pickup: "No. It's a track. And the thing on it is also a train." },
     { id: "a4_floor", name: "platform", r: [8, 190, 620, 62], z: 3, floor: true, look: "A concrete platform, yellow edge, a faint smell of ozone and decisions." }
   ],

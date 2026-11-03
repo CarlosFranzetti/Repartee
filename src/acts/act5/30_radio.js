@@ -179,6 +179,14 @@ async function interview(S) {
     "@a5_dana Harbor Lights, Saturday. Don't be late. I'll be in the front."
   ]);
   if (score < 3) await RP.lines(["@a5_dana I'll have the producer cut it for time. Most of it. All of it.", "(The clip gets eleven plays. Ten are Marcus. New fans: a handful, mostly confused.)"]);
+  /* an honest way to raise money: a paid read. The rate follows how the segment went (a poor interview pays little) */
+  const fee = 300 + score * 100;
+  await RP.lines(["@a5_dana Off air. The station sells reads. This week it's Eddie Two-Times's Spirit Water, thirty seconds, live. The rate follows the segment. Yours is " + RP.u.fmtMoney(fee) + "."]);
+  const pi = await RP.choose(["Read it (+" + RP.u.fmtMoney(fee) + ")", "No. My name stays off the water."]);
+  if (pi === 0) {
+    S.f.a5_radioPlug = true; RP.money(fee);
+    await RP.lines(["\"Spirit Water. It's water. Nine dollars. Eddie says hi.\" I say it in my best radio voice.", "@a5_dana That was the most honest ad this station has ever run. The engineer gave a thumbs up. He doesn't do that."]);
+  } else await RP.say("It was a lovely offer. I'd like to be known for the set, not the water.");
   RP.text("MARGO (MGR)", "That was " + (score >= 6 ? "perfect" : score >= 3 ? "good" : "an experience") + ". Gate at 7 PM: wristbands + guest list. Whit wants the list by 8.", false);
   RP.unlock("a5_loc_gate");
   await RP.lines(["Gate at seven. Time for lunch. Or the subway, which is lunch for people with no time."]);

@@ -1,9 +1,10 @@
 /* Act 5 — SUPERSTAR DJ. Headline Harbor Lights Festival (fictional).
    Act definition, characters, voices, items, locations and shared helpers (window.RP.a5).
 
-   Flags (S.f.a5_*):  day (1 Thu, 2 Fri, 3 Sat) · tod ("day"|"night") · calledMargo · gearMixer / gearMonitors / gearDecks / gearDone
+   Flags (S.f.a5_*):  day (1 Thu, 2 Fri, 3 Sat) · tod ("day"|"night") · calledMargo · gearMixer / gearMonitors / gearDecks (each: settled; monKind / deckKind say what) / gearDone (all settled, or slept on it)
+   · feeAdvance (Margo's $1,500 advance) · soldRecs (records sold to Eddie) · radioPlug (paid read on the radio)
    · boutiqueMet · interviewDone · interviewScore · danteOnAir · gateMet · guestDone · guestPick (0 all seven, 1 four, 2 none) · guestIn · louPass (have it) · louPassGiven · louComing
-   · slept2 / slept3 · phase (Saturday: 0 arrive, 1 soundcheck done, 2 axl handled, 3 overrun handled, 4 on stage, 5 set done)
+   · slept2 / slept3 · phase (Saturday: 0 arrive, 2 soundcheck AND Axl both done (night), 3 overrun handled, 5 set done)
    · rayMet · sharpie · passFixed · gloriaOK · twinkieIntel · axlIntel · jessMet · smoothie · axlDone · louArrived · soundDone ·
    overrunDone · overrunHow · setOpener · setCloser · setCrowd · setFinale · kosmoName · pierDone */
 (function () {
@@ -189,7 +190,7 @@ RP.item("a5_pass", {
     R(c, 8, 17, S.f.a5_passFixed ? 16 : 11, 2, S.f.a5_passFixed ? "#1d1622" : "#c0302c"); R(c, 8, 20, 9, 1, "#8a86a0");
   },
   iconKey: S => S.f.a5_passFixed ? 1 : 0,
-  look: S => S.f.a5_passFixed ? ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "DJ " + A5.pName(S).replace(/^DJ /, "") + ", in Sharpie. Spelled right. A first for any laminate."] : ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "Hand-laminated by an intern. The name is a stylistic choice. Not mine."],
+  look: S => S.f.a5_passFixed ? ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "DJ " + A5.pName(S).replace(/^DJ /, "") + ", in Sharpie. Spelled right. A first for any laminate."] : ["ARTIST. ALL ACCESS. HARBOR LIGHTS.", "Hand-laminated by an intern. The name is a stylistic choice. Not mine.", "It is laminated, so ballpoint will skate off it. Whatever fixes it has to be permanent ink. Somebody around here writes on everything."],
   use: "It's a pass. You show it to people who don't believe you."
 });
 RP.item("a5_marker", {
@@ -224,6 +225,17 @@ RP.item("a5_water", {
   use: async S => { RP.take("a5_water"); RP.sfx("click"); await RP.lines(["I drink it. It's cold. It's water.", "Nine dollars, spent on hydration. Roz would approve."]); }
 });
 
+/* the rig, in one place: what the player ended up with (sound, Mo and the crowd read it later) */
+A5.rig = S => { const g = S.gear || {}; return { taula: g.mixer === "can_electric_taula_4_mr", core: g.monitors === "dynaudio_core_47", cdj3: g.decks === "pioneer_cdj_3000", honestMon: g.monitors === "krk_rokit_5_g4", honestDecks: g.decks === "pioneer_cdj_900nxs" }; };
+/* the Taula comes first: until it is bought, the rest of the money is held back for it */
+A5.reserve = S => S.f.a5_gearMixer ? 0 : Math.round((RP.gearInfo("can_electric_taula_4_mr") || { price: 1650 }).price * 1.3);
+/* Saturday turns to night when BOTH the soundcheck and Axl are done, in whatever order */
+A5.nightfall = S => {
+  if ((S.f.a5_phase || 0) >= 2 || !S.f.a5_soundDone || !S.f.a5_axlDone) return false;
+  S.f.a5_phase = 2; RP.setClock("SAT 9:40 PM"); RP.relight();
+  return true;
+};
+
 /* act-wide combos: usable in any act-5 room */
 A5.fixPass = async S => {
   if (S.f.a5_passFixed) return "It's already fixed. I'm not making a second correction. That's how you get a third.";
@@ -248,7 +260,7 @@ RP.defineAct({
   start: { room: "a5_studio", x: 300, y: 232, face: "front" },
   setup(S, carry) {
     if (!carry) {
-      S.money = 8000; S.followers = 40000;
+      S.money = 1500; S.followers = 40000;
       S.records = A5.BASE_CRATE.slice();
       S.gear = { decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk7", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" };
       if (!S.name) S.name = "DJ KID";
@@ -269,7 +281,8 @@ RP.defineAct({
   wardrobe: A5.outfits.coat.patch,
   async intro(S) {
     const k = RP.actor("kid"); k.face = "front";
-    S.f.a5_advance = Math.max(5000, Math.ceil((10000 - S.money) / 500) * 500);
+    S.f.a5_advance = 5500;
+    const gi = id => RP.gearInfo(id) || { price: 0 };
     await RP.lines([
       "Thursday. Ten in the morning. Three days until I headline a festival.",
       "I'm not nervous. That's a lie. I've been up since five, alphabetizing my own records."
@@ -279,24 +292,23 @@ RP.defineAct({
       "@a5_margo Good morning, headliner. It's Margo. Your manager. I'm calling at ten because I'm a person who calls at ten.",
       "Margo Quist. My manager since Berlin. She heard Halle Neun paid me in cash, from an envelope, and called to say \"never again.\"",
       "She meant the envelope. Margo only calls at ten with news.",
-      "@a5_margo Harbor Lights wired your advance. " + RP.u.fmtMoney(S.f.a5_advance) + ", in your account. A wire. No envelope. Like a professional.",
-      "I've never had that much at once. I have to sit down. I'm sitting down."
+      "@a5_margo Harbor Lights wired your advance. " + RP.u.fmtMoney(S.f.a5_advance) + ", in your account. A wire. No envelope. Like a professional. The fee comes Saturday night, after you play."
     ]);
     S.f.a5_calledMargo = true;
     RP.money(S.f.a5_advance);
     await RP.lines([
-      "@a5_margo Here's the plan. You're not playing a festival on " + ((S.gear && RP.gearInfo(S.gear.decks) || { model: "CDJ-900" }).model) + "s and a mixer from a different decade.",
-      "@a5_margo Lacquer & Wire in Williamsburg. They stock the mixer you keep describing in your sleep. Handwired, in Barcelona.",
-      "The Taula. The Can Electric Taula 4 MR. I say its name like a prayer.",
-      "@a5_margo Also a proper pair of monitors, and new decks. Eddie Two-Times will be there.",
-      "@a5_margo I'm so sorry. It was the only way to get the mixer. Text me when it's done. Don't buy anything with a deal attached.",
+      "That's " + RP.u.fmtMoney(S.money) + " in the bank. I've never had that much at once. I have to sit down. I'm sitting down.",
+      "@a5_margo Here's the plan. You're not playing a festival on a mixer from a different decade. Lacquer & Wire in Williamsburg. The Can Electric Taula 4 MR, handwired in Barcelona. That comes first.",
+      "The Taula. I say its name like a prayer.",
+      "@a5_margo Then it's choices. CDJ-3000s are " + RP.u.fmtMoney(gi("pioneer_cdj_3000").price) + ". Dynaudio Core 47s are " + RP.u.fmtMoney(gi("dynaudio_core_47").price) + ". You cannot have all of it. Your old kit still works. People have headlined on worse.",
+      "@a5_margo If you're short, there are honest ways. Ask me. Ask the shop. Ask Dana at the radio. Eddie Two-Times will be there, so check your pockets.",
+      "@a5_margo I'm so sorry. It was the only way to get the mixer. Don't buy anything with a deal attached.",
       "Margo. It's Eddie. Every deal has a deal attached."
     ]);
-    RP.text("MARGO (MGR)", "THU: gear at Lacquer & Wire (Williamsburg). FRI 10 AM: Radio Harbor interview. FRI 7 PM: wristbands + guest list at the gate. SAT: soundcheck 4 PM. Do NOT say anything about Axl.", true);
     RP.text("HARBOR LIGHTS", "Congratulations, " + A5.pName(S) + "! You are confirmed as Saturday night headliner, main stage, 11:45 PM. Please see attached rider. Please do not attach a rider.", true);
     await RP.lines([
       "Okay. Subway map, shop, spend a stranger's money on a mixer. My phone has the map. I should also check the messages.",
-      "(Phone: Subway map. Then Lacquer & Wire. The advance is real. I checked twice.)"
+      "(Phone: Subway map. Then Lacquer & Wire. The advance is real. It is also not infinite.)"
     ]);
   },
   combos: [["a5_marker", "a5_pass", S => A5.fixPass(RP.state)]],

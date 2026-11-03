@@ -349,8 +349,11 @@ async function ingridCall(S) {
   const FLT = { none: "flights (she books them, you owe her one)", economy: "flights (economy)", "economy-direct": "flights (economy, direct)", business: "flights (business class)" };
   await A4.ingLines([res.forced ? "Fine. A fee of $" + fee + ". Flights. A hotel that is also a hotel." : "Fine. A fee of $" + fee + ", " + (FLT[S.f.a4_cls] || "flights") + ", the hotel and a rider.",
     "The rider: water, towels, and a vegetable that is not a pickle.",
-    "@kid And no exposure?", "No exposure. We have an exposure budget. I'm saving it for the tourists."]);
-  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 8:55 AM, Terminal 4. Lands 10:55 PM Berlin time. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Passport!!", false);
+    "@kid And no exposure?", "No exposure. We have an exposure budget. I'm saving it for the tourists.",
+    "Katja checks the rider at the door of the booth. Bring it yourself. Nachtwerk's rider budget is an urban legend, and every item you miss comes off your fee.",
+    "@kid I thought a rider meant the club buys it.", "In theory. Bring it. Also bring cash: I book the flight, I do not book your luggage."]);
+  RP.text("INGRID FALK", "Confirmed. TA 718 JFK-BER, tomorrow 8:55 AM, Terminal 4. Lands 10:55 PM Berlin time. Hotel Zum Pfau, Room 12. Fee $" + fee + " in cash after your set. Rider: water, towels, 1 vegetable (NOT a pickle). Katja counts it. Passport!!", false);
+  RP.give("a4_rider");
   A4.callOff(S);
   RP.setClock("FRI 11:58 AM");
   RP.unlock("a4_loc_jfk");

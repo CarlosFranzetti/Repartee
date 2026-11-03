@@ -42,12 +42,69 @@ A3.hallEnter = async function (S, from) {
     AC("a3_brandon").face = "right";
     await lines(["@a3_brandon Six months! Big night! Come here, come here, I'm a hugger.", "Brandon. Uh. Hi."]);
     RP.sfx("whoosh"); await RP.wait(500);
-    await lines(["@a3_brandon I'm a fan. Honestly. The way you... stand at things. Nice jacket!", "@a3_brandon Break a leg. Both. Whichever.",
-      "That was the longest hug I've had since I was nine.", "He smells like a hotel gift shop. And he patted my jacket twice. Weird. Probably a hugger thing."]);
-    S.f.a3_swap = true;
-    await RP.npcWalk("a3_brandon", 214, 222, "left");
+    await A3.hug(S);
     await say("Kosmo's in the booth. Let me go say hi. Carefully.");
   }
+  // ---- Night 3: Brandon's own plan, back from the booth
+  if (S.f.a3_foiled === "cat" && S.f.a3_swapFound && !S.f.a3_brandonDone) await A3.catBackfire(S);
+};
+
+/* the hug: the USB is either in the jacket pocket (swapped), tucked in the bag with the old cat stick as a decoy (Brandon takes the cat), in the bag alone (empty pocket) or wearing his own sticker */
+A3.hugRoute = S => {
+  const hid = !!S.f.a3_usbHidden, dec = RP.has("a3_usb_old"), stk = !!S.f.a3_usbSticker;
+  return hid && dec ? "cat" : hid ? "empty" : stk ? "smiley" : "swap";
+};
+A3.hug = async function (S) {
+  const route = A3.hugRoute(S);
+  await lines(["@a3_brandon I'm a fan. Honestly. The way you... stand at things. Nice jacket!"]);
+  if (route === "swap") {
+    await lines(["@a3_brandon Break a leg. Both. Whichever.", "That was the longest hug I've had since I was nine.", "He smells like a hotel gift shop. And he patted my jacket twice. Weird. Probably a hugger thing."
+      + (S.f.a3_twinkie3 ? " Twinkie said he was a hugger. Twinkie said a lot of things. I filed it under 'Twinkie.'" : "")]);
+    if (RP.has("a3_usb_old")) await say("The old cat stick is still in my pocket, with the real one. He took the one with the better posture.");
+    S.f.a3_swap = true;
+    await RP.npcWalk("a3_brandon", 214, 222, "left");
+    return;
+  }
+  if (route === "cat") {
+    await lines(["@a3_brandon Break a leg. Both. Whichever.", "His hand finds the jacket pocket. Twice, quick and professional, the way you'd lift a wallet from a sleeping man. It comes out with a stick, and goes back in with a blue one.",
+      "The stick he's taken is my old USB: 4,212 photos of Mr. Whiskers, asleep. The real one is zipped inside a Sylvester sleeve in the bag, three feet from his elbow and a continent from his hands.",
+      "@a3_brandon Nice jacket!", "Nice cat, Brandon."]);
+    RP.take("a3_usb_old"); S.f.a3_foiled = "cat";
+    await RP.npcWalk("a3_brandon", 214, 222, "left");
+    return;
+  }
+  if (route === "empty") {
+    await lines(["His hand finds the jacket pocket. Pats it. Pats it again, and a third time, lower, with the face of a man looking for his keys in someone else's trousers.",
+      "@a3_brandon You're, uh. Very flat.", "The USB is in a sleeve in the bag, between two Sylvesters. There is no pocket on earth he can reach.",
+      "@a3_brandon Well! Break a leg. Both. I have a... call to make."]);
+  } else {
+    await lines(["His hand finds the pocket, twice. It stops. He draws my USB a thumb's width into the light, and a gold smiley grins up at him: his own signature, on my stick.",
+      "@a3_brandon Huh.", "@a3_brandon ...I already did this one.", "He pushes it back, pats the pocket like a man calming a pleased horse, and frowns at his other pocket, where his blue fake is still sitting, unswapped.",
+      "@a3_brandon I'm going to have a drink. I'm clearly ahead of myself."]);
+  }
+  S.f.a3_foiled = route; S.f.a3_brandonDone = true; S.f.a3_usbBack = true;
+  await RP.npcWalk("a3_brandon", 604, 220, "right");
+  S.f.a3_brandonGone = true; AC("a3_brandon").vis = () => false;
+  await lines(["He exits through the staff door at the speed of a man who has just discovered he has no plan B."]);
+};
+
+A3.catBackfire = async function (S) {
+  await lines(["The floor is loud and happy, and Brandon is at Gus's sound desk holding a blue USB up like a stolen crown."]);
+  await RP.npcWalk("a3_brandon", 440, 222, "right");
+  await lines(["@a3_brandon Gus. Buddy. Plug this into the wall feed. Market research.", "Gus looks at the pretzel Brandon is holding out. At the USB. At the pretzel.", "@a3_gus ...Okay."]);
+  RP.sfx("click"); await RP.wait(500);
+  await lines(["The LED wall behind the booth blinks, loads, and shows the first image Brandon ever hoped to put on a stolen drive: MR. WHISKERS, ASLEEP, ON A RADIATOR.",
+    "Then Mr. Whiskers in a box. Mr. Whiskers in a hat. Mr. Whiskers, forty feet wide and in LED, mid-yawn.", "The floor stops dancing. The floor goes 'awww.' A hundred people raise their phones at a cat.",
+    "@a3_brandon That's not- those aren't my- WHERE ARE THE TRACKS?", "Somebody in the crowd shouts \"CAT.\" Then twenty: \"CAT. CAT. CAT.\""]);
+  RP.sfx("cheer");
+  await RP.npcWalk("a3_odessa", 410, 224, "right");
+  await lines(["@a3_odessa Brandon. Why is the Thursday kid's USB in your hand?", "@a3_brandon He gave it to me! For safekeeping! We're friends! We hugged!", "I did not give him a USB. I gave him a cat.",
+    "@a3_odessa Mr. Whiskers has never looked better. Brandon, my office. We're discussing your Saturday, and the word 'we' is doing me a favour.", "@a3_brandon You can't do that! It's MY Saturday! Those are MY- that's MY cat!",
+    "He leaves, gold vest flapping like a very expensive bird, with a USB that cost him four dollars, a plan that cost him a Saturday and not one track."]);
+  S.f.a3_brandonDone = true; S.f.a3_usbBack = true; S.f.a3_brandonGone = true; S.f.a3_catFamous = true; AC("a3_brandon").vis = () => false; RP.relight();
+  RP.followers(25);
+  await lines(["@a3_odessa Kosmo's about to wrap. Go to the booth. Be ready.", "I'm ready. I'm so ready. The cat is ready too."]);
+  RP.setClock("THU 11:50 PM");
 };
 
 A3.boothEnter = async function (S, from) {
@@ -58,12 +115,20 @@ A3.boothEnter = async function (S, from) {
       "That's three rules about looking.", "@a3_kosmo It's a visual art."]);
     await say("Let me check my USB on the spare CDJ. With headphones, so I don't wreck his vibe.");
     RP.sfx("click"); await RP.wait(300);
-    await lines(["Track one: BRANDON SHINE - SUMMER OF SHINE (EXTENDED SHINE MIX). Track two: SHINE ON ME (RADIO SHINE). Track three: it's Brandon again.",
-      "Sixteen gigs of Brandon. Same shade of blue. Same size. A smiley sticker where mine has a scratch. It's NOT mine.", "The hug. The pat. 'Nice jacket!' Brandon.",
-      "@a3_kosmo Problem, Wendell?", "No. All fine.", "@a3_kosmo You've gone white. It's a good look. Very moody.",
-      "I can't accuse the Saturday guy without proof. Odessa's going to want proof. A bar camera, maybe? I know she has one. Somewhere."]);
-    S.f.a3_swapFound = true; RP.setClock("THU 10:20 PM");
-    RP.toast("Mission: prove Brandon swapped your USB");
+    if (!S.f.a3_swap) {
+      if (S.f.a3_usbHidden) await say("I slide it out of the Sylvester sleeve first. Hugging distance is not bag distance.");
+      await lines(["Track one: my own. Track two: my own. Track three, my own, and one I'd forgotten I had. Sixteen gigs, one scratch. All mine."]);
+      S.f.a3_usbHidden = false; S.f.a3_swapFound = true; RP.setClock("THU 10:20 PM");
+      await lines(S.f.a3_foiled === "cat" ? ["@a3_kosmo You look pleased with something, Wendell.", "No. All fine. Just keeping an eye on a cat.", "Out on the floor, Brandon is patting a stick in his pocket like a man with a pet hamster. I don't look. Rule one."]
+        : ["@a3_kosmo You look pleased with something, Wendell.", "No. All fine. Just the best USB I've ever owned."]);
+    } else {
+      await lines(["Track one: BRANDON SHINE - SUMMER OF SHINE (EXTENDED SHINE MIX). Track two: SHINE ON ME (RADIO SHINE). Track three: it's Brandon again.",
+        "Sixteen gigs of Brandon. Same shade of blue. Same size. A gold smiley sticker where mine has a scratch. It's NOT mine.", "The hug. The pat. 'Nice jacket!' Brandon." + (S.f.a3_twinkie3 ? " Twinkie did say." : ""),
+        "@a3_kosmo Problem, Wendell?", "No. All fine.", "@a3_kosmo You've gone white. It's a good look. Very moody.",
+        "I can't accuse the Saturday guy without proof. Odessa's going to want proof. A bar camera, maybe? I know she has one. Somewhere."]);
+      S.f.a3_swapFound = true; RP.setClock("THU 10:20 PM");
+      RP.toast("Mission: prove Brandon swapped your USB");
+    }
   }
 };
 
@@ -88,6 +153,12 @@ async function night1Set(S) {
   await lines(["Gear that doesn't embarrass her. A sound of my own. A crowd. And the anniversary, next Thursday. Odessa's whole business plan, in lipstick.",
     "@a3_brandonoff Cute. Cute set. I'd say 'I'm proud,' but then I'd have to be. See you Saturdays. Oh wait. You won't."]);
   AC("a3_brandon").expr = "angry";
+  if (S.money > A3.WEEK) {
+    const rent = Math.round((S.money - A3.WEEK) * 100) / 100;
+    RP.phone([{ from: "BUSHWICK PROPERTY (AUTOPAY)", text: "Rent and sundries: -" + U.fmtMoney(rent) + ". Available: " + U.fmtMoney(A3.WEEK) + ". Have a productive week." }]);
+    RP.money(-rent);
+  }
+  await lines(["That's the week's money: " + U.fmtMoney(S.money) + ". Decks, a mixer, a house full of records, a coffee for a grunter. It does not stretch to everything without thinking about it.", "If I run short, Odessa always needs a hand on a weekday, and Mort buys records. I'd rather not, but I could."]);
   await RP.fadeTo(1, 700);
   S.f.a3_week = true; S.f.noTravel = false; S.f.a3_floor = null;
   RP.unlock("a3_loc_deepcuts");
@@ -109,6 +180,7 @@ A3.boothUse = async function (S) {
   }
   // ---------- Night 3
   if (!S.f.a3_swapFound) { await say("I should say hi to Kosmo first. Properly. With my hands where he can see them."); return; }
+  if (!S.f.a3_brandonDone && S.f.a3_foiled) { await say("Brandon is up to something near Gus's desk. I should see what before Kosmo wraps."); return; }
   if (!S.f.a3_brandonDone) {
     await lines(["I could play vinyl and skip the drama. But Brandon should answer for the USB first.", "And Kosmo's still on. I don't want to be the guy who walks into a legend's last record.", "Odessa needs to see what he did. I need the bar camera."]);
     return;
@@ -120,6 +192,7 @@ A3.boothUse = async function (S) {
 
 A3.usbIn = async function (S) {
   if (!S.f.a3_thu3) { await say("The USB's my backup. Vinyl first; tracks only if a record skips. I'll plug it in at the booth if I need it."); return; }
+  if (S.f.a3_usbHidden) { await say("It's in the bag, in a Sylvester sleeve. I'll fish it out when I need it."); return; }
   if (S.f.a3_swap && !S.f.a3_usbBack) { await lines(["I plug it in and cue the first track. 'SUMMER OF SHINE.' It's still Brandon.", "I unplug it before the CDJ catches 'Shine.'"]); return; }
   await say("My real USB's back in my pocket. I'll play vinyl and keep it as a backup.");
 };
@@ -198,7 +271,8 @@ A3.gusTalk = async function (S) {
     { text: "What do I have to do for the monitors?", when: S2 => !S2.f.a3_soundcheck, run: () => say("Snack.", "a3_gus") },
     { text: "What kind of snack?", when: S2 => !S2.f.a3_soundcheck, run: () => lines(["@a3_gus Salt. Vinegar. Chip. Blue bag.", "That's the most words I've ever heard. He used four. He's showing off."]) },
     { text: "Any spare gear around, Gus?", when: S2 => !!S2.f.a3_soundcheck && !S2.f.a3_dj350, run: () => lines(["@a3_gus ...Mixer. Lost and found. Lost since 2019.", "The mixer's in the lost and found. What does it cost?", "@a3_gus Snack. Different one. Green. Wet. Sour.", "A pickle. The man wants a pickle."]) },
-    { text: "Did you see Brandon near the booth?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_brandonDone, run: () => lines(["@a3_gus Pretzel.", "Pretzel?", "@a3_gus Brandon gave me a pretzel. I looked at the pretzel.", "He didn't look at the booth. He looked at the pretzel. Brandon's smarter than he looks, and he doesn't look that smart."]) },
+    { text: "Did you see Brandon near the booth?", when: S2 => !!S2.f.a3_foiled && !!S2.f.a3_swapFound && !S2.f.a3_brandonDone, run: () => lines(["@a3_gus Pretzel.", "Pretzel?", "@a3_gus Brandon wants the wall feed. For market research. Gave me a pretzel.", "Let me guess. He's holding a USB.", "@a3_gus ...Yeah."]) },
+    { text: "Did you see Brandon near the booth?", when: S2 => !S2.f.a3_foiled && !!S2.f.a3_swapFound && !S2.f.a3_brandonDone, run: () => lines(["@a3_gus Pretzel.", "Pretzel?", "@a3_gus Brandon gave me a pretzel. I looked at the pretzel.", "He didn't look at the booth. He looked at the pretzel. Brandon's smarter than he looks, and he doesn't look that smart."]) },
     { text: "Never mind.", end: true }
   ]);
 };
@@ -214,12 +288,13 @@ A3.gusGive = async function (S, item) {
   }
   if (item === "a3_pickle") {
     if (!S.f.a3_soundcheck) { await say("Later. Chips first.", "a3_gus"); return; }
-    if (S.f.a3_dj350) { await say("Done. Thank you for the pickle. Snack.", "a3_gus"); return; }
+    if (S.f.a3_dj350 || S.f.a3_mixerBox) { await say("Done. Thank you for the pickle. Snack.", "a3_gus"); return; }
     RP.take("a3_pickle");
     await lines(["Gus holds the pickle up to the light, like a diamond. He takes a bite. He closes his eyes.", "@a3_gus ...Lost and found.", "He reaches under the desk and pulls out a dusty box: a Pioneer DJM-350.",
-      "@a3_gus Lost since 2019. Found now.", "You want me to have it?", "@a3_gus Lose it again. Somewhere else."]);
-    RP.setGear("mixer", "pioneer_djm_350"); S.f.a3_dj350 = true; RP.relight();
-    await lines(["Pioneer DJM-350. A budget two-channel mixer, announced at Musikmesse 2010 next to my old CDJ-350. Two channels. Zero crackle. Zero vodka.", "Gus just gave me a mixer for a pickle. The market is a funny place."]);
+      "@a3_gus Lost since 2019. Found now.", "You want me to have it?", "@a3_gus Lose it again. Somewhere else.", "I open the box. A mixer, two channels, no power brick. The brick is not in the box.", "@a3_gus Brick. Walked off. 2019.",
+      "A mixer without its power brick is a very light paperweight. Eddie did say: cable he has."]);
+    S.f.a3_mixerBox = true; RP.relight();
+    await lines(["Pioneer DJM-350. A budget two-channel mixer, announced at Musikmesse 2010 next to my old CDJ-350. Two channels. Zero crackle. Zero vodka.", "Gus just gave me a mixer for a pickle. The market is a funny place. Now I need a power brick."]);
     return;
   }
   if (item === "a3_rinds") { await lines(["Gus takes one sniff.", "@a3_gus No.", "It's the first full word I've gotten out of him all week. It's a word I'll treasure."]); return; }
@@ -237,6 +312,7 @@ A3.odessaTalk = async function (S) {
     return;
   }
   if (!S.f.a3_swapFound) { await lines(["@a3_odessa Go say hi to Kosmo. Say it once. And don't say 'big fan.' He hates that."]); return; }
+  if (S.f.a3_brandonDone && !S.f.a3_footageGot) { await lines(["@a3_odessa Kosmo's about to wrap. Stay by the booth. Be ready."]); return; }
   if (!S.f.a3_footageGot) {
     if (!S.f.a3_toldOdessa) {
       S.f.a3_toldOdessa = true;
