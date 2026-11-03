@@ -91,5 +91,15 @@ switching); Phase 2 as listed above.
 ## Progress
 
 - Phase 1 done (commit 95a57db): every thread in the list above is closed or seeded and paid off.
-- Phase 2 in progress: Level 2's open Tuesday to Thursday, Level 3's USB swap and estate puzzles, Level 4's second
-  thread, Level 5's any-order Saturday, and tight money in Levels 3 to 5.
+- Phase 2 done (2026-11-03):
+  - Level 2: an open Tuesday to Thursday with three optional puzzles (Toby and Linda the kombucha, the fire escape into
+    4C, Kowalski's office hour); an honest side job at Rosa's bodega.
+  - Level 3: Brandon's USB swap can be foiled four ways on Twinkie's tip (the old recovery path stays as the fallback);
+    the estate is a puzzle (Priya's rival bid, Hal's pencil stars, Bernard the parakeet); wrong choices cost money or
+    fans; a real weekly budget with shifts and record sales to recover.
+  - Level 4: Ingrid's rider (water, towel, a vegetable that is not a pickle) runs alongside the bag hunt; money is tight
+    (about $150 start, class-based bag fees, ticket fines) with record sales, Kosmo, busking and Pfand to recover.
+  - Level 5: Saturday in any order after a clue chain to the Sharpie; a fixed advance so the gear is a real choice that
+    shows up later; Margo's advance, record sales and a paid radio read to recover.
+  - New walkthroughs `act3alt` and `act5alt` cover the alternate routes; all nine walkthroughs and the full run pass.
+- Next (Phase 3): fresh blind playtests of each level and a new length estimate.

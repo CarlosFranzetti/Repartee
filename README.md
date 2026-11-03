@@ -85,7 +85,8 @@ node tools/build.mjs                 # index.html (dev, one <script> per file), 
 node tests/full.mjs                  # plays every level's walkthrough, then the whole game in one save
 node tests/run.mjs smoke             # boots every level and lists the mini-games
 node tests/perf.mjs                  # frame cost of every room (budget 8 ms)
-node tests/run.mjs walk act2 --act 2 # one level's walkthrough (add --page dist/level2.html for its level page)
+node tests/run.mjs walk act2 --act 2 # one level's walkthrough (add --page dist/level2.html for its level page);
+                                     # also act2alt, act3alt, act4fail, act5alt (alternate routes)
 node tests/run.mjs shot a2_couch out.png --act 2
 node tests/run.mjs mg crowdRead out.png
 node tools/screens.mjs               # regenerates the screenshots in docs/screenshots/
