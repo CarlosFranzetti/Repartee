@@ -85,5 +85,11 @@ corridors:
 
 **Phase 3: check it.** A fresh blind playtest of each level, and the length per level measured again.
 
-**Open questions for the owner:** whether money may run short enough to force a detour (never a dead end), and
-whether to add a second playable character anywhere (both references have several; this game has one).
+**Owner's decisions (2026-11-03):** money tight enough to matter but never a dead end; one hero (no character
+switching); Phase 2 as listed above.
+
+## Progress
+
+- Phase 1 done (commit 95a57db): every thread in the list above is closed or seeded and paid off.
+- Phase 2 in progress: Level 2's open Tuesday to Thursday, Level 3's USB swap and estate puzzles, Level 4's second
+  thread, Level 5's any-order Saturday, and tight money in Levels 3 to 5.

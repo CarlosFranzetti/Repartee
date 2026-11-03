@@ -33,6 +33,12 @@ club.Drama, get.Followers, last.Train, crate.Digging, record.Hunt) were replaced
 `src/minigames/retired/`, which the build skips (code kept, out of the game and the arcade). Level 3's club nights use
 crowd.Read instead of set.Time. Build went from about 3.0 MB to 2.6 MB.
 
+**Whole-game analysis (2026-11-03).** `docs/GAME_ANALYSIS.md` compares the game with Maniac Mansion and Zak
+McKracken: length is about right (roughly 4 to 5.5 hours), but later levels drift into corridors, menu choices and
+mini-games. Phase 1 (story sense, all levels) is done. Owner's decisions: money tight but never a dead end; one hero;
+Phase 2 = the plan's list (Level 2 open Tue-Thu, Level 3 USB-swap and estate puzzles, Level 4 second thread, Level 5
+any-order Saturday). Phase 3 = fresh blind playtests and length check.
+
 **Open work (next).** All Level 3-5 findings from the blind takes, the story audit and the sweeps are fixed on the
 work branch (see `docs/PLAYTEST_LOG.md`); two small items remain open there. Every walkthrough, the full Level 1-5 run,
 smoke, perf (0 of 49 rooms over budget) and contrast pass on the rebuilt `dist/`. Next: open a PR, merge, deploy and
