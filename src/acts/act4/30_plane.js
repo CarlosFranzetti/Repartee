@@ -115,7 +115,7 @@ async function kosmoTalk(S) {
 }
 async function cartAsk(S) {
   const i = await RP.choose(["A towel (free)", "Tomato juice ($4)", "Pretzels ($3)", "Never mind"]);
-  if (i === 3) return;
+  if (i === 3) return "end";
   if (i === 0) {
     if (RP.has("a4_towel") || S.f.a4_rTowel) { await RP.lines(["@a4_marguerite One towel per passenger, sir. It's policy, and also a vow."]); return; }
     RP.give("a4_towel");

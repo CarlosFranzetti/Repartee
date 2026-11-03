@@ -195,7 +195,7 @@ async function kemalTalk(S) {
     { text: "Mind if I play a record on your deck?", when: S => RP.has("a4_bag") && (S.f.a4_busks || 0) < 2, run: () => busk(S) },
     { text: "Would you buy a record? ($25)", run: async () => {
       const id = await A4.sellRecord(S, 25);
-      if (!id) return;
+      if (!id) return "end";
       await RP.lines(["@a4_kemal " + RP.rec(id).title + ". For the wall behind the till. Sleeve only, normally. But vinyl too? Okay, twenty-five. Don't tell my wife I paid.", "It leaves the crate for good. A good home, behind a till, near a man who never stops talking."]);
     } },
     { text: "Just looking.", end: true }
@@ -207,7 +207,7 @@ async function spaetiShop(S) {
     await RP.lines(["@a4_kemal Water, a vegetable, a towel. Katja's rider, yes? Everybody who plays the Halle comes to me in a panic at one a.m.", "@a4_kemal The last American brought a pickle. Katja held it up like a verdict. Don't be the pickle."]);
   }
   const i = await RP.choose(["Bottle of water ($2)", "Carrot ($1.50)", "Towel ($4)", "Club-Mate ($2)", "Never mind"]);
-  if (i === 4) return;
+  if (i === 4) return "end";
   const price = [2, 1.5, 4, 2][i];
   if (i === 0 && (RP.has("a4_water") || S.f.a4_rWater)) { await RP.say("I already have water. Kemal looks relieved on behalf of his stock."); return; }
   if (i === 1 && (RP.has("a4_veg") || S.f.a4_rVeg)) { await RP.say("I've got a vegetable. One is plenty. Two is a salad, and salads are not on the rider."); return; }
@@ -223,7 +223,7 @@ async function spaetiShop(S) {
 async function busk(S) {
   const ids = ["white_nyc93"].concat(A4.sellable(S).slice(-2));
   const i = await RP.choose(ids.map(id => RP.rec(id).artist + " - " + RP.rec(id).title).concat(["Never mind"]));
-  if (i >= ids.length) return;
+  if (i >= ids.length) return "end";
   const tip = ids[i] === "white_nyc93" ? 18 : 10;
   S.f.a4_busks = (S.f.a4_busks || 0) + 1;
   await RP.lines(["@a4_kemal The deck is under the till. Needle's a bit gray. Like me.", "I set the record on a turntable behind a kiosk in the rain, and for three minutes a street in Berlin turns into a dance floor with a bike rack.",

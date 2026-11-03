@@ -172,7 +172,7 @@ async function doloresTalk(S) {
 /* ------------------------------------------------------------------ vending */
 async function vend(S) {
   const i = await RP.choose(["Potato chips ($3)", "Beef jerky ($4)", "Spring water ($3)", "Dill pickle ($3)", "Never mind"]);
-  if (i === 4) return;
+  if (i === 4) return "end";
   const price = [3, 4, 3, 3][i];
   if (i === 1 && S.f.a4_jerky) { await RP.say("I've already bought my jerky. The machine and I are even."); return; }
   if (i === 2 && S.f.a4_waterBought) { await RP.say("I've got a bottle. One bottle of water is a plan. Two is a personality."); return; }
@@ -193,7 +193,7 @@ async function collectorTalk(S) {
   await RP.convo([
     { text: "I could sell you a record. ($40)", run: async () => {
       const id = await A4.sellRecord(S, 40);
-      if (!id) return;
+      if (!id) return "end";
       const r = RP.rec(id);
       await RP.lines(["@a4_gil " + r.title + ". Hm. First pressing? No? ...Fine. Forty. Crisp, folded, a bit warm.", "It was a good record. It's now a good record in a tote bag in seat 14C. That's called a career move."]);
       return "end";

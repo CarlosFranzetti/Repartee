@@ -82,7 +82,7 @@ async function stagRescue(S) {
 }
 async function stagSell(S) {
   const id = await A4.sellRecord(S, 20);
-  if (!id) return;
+  if (!id) return "end";
   const r = RP.rec(id);
   await RP.lines(["@a4_stag1 " + r.title + "! We don't have a turntable, but we have a speaker and a plan! Twenty dollars! Prost!", "He hands me a twenty with a beer ring on it. Berlin pays in beer rings."]);
 }
@@ -97,7 +97,7 @@ async function buyTicket(S) {
     return;
   }
   const i = await RP.choose(["Zones A and B ($3.50)", "Zones B and C ($3.50)", "Zones A, B and C ($4.90)", "Day pass, all zones ($9.00)", "Never mind"]);
-  if (i === 4) return;
+  if (i === 4) return "end";
   const prices = [3.5, 3.5, 4.9, 9];
   if (!RP.canAfford(prices[i])) { await RP.say("Declined. A ticket machine just declined me. At an airport. In Germany."); if (!RP.canAfford(4.9)) await stagRescue(S); return; }
   RP.money(-prices[i]); RP.sfx("coin"); RP.give("a4_ticket"); S.f.a4_ticket = true;

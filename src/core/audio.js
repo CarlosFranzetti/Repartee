@@ -16,7 +16,8 @@ function ctx() {
     try {
       const C = window.AudioContext || window.webkitAudioContext;
       if (!C) return null;
-      AC = new C();
+      // "balanced" gives the audio thread a slightly larger buffer than the default, so a busy frame doesn't crackle
+      try { AC = new C({ latencyHint: "balanced" }); } catch (e) { AC = new C(); }
       comp = AC.createDynamicsCompressor();
       comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 6; comp.attack.value = 0.004; comp.release.value = 0.2;
       master = AC.createGain(); master.gain.value = audio.muted ? 0 : 0.85;
@@ -32,6 +33,25 @@ function ctx() {
   return AC;
 }
 audio.ctx = ctx;
+/* unlock: call from a click or key. Resumes the context and plays one silent sample (some mobile browsers only
+   start audio after a sound is played inside a gesture). ready(): resolves once the context is running, or after
+   a short wait, so music never starts against a context that is still waking up. */
+let unlocked = false;
+audio.unlock = () => {
+  const c = ctx(); if (!c) return;
+  if (!unlocked) { try { const b = c.createBuffer(1, 1, c.sampleRate), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); unlocked = true; } catch (e) { /* ignore */ } }
+};
+audio.ready = (maxMs = 600) => {
+  const c = ctx(); if (!c || c.state === "running") return Promise.resolve(!!c);
+  return new Promise(res => {
+    let done = false; const fin = v => { if (!done) { done = true; res(v); } };
+    try { c.resume().then(() => fin(true), () => fin(false)); } catch (e) { fin(false); }
+    setTimeout(() => fin(c.state === "running"), maxMs);
+  });
+};
+// coming back to the tab: wake the context; the schedulers skip the beats that were missed instead of bursting them
+document.addEventListener("visibilitychange", () => { if (!document.hidden && AC && AC.state === "suspended") { try { AC.resume(); } catch (e) { /* ignore */ } } });
+["pointerdown", "keydown", "touchend"].forEach(ev => window.addEventListener(ev, () => audio.unlock(), { capture: true, passive: true }));
 audio.buses = () => ({ music: musicBus, sfx: sfxBus, noise: noiseBuf });
 audio.setMute = m => {
   audio.muted = !!m;
@@ -157,8 +177,10 @@ let timer = null;
 function ensureTimer() { if (!timer) timer = setInterval(tick, 25); }
 function tick() {
   if (!AC) return;
-  const ahead = AC.currentTime + 0.12;
-  loops.forEach(L => { if (L.running) while (L.next < ahead) { L.playStep(L.step, L.next); L.advance(); } });
+  const now = AC.currentTime, ahead = now + 0.2;
+  // a stalled main thread (a heavy room paint, a background tab) leaves loops behind: skip the missed steps silently
+  // rather than scheduling them all in the past, which plays them at once as a burst
+  loops.forEach(L => { if (!L.running) return; let guard = 0; while (L.next < now - 0.02 && guard++ < 4096) L.advance(); while (L.next < ahead) { L.playStep(L.step, L.next); L.advance(); } });
   if (!loops.size) { clearInterval(timer); timer = null; }
 }
 

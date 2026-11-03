@@ -19,6 +19,9 @@ mini-game sweep. "Run" names where a finding came from.
 
 **Round 2 blind takes of Levels 3-5 (2026-11-03, on the reworked build after PR #11)**
 
+All fixed on 2026-11-03 (see the commit "Round-2 playtest fixes"), plus an audio start-up fix for an occasional
+sound glitch on the web.
+
 All three testers finished (about 190, 150 and 190 commands) and were never stuck for long. Best-liked: Bernard's
 chips bribe and the Sylvester keys (Level 3), the JFK bag chain, Ingrid's negotiation and Sven's quiz (Level 4), the
 sound.Check troubleshooting, the Taula inspection and the set building (Level 5). Money never ran short in any level.

@@ -1155,6 +1155,7 @@ RP.loadSave = async function () {
 };
 RP.clearSave = () => store.del(SAVE_KEY);
 RP.restore = async function (d) {
+  if (!fast && RP.audio && RP.audio.ready) { RP.audio.unlock(); await RP.audio.ready(); }
   if (!d || !ROOMS[d.room]) return false;
   S = Object.assign(baseState(), JSON.parse(JSON.stringify(d)));
   applyWardrobe(); renderInv(); updateHud();
@@ -1172,6 +1173,7 @@ function applyWardrobe() {
 RP.startAct = async function (n, opts = {}) {
   const a = ACTS[n];
   if (!a) { console.error("no act " + n); return; }
+  if (!fast && RP.audio && RP.audio.ready) { RP.audio.unlock(); await RP.audio.ready(); } // every level starts with the audio fully awake
   if (!opts.carry) { const name = S.name; S = baseState(); S.name = name || ""; }
   S.act = n; S.f.__hideKid = false;
   if (a.setup) a.setup(S, !!opts.carry);
