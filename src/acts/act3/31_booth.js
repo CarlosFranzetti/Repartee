@@ -24,6 +24,7 @@ const tableSprite = A3.sprite("a3_booth_table", 520, 90, c => {
   R(c, 10 + 388, 14, 28, 18, "#f4efe4"); R(c, 10 + 388, 14, 28, 1, "#ffffff"); R(c, 10 + 388, 31, 28, 1, "#a09888"); txtC(c, "NO", 10 + 402, 16, "#c0302c", 1, 1); txtC(c, "REQUESTS", 10 + 402, 22, "#17101e", 1, 1); txtC(c, "NOT A JUKEBOX", 10 + 402, 28, "#17101e", 1, 1);
   return em;
 });
+const smileySprite = A3.sprite("a3_booth_smiley", 11, 11, c => { ell(c, 5, 5, 5, 5, "#e0a820"); ell(c, 5, 5, 4, 4, "#ffd23f"); P(c, 3, 3, "#17101e"); P(c, 7, 3, "#17101e"); R(c, 3, 7, 5, 1, "#17101e"); P(c, 2, 6, "#17101e"); P(c, 8, 6, "#17101e"); P(c, 3, 2, "#fff0a0"); });
 const casesSprite = A3.sprite("a3_booth_cases", 100, 66, c => {
   R(c, 4, 20, 60, 36, "#2a2834"); R(c, 4, 20, 60, 2, "#5a566c"); R(c, 4, 54, 60, 2, "#0c0a12"); R(c, 6, 28, 56, 1, "#4a4658"); R(c, 28, 24, 12, 4, "#c8c4d8");
   R(c, 8, 34, 8, 8, "#c0302c"); R(c, 48, 34, 10, 6, "#ffd23f"); txt(c, "RETURN", 8, 46, "#8a86a0", 1, 1);
@@ -102,6 +103,7 @@ RP.room({
   ],
   sprites: [
     { y: 182, draw: c => tableSprite(c, BX - 10, BY - 4) },
+    { y: 184, vis: S => !S.f.a3_smileyTaken, draw: c => smileySprite(c, 331, 144) },
     { y: 172, draw: c => casesSprite(c, 566, 118) }
   ],
   actors: S => [
@@ -137,6 +139,10 @@ RP.room({
     { id: "a3_b_ball", name: "LED wall", r: [160, 22, 320, 56], z: 10, look: "The big wall behind me. A wave pattern that makes everyone look like they're underwater and delighted about it." },
     { id: "a3_b_speakers", name: "speaker stack", rects: [[12, 44, 46, 120], [580, 44, 46, 120]], z: 22, look: "PA stacks. They're where the bass is stored. The monitor mix is for me, the stack is for everyone else's chest cavity." },
     { id: "a3_b_truss", name: "lights", r: [0, 4, 640, 24], z: 8, look: "A truss of lights, all pointed at a spot that's currently occupied by me. That's a lot of pressure for a fixture." },
+    { id: "a3_b_smiley", name: "gold smiley sticker", r: [329, 142, 15, 15], z: 52, walk: [338, 153, "back"], vis: S => !S.f.a3_smileyTaken,
+      look: "A gold smiley sticker on the mixer's edge, the same one he's put on every venue in New York with a booth. Brandon's signature: a little face that says 'I was here first.'",
+      pickup: async S => { S.f.a3_smileyTaken = true; RP.give("a3_smiley"); RP.sfx("click"); await RP.say("I peel it off with a thumbnail. It comes away clean, grinning at the ceiling. I feel like a vandal and a locksmith."); },
+      use: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a3_b_smiley").pickup), talk: "Smile back at me, and I'll know you're cheap." },
     { id: "a3_b_usb", name: "USB slot", r: [356, 114, 14, 8], z: 50, walk: [352, 153, "back"], look: S => S.f.a3_swap && !S.f.a3_usbBack ? "The USB slot on the right CDJ. My drive's in there. At least, something that looks like my drive." : "The USB slot on the CDJ. My tracks go in here. Everything I've made ends up in a rectangle the size of a stick of gum.",
       use: S => A3.boothUse(S) }
   ],

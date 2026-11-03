@@ -508,7 +508,7 @@ A4.wtStudio = [
   ["use", "hot:a4_sampler"], ["expect", "S.f.a4_track", "track made"],
   ["answers", [0]], ["use", "hot:a4_hole", "phone"], ["run", async (S, RP) => { RP.test.answers.length = 0; }], ["expect", "RP.has('a4_photo')", "cover photo"],
   ["mg", { ok: true, score: 74, deal: { fee: 1800 } }],
-  ["use", "hot:a4_laptop"], ["expect", "S.f.a4_released && S.f.a4_viral && S.f.a4_deal", "released, spread, booked"],
+  ["use", "hot:a4_laptop"], ["expect", "S.f.a4_released && S.f.a4_viral && S.f.a4_deal && RP.has('a4_rider')", "released, spread, booked; the rider is in my pocket"],
   ["use", "hot:a4_door"], ["expect", "S.room === 'a4_studio'", "not leaving without the bag"],
   ["pickup", "hot:a4_bag"], ["expect", "RP.has('a4_bag')", "bag packed"],
   ["run", async (S, RP) => { RP.test.travelQ.push("a4_loc_jfk"); }], ["use", "hot:a4_door"], ["expect", "S.room === 'a4_jfk'", "at JFK"]

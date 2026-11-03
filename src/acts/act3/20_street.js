@@ -165,7 +165,17 @@ async function buySnack(S) {
   else if (i === 2) await buy("a3_pickle", "A pickle in a bag with a splash of brine. This is how you eat in the city.");
 }
 
+async function eddieBrick(S) {
+  await RP.lines(["@a3_eddie Mixer with no brick? Gus lost the brick. Gus loses everything. Lucky I stock the brick.", "@a3_eddie Power brick for a DJM-350. Thirty-five dollars. One price, said twice: thirty-five, thirty-five."]);
+  const i = await RP.choose(["Buy the power brick ($35)", "Not right now"]);
+  if (i === 1) return;
+  if (!RP.canAfford(35)) { await RP.lines(["I have " + U.fmtMoney(S.money) + ".", "@a3_eddie That's the 'no' kind of money. Odessa pays for hands on a weekday. The fair pays for records. A brick pays for itself."]); return; }
+  RP.money(-35); RP.setGear("mixer", "pioneer_djm_350"); S.f.a3_dj350 = true; RP.relight();
+  await RP.lines(["Eddie hands me a black brick with a cable like a tail. I plug it into the DJM-350 in my head and it works in my head too.", "@a3_eddie Two-time deal: you pay once, it works twice."]);
+}
+
 async function useEddie(S) {
+  if (S.f.a3_mixerBox && !S.f.a3_dj350 && S.f.a3_opener) { await eddieBrick(S); if (S.f.a3_cdj) return; }
   if (S.f.a3_cdj) { await RP.lines(["@a3_eddie Everything good with the " + (S.gear.decks === "pioneer_cdj_900" ? "900s" : "decks") + "? A two-time deal never breaks. It breaks twice.", "@a3_eddie Come back if you need speaker cable. I have cable. Cable I have."]); return; }
   if (!S.f.a3_eddieMet) {
     S.f.a3_eddieMet = true;
@@ -173,7 +183,7 @@ async function useEddie(S) {
       "@a3_eddie Two-time deal on a pair of CDJ-900s. Used. Barely. Previous owner: a wedding DJ.", "@a3_eddie Which is a good thing. They were only turned on twice."]);
   }
   if (!S.f.a3_opener) { await RP.lines(["@a3_eddie Come back when you've been paid. I know your type. The 'next week' type.", "I do know the type. I AM the type."]); return; }
-  if (S.money < 120) { await RP.lines(["@a3_eddie Come back with a hundred and twenty. I'm not a charity, kid. I'm a van."]); return; }
+  if (S.money < 120) { await RP.lines(["@a3_eddie Come back with a hundred and twenty. I'm not a charity, kid. I'm a van.", "@a3_eddie Short? Odessa always needs hands on a weekday. And Mort buys records on Sundays. Everybody sells something."]); return; }
   const i = await RP.choose(["Show me the CDJ-900s", "Haggle first", "Later"]);
   if (i === 2) return;
   if (i === 1) { await RP.lines(["What if I told you I'm a loyal customer?", "@a3_eddie A loyal customer is a customer who comes back. Hi. Let's do the deal."]); }
@@ -189,15 +199,21 @@ async function useEddie(S) {
   S.f.a3_cdj = true; RP.relight();
   if (gid === "pioneer_cdj_900") await RP.lines(["@a3_eddie Pioneer CDJ-900s. 2009, same press release as the CDJ-2000. They play USBs. They link. They're yours.", "@a3_eddie A two-time deal. I take the money, you take the decks. Twice if you count the handshake.", "Eddie hands me the decks. They're heavy and smell like a wedding. I love them."]);
   else { const g = RP.gearInfo(gid); await RP.lines(["@a3_eddie The " + g.brand + " " + g.model + "s? Not the 900s. Your call, kid. A two-time deal is a two-time deal.", "Eddie hands me the decks. They play. That's the whole review."]); }
-  if (!S.f.a3_dj350) await RP.say("Gear: decks done. Still need a mixer that doesn't smell like vodka.");
+  if (!S.f.a3_dj350) await RP.say(S.f.a3_mixerBox ? "Gear: decks done. Still need that power brick." : "Gear: decks done. Still need a mixer that doesn't smell like vodka.");
 }
 
 async function twinkie3(S) {
+  if (S.f.a3_twinkie3) {
+    await RP.lines(["@a3_twinkie Still here, honey. Tiny shuts the door in six minutes.", "@a3_twinkie Pat, pat. Remember. A hug is the one con where you thank the thief."]);
+    return;
+  }
   S.f.a3_twinkie3 = true;
   await RP.lines(["@a3_twinkie Look who it is. The Thursday kid. Hair's different. Same eyes. Tired.",
     "Hey, Twinkie. Know anything I should know?", "@a3_twinkie I know everything. It's the cost of not sleeping.",
     "@a3_twinkie Brandon was at the bodega at four. Bought a blue USB. Took the label off in the shop.", "@a3_twinkie Same shade as yours, honey. I notice shades. It's a gift. And a curse. Mostly a curse.",
-    "That is... a lot of detail for a USB."]);
+    "That is... a lot of detail for a USB.", "@a3_twinkie He's a hugger. Three DJs on this street, three hugs, two of them are still looking for their keys. The pat is twice, on the jacket, where you keep what matters.",
+    "He wants my USB?", "@a3_twinkie I'm not saying a word. If I had a USB I couldn't stand to lose, I wouldn't keep it where a hugger can reach. Or I'd give him something to take. Or I'd put his own face on it: the man sticks little gold smileys on everything he owns, even the stage. He'd be thrown by his own signature.",
+    "@a3_twinkie I didn't say any of that. It's four dollars a minute for advice. Tonight I'm waiving it."]);
 }
 
 async function enterClub(S) {

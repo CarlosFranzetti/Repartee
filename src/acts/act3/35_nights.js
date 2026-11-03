@@ -13,6 +13,17 @@ const TAB = 200;   // the anniversary envelope, and the anniversary bar tab: the
 const AC = id => RP.actor(id) || {};   // actors only exist in their own room; a missing one is a harmless dummy
 
 /* ====================================================================== room entry */
+A3.hideUsb = async function (S) {
+  if (!S.f.a3_thu3 || S.f.a3_n3intro) { await say(S.f.a3_n3intro ? "It's a bit late for hiding it. The hug has come and gone." : "The USB is fine where it is. It's a Thursday. Nobody wants it. Yet."); return; }
+  S.f.a3_usbHidden = !S.f.a3_usbHidden;
+  await say(S.f.a3_usbHidden ? "I slide it inside a Sylvester sleeve and the sleeve back between two others. A hugger can't pat a record bag. I think." : "I fish it back out and into my jacket pocket. Habit.");
+};
+A3.stickUsb = async function (S) {
+  if (S.f.a3_usbSticker) { await say("It's already grinning at me. One smiley is a signature. Two is a cry for help."); return; }
+  S.f.a3_usbSticker = true; RP.take("a3_smiley");
+  await lines(["I press Brandon's gold smiley onto my USB. It sticks like it's been waiting to be useful.", "If anyone steals my stick, it'll look like it's already stolen. By someone with a lot of gold in his vest."]);
+};
+
 A3.hallEnter = async function (S, from) {
   const open = !S.f.a3_week || S.f.a3_thu3;
   // ---- Night 1, first time through the door
@@ -155,7 +166,7 @@ async function night1Set(S) {
   AC("a3_brandon").expr = "angry";
   if (S.money > A3.WEEK) {
     const rent = Math.round((S.money - A3.WEEK) * 100) / 100;
-    RP.phone([{ from: "BUSHWICK PROPERTY (AUTOPAY)", text: "Rent and sundries: -" + U.fmtMoney(rent) + ". Available: " + U.fmtMoney(A3.WEEK) + ". Have a productive week." }]);
+    await RP.phone([{ from: "BUSHWICK PROPERTY (AUTOPAY)", text: "Rent and sundries: -" + U.fmtMoney(rent) + ". Available: " + U.fmtMoney(A3.WEEK) + ". Have a productive week." }]);
     RP.money(-rent);
   }
   await lines(["That's the week's money: " + U.fmtMoney(S.money) + ". Decks, a mixer, a house full of records, a coffee for a grunter. It does not stretch to everything without thinking about it.", "If I run short, Odessa always needs a hand on a weekday, and Mort buys records. I'd rather not, but I could."]);
@@ -199,9 +210,10 @@ A3.usbIn = async function (S) {
 
 async function kosmoOverrun(S) {
   RP.setClock("FRI 12:04 AM");
+  if (S.f.a3_promoMode === 1) await say("Half the room is here for the ten-second clip. They want the drop, every record, right now. This is going to be a read.");
   await lines(["Midnight. Kosmo's still playing.", "@a3_kosmo Wendell! One more. One more. The room is alive!", "Kosmo, it's twelve-oh-four.", "@a3_kosmo Time is a flat circle, Wendell."]);
   await lines(["Kosmo finally wraps at 12:21, lifting the last record off like a man returning a borrowed child.", "The room is warm, which is Kosmo's gift, and wobbling, which is his other one. Don't let it cool, don't spike it. Read it."]);
-  const res = await A3.mg("crowdRead", { records: A3.hand(S, 10, ["hardrive_deep_inside", "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "masters_at_work_blood_vibes_the_ha_dance", "loleatta_holloway_love_sensation", "double_exposure_ten_percent", "everything_but_the_girl_missing", "class_action_weekend", "cece_peniston_finally", "white_nyc93"]), crowd: "house", rounds: 5, goal: 4.5, difficulty: 2, venue: "Halcyon Room" }, {
+  const res = await A3.mg("crowdRead", { records: A3.hand(S, 10, ["hardrive_deep_inside", "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "masters_at_work_blood_vibes_the_ha_dance", "loleatta_holloway_love_sensation", "double_exposure_ten_percent", "everything_but_the_girl_missing", "class_action_weekend", "cece_peniston_finally", "white_nyc93"]), crowd: "house", rounds: 5, goal: 4.5, difficulty: S.f.a3_promoMode === 1 ? 3 : 2, venue: "Halcyon Room" }, {
     giveUp: "A minute", onFail: async () => { await lines(["The floor drifts. Half of it is on its phones, the other half is asking Odessa for something she doesn't have.", "Right: breathe, watch the floor, pick the right record."]); },
     assist: async () => { await say("Odessa steps up with a sheet of paper that says 'FIVE MORE MINUTES' in lipstick. The room reads it. The room forgives me."); } });
   if (res.giveUp) return;
@@ -250,13 +262,15 @@ async function anniversarySet(S) {
   await lines(["@a3_odoff ...That's the one. That's the set. That's Saturday.", "@a3_odoff Saturday. Eleven PM. The main floor. Prime time. Brandon's got a vacation.", "@a3_odoff Take the old booth monitors. Dynaudio BM5s. Too good for Gus, who only listens to the sound of a bag opening."]);
   RP.setGear("monitors", "dynaudio_bm5_mkiii");
   S.f.a3_saturday = true;
-  await lines(["@a3_odoff And your envelope. Two hundred. Thursdays are cash."]);
-  RP.money(TAB);
+  const fine = Math.min(TAB, S.f.a3_fines || 0), tab = TAB + (S.f.a3_tabExtra || 0);
+  await lines(["@a3_odoff And your envelope. Two hundred. Thursdays are cash." + (fine ? " Minus " + U.fmtMoney(fine) + " for " + [S.f.a3_shouted ? "the glass and the shouting" : "", S.f.a3_promoFined ? "fifty-eight bar owners who rang her about the tags ('wrong city,' mostly)" : ""].filter(Boolean).join(" and ") + ". Fair is fair." : "")]);
+  RP.money(TAB - fine);
   await lines(["@a3_marcusoff That was... the best night of my life. And I've been to a lot of nights.", "I'm going to cry. In front of Marcus. In front of Rico, Dee and the guy from the cab."]);
   RP.setClock("FRI 1:35 AM");
   await lines(["Twenty minutes of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ.' Odessa covers half. My half is the envelope: two hundred dollars.",
     "I hand Nico the envelope without opening it. I just played the best set of my life for free.", "@nar Marcus, counting his change: 'Trains are a mess, man. If your card's dead, find the oranges guy on the Delancey platform. He swipes people through. Takes payment in fruit.'"]);
-  RP.money(-TAB);
+  RP.money(-Math.min(tab, S.money));
+  if (S.f.a3_tabExtra) await say("Brandon's sixty is on it too. A man can build a whole bar tab out of one hug.");
   await lines(["Phone: 3%. Bag: every record I own. Time: twenty-five to two."]);
   await RP.fadeTo(1, 800); S.f.noTravel = false;
   await RP.goto("a3_platform", 540, 230, "left");
@@ -309,10 +323,11 @@ A3.odessaTalk = async function (S) {
     await say("Odessa. Where am I on the napkin?");
     if (left.length) { await say("Still on the list: " + left.join("; ") + ".", "a3_odessa"); await say("And do it before the anniversary. After that, nobody's counting.", "a3_odessa"); }
     else await say("You're done. Go home. Sleep. Come back Thursday. I want you rested and terrified.", "a3_odessa");
+    if ((S.f.a3_shifts || 0) < 2) { const j = await RP.choose(["Odessa, I'm a bit short. Any hours going?", "No, that's all"]); if (j === 0) await A3.shift(S); }
     return;
   }
   if (!S.f.a3_swapFound) { await lines(["@a3_odessa Go say hi to Kosmo. Say it once. And don't say 'big fan.' He hates that."]); return; }
-  if (S.f.a3_brandonDone && !S.f.a3_footageGot) { await lines(["@a3_odessa Kosmo's about to wrap. Stay by the booth. Be ready."]); return; }
+  if (S.f.a3_brandonDone) { await lines([S.f.a3_kosmoDone ? "@a3_odessa The room's yours. Go." : "@a3_odessa Kosmo's about to wrap. Stay by the booth. Be ready."]); return; }
   if (!S.f.a3_footageGot) {
     if (!S.f.a3_toldOdessa) {
       S.f.a3_toldOdessa = true;
@@ -323,6 +338,17 @@ A3.odessaTalk = async function (S) {
     return;
   }
   await lines(["@a3_odessa You've got something to show me?"]);
+};
+A3.shift = async function (S) {
+  const n = S.f.a3_shifts || 0;
+  await lines(["@a3_odessa Weekday delivery. Eight kegs, one pallet, no complaints. Fifty-five dollars and the satisfaction of a clean walk-in.", "I take it. It beats owing Eddie."]);
+  await RP.fadeTo(1, 500);
+  A3.clockTo(S, n ? "WED 6:00 PM" : "TUE 6:00 PM");
+  await lines(["Four hours in the walk-in. Nico stacks one end, Bex stacks the other, and I am the only line of communication between them.", "@a3_nico Tell her the lemons go on the left.", "@a3_bex Tell him the lemons are on the right.",
+    "Lemons are the only thing in this building that has ever been both. I carry nine messages and about six pounds of citrus."]);
+  await RP.fadeTo(0, 500);
+  RP.money(55); S.f.a3_shifts = n + 1;
+  await say(n ? "Second shift done. My back would like a word with Odessa, and my wallet would like to thank her." : "Fifty-five dollars. Honest money, the kind that smells of lemon.");
 };
 A3.odessaGive = async function (S, item) {
   if (item === "a3_footage") { await A3.footageToOdessa(S); return; }
@@ -340,7 +366,9 @@ A3.footageToOdessa = async function (S) {
 /* ====================================================================== Brandon */
 A3.brandonTalk = async function (S) {
   if (!S.f.a3_thu3) { await lines(["@a3_brandon Cute set. Cute. I don't mean it. I mean, I mean it, but not the way you want."]); return; }
+  if (S.f.a3_brandonDeal) { await lines(["@a3_brandon Kid! My favourite benefactor. Another round on you? ...I'm kidding. Put it on the tab."]); return; }
   if (S.f.a3_brandonDone) { await lines(["@a3_brandon I have nothing to say to you. Or to your tiny face."]); return; }
+  if (S.f.a3_foiled === "cat") { await lines(["@a3_brandon Kid! Great night. I'm just going to... borrow Gus for a minute. For research.", "He is holding a USB very carefully, like a man with a tiny, valuable bird."]); return; }
   if (!S.f.a3_swapFound) { await lines(["@a3_brandon Having fun? Six months. They grow up so fast. Break a leg."]); return; }
   if (S.f.a3_footageGot) { await A3.confrontBrandon(S); return; }
   await lines(["You swapped my USB.", "@a3_brandon What? A USB? I don't touch USBs. I use hard drives. Fancy ones. Why would I touch your cheap thing?",
@@ -355,20 +383,34 @@ A3.confrontBrandon = async function (S, withOdessa) {
   if (!S.f.a3_footageGot) { await say("I'd need proof. A clip. Otherwise it's my word against a gold vest."); return; }
   if (!withOdessa) {
     await lines(["Brandon. Walk with me.", "@a3_brandon Why? I'm busy. I'm hydrating."]);
+    const j = await RP.choose(["Show Odessa the clip.", "Keep it quiet: my USB back, and the clip stays in my pocket."]);
+    if (j === 1) {
+      await lines(["Brandon, I've got the bar cam. The hug. The pat. The yawn. You give me my USB, and nobody has to watch it.", "@a3_brandon ...You'd keep that to yourself? Out of the goodness of your heart?",
+        "I'd keep it to myself out of the goodness of your wallet. The bar tab tonight has your name on it. Sixty dollars.", "@a3_brandon Sixty?! For a hug?", "It was a long hug.",
+        "He slaps my real USB into my palm and unwraps his blue-and-gold one like it's a trophy. He keeps his Saturday. And I keep a clip I now can't use.",
+        "@a3_brandon Pleasure doing business. Next round's on you, kid."]);
+      S.f.a3_brandonDone = true; S.f.a3_usbBack = true; S.f.a3_brandonDeal = true; S.f.a3_tabExtra = 60; RP.relight();
+      if (RP.has("a3_footage")) RP.take("a3_footage");
+      await lines(["Odessa never sees it. Brandon never apologises. The room is warm and the tab is long.", "@a3_odessa Kosmo's about to wrap. Go to the booth. Be ready."]);
+      RP.setClock("THU 11:50 PM");
+      return;
+    }
     await RP.npcWalk("a3_odessa", 180, 226, "right");
   }
   await lines(["@a3_odessa ...Explain the yawn. I want to hear him explain the yawn.", "@a3_brandon That's not me. It's a lookalike. It's a very handsome lookalike. It's a plot to frame me!"]);
   AC("a3_brandon").expr = "angry";
-  for (let tries = 0; ; tries++) {
-    const i = await RP.choose(["Raise my voice. Call him a thief in front of the whole bar.", "Say nothing. Let the clip run again, with the sound up, and let him keep explaining.", "Offer a deal: the USB back, and I forget the whole thing."]);
-    if (i === 1) { await lines(["I fold my arms. The clip plays: the hug, the pat, the swap, the yawn. Brandon starts to explain it, and it gets worse every sentence.", "@a3_brandon ...and the vest isn't even MINE, it's a, it's a, a *loaner*, I-"]); break; }
-    await lines(i === 0 ? ["@a3_brandon Thief? THIEF? Odessa, he's shouting at a man in front of customers! You can't prove I meant it! It's entrapment! It's a hug!", "The bar has gone quiet and I'm the one who's shouting. Stay calm. Let him dig."]
-      : ["@a3_brandon A deal? There's no deal. I did nothing. A deal is for people who did something.", "@a3_odessa No deals under my roof. Not on a Thursday.", "Let him dig. He's very good at it."]);
-    if (tries >= 1) { await say("Odessa pulls the plug on the argument: 'Brandon, the clip's got your face, your vest, and a very bad yawn.'", "kid"); break; }
+  const i = await RP.choose(["Raise my voice. Call him a thief in front of the whole bar.", "Say nothing. Let the clip run again, with the sound up, and let him keep explaining."]);
+  if (i === 0) {
+    await lines(["Thief! You swapped my USB! Everybody saw!", "@a3_brandon THIEF? Odessa, he's shouting at a man in front of customers! It's a HUG! It's entrapment!",
+      "The bar has gone quiet. Somebody's filming me, not him. A glass goes off the end of the bar and the floor goes with it.", "@a3_odessa Not on my floor. Brandon, my office. You: you owe me for a glass, a mop and my nerves. Forty dollars off tonight's envelope.",
+      "The clip does the rest, but I look like the loud one and he looks like the injured one. He gives me a wounded little wave on his way out."]);
+    S.f.a3_fines = (S.f.a3_fines || 0) + 40; RP.followers(-10); S.f.a3_shouted = true;
+  } else {
+    await lines(["I fold my arms. The clip plays: the hug, the pat, the swap, the yawn. Brandon starts to explain it, and it gets worse every sentence.", "@a3_brandon ...and the vest isn't even MINE, it's a, it's a, a *loaner*, I-", "@a3_odessa Brandon, the clip's got your face, your vest, and a very bad yawn."]);
+    RP.followers(15);
   }
   S.f.a3_brandonDone = true; S.f.a3_usbBack = true; RP.relight();
   if (RP.has("a3_footage")) RP.take("a3_footage");
-  RP.followers(15);
   await lines(["@a3_brandon Fine. FINE. Here. Your USB. It was a joke. A prank. A harmless, extremely illegal prank.", "He slaps my real USB into my palm and unwraps a blue-and-gold one from his pocket like a trophy.",
     "@a3_odessa Brandon. My office. Now. We're discussing your Saturday.", "@a3_brandon You can't do that! It's MY Saturday!", "@a3_odessa It's a Saturday. I'm the one who has it.",
     "He storms off, gold vest flapping like a very expensive bird."]);
@@ -392,8 +434,8 @@ A3.nicoTalk = async function (S) {
   await say("What'll it be? I'm not speaking to her. Neither is she. So it's just us.", "a3_nico");
   await RP.convo([
     { text: "What happened between you two?", when: S2 => !S2.f.a3_feudKnown, run: async () => { S.f.a3_feudKnown = true; await lines(["@a3_nico The lemon incident. March. I cut lemons into wedges. She says wheels. We haven't spoken since.", "Over lemons?", "@a3_nico It's never about the lemons. It's about wedges."]); } },
-    { text: "What do you listen to when you're not angry?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_nico ...Sylvester. 'You Make Me Feel (Mighty Real).' Don't tell her. She thinks I only like opera.", "I'll keep it to myself."]) },
-    { text: "Can you open the bar-cam DVR for me?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_nico The DVR needs two keys: mine and Bex's, turned at the same time.", "@a3_nico We haven't been in the same room voluntarily since March. Ask her. Don't ask her. Ask her."]) },
+    { text: "What do you listen to when you're not angry?", when: S2 => !!S2.f.a3_swap && !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_nico ...Sylvester. 'You Make Me Feel (Mighty Real).' Don't tell her. She thinks I only like opera.", "I'll keep it to myself."]) },
+    { text: "Can you open the bar-cam DVR for me?", when: S2 => !!S2.f.a3_swap && !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_nico The DVR needs two keys: mine and Bex's, turned at the same time.", "@a3_nico We haven't been in the same room voluntarily since March. Ask her. Don't ask her. Ask her."]) },
     { text: "Tell Bex the limes are in the walk-in.", when: S2 => !S2.f.a3_feudOver, run: () => lines(["I'll tell her. ...She heard you. She says she knows.", "@a3_nico She says she KNOWS? Tell her I know she knows."]) },
     { text: "Never mind.", end: true }
   ]);
@@ -405,8 +447,8 @@ A3.bexTalk = async function (S) {
   await say("Don't speak to me about him. Order or leave.", "a3_bex");
   await RP.convo([
     { text: "What happened between you two?", when: S2 => !S2.f.a3_feudKnown, run: async () => { S.f.a3_feudKnown = true; await lines(["@a3_bex He cut lemons into wedges. Wedges. For a Collins. It's a wheel drink.", "That's it?", "@a3_bex That's the tip of it."]); } },
-    { text: "What do you listen to when you're not angry?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_bex ...Sylvester. 'Mighty Real.' Don't tell Nico. He thinks I only listen to drill.", "I'll take it to my grave. Or to a record player."]) },
-    { text: "Can you open the bar-cam DVR for me?", when: S2 => !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_bex Two keys. Mine and Nico's. At the same time. I'd rather swallow mine.", "@a3_bex Find a way to make him laugh first. I'll think about it. I won't."]) },
+    { text: "What do you listen to when you're not angry?", when: S2 => !!S2.f.a3_swap && !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_bex ...Sylvester. 'Mighty Real.' Don't tell Nico. He thinks I only listen to drill.", "I'll take it to my grave. Or to a record player."]) },
+    { text: "Can you open the bar-cam DVR for me?", when: S2 => !!S2.f.a3_swap && !!S2.f.a3_swapFound && !S2.f.a3_feudOver, run: () => lines(["@a3_bex Two keys. Mine and Nico's. At the same time. I'd rather swallow mine.", "@a3_bex Find a way to make him laugh first. I'll think about it. I won't."]) },
     { text: "Tell Nico the ice machine's his now.", when: S2 => !S2.f.a3_feudOver, run: () => lines(["I'll tell him. ...He heard you. He says it's always been his.", "@a3_bex It was always mine. Tell him I'll never forgive him."]) },
     { text: "Never mind.", end: true }
   ]);
@@ -417,6 +459,7 @@ A3.barGive = async function (S, who, item) {
 
 const BAR_PICKS = ["phuture_acid_tracks", "cece_peniston_finally", "mood_ii_swing_closer", "sylvester_you_make_me_feel_mighty_real", "inner_city_good_life", "crystal_waters_gypsy_woman"];
 A3.barPlayer = async function (S) {
+  if (!S.f.a3_swap && S.f.a3_thu3) { await say("The bar's record player. Nico and Bex are not speaking, and tonight I have no reason to referee."); return; }
   if (!S.f.a3_swapFound) { await say("A house rule: vinyl on the bar before doors. Nobody's put anything on yet. I'm not going to be the first. Not yet."); return; }
   if (S.f.a3_feudOver) { await say("It's playing already. Nico and Bex are not looking at each other. For the first time, that's because they're laughing."); return; }
   const owned = BAR_PICKS.filter(id => RP.hasRecord(id));

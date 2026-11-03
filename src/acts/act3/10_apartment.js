@@ -156,13 +156,13 @@ async function endScene(S) {
   await RP.phone([
     { from: "INGRID FALK (EMAIL)", text: "Subject: Your Thursday. A friend sent me a clip of your Thursday at the Halcyon Room. I watched it twice. I don't watch things twice. I book Halle Neun, in Berlin. I will be in touch about a Berlin date. Ingrid Falk, Nachtwerk Booking", hot: true },
     { from: "ODESSA", text: "Saturday. 11 PM. Main floor. Don't be late. -O", hot: true },
-    { from: "MARCUS", text: "SATURDAY??? plus 3. plus 4. plus however many Berlin is" }
+    { from: "MARCUS", text: S.f.a3_catFamous ? "SATURDAY??? plus 3. plus 4. also who is mr whiskers. the cat is on the club account. 11k likes." : "SATURDAY??? plus 3. plus 4. plus however many Berlin is" }
   ]);
   await RP.lines(["Berlin. An actual booking agent. In an actual other country.", "Saturday at the Halcyon Room. And now a continent.", "I'm going to sleep for a week. Right after I read that email four more times."]);
   S.f.a3_email = true;
   await RP.completeAct([
     [true, "Opened an empty floor on Thursday"], [!!S.f.a3_cdj, "Bought used " + deckName(S) + " from Eddie"], [!!S.f.a3_dj350, "Got the DJM-350 from Gus (for a pickle)"],
-    [!!S.f.a3_estateDone, "Dug the Pruitt estate: Technics 1210s and a grail"], [!!S.f.a3_promo, "Built a following"], [!!S.f.a3_brandonDone, "Outmanoeuvred DJ Brandon Shine"],
+    [!!S.f.a3_estateDone, "Dug the Pruitt estate: Technics 1210s and a grail"], [!!S.f.a3_promo, "Built a following"], [!!S.f.a3_brandonDone && !S.f.a3_brandonDeal, S.f.a3_swap ? "Got your USB back from DJ Brandon Shine" : "Saw DJ Brandon Shine's USB trick coming"],
     [!!S.f.a3_kosmoDone, "Followed Kosmo Delacroix (he called you " + A3.KOSMO_NAME + ")"], [!!S.f.a3_setDone, "Played the anniversary set"], [!!S.f.a3_train, "Got home on the last train"], [!!S.f.a3_saturday, "Earned the Saturday slot"]
   ]);
 }
@@ -219,15 +219,26 @@ RP.room({
         ], button: "CLOSE" });
         await RP.fadeTo(0, 500);
         const gained = [240, 320, 180][wk];
-        S.f.a3_promo = true; A3.clockTo(S, "WED 11:30 PM");
+        S.f.a3_promo = true; S.f.a3_promoMode = wk; A3.clockTo(S, "WED 11:30 PM");
         RP.followers(gained);
         await RP.lines(["Week's up. The numbers say " + S.followers.toLocaleString("en-US") + " fans.", "Odessa will like that number. She likes numbers. She calls them 'bodies.'"]);
-        RP.text("ODESSA", "Saw the numbers. Bodies, good. -O");
+        if (wk === 0) { RP.text("ODESSA", "Saw the numbers. Bodies, good. And the comments are people, not bots. -O"); await RP.say("Slow, and it's all real. A hundred people next Thursday who actually like the records."); }
+        else if (wk === 1) { RP.text("ODESSA", "Saw the numbers. Bodies, many. They came for the clip, not the set. Warn the booth. -O"); await RP.lines(["Big, fast and shallow. Half of Thursday's crowd is coming for a ten-second drop. They will want it for two hours.", "Brandon reposted the clip with his logo in the corner. He's very generous with other people's views."]); }
+        else {
+          S.f.a3_fines = (S.f.a3_fines || 0) + 40; S.f.a3_promoFined = true;
+          RP.text("ODESSA", "Fifty-eight bar owners phoned me this week. Fifty-eight. The tags are coming off YOUR envelope. Forty. -O");
+          await RP.lines(["Tagging sixty-one venues was a mistake. Most were in Newark, two were churches, one was a dentist.", "It comes off Thursday's envelope. Forty dollars. Spammers pay."]);
+        }
       },
       pickup: "It's safer on the bed. Everything is safer on the bed.", open: "It's already open. It doesn't close all the way anymore.", close: "If I close it, I'll never find the cursor again." },
     { id: "a3_usb", name: "USB stick", r: [186, 114, 18, 12], z: 60, vis: S => !S.f.a3_usbTaken, walk: [180, 214, "back"],
       look: "My tracks USB, plugged into the laptop. A brand-new one. Zero cat photos. Jess has the cat.",
       pickup: async S => { S.f.a3_usbTaken = true; RP.give("a3_usb"); RP.relight(); await RP.say("Got it. Sixteen gigs of tracks and zero cat."); } },
+    { id: "a3_drawer", name: "desk drawer", r: [352, 176, 76, 18], z: 58, walk: [390, 214, "back"], vis: S => !S.f.a3_oldUsbTaken,
+      look: "The desk drawer. It sticks. It has always stuck. It's where I keep what I don't need but won't throw away, which is most of my past.",
+      open: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a3_drawer").pickup), use: S => RP.runH(RP.curRoom().def.hotspots.find(h => h.id === "a3_drawer").pickup),
+      pickup: async S => { S.f.a3_oldUsbTaken = true; RP.give("a3_usb_old"); await RP.lines(["I yank it. A cable, a dead lighter, a takeaway menu, and my old USB: 4,212 photos of Mr. Whiskers, asleep, from the days when I was a person who owned a cat.", "Zero music on it. It's the exact opposite of what I need on a stage. I take it anyway."]); },
+      push: "It's a drawer. I push it. It stays shut and I stay confused." },
     { id: "a3_window", name: "window", r: [226, 24, 120, 106], z: 20, walk: [284, 214, "back"],
       look: S => mood(S) === "dawn" ? "Bushwick at dawn. A guy in a bathrobe is walking an enormous dog. Nobody has told him it's too early." : mood(S) === "dusk" ? "Bushwick at golden hour. A pigeon is giving another pigeon a very hard time." : "Bushwick at night. Somewhere out there, a promoter is lying to a DJ.",
       open: "It's stuck. It's been stuck since 2019, in a solid-state kind of way.", close: "It's already as closed as it gets." },

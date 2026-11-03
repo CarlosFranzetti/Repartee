@@ -90,6 +90,7 @@ RP.voice("a3_cell", { color: "#ffffff", prefix: "", anchor: S => [RP.actor("kid"
    helpers shared by all act 3 files
    ====================================================================== */
 A3.KOSMO_NAME = "Wendell";
+A3.WEEK = 330;   // the week's money after the rent autopay: decks, mixer, estate, a coffee. Odessa's shifts and the fair add a little more.
 A3.misspell = function (name) {
   let n = String(name || "DJ NOBODY").replace(/^DJ\s+/i, "") || "NOBODY";
   const s = n.split("");
