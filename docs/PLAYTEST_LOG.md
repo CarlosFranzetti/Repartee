@@ -17,6 +17,45 @@ mini-game sweep. "Run" names where a finding came from.
   Level 4 crowd.Read crate.
 - 3-11 (part): "It's Dj lowpass." wasn't found in the Level 3 source; if it shows again, note where.
 
+**Round 2 blind takes of Levels 3-5 (2026-11-03, on the reworked build after PR #11)**
+
+All three testers finished (about 190, 150 and 190 commands) and were never stuck for long. Best-liked: Bernard's
+chips bribe and the Sylvester keys (Level 3), the JFK bag chain, Ingrid's negotiation and Sven's quiz (Level 4), the
+sound.Check troubleshooting, the Taula inspection and the set building (Level 5). Money never ran short in any level.
+
+Level 3
+- 3-R1 Brandon's USB swap can't be prevented: Twinkie's tips come outside the club, the hug fires on entering, and the
+  smiley sticker is in the booth. The text after the hug contradicts what happened.
+- 3-R2 The finale's opener/closer picks change nothing; the narration plays records you didn't pick; the grail is
+  never offered.
+- 3-R3 The posting-week choice jumps to Wednesday 11:30 PM without warning; the Sunday fair is then open on Wednesday.
+- 3-R4 The forced $200 bar tab is unexplained; the ways to earn more are only mentioned in narration.
+- 3-R5 Slips: "Rico was right" (Marcus said it); the orange never reaches the inventory; "Gus will love them" repeats;
+  "at the booth" said in the booth; "booth in daylight" at 11:30 PM; the PTA coffee choice is auto-picked; the level
+  complete card flashes and a second end card follows; Marcus's "plus three" does nothing.
+
+Level 4
+- 4-R1 The $75 overweight fee comes without warning; JFK water is wasted when the Späti sells it; the rider reads
+  "missing" before shops are known; the Club-Mate is dead once Sven has let you in.
+- 4-R2 "Hot towel" vs "dish towel"; sitting in 23A skips to Berlin without warning; Ingrid's 2 a.m. vs Marcus's 3 AM.
+- 4-R3 Money is generous: record sales are never needed.
+
+Level 5
+- 5-R1 The money choice is hollow: with Margo's advance you can afford everything.
+- 5-R2 The CDJ pair is bought without a SURE? confirm; "Ray's white label" (it's Lou's); the PA still says the
+  misspelled name after the pass is fixed; Margo says the fee cleared but the wallet doesn't change.
+- 5-R3 Axl's options don't signal the intended approach; the end trigger (use the sunrise) isn't signposted; the
+  Spirit Water ad read has no consequence; unexplained time jumps (Roz: 1:30 to 3:40 PM).
+
+Shared (engine and mini-games)
+- S-R1 Dialogue menus renumber after an option is used, causing wrong picks; "Never mind" in shop menus loops.
+- S-R2 crowd.Read: round 5 has no finish button for mouse players (only Enter); NEXT ROUND appears late; peaking
+  early isn't punished; playing the white label says it "flopped" while the floor is full.
+- S-R3 mak.Tracks: "make the drop hit" is unclear, bar clicks cycle sections, Lou's mood never matters.
+- S-R4 go.Digging: a sale needs an extra BUY click; LISTEN doesn't show the role it promises. buy.Gear: CASH differs
+  from the wallet; Eddie accepts the first low offer. beat.Match: the keyboard nudge is slow. sound.Check: the dead
+  channel's fader has no visual, and the festival's Taula has no faders.
+
 ## Intended, not changed
 
 | # | Where | Finding | Why it stays |
