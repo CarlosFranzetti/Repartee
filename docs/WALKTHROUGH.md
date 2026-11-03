@@ -632,3 +632,11 @@ Twinkie's help. It works, but Axl's scene goes worse.
 ---
 
 *Records, labels and venues named here are real and used as homage. Every other character and club is fictional.*
+
+## Appendix: the streaming patch
+
+There is a hidden extra. On the title screen, press JUKEBOX three times, CREDITS twice, then JUKEBOX three more times.
+The screen flashes and the streaming patch turns on: the jukebox, and the records that play during the story, stream
+the actual track (audio only) instead of the built-in loop. It needs an internet connection; when a track cannot be
+found, the loop plays as before. A switch for it appears under HOW TO PLAY once it is unlocked. The mini-games keep
+their built-in loops either way, so beat.Match plays the same.

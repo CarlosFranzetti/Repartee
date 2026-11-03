@@ -93,9 +93,9 @@ function showTitle() {
   const first = [saved ? bCont : bNew];
   add("HOW TO PLAY", () => toggle(panel, howTo));
   if (!DEMO && Object.keys(RP.acts).length > 1) add("CHAPTER SELECT", () => { chapters(panel); themeSync(2000); });
-  add("JUKEBOX", () => toggle(panel, jukebox));
+  add("JUKEBOX", () => { if (RP.stream && RP.stream.tap("J")) { stopPreview(); return; } toggle(panel, jukebox); });
   add("MINI-GAMES", () => toggle(panel, arcade));
-  add("CREDITS", () => toggle(panel, credits));
+  add("CREDITS", () => { if (RP.stream && RP.stream.tap("C")) return; toggle(panel, credits); });
   if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all eight mini-games in the arcade. Sound on helps." }, box);
   else el("p", { cls: "small", text: "Five levels. Eight mini-games. Sound on helps." }, box);
   if (SITE) levelNav(box);
@@ -137,7 +137,7 @@ function stopPreview() { if (preview) { try { preview.stop(); } catch (e) { /* a
 function jukebox(p) {
   const recs = (RP.data.records || []).slice().sort((a, b) => a.artist.localeCompare(b.artist) || a.year - b.year);
   el("h3", { text: "JUKEBOX" }, p);
-  el("p", { text: recs.length + " real records from the game. Pick one to hear a loop in its style; pick it again to stop." }, p);
+  el("p", { text: recs.length + " real records from the game. " + (RP.stream && RP.stream.on ? "Streaming patch on: pick one to hear the actual record (a loop in its style while it loads)" : "Pick one to hear a loop in its style") + "; pick it again to stop." }, p);
   const chips = el("div", { cls: "rb-chips" }, p);
   const list = el("div", { cls: "rb-list" }, p);
   const note = el("p", { cls: "rb-note" }, p);
@@ -172,6 +172,13 @@ function howTo(p) {
    ["MENU", " (or use your phone) opens messages, the subway map, your record crate, your setup, and saving."],
    ["Keys:", " L look, P pick up, U use, O open, T talk, G give, Esc to cancel. H (or Tab) shows what you can click."],
    ["Mini-games", " explain their own controls. You can replay any of them from the Mini-Game Arcade."]].forEach(([b, t]) => { const q = el("p", {}, p); el("b", { text: b }, q); q.appendChild(document.createTextNode(t)); });
+  // the streaming patch, once its tap code has been entered on the title screen
+  if (RP.stream && RP.stream.unlocked) {
+    const q = el("p", {}, p); el("b", { text: "Streaming patch: " }, q);
+    const b = el("button", { type: "button", cls: "btn", text: RP.stream.on ? "ON" : "OFF" }, q);
+    b.addEventListener("click", () => { RP.stream.setOn(!RP.stream.on); b.textContent = RP.stream.on ? "ON" : "OFF"; stopPreview(); });
+    q.appendChild(document.createTextNode(" The jukebox and the story stream the real records (audio only). Mini-games keep the built-in loops."));
+  }
 }
 const REPO_URL = "https://github.com/CarlosFranzetti/Repartee";
 function credits(p) {
