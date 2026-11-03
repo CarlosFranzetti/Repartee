@@ -14,6 +14,14 @@
 
 ## Later
 
+- [ ] **Secret streaming patch (real audio for the records).** A hidden option, unlocked on the title screen by a tap
+      code on JUKEBOX and CREDITS (owner to confirm: 2 or 3 JUKEBOX taps first, then 2 CREDITS, then 3 JUKEBOX); the
+      screen flashes and the patch turns on (also toggleable in options). With it on, playing a record in the jukebox,
+      or anywhere else a record plays, streams the real track's audio instead of the synthesized loop, using the
+      lookup and fallback approach from the owner's Discogs streaming repo (add it to the session when starting).
+      Stretch goal: line the streamed audio up with the mini-games (the right part of the track, near the right BPM).
+      Before building: check the terms of the audio source (YouTube's terms restrict audio-only playback and hidden
+      players), and plan a fallback to the built-in loops whenever a stream fails.
 - [ ] **Desktop app (a binary).** Wrap the game's single HTML file (`dist/index.html`) in an Electron or Tauri window and
       build it for Windows, Mac and Linux. Things to know:
       - Vercel Web Analytics only runs on the hosted pages, so the app would not report to the dashboard. Counting app
