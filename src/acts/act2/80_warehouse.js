@@ -242,6 +242,7 @@ async function playSet(S) {
   if (S.f.a2_louSecret) await RP.lines(["A guy named Lou. L.O.U. He made it in 1993 on a borrowed sampler. Pressed ten copies. Never released.", "@a2_vic Ten copies. Nobody has it. Nobody. Hm."]);
   else await RP.lines(["I don't know. A neighbor gave it to me. No artist. Just a name in marker.", "@a2_vic Hm. A record nobody can find. I like that more than I want to."]);
   await RP.lines(["@a2_vic Okay. Come on. Sit down. Let's talk. And do NOT say \"please.\""]);
+  await vicStanding(S);
   await pitchVic(S);
 }
 
@@ -263,8 +264,26 @@ async function fallbackTalk() {
   return { ok: score >= 2, score: 40 + score * 20, fallback: true };
 }
 
+// the optional Tuesday pays off here: Kowalski's word and the demo tape from 4C
+async function vicStanding(S) {
+  if (S.f.a2_kowRef) await RP.lines(["@a2_vic ...Kowalski says you paid a landlord to your face, with pierogi. The man's never trusted a tenant. He trusts you. I don't know what you did. It was either charm or a crime.", "I'll take either."]);
+  if (RP.has("a2_tape") && !S.f.a2_tapeGiven) await giveTape(S);
+}
+async function giveTape(S) {
+  if (!RP.has("a2_tape") || S.f.a2_tapeGiven) return;
+  S.f.a2_tapeGiven = true; RP.take("a2_tape"); RP.followers(4);
+  await RP.lines([
+    "I take the cassette out of my jacket. \"BED-STUY MIX VOL. 2 (DON'T JUDGE).\"",
+    "@a2_vic A tape. In a vinyl-only basement.",
+    "It's analog. It hisses. Nothing digital in it but me.",
+    "@a2_vic ...You recorded this before you knew my name.",
+    "I recorded it before I knew my rent.",
+    "@a2_vic Hm. That's the first thing anyone's said to me tonight I didn't hate. I'll listen to it in the car. I'm not going to tell you what I think. That's my brand."
+  ]);
+}
+
 async function pitchVic(S) {
-  const patience = 7 + (S.f.a2_showered ? 1 : 0) + (S.f.a2_louSecret ? 1 : 0) + (S.f.a2_afterDone ? 1 : 0);
+  const patience = 7 + (S.f.a2_showered ? 1 : 0) + (S.f.a2_louSecret ? 1 : 0) + (S.f.a2_afterDone ? 1 : 0) + (S.f.a2_kowRef ? 1 : 0) + (S.f.a2_tapeGiven ? 2 : 0);
   let res = null;
   for (;;) {
     res = await A2.mg("promoterTalk", { promoter: "Vic", charId: "a2_vic", ask: "a monthly slot at Basement Tapes", patience, difficulty: 2 }, fallbackTalk);
@@ -316,7 +335,7 @@ async function settleUp(S) {
   await RP.lines([
     "@nar Tuesday, 2:00 PM. Management office hours. Fifteen minutes, exactly as advertised.",
     "@nar I slide the rent across the desk: on time, by one day, in cash, in an envelope that still smells like a basement.",
-    "@a2_kowalski ...It's all here. Huh. The lock change was temporary. Here's your key. Hot water: next week.",
+    S.f.a2_kowDone ? "@a2_kowalski ...The pierogi kid. You already have the key. Fine. The rest is here, too. Huh. Hot water: next week." : "@a2_kowalski ...It's all here. Huh. The lock change was temporary. Here's your key. Hot water: next week.",
     "@nar It's always next week. It's the one thing in this building that never changes.",
     "@nar 4C is mine again. Gerald is on the windowsill, leaning at the light like a hostage who has made peace with it. Lou has been watering him through the wall with a turkey baster."
   ]);
@@ -333,6 +352,7 @@ async function finishAct(S) {
     [!!S.f.a2_inLoft, "Got into the Meserole loft"],
     [!!S.f.a2_loftFixed, "Fixed a dead PA"],
     [!!S.f.a2_louSecret, "Learned the secret of \"NYC 93\""],
+    [!!(S.f.a2_tobyDeal || S.f.a2_loot4c || S.f.a2_kowDone), "Used the long Tuesday: " + [S.f.a2_tobyDeal && "Linda", S.f.a2_loot4c && "the fire escape", S.f.a2_kowDone && "Kowalski"].filter(Boolean).join(", ")],
     [!!S.f.a2_turntables, "Bought your first turntables"],
     [!!S.f.a2_slot, "Booked a monthly slot at Basement Tapes"],
     [true, "Paid the rent, rescued Gerald, gave Marcus his couch back"]
@@ -400,7 +420,7 @@ RP.room({
     { id: "a2_whpillars", name: "concrete pillars", rects: [[84, 30, 28, 142], [230, 30, 28, 142], [476, 30, 28, 142], [608, 30, 28, 142]], z: 10, walk: [300, 208, "back"], look: "Concrete pillars, each painted with a yellow number: 1, 2, 3, 4. Somebody's counting down.", push: "It's holding up Gowanus. Not pushing it." },
     { id: "a2_whpipes", name: "pipes", r: [0, 8, 640, 26], z: 8, walk: [320, 208, "back"], look: "Pipes along the ceiling: steam, water, mystery. One of them drips on the dance floor every four seconds, in tempo.", use: "I can't reach the pipes. I couldn't fix them if I could." },
     { id: "twinkie", name: "Twinkie", z: 80, look: "Twinkie: lavender bob, shades, a coat of calm. Holds the key to a basement she doesn't technically own.", talk: S => talkTwinkie(S) },
-    { id: "a2_vic", name: "Vic", z: 80, look: "Vic: leather jacket, ponytail, mustache, sunglasses at five in the morning. He's glaring at the room as if it owes him rent.", talk: S => talkVic(S), give: async (S, item) => { if (item === "a2_flyer") return ["@a2_vic That's my flyer. I know it's my flyer. I print them."]; if (item === "white") return ["@a2_vic Keep it. Play it. Don't show me. Show the room."]; return ["@a2_vic Don't hand me things. Hand me a reason."]; } },
+    { id: "a2_vic", name: "Vic", z: 80, look: "Vic: leather jacket, ponytail, mustache, sunglasses at five in the morning. He's glaring at the room as if it owes him rent.", talk: S => talkVic(S), give: async (S, item) => { if (item === "a2_tape") return S.f.a2_vicIn ? giveTape(S) : "Vic isn't here yet."; if (item === "a2_flyer") return ["@a2_vic That's my flyer. I know it's my flyer. I print them."]; if (item === "white") return ["@a2_vic Keep it. Play it. Don't show me. Show the room."]; return ["@a2_vic Don't hand me things. Hand me a reason."]; } },
     { id: "marcus", name: "Marcus", z: 80, look: "Marcus: dancing with two friends, plus three. They're all wearing party hats. At five in the morning. It's the best he's ever looked.", talk: async S => { await RP.lines(["@marcus I brought plus seven. I couldn't help it. It's a calling."]); } },
     { id: "a2_dani", name: "Dani", z: 80, look: "Dani, still in her apron, holding a stack of plastic cups she definitely stole from the loft.", talk: async S => { await RP.lines(["@a2_dani Don't thank me. Just tell Fitz I covered my tab. He doesn't believe in me."]); } },
     { id: "a2_moxie", name: "Moxie", z: 80, look: "Moxie, dancing hard, vest flapping. She brought a PA. She's the reason there is sound.", talk: async S => { await RP.lines(["@a2_moxie THE PA'S IN A VAN. THE VAN'S IN A BASEMENT. THE BASEMENT'S ILLEGAL. I LOVE THIS."]); } }

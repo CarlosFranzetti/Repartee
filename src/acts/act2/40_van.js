@@ -273,8 +273,15 @@ RP.room({
       use: S => talkEddie(S), pickup: "Not without paying. Eddie's eyes follow me like a security camera.", push: "I'd knock the turntables over. They'd forgive me. Eddie wouldn't." },
     { id: "a2_boombox", name: "boombox", r: [6, 146, 32, 24], z: 36, walk: [30, 214, "back"], look: "A boombox with a cassette: \"T. HUMPHRIES — KISS FM — ZANZIBAR YEARS.\" It's low. It's church. Tony Humphries is known for his Club Zanzibar years in New Jersey and his mixes on New York's KISS FM. Respect.",
       use: S => RP.say("Click. A mix drifts out, warm and careful. Tony Humphries on KISS FM, the Zanzibar years. I leave it on. It sounds like a thing a person should have to earn."), pickup: "It's Eddie's. He'd follow me to Queens." },
-    { id: "a2_junk", name: "bargain blanket", r: [446, 170, 114, 76], z: 24, walk: [504, 246, "back"], look: "Eddie's bargain blanket: a speaker with foam, a mixer with a cracked face, a toaster and a coil of cables. A sign: \"IT WORKED THIS MORNING.\" It has never worked.",
-      pickup: "I'm not that desperate. Everything here has a story, and the story is \"it worked this morning.\"", use: "Eddie says it works. Eddie says a lot of things." },
+    { id: "a2_junk", name: "bargain blanket", r: [446, 170, 114, 76], z: 24, walk: [504, 246, "back"], look: S => "Eddie's bargain blanket: a speaker with foam, a mixer with a cracked face, a toaster, a coil of cables" + (S.f.a2_knifeGot ? "." : " and a putty knife with a rubber grip, tagged \"MULTI-USE. $4.\"") + " A sign: \"IT WORKED THIS MORNING.\" It has never worked.",
+      pickup: async S => {
+        if (S.f.a2_knifeGot) return "I already took the one useful thing on that blanket. The rest has a story, and the story is \"it worked this morning.\"";
+        const i = await RP.choose(["Take the putty knife ($4)", "Never mind"]);
+        if (i !== 0) return "I put it back. It stays where Eddie can see it, which is everywhere.";
+        S.f.a2_knifeGot = true; RP.give("a2_knife");
+        if (S.money >= 4) { RP.money(-4); await RP.lines(["@eddie Four dollars. Cash. It's a two-time deal: you'll want it twice.", "I won't. It's a knife that scrapes. It scrapes."]); }
+        else await RP.lines(["@eddie You can't spare four dollars? Take it. Pay me back in a favor. I'll forget the favor twice."]);
+      }, use: "Eddie says it works. Eddie says a lot of things." },
     { id: "a2_toaster", name: "toaster", r: [518, 218, 28, 22], z: 36, walk: [532, 246, "back"], look: "A toaster. Mrs. Pearl bought one. Then another. Neither toasts. I suspect it's the same toaster.", use: "Eddie: \"Put a slice in. It'll work the second time.\" It won't.", pickup: "No. Mrs. Pearl warned me." },
     { id: "a2_door", name: "roll-up door", r: [148, 88, 100, 88], z: 14, walk: [200, 210, "back"], look: "A steel roll-up door with a graffiti piece: SOUND SYSTEM in pink and cyan. Someone rolled it down in 2011 and never up.", open: "It's locked from the inside. Possibly by a cat.", push: "It rattles. I leave it alone." },
     { id: "a2_column", name: "concrete column", rects: [[90, 60, 48, 120], [436, 60, 48, 120]], z: 12, walk: [120, 210, "back"], look: "A BQE support column covered in decades of tags, stickers and yellow-black hazard stripes. It holds up a highway. It holds up my spirits. Slightly.", push: "It's holding up a highway. I'm not going to push it.", pickup: "It's the foundation of the borough." },

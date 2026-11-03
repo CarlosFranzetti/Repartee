@@ -115,6 +115,20 @@ async function useAtm(S) {
   await RP.say("Real cash. It smells like cinnamon and regret. The bodega guy gives me a thumbs up through the glass.");
 }
 
+/* ------------------------------------------------------------------ Rosa's side job (honest, small, never a dead end) */
+RP.voice("a2_rosa", { color: "#8affb0", prefix: "ROSA: ", anchor: [450, 70] });
+async function rosaJob(S) {
+  const k = "a2_rosa" + (S.f.a2_ch || 1), n = S.f[k] || 0;
+  if (!S.f.a2_rosaMet) { S.f.a2_rosaMet = true; await RP.lines(["Rosa, behind the counter, sees me look at the crates and puts a hand on her lower back with great ceremony.", "@a2_rosa Delivery's out front. Twelve crates. My back says no. My wallet says eighteen dollars."]); }
+  if (n >= 2) { await RP.say("Rosa waves me off. \"That's all the crates for today, mijo. My back's back.\" She winks like it never left.", "nar"); return; }
+  const i = await RP.choose(["Carry the crates ($18)", "Not now"]);
+  if (i !== 0) { await RP.say("I check my wallet, then my back. Neither of us is ready."); return; }
+  await RP.fadeTo(1, 500); RP.sfx("thump"); await RP.wait(600);
+  S.f[k] = n + 1; RP.money(18);
+  await RP.fadeTo(0, 500);
+  await RP.say(n ? "Eight crates of plantains. Twelve of seltzer. Rosa pays in singles and a look of respect." : "Twelve crates of pickles, seltzer and one live lobster, which I decline to discuss. Rosa pays me eighteen dollars in singles. I smell like brine, and it's honest work.");
+}
+
 /* ------------------------------------------------------------------ Mrs. Pearl */
 async function talkPearl(S) {
   if (!S.f.a2_pearlMet) {
@@ -177,8 +191,8 @@ RP.room({
       exit: { room: "a2_couch", x: 70, y: 232, face: "right" },
       push: "It's locked from the outside. The inside is where Marcus keeps the cereal." },
     { id: "a2_stoop", name: "stoop", r: [108, 140, 120, 46], z: 18, walk: [236, 204, "left"], look: "A brownstone stoop. Fourteen steps of stone, one railing and a century of people sitting on them saying \"nothing's open.\"", use: "I could sit. I've got nowhere to be until Friday. Eh. I'm busy.", pickup: "It's a stoop. It's part of the building. It's been stolen once, and they put it back." },
-    { id: "a2_bodega", name: "Rosa's Deli Grocery", r: [396, 94, 118, 90], z: 20, walk: [450, 204, "back"], look: "Rosa's Deli Grocery. Open 24 hours, sells everything, has seen everything. A cat naps on the chips. The cat is management.",
-      use: "I've got a few bucks. Rosa's has a $4 minimum for cards and a $0 minimum for judgment.", talk: "The guy at the counter nods without looking up. In Bed-Stuy, that's a conversation.", pickup: "Stealing from Rosa's is how people lose a decade." },
+    { id: "a2_bodega", name: "Rosa's Deli Grocery", r: [396, 94, 118, 90], z: 20, walk: [450, 204, "back"], look: "Rosa's Deli Grocery. Open 24 hours, sells everything, has seen everything. A cat naps on the chips. The cat is management. A hand-lettered card in the window: \"HELP WANTED: A BACK. $18/RUN. ASK INSIDE.\"",
+      use: S => rosaJob(S), talk: S => rosaJob(S), pickup: "Stealing from Rosa's is how people lose a decade." },
     { id: "a2_atm", name: "ATM", r: [522, 116, 44, 76], z: 40, walk: [544, 204, "back"],
       look: "A bodega ATM. \"NO FEE*.\" Underneath, in tiny print: \"*SEE FEE.\" It has seen things. It has charged for them.",
       use: S => useAtm(S), open: "It opens for the guy with the key. The guy with the key is the guy who owns the key.", push: "Kicking an ATM never gives money. It gives a court date.", talk: "The ATM says nothing. It says everything with a surcharge." },

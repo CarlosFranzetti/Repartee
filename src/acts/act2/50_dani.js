@@ -152,9 +152,28 @@ async function afterShower(S, smooth) {
   await A2.dayCheck(S);
 }
 
+async function takePierogi(S) {
+  if (S.f.a2_pierogiGot) return "I've already got the Tupperware. Taking more would make it a heist.";
+  if (!S.f.a2_daniMet) return "The pierogi aren't mine to take. Yet.";
+  await RP.lines([
+    "Dani, could I take some pierogi to go?",
+    "@a2_dani You've eaten eleven. Who are they for?",
+    "Somebody who needs softening. A man who holds a key, a folding table and a grudge.",
+    "@a2_dani Landlord. Obviously. Polish? Then it's a done deal. Here: the good Tupperware. Return it clean, I know where you sleep. (It's Marcus's.)"
+  ]);
+  RP.give("a2_pierogi"); S.f.a2_pierogiGot = true;
+  RP.toast("Dani's pierogi: warm, to go.");
+}
 async function talkDani(S) {
   if (S.f.a2_showered) {
-    await RP.lines(["@a2_dani Leave some water for the rest of Brooklyn, DJ.", "@a2_dani Saturday. The loft. \"The tab is closed.\" Don't forget."]);
+    if (!S.f.a2_pierogiGot && S.f.a2_daniMet) {
+      await RP.convo([
+        { text: "Could I take some pierogi to go?", run: async () => { await takePierogi(S); return "end"; } },
+        { text: "Just saying thanks.", end: true }
+      ]);
+      return;
+    }
+    await RP.lines(["@a2_dani Leave some water for the rest of Brooklyn, DJ.", S.f.a2_daniName ? "@a2_dani Saturday. The loft. \"The tab is closed.\" Don't forget." : "@a2_dani Saturday, the loft. Fitz is on the door. He's afraid of me. Make that work."]);
     return;
   }
   if (!S.f.a2_daniMet) {
@@ -165,6 +184,7 @@ async function talkDani(S) {
     { text: "The pierogi. Tell me everything.", run: async () => { await RP.lines(["@a2_dani Potato and cheese. My grandmother's recipe. She'd hate everything about my life and love everything about my pierogi."]); } },
     { text: "So... the shower. I hear it has seven settings.", run: async () => { await showerSmooth(S); return "end"; } },
     { text: "I'll be honest, I really just need a shower.", run: async () => { await showerHonest(S); return "end"; } },
+    { text: "Could I take some pierogi to go?", when: S2 => !S2.f.a2_pierogiGot, run: async () => { await takePierogi(S); } },
     { text: "What's your bar night like?", run: async () => { await RP.lines(["@a2_dani I bartend at Nowhere on Saturdays. Dante pays in drink tickets. Don't tell him I told you. Actually, tell him. He never reads his texts."]); } },
     { text: "Maybe later.", end: true }
   ]);
@@ -198,7 +218,7 @@ RP.room({
     { id: "a2_records", name: "record shelf", r: [200, 42, 112, 54], z: 22, walk: [256, 212, "back"], look: "A shelf of records: Chic, \"Good Times,\" on Atlantic, June 1979. Sylvester, \"You Make Me Feel (Mighty Real).\" Loleatta Holloway, \"Love Sensation,\" Dan Hartman producing, Tom Moulton mixing. Someone who knows what they like.", pickup: "I'd never. A person's records are their diary. A diary with a groove.", use: "I'd love to flip through. I'd also like to be invited back." },
     { id: "a2_player", name: "record player", r: [208, 90, 76, 36], z: 30, walk: [248, 212, "back"], look: "A budget turntable with a record on it. Soul, turned low. A good deck is one that gets played. This one's played.", use: "I'm tempted to put on \"Missing.\" But it's her place. Dani's already got a vibe going.", pickup: "Not mine. I'd lift a tonearm. I'd feel bad." },
     { id: "a2_couch", name: "futon couch", r: [320, 126, 118, 56], z: 24, walk: [376, 212, "back"], look: "A mustard futon with a velvet pillow. It looks at me like a rival. A better couch than Marcus's. I'm not saying that out loud.", use: "I'm not lying down on Dani's futon. We're not there yet.", pickup: "It's got legs. It's not mine." },
-    { id: "a2_table", name: "dinner table", r: [434, 184, 66, 40], z: 26, walk: [468, 214, "back"], look: S => S.f.a2_daniMeal ? "A table with two empty plates and one candle, the sad little end of a lovely dinner." : "A small round table with two plates of pierogi, a candle and a lot of intention.", use: "I could eat. I should eat. I will eat.", pickup: "The pierogi aren't mine to take. Yet." },
+    { id: "a2_table", name: "dinner table", r: [434, 184, 66, 40], z: 26, walk: [468, 214, "back"], look: S => S.f.a2_daniMeal ? "A table with two empty plates and one candle, the sad little end of a lovely dinner." : "A small round table with two plates of pierogi, a candle and a lot of intention.", use: "I could eat. I should eat. I will eat.", pickup: S => takePierogi(S) },
     { id: "a2_stove", name: "kitchen", r: [440, 108, 140, 62], z: 24, walk: [508, 214, "back"], look: "A kitchen the size of a closet. Four burners, one pot, an unreasonable number of wooden spoons. The air is made of butter.", use: "I'd stir something, but then I'd have to take responsibility.", open: "The cabinets are full of mismatched mugs and spices from at least four continents." },
     { id: "a2_shelf", name: "spice shelf", r: [444, 38, 118, 56], z: 22, walk: [508, 214, "back"], look: "A shelf of bottles: hot sauce, vinegar, vodka for pierogi, a vodka for people, a vodka for people who've had a day.", pickup: "Stealing from a person who's feeding me is not good strategy." },
     { id: "a2_bath", name: "bathroom (rain shower)", r: [584, 22, 54, 144], z: 28, walk: [604, 214, "back"],

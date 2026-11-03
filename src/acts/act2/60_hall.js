@@ -1,7 +1,10 @@
 /* Act 2 — the 4th-floor hallway of my old building in Bushwick: the new lock on 4C, Lou's door (4B), the stairs down.
    Lou keeps everyone's mail (the Con Ed bill = proof of address for the plasma center) and finally admits that
    "NYC 93" is his own track, recorded in 1993 and never released. (Fictional.)
-   Flags: a2_louMet, a2_billGot, a2_louSecret, a2_geraldAsked, a2_louTapes */
+   Flags: a2_louMet, a2_billGot, a2_louSecret, a2_geraldAsked, a2_louTapes, a2_seamSeen, a2_louWindow, a2_loot4c,
+   a2_kowMet, a2_kowSoft, a2_kowDone, a2_kowRef.
+   Optional Tuesday: Kowalski's office hour (pierogi from Dani + $40 = key + a word to Vic), and the hall window (putty knife) out the
+   airshaft fire escape into 4C: $35 and the demo tape. */
 (function () {
 "use strict";
 const RP = window.RP, A2 = RP.a2, PK = RP.PK;
@@ -105,6 +108,110 @@ async function louSecret(S) {
   RP.toast("Lou's secret: \"NYC 93\" is his own track.");
 }
 
+/* ------------------------------------------------------------------ the optional Tuesday: 4C and Kowalski */
+const kowOpen = S => !!S.f.a2_dayDone && (S.f.a2_ch || 1) === 1 && !S.f.a2_kowDone;
+
+// 4C from the inside (via the airshaft window or with Kowalski's key): Gerald, $35 and the demo tape
+async function enter4C(S, how) {
+  if (S.f.a2_loot4c) { await RP.say("Nothing left in there but Gerald. He's thriving. I'm not disturbing a man in a good place."); return; }
+  if (how === "key") {
+    await RP.walkTo(382, 214, "back");
+    RP.sfx("click");
+    await RP.lines(["The new key turns like it was made for this door. Which it was, by a man who changed the lock to keep me out. Closure."]);
+  }
+  await RP.fadeTo(1, 500);
+  await RP.lines([
+    "4C. It smells like me before the hot dog. The lock crew tracked mud across the floor and moved nothing, with the care of professionals who bill by the hour.",
+    "Gerald is on the windowsill, leaning at the light. Lou's turkey baster has left a small, loving puddle in his saucer."
+  ]);
+  await RP.fadeTo(0, 500);
+  await RP.lines([
+    "Under Gerald's saucer: an envelope. \"EMERGENCY. DO NOT SPEND ON RECORDS.\" In my own handwriting. I spend it on records, but at least now I feel bad about it.",
+    "Thirty-five dollars. It's the nicest thing past-me ever did for present-me."
+  ]);
+  RP.money(35); RP.sfx("cash");
+  await RP.lines([
+    "On the shelf by the dead stereo, a cassette: \"BED-STUY MIX VOL. 2 (DON'T JUDGE).\" My demo. Forty minutes of me trying to sound like I'm not trying.",
+    "I leave Gerald and his spare pot where they are. He's got a view and a baster. I'm the one with a couch."
+  ]);
+  RP.give("a2_tape"); S.f.a2_loot4c = true;
+  if (how !== "key") await RP.lines(["Back out the window, past the clothesline, onto the hallway side. The pigeon doesn't say anything. I appreciate its discretion."]);
+  await RP.walkTo(how === "key" ? 382 : 612, 214, how === "key" ? "back" : "back");
+}
+
+async function hallWindow(S) {
+  if (S.f.a2_loot4c) { await RP.say("It's open now. I could climb out again, but there's nothing left in 4C but Gerald, and Gerald has made it clear he's staying."); return; }
+  if (!RP.has("a2_knife")) {
+    S.f.a2_seamSeen = true;
+    await RP.lines(["The window is painted shut, from at least four administrations. I push. The paint pushes back.", "There's a seam where the paint meets the frame, thin as a rumor. Something flat and thin and stiff could crack it. My thumbnail is not that."]);
+    return;
+  }
+  await RP.walkTo(612, 214, "back");
+  RP.sfx("thump");
+  await RP.lines(["I work the putty knife into the seam. It cracks along the frame like a dry riverbed. Four administrations of paint, gone.", "The window slides up. Airshaft air: cold, brick, somebody's onions."]);
+  await RP.lines(["The fire escape. Rated for \"hopes.\" I step out onto it, then down a landing, then along, past a clothesline of someone's very large underwear, to my own kitchen window.", "It has never latched. I shoulder it. It opens like it's been waiting for me. The only door in this building that likes me is a window."]);
+  await enter4C(S, "window");
+}
+
+async function settleKow(S) {
+  if (!kowOpen(S)) return "Mr. Kowalski isn't here. Office hours are over.";
+  if (!RP.has("a2_pierogi")) return "I have nothing to offer him but my side of the story.";
+  if (!S.f.a2_kowSoft) {
+    S.f.a2_kowSoft = true; RP.take("a2_pierogi");
+    await RP.lines([
+      "Dani's pierogi. It's a long shot, in a Tupperware.",
+      "@a2_kow ...What's this?",
+      "Potato and cheese. A friend in Greenpoint made them.",
+      "@a2_kow Greenpoint. Manhattan Avenue? Next to the church? ...Her grandmother's recipe, I'll bet. Don't tell me. I'll cry in front of my own forms.",
+      "@a2_kow Forty years I've collected rent in this building and not once has a tenant brought me something that wasn't a complaint or a postcard from Florida.",
+      "@a2_kow Sit. Sit. I'm eating these. Fifteen minutes is fifteen minutes, but a man can eat in fourteen."
+    ]);
+    RP.sfx("success");
+  }
+  return payKow(S);
+}
+
+async function payKow(S) {
+  await RP.lines([
+    "@a2_kow Here's the thing. The rent's the rent. You're short. The lock is the lock. It's temporary because I wrote \"temporary\" on it, which is the only reason it's temporary.",
+    "@a2_kow I'll cut the lock fee. Forty on account, the rest on the first, and you're a tenant again. Forty. That's a pierogi discount."
+  ]);
+  const i = await RP.choose(["Pay $40 on account", "Not yet"]);
+  if (i !== 0) { await RP.say("I need a minute. Kowalski waves a hand: \"I'm here till you sleep, kid. Come back with forty. I'm saving you the second pierogi.\"", "nar"); return; }
+  if (S.money < 40) { await RP.lines(["I have $" + Math.round(S.money) + ". It's a beginning.", "@a2_kow Forty is forty. The second pierogi is waiting. So am I."]); return; }
+  RP.money(-40); RP.sfx("cash"); RP.give("a2_key");
+  S.f.a2_kowDone = true; S.f.a2_kowRef = true;
+  await RP.lines([
+    "@a2_kow There. The key. Hot water: next week.",
+    "I know. I know it's next week.",
+    "@a2_kow You mentioned a flyer. The Basement Tapes, Gowanus. That's my building. I rent that basement to a man in sunglasses. Vic.",
+    "@a2_kow Vic pays on time, which I find rude. If you ever have to stand in front of him, tell him Kowalski says you pay on time too. I'll say it back, if he asks. He won't ask. He'll just feel it.",
+    "@a2_kow Now go. I have a second pierogi and a sentiment I don't have a form for."
+  ]);
+  RP.followers(2);
+  RP.toast("Key to 4C. Kowalski will vouch for you with Vic.");
+}
+
+async function talkKow(S) {
+  if (!S.f.a2_kowMet) {
+    S.f.a2_kowMet = true;
+    await RP.lines([
+      "Mr. Kowalski. Folding table, a stack of forms, a ham sandwich on foil, and a mug: \"PIEROGI FEST 2009 — GREENPOINT.\"",
+      "@a2_kow Name and unit. ...4C. The lockout. You're the DJ. The one with the noise.",
+      "@a2_kow Fifteen minutes. Make it a good fourteen. Lunch."
+    ]);
+  }
+  await RP.convo([
+    { text: "I'd like the key to 4C.", when: S2 => !S2.f.a2_kowSoft, run: async () => {
+      await RP.lines(["@a2_kow Key's a hundred and ninety. Arrears, the lock fee, and a little for my trouble. Cash or a miracle.", "I have $" + Math.round(S.money) + ".", "@a2_kow Then it's a miracle. Next week. I do miracles next week.", "@a2_kow I'd get you a better deal if I liked you. I don't know you. Nobody brings me anything. They bring complaints.", "My mother's pierogi, God rest her, used to end wars on this block. Greenpoint. Gone, the recipe. I think about it with my ham."]);
+    } },
+    { text: "I'm ready to pay the forty.", when: S2 => !!S2.f.a2_kowSoft && !S2.f.a2_kowDone, run: async () => { await payKow(S); } },
+    { text: "Who else rents from you?", run: async () => { await RP.lines(["@a2_kow Half of Bushwick and a Gowanus basement. Nobody tells me anything. They tell me to fix the hot water.", "@a2_kow The basement's rented by a man in sunglasses who pays cash on the first. It's inhuman. I find it rude."]); } },
+    { text: "What about the hot water?", run: async () => { await RP.lines(["@a2_kow Next week."]); } },
+    { text: "Let me know when the lock stops being temporary.", end: true }
+  ]);
+}
+
 async function talkLou(S) {
   if (!S.f.a2_louMet) {
     S.f.a2_louMet = true;
@@ -132,6 +239,10 @@ async function talkLou(S) {
       S.f.a2_geraldAsked = true;
       await RP.lines(["@a2_lou Your plant? Gerald's thriving. I water him through the hole in the wall with a turkey baster.", "@a2_lou He's seen things. He asked about you. Okay, he didn't. He's a plant. But he'd ask.", "From behind Lou, through the crack, something small goes \"mrrp.\"", "Was that a cat?", "@a2_lou Radiator.", "The radiator is on the other side of the hall.", "@a2_lou It's a visitor. He likes my records. He's not on the lease. Neither of us is discussing it."]);
     } },
+    { text: "Who painted the hall window shut?", when: S2 => !S2.f.a2_loot4c, run: async () => {
+      S.f.a2_louWindow = true;
+      await RP.lines(["@a2_lou I did. 1998. Pigeons. They'd come in and look at me.", "@a2_lou There's a seam where the paint meets the frame. Thin steel, flat, you work it along and it cracks like a dry riverbed. Don't use your face.", "@a2_lou The fire escape out there goes past your kitchen window, by the way. Never latched. I've told you for two years. You said \"it's fine.\"", "@a2_lou It was not fine. I watched a raccoon use it once. He knocked."]);
+    } },
     { text: "Ever heard of Basement Tapes?", when: S2 => S2.f.a2_plan, run: async () => {
       S.f.a2_louTapes = true;
       await RP.lines(["@a2_lou Basement Tapes? That's the old Tri-State Tape place. Gowanus. I got my demos duplicated there in '93. Smelled like hot plastic and ambition.", "@a2_lou If it's the same basement, tell the ghost of the foreman Lou says hi."]);
@@ -150,6 +261,7 @@ RP.room({
   walk: [[8, 208], [630, 208], [630, 252], [8, 252]],
   start: { x: 70, y: 232, face: "right" },
   update: A2.update,
+  actors: [{ id: "a2_kow", char: "a2_kow", x: 176, y: 230, face: "right", act: "stand", name: "Mr. Kowalski", vis: S2 => kowOpen(S2) }],
   draw,
   fx: [{ type: "dust", rect: [140, 20, 140, 140], count: 8, color: "#ffe2a0" }, { type: "dust", rect: [420, 20, 120, 140], count: 8, color: "#ffe2a0" }],
   hotspots: [
@@ -162,22 +274,33 @@ RP.room({
       push: "If I push, he'll push back. With a cardigan." },
     { id: "a2_4c", name: "my door (4C)", r: [358, 38, 50, 130], z: 22, walk: [382, 214, "back"],
       look: "4C. My door, my home, my security deposit's last resting place. A gleaming new deadbolt shines on it like a smug dentist. There's a notice taped under the peephole.",
-      use: "Locked. The lock's new and it knows it.", open: "Locked. I try the handle twice, in case the first time was a mistake.", push: "I throw my shoulder against it. The door doesn't care. My shoulder cares a lot.", pull: "Nothing. The deadbolt looks like a tiny smirk.",
+      use: S => RP.has("a2_key") ? enter4C(S, "key") : S.f.a2_loot4c ? "Locked again, behind me. Nothing left in there except Gerald, who is thriving, and the smell of my own socks." : "Locked. The lock's new and it knows it.", open: S => RP.has("a2_key") ? enter4C(S, "key") : "Locked. I try the handle twice, in case the first time was a mistake.", push: "I throw my shoulder against it. The door doesn't care. My shoulder cares a lot.", pull: "Nothing. The deadbolt looks like a tiny smirk.",
       talk: async S => { await RP.lines(["Gerald? ...Gerald, it's me.", "No answer. He's a plant. He's got good instincts.", "I'll be back for you, buddy.", S.f.a2_billGot ? "My mail all goes to Lou anyway. Nothing in there needs me except Gerald." : "My mail goes to Lou, not to 4C. Nothing in there needs me except Gerald."]); } },
     { id: "a2_notice", name: "notice", r: [366, 52, 34, 28], z: 40, walk: [382, 214, "back"],
-      look: "\"NOTICE: LOCK CHANGE (TEMPORARY). Tenants must contact Management to receive new key. Management office hours: Tuesdays, 2:00-2:15 PM.\" Fifteen minutes a week. They've thought of everything except help. I'm not rearranging my life to beg Kowalski for a quarter hour he'll spend saying \"next week.\" Marcus's couch is home for now.",
+      look: S => "\"NOTICE: LOCK CHANGE (TEMPORARY). Tenants must contact Management to receive new key. Management office hours: Tuesdays, 2:00-2:15 PM.\" Fifteen minutes a week. They've thought of everything except help. " + (S.f.a2_kowDone ? "Kowalski's folding table is gone. The notice remains, like a ghost with a deadline." : S.f.a2_dayDone ? "It's Tuesday, a little before two. There's a folding table by the stairs and a man behind it eating a ham sandwich." : "Not rearranging my life for a quarter hour he'll spend saying \"next week.\" Marcus's couch is home for now. Tuesday, though, I'm free."),
       pickup: "It's taped on with the kind of tape that outlives civilization.", use: "I could read it again. It wouldn't get better." },
     { id: "a2_4d", name: "door 4D", r: [500, 38, 50, 128], z: 20, walk: [524, 214, "back"], look: "4D. The guy in 4D plays a trombone at 6 AM. We don't talk. We have an understanding. He has the trombone.", use: "I'm not knocking. If he answers, it'll be with a trombone.", open: "Locked. And I'd hate to see what's behind it.", talk: "...A faint trombone. We're both busy." },
     { id: "a2_light", name: "ceiling bulbs", rects: [[190, 10, 16, 30], [462, 10, 16, 30]], z: 14, walk: [330, 214, "back"], look: "Two bare bulbs that flicker like they're sending Morse code for \"fix me.\" The landlord has heard it and chosen silence.", use: "I'd change it but I don't have a bulb. Or a ladder. Or standing.", pickup: "Not without a ladder and a lawyer." },
     { id: "a2_radiator", name: "radiator", r: [294, 124, 54, 36], z: 24, walk: [322, 214, "back"], look: "A hallway radiator that clanks like a ghost. In December it's a sauna; in October it's a coat rack.", use: "It's off. Cold, like the landlord's heart.", push: "It doesn't budge. Nothing in this building does." },
-    { id: "a2_window", name: "hallway window", r: [588, 12, 48, 62], z: 16, walk: [612, 214, "back"], look: "A window onto an airshaft: a wall of brick, a clothesline and someone's cat looking at me like it knows my rent.", open: "It's painted shut. Since the Dinkins administration.", push: "It's shut. Hard." },
+    { id: "a2_window", name: "hallway window", r: [588, 12, 48, 62], z: 16, walk: [612, 214, "back"], look: S => S.f.a2_loot4c ? "The hall window, open and unpainted. A fire escape rattles outside, past a clothesline, to a kitchen window I've now officially broken into." : "A window onto an airshaft: brick, a clothesline, someone's cat looking at me like it knows my rent, and a fire escape zigzagging past. The third landing is outside my own kitchen window. The one I always leave unlatched.",
+      open: S => hallWindow(S), use: S => hallWindow(S), push: S => hallWindow(S), pull: S => hallWindow(S), pickup: "It's a window. It's attached to the airshaft. I'm not strong enough to take the building's eyes." },
     { id: "a2_bike", name: "bike on the wall", r: [564, 106, 52, 36], z: 24, walk: [590, 214, "back"], look: "Someone's bike, hanging on a hook like a trophy. It's been there so long it's technically part of the building.", pickup: "Not mine. And it's up there for a reason. The reason is the 4D guy's trombone.", use: "No. I don't ride anything with a trombone owner's name on it." },
     { id: "a2_ext", name: "fire extinguisher", r: [604, 90, 14, 38], z: 24, walk: [612, 214, "back"], look: "A fire extinguisher, last inspected in 2014. It's a prop. It's also a mood.", pickup: "If I need it, it won't work. If it works, I won't need it. It's a koan.", use: "I'm not setting the building on fire. It's the only place I have mail." },
+    { id: "a2_kow", name: "Mr. Kowalski", z: 80, look: S => "Mr. Kowalski, the landlord, at a folding table with a ham sandwich, a stack of forms and a mug: \"PIEROGI FEST 2009 — GREENPOINT.\" He looks like a man who has said \"next week\" so often it's lost its meaning, and kept the sentence.",
+      talk: S => talkKow(S), give: async (S, item) => { if (item === "a2_pierogi") return settleKow(RP.state); if (item === "a2_card") return ["@a2_kow Plastic? In this building? You'll be paying with a body part next. ...Oh. You have. Sorry."]; if (item === "a2_flyer") return ["@a2_kow Basement Tapes? That's the old Tri-State Tape place on Gowanus. I rent it to a man in sunglasses. He pays on time, which I find rude. Is this about him?"]; return ["@a2_kow I'm not here to receive things. I'm here to say \"next week.\""]; } },
     { id: "a2_menus", name: "takeout menus", r: [136, 184, 56, 20], z: 12, floor: true, look: "A pile of takeout menus someone shoved under the door. Thai, pizza, Thai-pizza. Hope with a delivery charge.", pickup: "I'm not taking a menu. I'm taking a stand." }
   ],
   combos: [
     ["white", "a2_lou4b", S => louSecret(RP.state)],
     ["a2_bill", "a2_lou4b", "\"Lou, I've got the bill.\" He says nothing. He's already taken credit."],
+    ["a2_pierogi", "a2_kow", S => settleKow(RP.state)],
+    ["a2_pierogi", "a2_lou4b", "Lou would eat them and then deny it. He'd say they were already gone when they arrived."],
+    ["a2_pierogi", "a2_4c", "Pierogi don't pick locks. They soften the man who holds the key."],
+    ["a2_key", "a2_4c", S => enter4C(RP.state, "key")],
+    ["a2_knife", "a2_window", S => hallWindow(RP.state)],
+    ["a2_knife", "a2_4c", "A putty knife won't beat a chrome deadbolt. It might beat a window, though. Paint and plaster are its department."],
+    ["a2_knife", "a2_notice", "I scrape. The notice stays. It's been taped by a man who plans for the apocalypse."],
+    ["a2_sachet", "a2_kow", ["@a2_kow Lavender? I'm a landlord. I don't relax. It's in the lease."]],
     ["usb_cat", "a2_4c", "It's a USB. It's not a key. The lock thinks it's funnier than that."],
     ["phone", "a2_4c", "I'd call the landlord, but then I'd have to listen to the hold music and the hold music is \"Next Week.\""],
     ["a2_card", "a2_4c", "Cards don't open locks outside movies. And I don't have a movie. I have a card with plasma on it."]

@@ -1,6 +1,7 @@
 /* Act 2 — headless walkthroughs. RP.walkthroughs.act2 is the complete level from the couch to RP.completeAct.
-   RP.walkthroughs.act2alt takes the other branches: honest shower, the sneak-in, a lemon from Eddie, failed
-   mini-games with retries, the amp as a ticket.
+   RP.walkthroughs.act2alt takes the other branches: Dani's honest shower, her pierogi for Kowalski (key to 4C), Rosa's side job, the sneak-in, a lemon
+   from Eddie, failed mini-games with retries. The main walkthrough does the Tuesday goals Toby/Linda (shower + sachet for Fitz) and the
+   fire escape into 4C (putty knife, cash, demo tape for Vic).
    Every hotspot step is guarded: it must be visible and present in the current room (the engine's test hook skips that check).
    Every mini-game step queues its result when the game is installed, or the answers for the dialogue fallback when not. */
 (function () {
@@ -34,7 +35,12 @@ RP.walkthroughs.act2 = W(
   // Marcus: the plan, the shower hint (which also texts Dani), Vic, the next-step hint
   say(["plan", "shower", "pierogi", "Vic", "next", "Later"]), hot("talk", "marcus"), clear(),
   exp("S.f.a2_plan && S.f.a2_daniText && S.unlocked.includes('a2_loc_plasma') && S.unlocked.includes('a2_loc_van') && S.unlocked.includes('a2_loc_dani')", "Marcus's plan unlocked the map"),
-  hot("use", "a2_bath"), hot("use", "a2_bath"),
+  hot("use", "a2_bath"), hot("use", "a2_bath"), hot("use", "a2_bath"),
+  // Toby's bathroom: Linda (the kombucha culture in the fridge) for the bathroom, and a sachet for Fitz
+  hot("open", "a2_fridge"), hot("pickup", "a2_fridge"),
+  exp("S.f.a2_jarSeen && S.inv.includes('a2_scoby')", "found Linda in the fridge"),
+  hot("use", "a2_bath", "a2_scoby"),
+  exp("S.f.a2_tobyDeal && S.f.a2_showered && S.inv.includes('a2_sachet') && !S.inv.includes('a2_scoby')", "Toby traded the bathroom for Linda; a clean kid with a sachet"),
   // out to the street, Mrs. Pearl's tips
   hot("use", "a2_door"),
   exp("S.room === 'a2_street'", "on the street"),
@@ -45,7 +51,10 @@ RP.walkthroughs.act2 = W(
   go("a2_subway", "a2_loc_hall"),
   exp("S.room === 'a2_hall'", "in the hall"),
   hot("look", "a2_notice"), hot("use", "a2_4c"),
-  say(["mail", "NYC 93", "Gerald", "Basement", "Thanks"]), hot("talk", "a2_lou4b"), clear(),
+  say(["mail", "NYC 93", "Gerald", "window", "Basement", "Thanks"]), hot("talk", "a2_lou4b"), clear(),
+  exp("S.f.a2_louWindow", "Lou told me how to crack the hall window"),
+  hot("use", "a2_window"),
+  exp("S.f.a2_seamSeen && !S.f.a2_loot4c", "the window is painted shut; there's a seam"),
   exp("S.inv.includes('a2_bill') && S.f.a2_louSecret", "Con Ed bill in hand and Lou admitted NYC 93 is his"),
   // plasma center
   go("a2_stairs", "a2_loc_plasma"),
@@ -74,13 +83,14 @@ RP.walkthroughs.act2 = W(
   say(["How much", "records", "Vic", "boombox", "I want the", "Later"]), hot("talk", "eddie"), clear(),
   exp("S.f.a2_metEddie && S.hasRecordCheck !== 1 && RP.hasRecord('crystal_waters_gypsy_woman') && !S.f.a2_turntables", "met Eddie, bought Gypsy Woman, no turntables yet (not enough cash)"),
   hot("use", "a2_boombox"), hot("look", "a2_junk"),
-  // Dani's shower
-  go("a2_vanstairs", "a2_loc_dani"),
-  exp("S.room === 'a2_dani'", "at Dani's"),
-  hot("look", "a2_bath"),
-  say(["pierogi", "seven settings"]), hot("talk", "a2_dani"), clear(),
-  exp("S.f.a2_showered && S.f.a2_daniName && RP.hasRecord('snap_rhythm_is_a_dancer') && !S.unlocked.includes('a2_loc_loft')", "clean, Dani's name to drop, a new record (the loft opens Saturday)"),
-  go("a2_exit", "a2_loc_couch"),
+  say(["putty knife"]), hot("pickup", "a2_junk"), clear(),
+  exp("S.inv.includes('a2_knife') && S.f.a2_knifeGot", "bought the putty knife from Eddie's blanket"),
+  // the fire escape back into 4C (the airshaft window in the hall)
+  go("a2_vanstairs", "a2_loc_hall"),
+  exp("S.room === 'a2_hall'", "back in the hall"),
+  hot("use", "a2_window", "a2_knife"),
+  exp("S.f.a2_loot4c && S.inv.includes('a2_tape') && !S.f.a2_kowDone", "climbed into 4C: cash and the demo tape"),
+  go("a2_stairs", "a2_loc_couch"),
   hot("use", "a2_stoopdoor"),
   exp("S.room === 'a2_couch'", "home on the couch"),
   // sleep until Friday, work Marcus's door (the door scene)
@@ -99,8 +109,8 @@ RP.walkthroughs.act2 = W(
   // the Bushwick loft: Fitz, the guest list by Dani's name
   go("a2_vanstairs", "a2_loc_loft"),
   exp("S.room === 'a2_loftdoor'", "outside the loft"),
-  say(["Dani says"]), hot("talk", "a2_fitz"), clear(),
-  exp("S.room === 'a2_loft' && S.f.a2_inLoft && !S.f.a2_sneaked", "talked onto the list"),
+  hot("give", "a2_fitz", "a2_sachet"),
+  exp("S.room === 'a2_loft' && S.f.a2_inLoft && !S.f.a2_sneaked && !S.inv.includes('a2_sachet')", "Toby's sachet got me in"),
   say(["spare amp", "Later"]), hot("talk", "a2_moxie"), clear(),
   say(["advice", "Never"]), hot("talk", "kosmo"), clear(),
   hot("look", "a2_flyerbs"), hot("look", "a2_flyer718"),
@@ -114,8 +124,9 @@ RP.walkthroughs.act2 = W(
   exp("S.room === 'a2_warehouse' && S.f.a2_whIntro && S.f.a2_whLights", "arrived at Basement Tapes"),
   mg("afterParty", { ok: true, score: 80, guests: 60 }, FB.after), hot("talk", "twinkie"), clear(),
   exp("S.f.a2_afterDone", "after.Party succeeded"),
+  exp("S.inv.includes('a2_tape') && !S.f.a2_tapeGiven", "still carrying the demo tape for Vic"),
   mg("promoterTalk", { ok: true, score: 82, deal: { slot: "monthly" } }, FB.talk), hot("use", "a2_whbooth", "a2_tts"), clear(),
-  exp("S.f.a2_ttSet && S.f.a2_louPlayed && S.f.a2_slot", "turntables set up, NYC 93 played, slot booked"),
+  exp("S.f.a2_ttSet && S.f.a2_louPlayed && S.f.a2_slot && S.f.a2_tapeGiven", "turntables set up, NYC 93 played, the tape handed to Vic, slot booked"),
   exp("RP.hasRecord('mr_fingers_washing_machine_can_you_feel_it') && S.done.includes(2)", "act 2 complete")
 );
 
@@ -125,6 +136,10 @@ RP.walkthroughs.act2alt = W(
   // skip the Marcus hint speech: go straight for what the plan says
   say(["plan", "Later"]), hot("talk", "marcus"), clear(),
   hot("use", "a2_door"),
+  // the side job at Rosa's (honest, small): $18 a run, two a chapter
+  ["run", (S, R) => { S.f.__m1 = S.money; }],
+  say([0]), hot("use", "a2_bodega"), clear(),
+  exp("S.money === S.f.__m1 + 18 && S.f.a2_rosa1 === 1", "Rosa paid $18 for a run of crates"),
   go("a2_subway", "a2_loc_hall"),
   say(["mail", "Thanks"]), hot("talk", "a2_lou4b"), clear(),
   go("a2_stairs", "a2_loc_plasma"),
@@ -142,7 +157,19 @@ RP.walkthroughs.act2alt = W(
   queueTravel("a2_loc_dani"), hot("use", "a2_subway"), clear(),
   say(["I'll be honest"]), hot("talk", "a2_dani"), clear(),
   exp("S.f.a2_showered", "showered the honest way"),
-  go("a2_exit", "a2_loc_couch"),
+  hot("pickup", "a2_table"),
+  exp("S.inv.includes('a2_pierogi')", "Dani packed pierogi to go"),
+  // Tuesday, 2 PM: Kowalski's office hour, softened with pierogi
+  go("a2_exit", "a2_loc_hall"),
+  exp("S.f.a2_dayDone && S.room === 'a2_hall'", "Tuesday afternoon in the hall"),
+  say(["key to 4C"]), hot("talk", "a2_kow"), clear(),
+  exp("!S.f.a2_kowSoft", "Kowalski won't budge for nothing"),
+  ["run", (S, R) => { S.f.__m2 = S.money; }],
+  say(["Pay $40"]), hot("give", "a2_kow", "a2_pierogi"), clear(),
+  exp("S.f.a2_kowDone && S.f.a2_kowRef && S.inv.includes('a2_key') && S.money === S.f.__m2 - 40", "pierogi and $40 bought the key and a word to Vic"),
+  hot("use", "a2_4c", "a2_key"),
+  exp("S.f.a2_loot4c && S.inv.includes('a2_tape')", "let myself into 4C: cash and the demo tape"),
+  go("a2_stairs", "a2_loc_couch"),
   hot("use", "a2_stoopdoor"),
   say(["Sleep"]), hot("use", "a2_couch"), clear(),
   // the party: a failed door still moves on (forgiving), then Jess and Twinkie
