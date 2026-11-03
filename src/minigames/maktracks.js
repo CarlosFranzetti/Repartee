@@ -349,6 +349,13 @@ const CSS = `
 .mt-arr { display: grid; grid-template-columns: 38px repeat(8, minmax(0, 1fr)); gap: 3px; align-items: stretch; }
 .mt-arr .rl { font-size: 12px; color: var(--muted); display: flex; align-items: center; justify-content: flex-end; padding-right: 2px; }
 .mt-sec { font-size: 13px; padding: 3px 0; border: 2px solid; border-color: var(--sc) #0a0716 #0a0716 var(--sc); background: #1a1534; color: var(--sc); cursor: pointer; line-height: 1; min-width: 0; overflow: hidden; }
+.mt-sec.sel { outline: 2px solid #fff; outline-offset: 1px; }
+.mt-aim { font-size: 17px; line-height: 1.05; color: var(--fg); margin-bottom: 4px; } .mt-aim b { font-weight: 400; color: var(--amber); }
+.mt-secbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
+.mt-seclab { font-size: 16px; color: var(--muted); flex: 1 1 100%; }
+.mt-secpick { font-family: var(--ui); font-size: 15px; padding: 2px 6px; border: 2px solid var(--sc, var(--muted)); background: #1a1534; color: var(--sc, var(--fg)); cursor: pointer; line-height: 1; }
+.mt-secpick:disabled { opacity: .45; cursor: default; } .mt-secpick.cur { background: var(--sc); color: #12061a; }
+.mt-undo { margin-left: auto; --sc: var(--fg); }
 .mt-sec.play { background: var(--sc); color: #12061a; }
 .mt-em { position: relative; height: 54px; display: flex; flex-direction: column-reverse; gap: 1px; background: #0a0816; border: 1px solid #241d48; padding: 1px; cursor: pointer; }
 .mt-em i { flex: 1; background: #1a1534; }
@@ -605,15 +612,24 @@ RP.mg.register("makTracks", {
     }
     const goalBox = el("div", { cls: "mt-box" }, colB);
     el("div", { cls: "mt-h", html: "<b>GOALS</b><span>level " + diff + "</span>" }, goalBox);
+    el("div", { cls: "mt-aim", html: "<b>THE AIM:</b> bounce a track whose DROP hits hard. Fill the pattern, then in the arrangement put a quiet BUILD or BREAK bar right before the DROP so the DROP lands " + TIER_GOALS.jump[diff - 1] + "+ points louder." + (withLou ? " Lou has to like it too (mood " + TIER_GOALS.taste[diff - 1] + "%+)." : "") }, goalBox);
     const goalUl = el("ul", { cls: "mt-goals" }, goalBox);
     const arrBox = el("div", { cls: "mt-box" }, colB);
-    el("div", { cls: "mt-h", html: "<b>ARRANGEMENT</b><span>tap a bar name to change it</span>" }, arrBox);
+    el("div", { cls: "mt-h", html: "<b>ARRANGEMENT</b><span>tap a bar, then pick its section</span>" }, arrBox);
+    const secBar = el("div", { cls: "mt-secbar" }, arrBox);
+    const secLab = el("span", { cls: "mt-seclab", text: "No bar selected." }, secBar);
+    const secBtns = SEC_ORDER.map(k => {
+      const b = el("button", { cls: "mt-secpick", type: "button", text: SECS[k].name, disabled: "disabled" }, secBar); b.style.setProperty("--sc", SECS[k].col);
+      b.addEventListener("click", () => setSection(st.selBar, k)); return b;
+    });
+    const undoBtn = el("button", { cls: "mt-secpick mt-undo", type: "button", text: "UNDO", disabled: "disabled", "aria-label": "Undo the last arrangement change" }, secBar);
+    undoBtn.addEventListener("click", () => undoArr());
     const arrG = el("div", { cls: "mt-arr" }, arrBox);
     const secEls = [], emEls = [], lyEls = [];
     el("div", { cls: "rl", text: "BAR" }, arrG);
     for (let b = 0; b < BARS; b++) {
       const bt = el("button", { cls: "mt-sec", type: "button", text: "", "aria-label": "Bar " + (b + 1) + " section" }, arrG); secEls.push(bt);
-      bt.addEventListener("click", () => { cycleSection(b); });
+      bt.addEventListener("click", () => { st.selBar = st.selBar === b ? null : b; RP.sfx("click"); onChange(); });
     }
     el("div", { cls: "elbl", text: "ENERGY" }, arrG);
     for (let b = 0; b < BARS; b++) {
@@ -627,7 +643,7 @@ RP.mg.register("makTracks", {
       lyEls[ri] = [];
       for (let b = 0; b < BARS; b++) {
         const ly = el("button", { cls: "mt-ly", type: "button", style: "--lc:" + ROWS[ri].col, "aria-label": ROWS[ri].name + " in bar " + (b + 1), "aria-pressed": "false" }, arrG); lyEls[ri][b] = ly;
-        ly.addEventListener("click", () => { st.layers[b][ri] = !st.layers[b][ri]; RP.sfx("blip"); onChange(); });
+        ly.addEventListener("click", () => { pushArr(); st.layers[b][ri] = !st.layers[b][ri]; RP.sfx("blip"); onChange(); });
       }
     });
 
@@ -793,9 +809,17 @@ RP.mg.register("makTracks", {
       onChange(rid);
     }
     function clearRow(rid) { pat[rid].fill(0); refreshGrid(); onChange(rid); }
-    function cycleSection(b) {
-      const i = SEC_ORDER.indexOf(st.arr[b]); st.arr[b] = SEC_ORDER[(i + 1) % SEC_ORDER.length];
-      st.layers[b] = RID.map(r => SECS[st.arr[b]].layers.indexOf(r) >= 0); RP.sfx("blip"); onChange();
+    /* arrangement edits: pick a bar, then pick what it becomes (no blind cycling); every change can be undone */
+    const undoStack = [];
+    function pushArr() { undoStack.push({ arr: st.arr.slice(), layers: st.layers.map(l => l.slice()) }); if (undoStack.length > 40) undoStack.shift(); }
+    function setSection(b, k) {
+      if (b == null || st.arr[b] === k) return;
+      pushArr(); st.arr[b] = k;
+      st.layers[b] = RID.map(r => SECS[k].layers.indexOf(r) >= 0); RP.sfx("blip"); onChange("arr");
+    }
+    function undoArr() {
+      const u = undoStack.pop(); if (!u) return;
+      st.arr = u.arr; st.layers = u.layers; RP.sfx("blip"); onChange("arr");
     }
     // pointer painting (mouse): press on a cell, drag across the row
     let paint = null;
@@ -917,9 +941,13 @@ RP.mg.register("makTracks", {
         if (g.ok && !st.goalsDone[g.id]) { st.goalsDone[g.id] = true; if (!st.firstEval) rewardGoal(g); }
       });
       // arrangement
+      secLab.textContent = st.selBar == null ? "No bar selected. Tap a bar name below." : "BAR " + (st.selBar + 1) + " is " + SECS[st.arr[st.selBar]].name + ". Make it:";
+      secBtns.forEach((bt, k) => { bt.disabled = st.selBar == null; bt.classList.toggle("cur", st.selBar != null && st.arr[st.selBar] === SEC_ORDER[k]); });
+      undoBtn.disabled = !undoStack.length;
       for (let b = 0; b < BARS; b++) {
         const sec = SECS[st.arr[b]];
         secEls[b].textContent = sec.name; secEls[b].style.setProperty("--sc", sec.col);
+        secEls[b].classList.toggle("sel", st.selBar === b); secEls[b].setAttribute("aria-pressed", st.selBar === b ? "true" : "false");
         const e = ev.en[b], lit = Math.round(e / 10);
         const em = emEls[b]; em.style.setProperty("--ec", e >= 80 ? "#ffffff" : e >= 60 ? "#ff3fa4" : e >= 35 ? "#ffc44d" : "#39d0ff");
         [...em.querySelectorAll("i")].forEach((i, k) => i.classList.toggle("on", k < lit));
@@ -1013,6 +1041,7 @@ RP.mg.register("makTracks", {
       const inp = el("input", { type: "text", id: "mtname", maxlength: "40", value: st.name, "aria-label": "Track name", autocomplete: "off", spellcheck: "false" }, card);
       const ul = el("ul", {}, card);
       ev.list.forEach(g => el("li", { html: (g.ok ? "<b>[x]</b> " : "[ ] ") + RP.u.esc(g.t) + " <span style='color:var(--muted)'>" + RP.u.esc(g.prog) + "</span>" }, ul));
+      if (withLou && ev.tz.t < TIER_GOALS.taste[diff - 1] - 15) el("li", { html: "<span style='color:var(--amber)'>Lou isn't won over yet (" + ev.tz.t + "%). He won't sign off below " + (TIER_GOALS.taste[diff - 1] - 15) + "%.</span>" }, ul);
       const row = el("div", { cls: "row" }, card);
       const back = el("button", { cls: "btn", type: "button", text: "KEEP EDITING" }, row), go = el("button", { cls: "btn primary", type: "button", text: "BOUNCE IT" }, row);
       back.addEventListener("click", () => { m.remove(); });
@@ -1027,7 +1056,8 @@ RP.mg.register("makTracks", {
       const goalsPart = 56 * done / total;
       const energyQ = 0.6 * clamp((ev.dropMin - 40) / 50, 0, 1) + 0.4 * clamp(ev.jump / 30, 0, 1);
       const score = Math.round(clamp(goalsPart + 22 * energyQ + 22 * ev.tz.t / 100, 0, 100));
-      const res = { ok: score >= 55, score, title: st.name, track: { name: st.name, title: st.name, bpm: st.bpm, pattern: { steps: STEPS, rows: JSON.parse(JSON.stringify(pat)), voices: Object.assign({}, st.voice), arrangement: st.arr.slice(), layers: st.layers.map(l => l.slice()), swing: st.swing }, sample: rec.id, goals: done + "/" + total, energy: ev.en.slice(), lou: ev.tz.t } };
+      const louOk = !withLou || ev.tz.t >= TIER_GOALS.taste[di] - 15;   // Lou has to be at least half won over, or the track doesn't ship
+      const res = { ok: score >= 55 && louOk, score, title: st.name, track: { name: st.name, title: st.name, bpm: st.bpm, pattern: { steps: STEPS, rows: JSON.parse(JSON.stringify(pat)), voices: Object.assign({}, st.voice), arrangement: st.arr.slice(), layers: st.layers.map(l => l.slice()), swing: st.swing }, sample: rec.id, goals: done + "/" + total, energy: ev.en.slice(), lou: ev.tz.t } };
       wrap.remove(); head.remove();
       host.header("mak.Tracks", "Bounced");
       const card = el("div", { cls: "mt-card", style: "margin: 0 auto; border-color: var(--pink)" }, root);
@@ -1040,6 +1070,7 @@ RP.mg.register("makTracks", {
       const louNit = count("bass") > count("kick") ? "The bass is too loud." : count("hat") >= 10 ? "The hats are too busy." : "Leave my hi-hat alone next time.";
       let line;
       if (!withLou) line = res.ok ? "Mastered, named, ready for Pipe Hole Records." : "It needs another pass before it goes anywhere.";
+      else if (!louOk) line = "Lou, shaking his head: “No. I'm not putting my name on that. Fix the hook and the mix, kid. Then we'll talk.” (Lou's mood " + t + "%; he needed " + (TIER_GOALS.taste[di] - 15) + "%.)";
       else if (t >= 75) line = "Lou, quiet for a second: “...That's it. That's the room. I haven't heard it through speakers since '93.” He sniffs. “" + louNit + "”";
       else if (t >= 50) line = "Lou, arms folded: “It's not 1993. But it's not bad. Don't tell anyone I said that.”";
       else line = "Lou: “You put my track in a blender, kid. ...Do it again. Slower.”";

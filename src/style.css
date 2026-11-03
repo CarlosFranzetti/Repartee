@@ -64,6 +64,8 @@ body.p #panel.choosing { max-height: none; }
 .choice::before { content: "\25B8 "; color: #3a3070; }
 .choice:hover, .choice:focus-visible { color: var(--pink); }
 .choice:hover::before { color: var(--pink); }
+.choice.used { color: var(--muted); cursor: default; text-decoration: line-through; }
+.choice.used:hover, .choice.used:hover::before { color: var(--muted); }
 #panel.busy #verbs, #panel.busy #inv { opacity: .55; }
 #below { width: 100%; display: none; flex-direction: column; gap: 8px; }
 #hint { display: none; font-size: 16px; color: var(--muted); text-align: center; }

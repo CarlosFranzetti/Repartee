@@ -114,12 +114,12 @@ async function kosmoTalk(S) {
   ]);
 }
 async function cartAsk(S) {
-  const i = await RP.choose(["A hot towel", "Tomato juice ($4)", "Pretzels ($3)", "Never mind"]);
+  const i = await RP.choose(["A towel (free)", "Tomato juice ($4)", "Pretzels ($3)", "Never mind"]);
   if (i === 3) return;
   if (i === 0) {
     if (RP.has("a4_towel") || S.f.a4_rTowel) { await RP.lines(["@a4_marguerite One towel per passenger, sir. It's policy, and also a vow."]); return; }
     RP.give("a4_towel");
-    await RP.lines(["@a4_marguerite Hot towel. Economy gets it lukewarm and with a look.", "She tongs one out of a steel tray. It steams like a small, clean ghost.", "The rider says towels. Plural. I'll take what the airline calls plural."]);
+    await RP.lines(["@a4_marguerite Towel. Economy gets it lukewarm and with a look.", "She tongs one out of a steel tray. It steams like a small, clean ghost.", "The rider says towels. Plural. I'll take what the airline calls plural."]);
     return;
   }
   const price = i === 1 ? 4 : 3;
@@ -155,6 +155,11 @@ async function giveBag(S) {
 }
 async function takeSeat(S) {
   if (!RP.has("a4_bag") && !S.f.a4_kosmoBag) { await RP.say("Without the bag? No. Without the bag, I'm not even sure this is my seat."); return; }
+  if (!RP.has("a4_bag") && S.f.a4_kosmoBag) {
+    const need = [!(RP.has("a4_towel") || S.f.a4_rTowel) && "a towel", !(RP.has("a4_veg") || S.f.a4_rVeg) && "a vegetable", !(RP.has("a4_water") || S.f.a4_rWater) && "water"].filter(Boolean);
+    const j = await RP.choose(["Sit down. The plane leaves when I sit: next stop Berlin" + (need.length ? " (the cart stays behind; rider still short: " + need.join(", ") + ")" : ""), "Not yet"]);
+    if (j !== 0) return;
+  }
   if (RP.has("a4_bag")) { await RP.lines(["I sit with the bag on my lap.", "@a4_marguerite Sir. The bag.", "It's on my lap.", "@a4_marguerite It doesn't fit under the seat. It doesn't fit anywhere. It goes in the hold or on a seat.", "A seat. I need a seat. Wait. Kosmo's got a free one."]); return; }
   await RP.walkTo(358, 226, "back");
   RP.place("kid", 358, 196, "front"); RP.actor("kid").act = "sit";
@@ -213,11 +218,11 @@ RP.room({
     { id: "a4_emptyseat", name: "empty seat", r: [146, 100, 64, 100], z: 40, walk: [178, 232, "back"], vis: S => !S.f.a4_kosmoBag,
       look: "An empty seat next to Kosmo. A luxury seat, without a person. It's bigger than my first apartment.", use: "Not mine. Kosmo bought it. I'd need to ask him.", pickup: "You can't pick up a seat. Not even a very nice one." },
     { id: "a4_bagseat", name: "my record bag", r: [163, 156, 36, 30], z: 66, vis: S => !!S.f.a4_kosmoBag, walk: [178, 232, "back"], look: "My record bag, buckled into Kosmo's spare seat like a VIP. It's got its own seatbelt.", pickup: "Not yet. It's settled in. It'll be mine when we land.", use: "Leave it be. It's asleep." },
-    { id: "a4_myseat", name: "seat 23A", r: [326, 100, 64, 100], z: 40, walk: [358, 232, "back"], look: "23A. A window seat. My knees are about to have a very personal relationship with the seat in front.",
+    { id: "a4_myseat", name: "seat 23A", r: [326, 100, 64, 100], z: 40, walk: [358, 232, "back"], look: "23A. A window seat. My knees are about to have a very personal relationship with the seat in front. Once I sit, the doors close and the plane goes.",
       use: S => takeSeat(S), open: S => takeSeat(S), pickup: "It's an airplane seat. They're attached to the plane. And the plane is attached to the sky." },
     { id: "a4_bin", name: "overhead bin", r: [270, 8, 180, 50], z: 20, walk: [358, 232, "back"], look: "The overhead bin above 23A. Stuffed with duty-free bags, a guitar, a pillow and someone's emotional baggage. It will not take my bag.", open: "Full. It opens, takes one look at me and slams shut.", pickup: "It's the bin. I'm not carrying the bin.", push: "It's wedged. It'd take a crowbar and a sense of shame." },
     { id: "a4_windows", name: "windows", rects: [[72, 74, 32, 42], [162, 74, 32, 42], [252, 74, 32, 42], [342, 74, 32, 42], [432, 74, 32, 42], [522, 74, 32, 42]], z: 20, walk: [358, 232, "back"], look: S => S.f.a4_flown ? "Oval windows full of night. And on the right, a wing, blinking red, like it knows something." : "Oval windows: tarmac, a morning sky, a man waving two orange sticks. On the right, a wing. It's blinking red, like it knows something.", open: "It doesn't open. In an hour, that will be a relief." },
-    { id: "a4_cart", name: "service cart", r: [560, 190, 62, 64], z: 60, walk: [540, 238, "right"], look: "The drinks cart. Tiny bottles, tiny dreams, a steel tray of hot towels and a tomato juice with a celery stick standing in it like a flag. Marguerite pushes it like it owes her money.", use: S => cartAsk(S), talk: S => cartAsk(S),  pickup: "It's the airline's. And I don't want those pretzels that badly." },
+    { id: "a4_cart", name: "service cart", r: [560, 190, 62, 64], z: 60, walk: [540, 238, "right"], look: "The drinks cart. Tiny bottles, tiny dreams, a steel tray of rolled towels and a tomato juice with a celery stick standing in it like a flag. Marguerite pushes it like it owes her money.", use: S => cartAsk(S), talk: S => cartAsk(S),  pickup: "It's the airline's. And I don't want those pretzels that badly." },
     { id: "a4_door", name: "exit door", r: [4, 62, 46, 156], z: 20, walk: [58, 232, "left"], look: "The cabin door. Through it, the jet bridge. Behind me, New York. Ahead of me, a bag with a seatbelt.", exit: "No going back. Not until Berlin. Possibly not even then." },
     { id: "a4_floor", name: "aisle", r: [8, 224, 620, 28], z: 5, floor: true, look: "The aisle. A strip of carpet with the dignity of a thousand rolling suitcases." }
   ],

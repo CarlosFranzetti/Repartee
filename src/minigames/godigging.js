@@ -332,9 +332,10 @@ RP.mg.register("goDigging", {
       S.prev = { loop, copy: c, t0: performance.now(), lastCrack: performance.now(), len: 9 };
       if (S.mode === "flip") setMode("inspect");
       if (S.previews > 5 && S.previews % 3 === 0) quip("tooMany"); else if (c.warped) quip("warp"); else quip("preview");
-      if (want && want.vibe) {
-        const rn = DK.rolesOf(c.rec).map(r => DK.ROLES[r].name), fits = (c.rec.vibe || []).includes(want.vibe), W = String(want.vibe).toUpperCase();
-        msg.textContent = "You hear it: " + (rn.join(" / ") || "no clear role") + ". " + (fits ? "That's the " + W + " on your list." : "Not the " + W + " on your list.");
+      {
+        const rn = DK.rolesOf(c.rec).map(r => DK.ROLES[r].name);
+        msg.textContent = "You hear it: " + (rn.join(" / ") || "no clear role") + ".";
+        if (want && want.vibe) { const fits = (c.rec.vibe || []).includes(want.vibe), W = String(want.vibe).toUpperCase(); msg.textContent += " " + (fits ? "That's the " + W + " on your list." : "Not the " + W + " on your list."); }
       }
       render();
     }
@@ -456,13 +457,13 @@ RP.mg.register("goDigging", {
       const step = h.step, floorP = Math.max(step, Math.ceil(c.base * c.floorFrac / step - 1e-9) * step);
       if (floorP >= c.base - 1e-9) { h.msg = "No discount on that one."; say("Sticker's the sticker on this one. Take it or flip."); c.haggled = true; S.hag = null; RP.sfx("error"); render(); return; }
       if (h.offer >= c.base - 1e-9) { S.hag = null; render(); return; }
-      if (h.offer >= floorP - 1e-9) { c.deal = h.offer; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); return; }
+      if (h.offer >= floorP - 1e-9) { c.deal = h.offer; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); buy(); return; }   // a deal is a sale: no second BUY click
       if (h.offer >= floorP - step * 1.01 || h.offer >= floorP * 0.88) { h.counter = floorP; h.msg = "He counters at " + money(floorP) + "."; RP.sfx("click"); say(DK.pick(RAY_QUIPS.counter) + " " + money(floorP) + "."); render(); return; }
       S.patience--; RP.sfx("error");
       if (S.patience <= 0) { S.hag = null; c.haggled = true; quip("noPatience"); } else { h.msg = DK.pick(RAY_QUIPS.insult); say(h.msg); }
       render();
     }
-    function takeCounter() { const h = S.hag, c = cur(); if (!h || !c || h.counter == null) return; c.deal = h.counter; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); }
+    function takeCounter() { const h = S.hag, c = cur(); if (!h || !c || h.counter == null) return; c.deal = h.counter; c.haggled = true; S.hag = null; RP.sfx("coin"); quip("accept"); render(); buy(); }
 
     /* ------------------------------------------------ buy */
     /* why this copy might not count for the list. Genre, price and condition are visible; the role is only known after LISTEN. */
@@ -471,7 +472,7 @@ RP.mg.register("goDigging", {
       const rec = c.rec, out = [];
       if (want.id && rec.id !== want.id) out.push({ k: "id", t: "You came for " + DK.wantText({ id: want.id }, recOf(want.id)) + ". This isn't it." });
       if (want.genre && !DK.matchWant(rec, { genre: want.genre }, null)) out.push({ k: "genre", t: "It's " + rec.genre + ". You want " + want.genre + "." });
-      if (want.maxPrice != null && pr > want.maxPrice + 1e-9) out.push({ k: "price", t: "It costs " + money(pr) + ". The list says under " + money(want.maxPrice) + "." });
+      if (want.maxPrice != null && pr > want.maxPrice + 1e-9) out.push({ k: "price", t: "It costs " + money(pr) + ". The list says " + money(want.maxPrice) + " or less." });
       if (c.cond.id === "beat") out.push({ k: "cond", t: "It's BEAT. A trashed copy doesn't count for the list." });
       if (want.vibe) {
         const W = String(want.vibe).toUpperCase();

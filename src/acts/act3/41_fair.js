@@ -93,7 +93,12 @@ async function mortTalk(S) {
   await RP.say("Mmph.", "a3_mort");
   await RP.say("Ray sent me.", "kid");
   await RP.say("Ray sends everybody. Ray sends people to the DMV. You got anything for me, or are you here to look sad?", "a3_mort");
-  if (!RP.has("a3_coffee")) { await RP.lines(["I... have a charming smile?", "@a3_mort Smile's free. Everybody has one. Come back with something worth the walk.", "He's not a talker. He's a grunter. Ray said to bring something. A coffee, maybe?"]); return; }
+  if (!RP.has("a3_coffee")) { await RP.lines(["I... have a charming smile?", "@a3_mort Smile's free. Everybody has one. Come back with something worth the walk.", "He's not a talker. He's a grunter. Ray said to bring something. A coffee, maybe?"]); 
+    if ((S.f.a3_sold || 0) < 2 && S.money < 200) {
+      await RP.lines(["@a3_mort ...Light in the wallet, by the look of the bag. I buy records. Sixty cents on the dollar, no haggling, no feelings."]);
+      if ((await RP.choose(["Mort, are you buying? I could part with a record.", "No, thanks"])) === 0) await sellToMort(S);
+    }
+    return; }
   await mortCoffee(S);
 }
 const NO_SELL = ["sylvester_you_make_me_feel_mighty_real", "white_nyc93", "everything_but_the_girl_missing", "loose_joints_is_it_all_over_my_face", "mood_ii_swing_closer"];
@@ -110,7 +115,11 @@ async function sellToMort(S) {
 }
 async function mortCoffee(S) {
   RP.take("a3_coffee");
-  await RP.lines(["Here. A coffee. It's from the PTA table.", "@a3_mort ...Black?", "It's black. Like my future.", "@a3_mort *sips* ...Terrible. Thank you. Sit down, you look nervous.",
+  const kind = S.f.a3_coffeeKind || 0;
+  await RP.lines(["Here. A coffee. It's from the PTA table."].concat(kind === 1 ? ["@a3_mort ...Cream?", "She said it was a day for cream.", "@a3_mort *sips* ...Soft. Terrible. Thank you. Sit down, you look nervous."]
+    : kind === 2 ? ["@a3_mort What's in it?", "A surprise. Cinnamon, probably.", "@a3_mort *sips* ...Probably. Terrible. Thank you. Sit down, you look nervous."]
+    : ["@a3_mort ...Black?", "It's black. Like my future.", "@a3_mort *sips* ...Terrible. Thank you. Sit down, you look nervous."]));
+  await RP.lines([
     "@a3_mort Pruitt. Hal Pruitt. Sixty years of records in a house in Woodside. He had a clean West End copy of that one. Wouldn't sell. Said it was 'for company.'",
     "@a3_mort He passed in March. The niece is emptying the house this week. Whole collection. Everything. She just wants it gone.",
     "@a3_mort Priya's been bugging me for the address for a week. I told her I don't know it. I lied. Go. Quickly.",
@@ -140,10 +149,12 @@ async function buyCoffee(S) {
   if (RP.has("a3_coffee")) { await RP.say("I already have one. Two coffees means I've made a bad decision."); return; }
   await RP.say("A coffee, please.", "kid");
   await RP.say("Five dollars, hon. It's for the gym floor. Black, cream or 'surprise'?", "a3_pta");
+  const i = await RP.choose(["Black", "Cream", "Surprise me", "Never mind"]);
+  if (i === 3) return;
   if (!RP.canAfford(5)) { await RP.say("I'm broke. Even PTA coffee wants five dollars."); return; }
-  RP.money(-5); RP.give("a3_coffee");
-  await RP.say("Black. A strong coffee. For a strong... customer.");
-  await RP.say("Don't flatter me, you'll get a bigger lemon bar.", "a3_pta");
+  RP.money(-5); RP.give("a3_coffee"); S.f.a3_coffeeKind = i;
+  await RP.say(["Black. A strong coffee. For a strong... customer.", "Cream. A coffee for a man who has made peace.", "'Surprise.' She adds something from a jar marked 'cinnamon, probably.'"][i]);
+  await RP.say(i === 0 ? "Don't flatter me, you'll get a bigger lemon bar." : "Careful, hon. Mort's particular.", "a3_pta");
 }
 RP.item("a3_coffee", { name: "PTA coffee", short: "Coffee", icon: c => { U.R(c, 10, 8, 12, 13, "#efeaf6"); U.R(c, 10, 8, 12, 2, "#ffffff"); U.R(c, 11, 10, 10, 3, "#4a2a1a"); U.R(c, 22, 11, 4, 6, "#efeaf6"); U.R(c, 12, 4, 1, 3, "#c8c4d8"); U.R(c, 16, 3, 1, 4, "#c8c4d8"); },
   look: "A paper cup of PTA coffee. Strong, terrible, and the last thing standing between me and Mort's 'mmph.'", use: "I'd drink it, but I need it for Mort." });
@@ -175,7 +186,7 @@ RP.room({
     { crowd: { n: 4, rect: [90, 208, 470, 12], seed: 41, face: "back", act: "stand", scale: 0.95 } }
   ],
   enter: async (S, from) => {
-    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; A3.clockTo(S, "SUN 10:00 AM"); await RP.lines(["The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "The kid on the three-dollar cash box sees my record bag, decides I'm a vendor and waves me in. I don't correct him.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
+    if (!S.f.a3_fairSeen) { S.f.a3_fairSeen = true; A3.clockTo(S, "SUN 10:00 AM"); await RP.lines(["The record fair only runs on Sundays, so the weekend goes by waiting for it. Sunday, ten AM.", "The Sunday record fair. A school gym, folding tables, and about two hundred people who have strong feelings about pressings.", "The kid on the three-dollar cash box sees my record bag, decides I'm a vendor and waves me in. I don't correct him.", "It smells like old cardboard and bad coffee. It's the best smell on earth."]); }
   },
   hotspots: [
     { id: "a3_f_door", name: "door", r: [4, 38, 54, 114], z: 20, walk: [66, 214, "left"], look: "The gym door. A hand-lettered sign says 'RECORD FAIR: $3, CASH ONLY.' A second sign says 'NO RUNNING.' Nobody's running. Everyone's walking quickly. The cash-box kid thinks I'm a vendor. The bag gets me in everywhere.", exit: S => "travel" },

@@ -84,7 +84,7 @@ const WALK3 = [
   ["talk", "hot:a3_mort"],                                          // no coffee: grunts
   ["talk", "hot:a3_priya"], ["talk", "hot:a3_dj_danny_krivit"], ["talk", "hot:a3_vendor"],
   ["look", "hot:a3_f_cork"], ["pickup", "hot:a3_f_cork"],
-  ["talk", "hot:a3_pta"],
+  ans([0]), ["talk", "hot:a3_pta"],                                  // black coffee
   ["expect", "RP.has('a3_coffee') && S.f.a3_clue3 && RP.has('a3_flyer')", "coffee bought, flyer in the pocket"],
   ["give", "hot:a3_mort", "a3_coffee"],
   ["expect", "S.f.a3_clue2 && S.f.a3_hunt && S.f.a3_knowHal && S.unlocked.includes('a3_loc_estate')", "the three clues add up: the Pruitt house"],
@@ -111,7 +111,7 @@ const WALK3 = [
   ["expect", "S.room === 'a3_apartment'", "home"],
   ["use", "hot:a3_bed"],                                            // promo still missing
   ["expect", "!S.f.a3_thu3", "bed refuses: promo missing"],
-  ans([1]), ["use", "hot:a3_laptop"],                                // the posting week: a clip a day
+  ans([0, 1]), ["use", "hot:a3_laptop"],                                // the posting week: a clip a day
   ["expect", "S.f.a3_promo && S.followers >= 600", "promo week done"],
   ["use", "hot:a3_bed"],
   ["expect", "S.f.a3_thu3 && S.msgs.length >= 4", "Thursday again: anniversary night"],
@@ -137,7 +137,7 @@ const WALK3 = [
   ["use", "hot:a3_h_stage"],
   mg({ ok: true, score: 80, played: [] }), ["use", "hot:a3_b_cdjs"],       // crowd.Read: the room Kosmo warmed up
   ["expect", "S.f.a3_kosmoDone", "followed Kosmo Delacroix"],
-  ans([0, 0, 2]), ["use", "hot:a3_b_cdjs"],                         // opener, closer -> set -> Saturday -> platform (ask the man with the oranges) -> home -> ending
+  ans([0, 0, 0, 2]), ["use", "hot:a3_b_cdjs"],                      // opener, closer, the grail at the peak -> set -> Saturday -> platform (ask the man with the oranges) -> home -> ending
   ["expect", "S.f.a3_setDone && S.f.a3_saturday && S.gear.monitors === 'dynaudio_bm5_mkiii'", "anniversary set, Saturday, Dynaudios"],
   ["expect", "S.f.a3_train && S.f.a3_email", "home on the last train, the email arrived"],
   ["expect", "S.done.includes(3)", "act 3 complete"]
@@ -171,7 +171,7 @@ RP.walkthroughs.act3alt = [
   ["travel", "a3_loc_deepcuts"],
   ans(["something for me", "Later"]), ["talk", "hot:a3_ray"],
   ["travel", "a3_loc_fair"],
-  ["talk", "hot:a3_pta"],
+  ans([1]), ["talk", "hot:a3_pta"],                                  // cream
   ["look", "hot:a3_f_cork"],
   ["give", "hot:a3_mort", "a3_coffee"],
   ["expect", "S.f.a3_hunt && S.f.a3_knowHal && !RP.has('a3_flyer')", "hunt solved; no flyer taken"],
@@ -188,7 +188,7 @@ RP.walkthroughs.act3alt = [
   ["pickup", "hot:a3_e_platter"], ["pickup", "hot:a3_e_tt"],
   ["expect", "S.f.a3_estateDone", "estate done"],
   ["travel", "a3_loc_apartment"],
-  ans([2]), ["use", "hot:a3_laptop"],                               // tag every bar: a $40 fine
+  ans([0, 2]), ["use", "hot:a3_laptop"],                               // tag every bar: a $40 fine
   ["expect", "S.f.a3_promo && S.f.a3_fines === 40", "tags cost a fine"],
   ["use", "hot:a3_bed"],
   ["expect", "S.f.a3_thu3", "Thursday"],
@@ -211,7 +211,7 @@ RP.walkthroughs.act3alt = [
   ["use", "hot:a3_h_stage"],
   mg({ ok: true, score: 80, played: [] }), ["use", "hot:a3_b_cdjs"],
   ["expect", "S.f.a3_kosmoDone", "followed Kosmo"],
-  ans([0, 0, 0]), ["use", "hot:a3_b_cdjs"],                         // opener, closer, jump the turnstile
+  ans([0, 0, 1, 0]), ["use", "hot:a3_b_cdjs"],                      // opener, closer, the grail last, jump the turnstile
   ["expect", "S.f.a3_setDone && S.f.a3_saturday && S.f.a3_train && S.f.a3_ticket !== undefined", "set, Saturday, a ticket on the way home"],
   ["expect", "S.f.a3_email && S.done.includes(3)", "act 3 complete"]
 ];

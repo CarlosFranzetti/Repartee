@@ -124,6 +124,7 @@ async function overrun(S) {
     "@a5_roz Mo's got your rig patched in and a loop holding the room. Go up the stairs, to the booth. It's yours.",
     "@a5_roz And headliner? ...Don't peak early."
   ]);
+  await RP.lines(["Changeover is not a snap of the fingers. Mo patches the rig, the crew strikes Axl's backline, and the field waits in the dark.", "Axl's last bow was 11:52. By the time the stage is mine, it's half past midnight."]);
   S.f.a5_phase = 3; RP.setClock("SUN 12:30 AM");
   RP.text("MARGO (MGR)", "Axl's off. You're on. Whatever happens, I'm proud, and I've invoiced.", true);
 }

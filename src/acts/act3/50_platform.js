@@ -60,21 +60,26 @@ function update(dt, S, t) {
   }
 }
 
+RP.item("a3_orange", { name: "orange", short: "Orange", icon: c => { ell(c, 16, 17, 9, 9, "#e8802a"); ell(c, 14, 14, 3, 3, "#ffb060"); R(c, 15, 6, 3, 3, "#4a8a2a"); },
+  look: "An orange, the price of a swipe. It is, to be fair, the best-value fare in the system.", use: "I'll eat it on the train. A fare, then a snack." });
+
 async function runTrain(S) {
-  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard.", "Two minutes ago a girl in a hoodie got a swipe out of him, and he took payment in a segment. Rico was right. The J has a guy."]);
+  await RP.lines(["The board says the J is eleven minutes out, which is what it said five minutes ago. If I miss this one, the next is a rumor.", "A man down the platform is eating an orange out of a paper bag, one segment at a time, the way you eat when you have nowhere to be. He has the look of someone with a MetroCard.", "Two minutes ago a girl in a hoodie got a swipe out of him, and he took payment in a segment. Marcus did say it: the J has a guy."]);
   const i = await RP.choose(["Jump the turnstile with a bag of records on my shoulder", "Order a car on my phone", "Ask the man with the oranges for a swipe"]);
-  if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); }
+  if (i === 2) { await RP.lines(["Excuse me. I'm sorry. I have no card, the cash is the rent, and the phone's at three percent. Could you possibly-", "@nar He swipes me through before I finish the sentence. 'Pay it forward,' he says. 'In oranges.'", "He hands me an orange. I have never been more grateful for a piece of fruit."]); RP.give("a3_orange"); }
   else if (i === 0) {
     const fine = Math.min(S.money, 50);
     await RP.lines(["I get one leg over. The bag, forty pounds of vinyl, does not. A transit cop at the far end of the platform lifts one eyebrow, then walks the whole platform to make a point of it.",
       fine ? "@nar 'Fifty dollars or a summons, your call.' I pay " + U.fmtMoney(fine) + ", which is the rent's first bite, and he writes the receipt in the tiniest handwriting." : "@nar 'Fifty dollars or a summons.' I turn out my pockets. There is nothing in them but lint and three percent. He sighs and writes 'warning' in the box.",
       "The man with the oranges has watched all of it. He walks over, swipes me through, and says nothing. Then, 'In oranges.'", "I take the orange."]);
+    RP.give("a3_orange");
     if (fine) { RP.money(-fine); S.f.a3_ticket = fine; }
   } else {
     const fee = Math.min(S.money, 6);
     await RP.lines(["The app takes forty seconds to open. It quotes $61 for Bushwick at this hour. At the word 'confirm,' the phone gives up and goes black.", "Three percent was optimistic. " + (fee ? "The app has already charged me " + U.fmtMoney(fee) + " for the privilege of failing to confirm." : "It would have charged me for the privilege, if I'd had it."),
       "The J pulls in, opens its doors, shuts them, and leaves while I'm shaking the phone. The next is a rumor. Seventeen minutes, a bench, and a sleeping man's snore like a bad subwoofer.",
       "The man with the oranges walks over, swipes me through for the next one, and says nothing. Then, 'In oranges.'", "I take the orange."]);
+    RP.give("a3_orange");
     if (fee) RP.money(-fee);
     S.f.a3_missedJ = true;
   }
@@ -88,7 +93,7 @@ async function runTrain(S) {
   await RP.fadeTo(1, 1200);
   trainState = 0; doorsOpen = false;
   await RP.goto("a3_apartment", 560, 232, "left");
-  await RP.fadeTo(0, 600);
+  if (!S.f.a3_end) await RP.fadeTo(0, 600);   // the end scene (inside that goto) has already lifted the fade, run the level card and started the next act
   return true;
 }
 A3.runTrain = runTrain;

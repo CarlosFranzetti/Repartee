@@ -86,6 +86,11 @@ async function riderHand(S, only) {
   if (!any && only) await RP.say("She already has that. A second water is not a second chance.");
   return any;
 }
+async function giveKatjaMate(S) {
+  if (!RP.has("a4_mate")) return;
+  RP.take("a4_mate"); S.f.a4_mateGiven = true; RP.money(10);
+  await RP.lines(["@a4_katja A Club-Mate. Nobody brings the clipboard a drink.", "@a4_katja (she drinks a third of it standing, eyes on the floor) Not on the rider. Not on the spreadsheet. I'll make a column.", "(She peels a ten from the till and puts it in my hand without looking. \"Mate costs two. I round up.\")"]);
+}
 async function katjaTalk(S) {
   if (S.f.a4_setDone) { await RP.lines(["@a4_katja You played. They stayed. That's all I ask.", "@a4_katja Come back next year. Maybe sooner. I'll pretend I never said that."]); return; }
   S.f.a4_katjaTalked = true;
@@ -186,7 +191,7 @@ RP.room({
       talk: S => S.f.a4_setDone ? "He nods once, eyes on the room. That's the whole conversation. I'm okay with it." : RP.lines(["I'm a big fan. I... really...", "(He glances over, nods once, and goes back to the decks.)", "That counts as a full conversation. I'm putting it on my résumé."]),
       give: "He's mid-set. Nobody hands a DJ a record mid-set. Unless it's love.", pickup: "I'd like to keep my arms. And his headphones.", push: "No. Never push a DJ mid-set." },
     { id: "a4_katja", name: "Katja", look: "Katja, who runs the room. Black jacket, ponytail, a clipboard and a headset she doesn't use. She looks at me like she's computing a very small, very exact number.",
-      talk: S => katjaTalk(S), give: (S, item) => S.f.a4_setDone ? "The set's done. She doesn't take things. She hands them out." : ["a4_water", "a4_towel", "a4_veg", "a4_pickle"].includes(item) ? riderHand(S, item) : "She doesn't take things. She hands them out.", pickup: "She'd have me escorted out. By Sven.", push: "I'd rather push my luck. And I'm about to." },
+      talk: S => katjaTalk(S), give: (S, item) => item === "a4_mate" ? giveKatjaMate(S) : S.f.a4_setDone ? "The set's done. She doesn't take things. She hands them out." : ["a4_water", "a4_towel", "a4_veg", "a4_pickle"].includes(item) ? riderHand(S, item) : "She doesn't take things. She hands them out.", pickup: "She'd have me escorted out. By Sven.", push: "I'd rather push my luck. And I'm about to." },
     { id: "a4_booth", name: "DJ booth", r: [183, 94, 274, 92], z: 40, walk: [330, 218, "back"],
       look: "A raised booth: two Pioneer DJ CDJ-3000s and a four-channel mixer, a Technics for the vinyl people. A red scrim says H9. I'm about to stand behind that.",
       use: S => startSet(S), open: S => startSet(S), push: "I'd rather push a button than the booth.", pickup: "It's bolted to the concrete. Or the concrete's bolted to it." },

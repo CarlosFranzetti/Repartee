@@ -183,6 +183,7 @@ async function twinkieTalk(S) {
       await RP.lines([
         "@twinkie Axl Vanta? Born Alexander Vantuono. Staten Island. He has a rider with six pages and one actual need: a green smoothie.",
         "@twinkie His mother's here tonight. Front row. She has a banner: \"MY ALEX.\" He's terrified of her.",
+        "@twinkie So if he ever digs in about the slot, don't argue with Axl. Call him Alex and mention the banner. I have never seen it fail. I have seen it once.",
         "@twinkie Don't ask me how I know. I know everyone. I even know the guy who knows."
       ]);
     } },

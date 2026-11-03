@@ -7,6 +7,7 @@
      { slot: "turntables"|"decks"|"mixer"|"monitors"|"headphones",   default "turntables" ("mixer" for the boutique)
        options: [gearIds]        listings (the same id twice = two units from two sellers); default per slot
        seller: "Eddie Two-Times" | any name | "boutique"   ("boutique" = act-5 showroom: no scams, a waitlist instead of a haggle)
+       wallet: $ your real cash (default: the game's money); when it differs from budget the header reads "BUDGET (of your $wallet)"
        budget: $ cash in hand    default: enough for the best working unit only if you haggle
        scams: n                  how many listings are lemons (default by difficulty, always leaves >= 1 good unit)
        flaws: [...]              scripted scenario: one flaw key per listing ("ok" | "cosmetic" | a lemon flaw). Prices are then
@@ -334,7 +335,10 @@ RP.mg.register("buyGear", {
     root.removeChild(wrap); // header must be first
     const head = host.header("buy.Gear", boutique ? "Boutique · by appointment" : sc.seller + (/s$/i.test(sc.seller) ? "'" : "'s") + " van");
     head.classList.add("bg-head");
-    const cashEl = el("span", { cls: "bg-cash", html: "<small>CASH</small>" + money(sc.budget) }, head);
+    /* CASH is what you really carry; if the story caps what you can spend here, say so ("BUDGET $x of your $y") */
+    const wallet = p.wallet != null ? +p.wallet : (!p.arcade && host.S && typeof host.S.money === "number" ? host.S.money : null);
+    const cashHtml = () => wallet != null && Math.round(wallet) !== Math.round(sc.budget) ? "<small>BUDGET (of your " + money(wallet) + ")</small>" + money(sc.budget) : wallet != null ? "<small>CASH</small>" + money(sc.budget) : "<small>BUDGET</small>" + money(sc.budget);
+    const cashEl = el("span", { cls: "bg-cash", html: cashHtml() }, head);
     const leave = el("button", { cls: "btn bg-leave", type: "button", text: "LEAVE" }, head);
     root.appendChild(wrap);
 
@@ -555,7 +559,7 @@ RP.mg.register("buyGear", {
       btnBuy.textContent = st.buying ? "SURE? " + money(price) : sc.budget < price ? "NEED " + money(price - sc.budget) + " MORE" : "BUY " + money(price);
       btnBuy.classList.toggle("confirm", st.buying);
       btnBuy.disabled = !open || sc.budget < price;
-      cashEl.innerHTML = "<small>CASH</small>" + money(sc.budget);
+      cashEl.innerHTML = cashHtml();
     }
     buildDeal();
 
@@ -566,7 +570,12 @@ RP.mg.register("buyGear", {
       // an honest flaw you noticed is leverage
       if (l.cosmetic && l.probes.look && !l.cosLev) { l.cosLev = true; l.floor = r5(l.floor * 0.93); l.askNow = Math.min(l.askNow, r5(l.ask0 * 0.93)); speak("Fine, fine, the cover's gone. I'll knock a little off.", "worried"); RP.sfx("coin"); refreshCards(); refreshDeal(); return; }
       if (offer >= l.askNow) { l.agreed = l.askNow; speak("Sold! A two-time deal. Hand it over.", "happy"); RP.sfx("coin"); }
-      else if (offer >= l.floor) { l.agreed = offer; speak(pickR(["Alright, alright. " + money(offer) + ". A two-time deal.", "You're killing me. Fine. " + money(offer) + ".", "Ugh. " + money(offer) + ". Don't tell my mother."]), "happy"); RP.sfx("coin"); }
+      else if (offer >= l.floor && !l.pushed && offer < l.askNow * 0.93) {
+        /* a seller never takes the first big cut: he comes down part of the way and makes you say it again */
+        l.pushed = true; const mid = Math.max(offer, r5((offer + l.askNow) / 2)); l.askNow = Math.min(l.askNow, mid);
+        speak(pickR(["Whoa, whoa. " + money(offer) + "? Let's say " + money(l.askNow) + " and nobody cries.", "Nobody pays that. " + money(l.askNow) + ". That's already a favor."]), "worried"); RP.sfx("click");
+      }
+      else if (offer >= l.floor) { l.agreed = Math.min(offer, l.askNow); speak(pickR(["Alright, alright. " + money(offer) + ". A two-time deal.", "You're killing me. Fine. " + money(offer) + ".", "Ugh. " + money(offer) + ". Don't tell my mother."]), "happy"); RP.sfx("coin"); }
       else {
         const r = offer / l.floor, twice = l.lastOffer != null && Math.abs(l.lastOffer - offer) <= 1;
         l.patience -= r < 0.6 ? 2 : r < 0.85 ? 1 : 0;

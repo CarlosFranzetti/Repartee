@@ -206,7 +206,7 @@ async function spaetiShop(S) {
     S.f.a4_kemalRider = true;
     await RP.lines(["@a4_kemal Water, a vegetable, a towel. Katja's rider, yes? Everybody who plays the Halle comes to me in a panic at one a.m.", "@a4_kemal The last American brought a pickle. Katja held it up like a verdict. Don't be the pickle."]);
   }
-  const i = await RP.choose(["Bottle of water ($2)", "Carrot ($1.50)", "Dish towel ($4)", "Club-Mate ($2)", "Never mind"]);
+  const i = await RP.choose(["Bottle of water ($2)", "Carrot ($1.50)", "Towel ($4)", "Club-Mate ($2)", "Never mind"]);
   if (i === 4) return;
   const price = [2, 1.5, 4, 2][i];
   if (i === 0 && (RP.has("a4_water") || S.f.a4_rWater)) { await RP.say("I already have water. Kemal looks relieved on behalf of his stock."); return; }

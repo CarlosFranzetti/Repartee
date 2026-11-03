@@ -457,7 +457,7 @@ DK.wantText = (want, rec) => {
   if (want.id) { const r = rec || RP.rec(want.id); bits.push(r.artist + " – " + r.title); }
   if (want.vibe) bits.push("a " + String(want.vibe).toUpperCase());
   if (want.genre) bits.push(want.genre);
-  if (want.maxPrice != null) bits.push("under " + DK.money(want.maxPrice));
+  if (want.maxPrice != null) bits.push(DK.money(want.maxPrice) + " or less");
   return bits.length ? (want.id ? "" : "WANT: ") + bits.join(", ") : "Find something good.";
 };
 /* the four set roles a record can carry (rec.vibe), in plain words. Same names and colours as the tags in crowd.Read. */

@@ -113,8 +113,11 @@ async function sleepNow(S) {
   await RP.say("Thursday. Anniversary night.", "nar");
   RP.text("ODESSA", "Six months tonight. Kosmo's in. Doors 9. Do NOT be late. Do NOT make me regret the napkin.");
   RP.text("MARCUS", "plus 3 right??? it's your ANNIVERSARY");
+  RP.text("TWINKIE", "Brandon bought a blue USB at the bodega at 4. Took the label off. Same shade as yours, honey. He is a hugger: the pat is twice, on the jacket pocket. If I had a stick I couldn't lose, I'd keep it out of a hugger's reach. Or give him something else to take. Or put his own gold smiley on it. Advice is $4 a minute. Tonight it's free.", true);
+  S.f.a3_twinkie3 = true;
   await RP.fadeTo(0, 900);
-  await RP.lines(["Six months. Half a year of Thursdays.", "Bag. USB. Don't forget the USB. Lou will never let me live it down."]);
+  await RP.lines(["Six months. Half a year of Thursdays.", "A fourth text, from a number I never saved. Twinkie. Brandon, a blue USB, and a hug with a pat in it.",
+    "Bag. USB. Don't forget the USB. Lou will never let me live it down.", "The cat stick is in the drawer. Brandon's gold smiley stickers are on everything he owns. And Brandon is a man who hugs at the door."]);
 }
 
 async function pickBag(S) {
@@ -142,6 +145,7 @@ async function loulines(S) {
 async function endScene(S) {
   S.f.a3_end = true;
   RP.setClock("FRI 3:00 AM");
+  await RP.fadeTo(0, 500);   // the train scene faded to black; lift it before the end scene talks
   RP.actor("kid").face = "front";
   await RP.lines([
     "@nar Friday, 3:00 AM.",
@@ -208,7 +212,10 @@ RP.room({
       use: async S => {
         if (!S.f.a3_opener) return "No time to edit. Records in the bag, USB in my pocket. That's the whole plan.";
         if (S.f.a3_promo) return "I've posted enough this week. The algorithm needs a break from me.";
-        await RP.say("Time to be a person on the internet. A week of posting, practicing and digging. How do I split it?");
+        if (!S.f.a3_estateDone) { await RP.say("The posting week eats the rest of the week: Wednesday night, gone. The fair is on Sunday and the estate sale ends this week. Do the digging first."); return; }
+        await RP.say("The week is almost over. If I start posting now I won't look up until Wednesday night, and everything else on the napkin has to be done already.");
+        if ((await RP.choose(["Start the posting week", "Not yet"])) === 1) return;
+        await RP.say("A week of posting, practicing and hoping. How do I split it?");
         const wk = await RP.choose(["One proper mix, posted properly, and answer every comment", "Ten-second clips from the booth, one a day, no talking", "Tag every bar and promoter on the Lower East Side"]);
         await RP.fadeTo(1, 500);
         await RP.say("One week of posting later.", "nar");

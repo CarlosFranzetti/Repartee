@@ -113,6 +113,7 @@ async function rozTalk(S) {
   if (!S.f.a5_rozMet) {
     S.f.a5_rozMet = true;
     if (!S.f.a5_soundDone && !S.f.a5_axlDone) RP.setClock("SAT 3:40 PM");
+    if (!S.f.a5_soundDone && !S.f.a5_axlDone) await RP.lines(["(The fence, the Sharpie hunt and a long walk across the lawn have eaten the afternoon. It's 3:40.)"]);
     await RP.lines([
       "@a5_roz You're the headliner. Roz. Stage manager. I run everything that isn't on fire. Don't make me add fire.",
       "@a5_roz Soundcheck's the main stage booth. Wings are east, past the steps. Mo's on the desk. He talks through the talkback. Don't be rude to Mo.",

@@ -186,6 +186,9 @@ A4.sellRecord = async function (S, price) {
   return L[i];
 };
 /* the rider Ingrid wrote into the contract: water, towels, a vegetable that is not a pickle */
+/* the checked-bag fee at the desk (Ingrid warns about it; stuffing the jacket and tote with records takes $25 off) */
+A4.BAGFEE = { business: 40, economy: 75, "economy-direct": 75 };
+A4.bagFee = S => S.f.a4_lightBag && S.f.a4_cls === "business" ? 0 : Math.max(0, (A4.BAGFEE[S.f.a4_cls] || 95) - (S.f.a4_lightBag ? 25 : 0));   /* a thin deal (no class named) pays the walk-up rate */
 A4.riderHave = S => ["a4_rWater", "a4_rTowel", "a4_rVeg"].filter(k => S.f[k]).length;
 
 /* ------------------------------------------------------------------ the act */
@@ -197,7 +200,7 @@ RP.defineAct({
     Object.keys(S.f).forEach(k => { if (k.indexOf("a4_") === 0) delete S.f[k]; });
     S.f.noTravel = false; S.f.time = "dusk";
     if (!carry) {
-      S.money = 150; S.followers = 2500;
+      S.money = 80; S.followers = 2500;
       S.records = A4.BASE_RECORDS.slice();
       S.gear = { decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk2", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" };
     } else {
@@ -206,7 +209,7 @@ RP.defineAct({
       S.followers = Math.max(S.followers || 0, 2500);
       S.gear = Object.assign({ decks: "pioneer_cdj_900", turntables: "technics_sl_1210mk2", mixer: "pioneer_djm_350", monitors: "dynaudio_bm5_mkiii" }, S.gear);
     }
-    if (carry) S.money = Math.max(120, Math.min(S.money || 0, 220));      /* tight on purpose: rent, the MK7s and a deposit ate the rest */
+    if (carry) S.money = Math.max(70, Math.min(S.money || 0, 80));        /* tight on purpose: rent, the MK7s and a deposit ate the rest */
     S.inv = ["phone", "a4_white"];
     S.clock = "THU 4:10 PM";
     S.unlocked = ["a4_loc_studio"];
@@ -248,14 +251,14 @@ RP.item("a4_white", { name: "white label \"NYC 93\"", short: "NYC 93",
   use: "It needs a turntable. Luckily I own two good ones now. Still can't believe that sentence." });
 RP.item("a4_rider", { name: "Ingrid's rider", short: "Rider",
   icon: c => { R(c, 7, 3, 18, 22, "#efeaf6"); R(c, 7, 3, 18, 3, "#7ad8f0"); for (let y = 9; y < 22; y += 4) { R(c, 10, y, 3, 2, "#55516a"); R(c, 15, y, 7, 1, "#55516a"); } },
-  look: S => { const st = (f, id, no) => S.f[f] ? "with Katja" : RP.has(id) ? "in my pocket" : no; return "Ingrid's rider, texted. Water: " + st("a4_rWater", "a4_water", "missing") + ". Towels: " + st("a4_rTowel", "a4_towel", "missing") + ". One vegetable, \"NOT a pickle\": " + st("a4_rVeg", "a4_veg", "missing") + ". Katja counts it at Halle Neun, and every miss comes off the fee."; },
+  look: S => { const st = (f, id, no) => S.f[f] ? "with Katja" : RP.has(id) ? "in my pocket" : no; return "Ingrid's rider, texted. To bring: water (" + st("a4_rWater", "a4_water", "still to find") + "), a towel (" + st("a4_rTowel", "a4_towel", "still to find") + "), one vegetable, \"NOT a pickle\" (" + st("a4_rVeg", "a4_veg", "still to find") + "). Anywhere on the way counts: the airport snack machine, the drinks cart, the Späti by the arch in Berlin. Katja counts it at Halle Neun, and every miss comes off the fee."; },
   use: "Katja checks it, not me. I hand over what I've got, and the club does the arithmetic on what I haven't." });
 RP.item("a4_water", { name: "bottle of water", short: "Water",
   icon: c => { R(c, 12, 8, 8, 16, "#9fd8f0"); R(c, 13, 4, 6, 5, "#9fd8f0"); R(c, 14, 2, 4, 3, "#2f62b8"); R(c, 12, 14, 8, 4, "#efeaf6"); R(c, 13, 9, 1, 13, "#d8f4ff"); },
   look: "Still water, in a bottle, for money. In Brooklyn the tap is free and tastes like a pipe. Today I'm cultured.", use: "It's for the rider. If I drink it, Katja gets a lecture instead of a bottle." });
-RP.item("a4_towel", { name: S => S.f.a4_towelKind === "dish" ? "dish towel" : "hot towel", short: "Towel",
+RP.item("a4_towel", { name: "towel", short: "Towel",
   icon: c => { R(c, 6, 10, 20, 12, "#efeaf6"); R(c, 6, 10, 20, 2, "#ffffff"); R(c, 6, 20, 20, 2, "#c8c4d8"); for (let x = 9; x < 24; x += 5) R(c, x, 13, 1, 6, "#d8d4e8"); P(c, 10, 6, "#c8c4d8"); P(c, 16, 5, "#c8c4d8"); P(c, 21, 6, "#c8c4d8"); },
-  look: S => S.f.a4_towelKind === "dish" ? "A Geschirrtuch with a Berlin bear on it, bought from a man in an apron. It's a towel. Katja can argue the rest." : "A rolled towel, already losing its heat. Airlines hand out heat the way banks hand out interest.", use: "Wiping my face with the rider would be a fine way to start a fee dispute." });
+  look: S => S.f.a4_towelKind === "dish" ? "A towel with a Berlin bear on it (a Geschirrtuch, to Germans), bought from a man in an apron. It's a towel. Katja can argue the rest." : "A towel from the airline, rolled, already losing its heat. Airlines hand out heat the way banks hand out interest.", use: "Wiping my face with the rider would be a fine way to start a fee dispute." });
 RP.item("a4_veg", { name: S => S.f.a4_vegKind === "carrot" ? "carrot" : "celery stick", short: S => S.f.a4_vegKind === "carrot" ? "Carrot" : "Celery",
   icon: (c, S) => { if (S.f.a4_vegKind === "carrot") { RP.u.poly(c, [[8, 10], [24, 8], [10, 16]], "#e8822a"); R(c, 22, 6, 4, 2, "#5a9a2a"); P(c, 26, 5, "#5a9a2a"); } else { R(c, 14, 6, 4, 20, "#9be15d"); R(c, 14, 6, 1, 20, "#d8ff9a"); R(c, 12, 3, 2, 4, "#5a9a2a"); R(c, 18, 3, 2, 4, "#5a9a2a"); } },
   iconKey: S => S.f.a4_vegKind === "carrot" ? 1 : 0,
@@ -266,7 +269,7 @@ RP.item("a4_pickle", { name: "pickle in a pouch", short: "Pickle",
   look: "\"Dill Deal\": a sealed pickle, \"100% pickle.\" The rider said NOT a pickle. In capital letters. I read them. I bought it anyway.", use: "It's a pickle. The rider banned the one thing I'm holding. I have a type." });
 RP.item("a4_mate", { name: "Club-Mate", short: "Mate",
   icon: c => { R(c, 12, 6, 8, 18, "#3a5a2a"); R(c, 13, 3, 6, 4, "#3a5a2a"); R(c, 14, 2, 4, 2, "#c8a030"); R(c, 12, 12, 8, 6, "#efe6d0"); R(c, 14, 14, 4, 2, "#c0302c"); R(c, 13, 7, 1, 15, "#6a9a4a"); },
-  look: "Club-Mate, cold, in a brown bottle. Berlin runs on it: three times the caffeine, twice the regret.", use: "Not for me. There's a man at a steel door who's been standing in the rain since the power plant closed." });
+  look: "Club-Mate, cold, in a brown bottle. Berlin runs on it: three times the caffeine, twice the regret.", use: "Not for me. There's a man at a steel door who's been standing in the rain since the power plant closed. And a woman inside with a clipboard who looks like she could use one." });
 
 RP.item("a4_passport", { name: "passport", short: "Passport",
   icon: c => { R(c, 8, 3, 16, 20, "#1d2a5a"); R(c, 8, 3, 16, 1, "#3a4a8a"); R(c, 8, 22, 16, 1, "#0e1630"); ell(c, 16, 11, 4, 4, "#c8a030"); ell(c, 16, 11, 2, 2, "#1d2a5a"); R(c, 11, 18, 10, 1, "#c8a030"); },

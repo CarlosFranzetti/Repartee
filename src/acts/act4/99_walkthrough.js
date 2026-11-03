@@ -8,14 +8,16 @@ const A4 = RP.a4;
 
 const jfk = [
   ["expect", "S.room === 'a4_jfk'", "at JFK"],
-  ["look", "hot:a4_board"], ["look", "hot:a4_cart"], ["use", "hot:a4_vend"], ["look", "hot:a4_pax2"], ["look", "inv:a4_rider"], ["run", async (S, RP) => { RP.test.m0 = S.money; }], ["expect", "S.money <= 220", "a tight start: $150 less the cab to JFK, never more than $220"],                          // (empty answer queue: picks the last option = Never mind)
+  ["look", "hot:a4_board"], ["look", "hot:a4_cart"], ["use", "hot:a4_vend"], ["look", "hot:a4_pax2"], ["look", "inv:a4_rider"], ["run", async (S, RP) => { RP.test.m0 = S.money; }], ["expect", "S.money <= 80", "a tight start: $80 less the cab to JFK, never more"],                          // (empty answer queue: picks the last option = Never mind)
   ["pickup", "hot:a4_forms"], ["expect", "!RP.has('a4_form')", "no form before the airline tells me I'm in trouble"],
   ["use", "hot:a4_door_bag"], ["expect", "S.room === 'a4_jfk'", "Baggage Services is closed to me before check-in"],
   ["give", "hot:a4_dolores", "a4_bag"], ["expect", "!S.f.a4_bagChecked", "passport first"],
   ["give", "hot:a4_dolores", "a4_passport"], ["expect", "RP.has('a4_boarding')", "boarding pass"],
+  ["give", "hot:a4_dolores", "a4_bag"], ["expect", "!S.f.a4_bagChecked && S.money < 75", "the $75 overweight fee is more than the wallet holds: the pinch"],
+  ["answers", [0, 0]], ["talk", "hot:a4_pax2"], ["expect", "S.f.a4_sold === 1 && S.money > 75", "recovery: one house record to the man in the Hawaiian shirt ($40)"],
   ["give", "hot:a4_dolores", "a4_bag"],
   ["expect", "S.f.a4_bagChecked && RP.has('a4_claim') && S.f.a4_msgBag && !RP.has('a4_bag') && S.f.noTravel", "bag checked, claim tag, message, travel blocked"],
-  ["expect", "S.money === RP.test.m0 - 95", "the walk-up bag fee cost $95"],
+  ["expect", "S.money === RP.test.m0 + 40 - 75", "the overweight fee cost $75"],
   ["pickup", "hot:a4_forms"], ["expect", "RP.has('a4_form')", "Form 7B"],
   ["answers", [1]], ["use", "hot:a4_vend"], ["expect", "RP.has('a4_jerky')", "jerky"],
   ["answers", [2]], ["use", "hot:a4_vend"], ["expect", "RP.has('a4_water')", "rider item 1: water ($3)"],
@@ -41,9 +43,10 @@ const plane = [
   ["use", "hot:a4_myseat"], ["expect", "S.room === 'a4_plane' && !S.f.a4_flown", "can't sit with the bag on my lap"],
   ["talk", "hot:a4_marguerite"], ["look", "hot:a4_cart"],
   ["answers", [0]], ["use", "hot:a4_cart"], ["answers", [1]], ["use", "hot:a4_cart"], ["expect", "RP.has('a4_towel') && RP.has('a4_veg') && S.f.a4_vegKind === 'celery'", "rider items 2 and 3 from the cart: hot towel, celery from the tomato juice"],
-  ["talk", "hot:a4_kosmo"], ["expect", "!S.f.a4_kosmoLoan", "Kosmo lends nothing to a man with $40 or more"],
+  ["talk", "hot:a4_kosmo"], ["expect", "!S.f.a4_kosmoLoan", "Kosmo only lends against a joke, and no joke was offered"],
   ["give", "hot:a4_kosmo", "a4_bag"], ["expect", "S.f.a4_kosmoBag && !RP.has('a4_bag')", "bag on Kosmo's spare seat"],
-  ["use", "hot:a4_myseat"], ["expect", "S.room === 'a4_ber_platform' && RP.has('a4_bag') && S.f.a4_landed", "landed in Berlin with the bag"]
+  ["answers", [1]], ["use", "hot:a4_myseat"], ["expect", "S.room === 'a4_plane' && !S.f.a4_flown", "sitting asks first: Not yet"],
+  ["answers", [0]], ["use", "hot:a4_myseat"], ["expect", "S.room === 'a4_ber_platform' && RP.has('a4_bag') && S.f.a4_landed", "landed in Berlin with the bag"]
 ];
 const platform = [
   ["use", "hot:a4_train"], ["expect", "!S.f.a4_trainDone", "no ticket, no train"],

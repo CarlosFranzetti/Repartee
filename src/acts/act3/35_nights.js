@@ -39,7 +39,7 @@ A3.hallEnter = async function (S, from) {
   // ---- the week: the club in daylight
   if (S.f.a3_week && !S.f.a3_thu3 && !S.f.a3_weekHall) {
     S.f.a3_weekHall = true;
-    await lines(["The Halcyon Room in daylight. Work lights, mop buckets, and chairs upside-down on tables. It looks like a club that's been caught with its pants down.", "@a3_odessa Don't look at it. It doesn't like being looked at."]);
+    await lines(["The Halcyon Room with the work lights on. Mop buckets, and chairs upside-down on tables. It looks like a club that's been caught with its pants down.", "@a3_odessa Don't look at it. It doesn't like being looked at."]);
     return;
   }
   // ---- Night 3 arrival: Brandon's big hug
@@ -49,15 +49,37 @@ A3.hallEnter = async function (S, from) {
     await lines(["@nar Anniversary night. Six months of Thursdays.", "The room's filling fast. The banner says '6 MONTHS.' It doesn't say my name. It's for the room. It's still my favorite banner.",
       "@a3_odessa Six months. You've been late zero times. I've never had a DJ be early six months in a row.", "@a3_odessa Kosmo's here. He's in the booth. Don't speak unless spoken to. And if spoken to, don't speak too much.",
       "@a3_brandon THERE he is! The Thursday kid!"]);
-    AC("a3_brandon").x = 150; AC("a3_brandon").y = 232;
-    AC("a3_brandon").face = "right";
-    await lines(["@a3_brandon Six months! Big night! Come here, come here, I'm a hugger.", "Brandon. Uh. Hi."]);
-    RP.sfx("whoosh"); await RP.wait(500);
+    await A3.hugApproach(S);
     await A3.hug(S);
     await say("Kosmo's in the booth. Let me go say hi. Carefully.");
   }
   // ---- Night 3: Brandon's own plan, back from the booth
   if (S.f.a3_foiled === "cat" && S.f.a3_swapFound && !S.f.a3_brandonDone) await A3.catBackfire(S);
+};
+
+/* Brandon crosses the floor with his arms already open; the player gets a moment to act on Twinkie's hint before he arrives */
+A3.hugApproach = async function (S) {
+  const b = AC("a3_brandon");
+  b.x = 470; b.y = 226; b.face = "left";
+  await lines(["Across the floor, a gold vest is parting the crowd. Arms open. Sunglasses on, indoors, at night.", "@a3_brandon Six months! Big night! Come here, come here, I'm a hugger!"]);
+  await RP.npcWalk("a3_brandon", 330, 226, "left");
+  await say("He's still twenty feet away and already smiling at my jacket.");
+  for (let guard = 0; guard < 4; guard++) {
+    const opts = [], acts = [];
+    if (RP.has("a3_usb") && !S.f.a3_usbHidden) { opts.push("Slip the real USB into a Sylvester sleeve in the bag"); acts.push("hide"); }
+    if (RP.has("a3_usb") && RP.has("a3_smiley") && !S.f.a3_usbSticker) { opts.push("Press the gold smiley onto the USB"); acts.push("sticker"); }
+    if (!acts.length) break;
+    opts.push("Let him come");
+    const i = await RP.choose(opts);
+    if (i >= acts.length) break;
+    if (acts[i] === "hide") {
+      S.f.a3_usbHidden = true;
+      await say(RP.has("a3_usb_old") ? "The real stick goes between two Sylvesters. The old cat stick stays in the pocket, looking important." : "The real stick goes between two Sylvesters. My pocket is now just a pocket.");
+    } else await A3.stickUsb(S);
+  }
+  await RP.npcWalk("a3_brandon", 150, 228, "left");
+  await lines(["He arrives. Arms first."]);
+  RP.sfx("whoosh"); await RP.wait(500);
 };
 
 /* the hug: the USB is either in the jacket pocket (swapped), tucked in the bag with the old cat stick as a decoy (Brandon takes the cat), in the bag alone (empty pocket) or wearing his own sticker */
@@ -71,7 +93,7 @@ A3.hug = async function (S) {
   if (route === "swap") {
     await lines(["@a3_brandon Break a leg. Both. Whichever.", "That was the longest hug I've had since I was nine.", "He smells like a hotel gift shop. And he patted my jacket twice. Weird. Probably a hugger thing."
       + (S.f.a3_twinkie3 ? " Twinkie said he was a hugger. Twinkie said a lot of things. I filed it under 'Twinkie.'" : "")]);
-    if (RP.has("a3_usb_old")) await say("The old cat stick is still in my pocket, with the real one. He took the one with the better posture.");
+    if (RP.has("a3_usb_old")) await say("The old cat stick is still on me, untouched. He took the one with the better posture.");
     S.f.a3_swap = true;
     await RP.npcWalk("a3_brandon", 214, 222, "left");
     return;
@@ -173,7 +195,7 @@ async function night1Set(S) {
   await RP.fadeTo(1, 700);
   S.f.a3_week = true; S.f.noTravel = false; S.f.a3_floor = null;
   RP.unlock("a3_loc_deepcuts");
-  RP.text("RAY", "Deep Cuts. Tomorrow. Got something you're too young for. -R");
+  RP.text("RAY", "Deep Cuts. Today, after lunch. Got something you're too young for. -R");
   RP.text("EDDIE TWO-TIMES", "Heard you got paid. Two-time deal on those CDJ-900s. Come to the van. -E2T", true);
   RP.setClock("FRI 1:20 PM");
   await RP.goto("a3_apartment", 560, 232, "left");
@@ -185,7 +207,7 @@ A3.boothUse = async function (S) {
   const gear = RP.actor("kid");
   // ---------- Night 1
   if (!S.f.a3_thu3) {
-    if (S.f.a3_week) { await say("The booth in daylight: nobody's here, and the gear's asleep. It's a better look for it, honestly."); return; }
+    if (S.f.a3_week) { await say("The booth under work lights: nobody's here, and the gear's asleep. It's a better look for it, honestly."); return; }
     if (!S.f.a3_soundcheck) { await lines(["The booth monitors are dead. The LEDs are asleep.", "Gus has to wake them. Gus is out at the desk. Gus responds to snacks."]); return; }
     await night1Set(S); return;
   }
@@ -202,7 +224,7 @@ A3.boothUse = async function (S) {
 };
 
 A3.usbIn = async function (S) {
-  if (!S.f.a3_thu3) { await say("The USB's my backup. Vinyl first; tracks only if a record skips. I'll plug it in at the booth if I need it."); return; }
+  if (!S.f.a3_thu3) { await say("The USB's my backup. Vinyl first; tracks only if a record skips. I'll plug it in if I need it."); return; }
   if (S.f.a3_usbHidden) { await say("It's in the bag, in a Sylvester sleeve. I'll fish it out when I need it."); return; }
   if (S.f.a3_swap && !S.f.a3_usbBack) { await lines(["I plug it in and cue the first track. 'SUMMER OF SHINE.' It's still Brandon.", "I unplug it before the CDJ catches 'Shine.'"]); return; }
   await say("My real USB's back in my pocket. I'll play vinyl and keep it as a backup.");
@@ -235,26 +257,32 @@ async function anniversarySet(S) {
   if (shuts.length < 2) shuts = shuts.concat(take(pool.filter(id => !shuts.includes(id) && !opens.includes(id)), 2 - shuts.length));
   await lines(["Everything I own is in the bag. The set only needs two decisions made properly: how it starts, and how it ends. The middle takes care of itself if the first record is honest.", "The first record."]);
   const op = opens[await RP.choose(opens.map(nameOf))];
-  await lines(["Good. A room handed back by a legend wants a hand on the shoulder, not a shove.", "And the last one, for whoever's still standing at ten to one."]);
+  await lines(["Noted. And the last one, for whoever's still standing at ten to one."]);
   const cl = shuts[await RP.choose(shuts.map(nameOf))];
   const spread = (a, n) => a.length <= n ? a : Array.from({ length: n }, (_, i) => a[Math.round(i * (a.length - 1) / (n - 1))]);
   const mid = spread(pool.filter(id => id !== op && id !== cl).sort((a, b) => RP.rec(a).energy - RP.rec(b).energy || RP.rec(a).bpm - RP.rec(b).bpm), 4);
-  const order = [op].concat(mid.slice(0, 3), RP.hasRecord("white_nyc93") ? ["white_nyc93"] : [], mid.slice(3), RP.hasRecord(GRAIL) ? [GRAIL] : [], [cl]);
-  S.f.a3_setDone = true;
-  RP.followers(60 + 4 * (S.f.a3_gems == null ? 8 : S.f.a3_gems));   // Hal's stars are what the set is made of
+  const hasGrail = RP.hasRecord(GRAIL), hasWhite = RP.hasRecord("white_nyc93");
+  let grailAt = "bag";
+  if (hasGrail) {
+    await lines(["One more sleeve in the bag, marked 'FOR COMPANY' in Hal's hand. Loose Joints. 'Is It All Over My Face?' Larry Levan's remix, the one everyone knows. Hal kept it for sixty years for someone who would play it.", "When does it come out?"]);
+    grailAt = ["peak", "last", "bag"][await RP.choose(["The peak, after the white label, with the room already up", "After " + nameOf(cl) + ", as the very last record", "Keep it in the bag. Some records are for company"])];
+  }
+  const order = [op].concat(mid.slice(0, 3), hasWhite ? ["white_nyc93"] : [], grailAt === "peak" ? [GRAIL] : [], mid.slice(3), [cl], grailAt === "last" ? [GRAIL] : []);
+  S.f.a3_setDone = true; S.f.a3_grailAt = grailAt;
+  const hot = id => RP.rec(id).energy >= 4, nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");
+  RP.followers(60 + 4 * (S.f.a3_gems == null ? 8 : S.f.a3_gems) + (hot(cl) ? 10 : 15) + (hasGrail && grailAt !== "bag" ? 30 : 0));   // Hal's stars are what the set is made of
   RP.setClock("FRI 1:15 AM");
-  const hasGrail = RP.hasRecord(GRAIL);
-  const ids = order.filter(id => id && RP.rec(id)), nm = id => id === "white_nyc93" ? "the white label" : RP.rec(id).artist.replace(/ (featuring|feat\.?|ft\.?) .*$/i, "");
-  const wi = ids.indexOf("white_nyc93"), gi = ids.indexOf(GRAIL);
-  const setLines = ["The first record drops" + (ids[0] ? ": " + nm(ids[0]) : "") + ". The room settles like a sigh."];
-  if (ids.length >= 3) setLines.push("Then " + nm(ids[1]) + ", then " + nm(ids[2]) + ". Build, don't jump. For once, I don't jump.");
-  setLines.push(wi >= 0 && wi < 3 ? "The white label is Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud."
-    : wi >= 0 || !ids.length ? "Somewhere in there, something nobody in here has heard: the white label. Lou's 1993. The room goes quiet for a beat, then loud."
-    : "Then one record that isn't on the plan: the white label. Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud.");
-  await lines(setLines);
-  if (hasGrail) await lines([(gi >= 0 && gi < ids.length - 1 ? "When its turn comes, I pull out" : "For the last record I pull out") + " the one sleeve in the bag that says 'FOR COMPANY.' Loose Joints. 'Is It All Over My Face?' Larry Levan's remix, the one everyone knows. On the Technics' cousin in the booth.",
-    "Somebody screams. Somebody cries. Somebody films it, which is the same thing."]);
-  await lines(["I send them home on " + nm(cl) + ", just as planned. The lights come up slowly. Nobody leaves."]);
+  const ids = order.filter(id => id && RP.rec(id));
+  await lines(["The first record is " + nameOf(op) + "." + (hot(op) ? " A hot start: the room is a half step behind me for a minute, then catches up. Nobody tells me it was risky." : " It lands like a hand on the shoulder. The room settles like a sigh.")]);
+  const mids = ids.filter(id => id !== op && id !== cl && id !== GRAIL && id !== "white_nyc93").slice(0, 3);
+  if (mids.length) await lines(["Then " + mids.map(nm).join(", then ") + ". Build, don't jump. For once, I don't jump."]);
+  if (hasWhite) await lines([ids.indexOf("white_nyc93") < 4 ? "The white label comes early, Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud." : "Then the white label, Lou's 1993. Nobody in here has heard it. The room goes quiet for a beat, then loud."]);
+  if (grailAt === "peak") await lines(["Loose Joints, with the room already up. Somebody screams. Somebody cries. Somebody films it, which is the same thing. Then I have to land the plane, and the plane is " + nm(cl) + "."]);
+  await lines(hot(cl) ? ["The closer is " + nameOf(cl) + ", and I don't ease off. The floor won't let me. Nobody checks a coat."]
+    : ["The closer is " + nameOf(cl) + ". The lights come up slowly. The floor sways home, coats coming out one slow arm at a time."]);
+  if (grailAt === "last") await lines(["Then I pull out the sleeve marked 'FOR COMPANY.' Loose Joints. Nobody had left. Everybody screams. Somebody cries. Somebody films it, which is the same thing."]);
+  if (grailAt === "bag") await say("Somebody asks about the record in the bag with the handwriting on it. I tell them next time. Hal would have wanted somebody to have a reason to come back.");
+  if (grailAt !== "bag" && hasGrail) await say("Hal's record, played to a room, as promised. Somewhere in Woodside a parakeet is smug about it.");
   RP.sfx("cheer");
   S.f.a3_vegaHere = true;
   await lines(["At the end of the booth, a guy with headphones round his neck gives me a thumbs-up. Louie Vega. Masters At Work, with Kenny 'Dope' Gonzalez.", "@a3_dj_louie_vega Nice blend.", "@a3_dj_louie_vega Woman by the door, black coat, filming you since the white label. Berlin accent. She tipped her head at the booth. I know that head tip. That's a booker."]);
@@ -267,7 +295,7 @@ async function anniversarySet(S) {
   RP.money(TAB - fine);
   await lines(["@a3_marcusoff That was... the best night of my life. And I've been to a lot of nights.", "I'm going to cry. In front of Marcus. In front of Rico, Dee and the guy from the cab."]);
   RP.setClock("FRI 1:35 AM");
-  await lines(["Twenty minutes of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ.' Odessa covers half. My half is the envelope: two hundred dollars.",
+  await lines(["Twenty minutes of hugging strangers later, Dee, Rico and the guy from the cab have put eleven rounds on 'the DJ': Marcus's plus three, as promised, on my name. Odessa covers half. My half is the envelope: two hundred dollars.",
     "I hand Nico the envelope without opening it. I just played the best set of my life for free.", "@nar Marcus, counting his change: 'Trains are a mess, man. If your card's dead, find the oranges guy on the Delancey platform. He swipes people through. Takes payment in fruit.'"]);
   RP.money(-Math.min(tab, S.money));
   if (S.f.a3_tabExtra) await say("Brandon's sixty is on it too. A man can build a whole bar tab out of one hug.");
@@ -323,7 +351,10 @@ A3.odessaTalk = async function (S) {
     await say("Odessa. Where am I on the napkin?");
     if (left.length) { await say("Still on the list: " + left.join("; ") + ".", "a3_odessa"); await say("And do it before the anniversary. After that, nobody's counting.", "a3_odessa"); }
     else await say("You're done. Go home. Sleep. Come back Thursday. I want you rested and terrified.", "a3_odessa");
-    if ((S.f.a3_shifts || 0) < 2) { const j = await RP.choose(["Odessa, I'm a bit short. Any hours going?", "No, that's all"]); if (j === 0) await A3.shift(S); }
+    if ((S.f.a3_shifts || 0) < 2) {
+      if (S.money < 150) await lines(["@a3_odessa And you're counting coins with your eyes. I have a walk-in that needs stacking, " + U.fmtMoney(55) + " cash for four hours."]);
+      const j = await RP.choose(["Odessa, I'm a bit short. Any hours going?", "No, that's all"]); if (j === 0) await A3.shift(S);
+    }
     return;
   }
   if (!S.f.a3_swapFound) { await lines(["@a3_odessa Go say hi to Kosmo. Say it once. And don't say 'big fan.' He hates that."]); return; }
@@ -343,7 +374,7 @@ A3.shift = async function (S) {
   const n = S.f.a3_shifts || 0;
   await lines(["@a3_odessa Weekday delivery. Eight kegs, one pallet, no complaints. Fifty-five dollars and the satisfaction of a clean walk-in.", "I take it. It beats owing Eddie."]);
   await RP.fadeTo(1, 500);
-  A3.clockTo(S, n ? "WED 6:00 PM" : "TUE 6:00 PM");
+  A3.clockTo(S, S.f.a3_fairSeen ? (n ? "TUE 6:00 PM" : "MON 6:00 PM") : (n ? "SAT 6:00 PM" : "FRI 6:00 PM"));
   await lines(["Four hours in the walk-in. Nico stacks one end, Bex stacks the other, and I am the only line of communication between them.", "@a3_nico Tell her the lemons go on the left.", "@a3_bex Tell him the lemons are on the right.",
     "Lemons are the only thing in this building that has ever been both. I carry nine messages and about six pounds of citrus."]);
   await RP.fadeTo(0, 500);
