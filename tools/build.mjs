@@ -38,7 +38,7 @@ const site = (level, artifact) => ({
   full: artifact ? FULL_GAME_URL : "index.html",
   pages: LEVELS.map((_, i) => artifact ? LEVEL_ARTIFACTS[i + 1] || SITE_URL + "/level" + (i + 1) : "level" + (i + 1) + ".html")
 });
-const DESC = "A pixel-art point-and-click DJ adventure. From broke-ass bedroom DJ to festival headliner, one bad decision at a time.";
+const DESC = "A pixel-art point-and-click DJ adventure. From broke-ass bedroom DJ to festival headliner, one questionable decision at a time.";
 
 const core = ["util", "chars", "fx", "audio", "titletheme", "stream", "icons", "paint", "engine"].map(n => path.join(root, "src/core", n + ".js")).filter(f => fs.existsSync(f));
 const data = sortJs(walk(path.join(root, "src/data")));

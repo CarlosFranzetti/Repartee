@@ -109,7 +109,7 @@ async function interview(S) {
   await RP.say("Hi, New York. I'm... " + name + ".");
   let score = 0;
   score += await ask(S, "So. A bedroom in Bushwick to the main stage at Harbor Lights. How did that happen?", [
-    ["One bad decision at a time.", "That's the best answer this show has had all year. Put it on a shirt.", 2],
+    ["One questionable decision at a time.", "That's the best answer this show has had all year. Put it on a shirt.", 2],
     ["Hard work, passion, and a dream.", "Wow. That's what the last six guests said. In the same order.", 1],
     ["A bag of oregano, mostly.", "...I'm going to pretend that's a metaphor.", 0]
   ]);

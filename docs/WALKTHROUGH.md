@@ -546,7 +546,7 @@ advance on the fee. Keep your old CDJs and monitors. At home the bed asks if you
 ## Friday: the radio, the gate and Lou
 
 10. Travel to **Radio Harbor 88.1**. Look at the **control room window**. Talk to **Dana Okafor**.
-11. Pick the first option each time: "One bad decision at a time.", "The bartenders danced.", "A white label nobody's
+11. Pick the first option each time: "One questionable decision at a time.", "The bartenders danced.", "A white label nobody's
     heard. It's my neighbor's." and "No comment. But I'd like it noted: I have a Taula." These score well. Do not say
     Axl Vanta's name on air.
 12. Callers cut in (Ray, Marcus, Eddie, Dante). Dante promises on air to pay you, which matters on the pier.
@@ -635,7 +635,7 @@ Twinkie's help. It works, but Axl's scene goes worse.
 
 ## Appendix: the streaming patch
 
-There is a hidden extra. On the title screen, press JUKEBOX three times, CREDITS twice, then JUKEBOX three more times.
+There is a hidden extra. On the title screen, click the logo: three times on "re:", twice on "parteé", then three more times on "re:".
 The screen flashes and the streaming patch turns on: the jukebox, and the records that play during the story, stream
 the actual track (audio only) instead of the built-in loop. It needs an internet connection; when a track cannot be
 found, the loop plays as before. A switch for it appears under HOW TO PLAY once it is unlocked. The mini-games keep

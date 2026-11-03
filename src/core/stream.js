@@ -1,5 +1,5 @@
-/* The streaming patch: real audio for the real records, hidden behind a tap code on the title screen
-   (JUKEBOX x3, CREDITS x2, JUKEBOX x3; the screen flashes). With it on, the jukebox and the story's record plays stream
+/* The streaming patch: real audio for the real records, hidden behind a tap code on the title logo
+   (3 taps on "re:", 2 on "parteé", 3 on "re:"; the screen flashes). With it on, the jukebox and the story's record plays stream
    the actual track instead of the synthesized loop. Resolving uses the same chain as the owner's discogs-stream app
    (youtube-search -> yt-dlp-audio, then invidious-audio), through its public Supabase functions; any failure falls back
    to the built-in loop. Audio only, no video. Mini-games always keep the synthesized loops: beat.Match, crowd.Read and
@@ -11,12 +11,15 @@ const audio = RP.audio;
 const store = RP.u.store;
 const KEY = "reparte.stream";
 const FN = "https://lircvbmcqxbnjaeyrpui.supabase.co/functions/v1/";
+// the discogs-stream project's publishable (anon) key: the Supabase gateway refuses function calls without it.
+// It is a public browser key by design (the stream app ships it in its bundle too). Paste it in to enable streaming.
+const APIKEY = "";
 const ST = RP.stream = { on: !!store.get(KEY), unlocked: !!store.get(KEY + ".unlocked"), cache: {} };
 ST.setOn = v => { ST.on = !!v; store.set(KEY, ST.on); };
 ST.unlock = () => { ST.unlocked = true; store.set(KEY + ".unlocked", true); ST.setOn(true); };
 
 /* ---- the tap code on the title menu ---- */
-const CODE = "JJJCCJJJ";
+const CODE = "RRRPPRRR";
 let taps = "";
 ST.tap = k => {
   taps = (taps + k).slice(-CODE.length);
@@ -39,7 +42,8 @@ ST.flash = () => {
 const post = async (fn, body, ms) => {
   const ac = new AbortController(); const t = setTimeout(() => ac.abort(), ms || 12000);
   try {
-    const r = await fetch(FN + fn, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: ac.signal });
+    if (!APIKEY) return null;
+    const r = await fetch(FN + fn, { method: "POST", headers: { "content-type": "application/json", apikey: APIKEY, authorization: "Bearer " + APIKEY }, body: JSON.stringify(body), signal: ac.signal });
     if (!r.ok) return null;
     return await r.json();
   } catch (e) { return null; } finally { clearTimeout(t); }

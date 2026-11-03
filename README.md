@@ -1,6 +1,6 @@
 # re:parteé
 
-**A pixel-art DJ adventure game.** From broke-ass bedroom DJ to festival headliner. One bad decision at a time.
+**A pixel-art DJ adventure game.** From broke-ass bedroom DJ to festival headliner. One questionable decision at a time.
 
 By Carlos Franzetti. Source: [github.com/CarlosFranzetti/Repartee](https://github.com/CarlosFranzetti/Repartee).
 
