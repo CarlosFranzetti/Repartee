@@ -2187,26 +2187,27 @@ T.stop = function (fadeSec = 0.6) {
 /* ---- src/core/stream.js ---- */
 try {
 /* The streaming patch: real audio for the real records, hidden behind a tap code on the title logo
-   (3 taps on "re:", 2 on "parteé", 3 on "re:"; the screen flashes). With it on, the jukebox and the story's record plays stream
-   the actual track instead of the synthesized loop. Resolving uses the same chain as the owner's discogs-stream app
-   (youtube-search -> yt-dlp-audio, then invidious-audio), through its public Supabase functions; any failure falls back
-   to the built-in loop. Audio only, no video. Mini-games always keep the synthesized loops: beat.Match, crowd.Read and
-   go.Digging read phase/BPM/filters off the loop handle, which a streamed track cannot honour. */
+   (3 taps on "re:", 2 on "parteé", 3 on "re:"; the screen flashes). With it on, the jukebox and the story's record
+   plays play the actual record instead of the synthesized loop. Audio only, no video.
+
+   Today it plays official 30-second previews from Apple's public iTunes Search API, straight from the browser: no
+   server, no key, licensed previews. The catalog can also carry a YouTube video id per record (src/data/stream_ids.js,
+   filled in by tools/stream-ids.mjs); a full-length path (an embedded player, or a serverless function that resolves
+   audio) can be added on top of that later without touching this file's callers.
+
+   Anything that fails falls back to the built-in loop. Mini-games always keep the synthesized loops: beat.Match,
+   crowd.Read and go.Digging read phase/BPM/filters off the loop handle, which a stream cannot honour. */
 (function () {
 "use strict";
 const RP = window.RP;
 const audio = RP.audio;
 const store = RP.u.store;
 const KEY = "reparte.stream";
-const FN = "https://lircvbmcqxbnjaeyrpui.supabase.co/functions/v1/";
-// the discogs-stream project's publishable (anon) key: the Supabase gateway refuses function calls without it.
-// It is a public browser key by design (the stream app ships it in its bundle too). Paste it in to enable streaming.
-const APIKEY = "";
-const ST = RP.stream = { on: !!store.get(KEY), unlocked: !!store.get(KEY + ".unlocked"), cache: {} };
+const ST = RP.stream = { on: !!store.get(KEY), unlocked: !!store.get(KEY + ".unlocked"), cache: {}, ids: (RP.data && RP.data.streamIds) || {} };
 ST.setOn = v => { ST.on = !!v; store.set(KEY, ST.on); };
 ST.unlock = () => { ST.unlocked = true; store.set(KEY + ".unlocked", true); ST.setOn(true); };
 
-/* ---- the tap code on the title menu ---- */
+/* ---- the tap code on the title logo ---- */
 const CODE = "RRRPPRRR";
 let taps = "";
 ST.tap = k => {
@@ -2226,34 +2227,40 @@ ST.flash = () => {
   if (RP.toast) RP.toast(ST.on ? "STREAMING PATCH ON: the records play for real" : "STREAMING PATCH OFF");
 };
 
-/* ---- resolving: artist + title -> a playable audio url (cached per record) ---- */
-const post = async (fn, body, ms) => {
-  const ac = new AbortController(); const t = setTimeout(() => ac.abort(), ms || 12000);
-  try {
-    if (!APIKEY) return null;
-    const r = await fetch(FN + fn, { method: "POST", headers: { "content-type": "application/json", apikey: APIKEY, authorization: "Bearer " + APIKEY }, body: JSON.stringify(body), signal: ac.signal });
-    if (!r.ok) return null;
-    return await r.json();
-  } catch (e) { return null; } finally { clearTimeout(t); }
+/* ---- resolving: artist + title -> a preview url, cached per record ----
+   iTunes Search: https://itunes.apple.com/search?term=...&media=music&entity=song&limit=N returns
+   { resultCount, results: [{ artistName, trackName, previewUrl, trackTimeMillis, ... }] } with CORS open. */
+const norm = s => String(s || "").toLowerCase().replace(/\(.*?\)|\[.*?\]/g, " ").replace(/feat\.?|featuring|ft\./g, " ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+const score = (rec, r) => {
+  const a = norm(rec.artist), t = norm(rec.title), ra = norm(r.artistName), rt = norm(r.trackName);
+  let s = 0;
+  if (ra === a) s += 4; else if (ra.includes(a) || a.includes(ra)) s += 2;
+  if (rt === t) s += 4; else if (rt.includes(t) || t.includes(rt)) s += 2;
+  // judge "remix / live / edit" on the raw titles: norm() strips the brackets those words usually sit in
+  const extra = /remix|live|karaoke|instrumental|edit|version|mix\b/i;
+  if (extra.test(r.trackName || "") && !extra.test(rec.title || "")) s -= 3;
+  return s;
 };
 ST.resolve = async rec => {
-  const c = ST.cache[rec.id]; if (c) return c;
-  const q = rec.artist + " " + rec.title.replace(/ \(.*\)$/, "");
-  const s = await post("youtube-search", { query: q, maxResults: 3 }, 12000);
-  const vids = (s && (s.videos || s.results || s.items)) || [];
-  const id = vids.length ? (vids[0].videoId || vids[0].id) : null;
-  if (!id) return null;
-  let a = await post("yt-dlp-audio", { videoId: id }, 20000);
-  if (!(a && a.success && a.audioUrl)) a = await post("invidious-audio", { videoId: id }, 20000);
-  if (!(a && a.success && a.audioUrl)) return null;
-  const dur = Number(a.duration) || 0;
-  return (ST.cache[rec.id] = { url: a.audioUrl, title: a.title || "", duration: dur });
+  const c = ST.cache[rec.id]; if (c !== undefined) return c;
+  const term = encodeURIComponent(rec.artist + " " + rec.title.replace(/ \(.*\)$/, ""));
+  const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 8000);
+  let out = null;
+  try {
+    const r = await fetch("https://itunes.apple.com/search?term=" + term + "&media=music&entity=song&limit=8", { signal: ac.signal });
+    if (r.ok) {
+      const j = await r.json();
+      const best = (j.results || []).filter(x => x.previewUrl).map(x => [score(rec, x), x]).sort((p, q) => q[0] - p[0])[0];
+      if (best && best[0] >= 4) out = { url: best[1].previewUrl, title: best[1].trackName, artist: best[1].artistName, duration: Math.round((best[1].trackTimeMillis || 0) / 1000), preview: true };
+    }
+  } catch (e) { out = null; } finally { clearTimeout(tm); }
+  return (ST.cache[rec.id] = out);
 };
 
 /* ---- a streamed "loop": same handle shape as audio.loop, so callers can't tell ---- */
 function streamed(rec, o, fallback) {
   const el = new Audio(); el.crossOrigin = "anonymous"; el.preload = "auto";
-  let node = null, gain = null, filt = null, dead = false, started = false;
+  let node = null, gain = null, filt = null, dead = false;
   const vol0 = o.volume == null ? 0.8 : o.volume;
   const c = audio.ctx();
   // route through the music bus when the context exists, so the mute switch and the bus volume still apply
@@ -2264,22 +2271,18 @@ function streamed(rec, o, fallback) {
       node.connect(filt); filt.connect(gain); gain.connect(audio.buses().music);
     } catch (e) { node = null; el.volume = Math.min(1, vol0); }
   } else el.volume = Math.min(1, vol0);
-  let fb = null; // the synthesized loop takes over if the stream never arrives
+  let fb = null; // the synthesized loop takes over if the preview never arrives
   const useFallback = () => { if (dead || fb) return; fb = fallback(); if (fb) { try { fb.start(); } catch (e) { /* ignore */ } } };
   const H = {
     silent: false, output: null, streamed: true,
     start() {
-      started = true;
       ST.resolve(rec).then(r => {
         if (dead) return;
         if (!r) { useFallback(); return; }
-        el.src = r.url;
-        // the best-matching portion: skip the intro, land a third of the way in, where the groove usually is
-        const seek = r.duration > 90 ? Math.floor(r.duration / 3) : 0;
-        el.addEventListener("loadedmetadata", () => { try { if (seek) el.currentTime = seek; } catch (e) { /* ignore */ } }, { once: true });
+        el.src = r.url; el.loop = true; // a 30-second preview loops until stopped
         el.addEventListener("error", () => useFallback(), { once: true });
-        el.loop = true;
         el.play().catch(() => useFallback());
+        if (RP.toast && !ST.quiet) RP.toast("NOW PLAYING: " + r.artist + " - " + r.title + " (preview)");
       });
     },
     stop(fadeSec) {
@@ -7855,6 +7858,20 @@ RP.data.records = (RP.data.records || []).concat([
 })();
 
 } catch (e) { console.error("load error in src/data/records_more.js", e); (window.__loadErrors = window.__loadErrors || []).push("src/data/records_more.js: " + e); }
+/* ---- src/data/stream_ids.js ---- */
+try {
+/* YouTube video ids for the records, for a future full-length path of the streaming patch (an embedded player, or a
+   serverless function that resolves audio). Keyed by record id; an empty map means nothing resolved yet. Fill it in
+   with `node tools/stream-ids.mjs` from a machine that can reach YouTube; hand-edit entries to correct a bad match. */
+(function () {
+"use strict";
+const RP = window.RP;
+RP.data = RP.data || {};
+RP.data.streamIds = {
+};
+})();
+
+} catch (e) { console.error("load error in src/data/stream_ids.js", e); (window.__loadErrors = window.__loadErrors || []).push("src/data/stream_ids.js: " + e); }
 /* ---- src/minigames/afterparty.js ---- */
 try {
 /* after.Party — 4 AM, the party is dying, sunrise is coming. Use your dying phone to recruit people,

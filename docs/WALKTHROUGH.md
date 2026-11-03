@@ -635,8 +635,8 @@ Twinkie's help. It works, but Axl's scene goes worse.
 
 ## Appendix: the streaming patch
 
-There is a hidden extra. On the title screen, click the logo: three times on "re:", twice on "parteé", then three more times on "re:".
-The screen flashes and the streaming patch turns on: the jukebox, and the records that play during the story, stream
-the actual track (audio only) instead of the built-in loop. It needs an internet connection; when a track cannot be
-found, the loop plays as before. A switch for it appears under HOW TO PLAY once it is unlocked. The mini-games keep
-their built-in loops either way, so beat.Match plays the same.
+There is a hidden extra. On the title screen, click the logo: three times on "re:", twice on "parteé", then three more
+times on "re:". The screen flashes and the streaming patch turns on: the jukebox, and the records that play during the
+story, play the actual record (an official 30-second preview, looping) instead of the built-in loop. It needs an
+internet connection; when a record cannot be found, the loop plays as before. A switch for it appears under HOW TO
+PLAY once it is unlocked. The mini-games keep their built-in loops either way, so beat.Match plays the same.
