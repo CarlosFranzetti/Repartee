@@ -8,8 +8,11 @@ const RP = window.RP;
 const { mulberry, hashStr, clamp } = RP.u;
 
 let AC = null, master = null, musicBus = null, sfxBus = null, ambBus = null, noiseBuf = null, comp = null;
-const muteCbs = [];
+const muteCbs = [], pauseCbs = [];
 const audio = RP.audio = { muted: false };
+// held: the game is paused (RP.pause). The context stays suspended until it is released, whatever else calls ctx()
+let held = false;
+const live = c => c && c.state !== "closed";
 
 function ctx() {
   if (!AC) {
@@ -27,9 +30,11 @@ function ctx() {
       musicBus.connect(comp); sfxBus.connect(comp); ambBus.connect(comp); comp.connect(master); master.connect(AC.destination);
       noiseBuf = AC.createBuffer(1, AC.sampleRate * 1, AC.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      if (held) { try { AC.suspend(); } catch (e) { /* ignore */ } }
     } catch (e) { AC = null; return null; }
   }
-  if (AC.state === "suspended") { try { AC.resume(); } catch (e) { /* ignore */ } }
+  // wake a suspended (or iOS "interrupted") context, but never while the game is paused or the tab is in the background
+  if (AC.state !== "running" && live(AC) && !held && !document.hidden) { try { AC.resume(); } catch (e) { /* ignore */ } }
   return AC;
 }
 audio.ctx = ctx;
@@ -42,15 +47,32 @@ audio.unlock = () => {
   if (!unlocked) { try { const b = c.createBuffer(1, 1, c.sampleRate), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); unlocked = true; } catch (e) { /* ignore */ } }
 };
 audio.ready = (maxMs = 600) => {
-  const c = ctx(); if (!c || c.state === "running") return Promise.resolve(!!c);
+  const c = ctx(); if (!c || c.state === "running" || held) return Promise.resolve(!!c);
   return new Promise(res => {
     let done = false; const fin = v => { if (!done) { done = true; res(v); } };
     try { c.resume().then(() => fin(true), () => fin(false)); } catch (e) { fin(false); }
     setTimeout(() => fin(c.state === "running"), maxMs);
   });
 };
-// coming back to the tab: wake the context; the schedulers skip the beats that were missed instead of bursting them
-document.addEventListener("visibilitychange", () => { if (!document.hidden && AC && AC.state === "suspended") { try { AC.resume(); } catch (e) { /* ignore */ } } });
+/* background tab: suspend the context, so the look-ahead schedulers (throttled to ~1 Hz by the browser) can't fall
+   behind and nothing plays half-scheduled; coming back wakes it, unless the game is paused (RP.pause), in which case
+   RESUME does. Audio time stands still while suspended, so the loops pick up exactly where they stopped. */
+document.addEventListener("visibilitychange", () => {
+  if (!AC || !live(AC)) return;
+  if (document.hidden) { if (AC.state === "running") { try { AC.suspend(); } catch (e) { /* ignore */ } } }
+  else if (!held && AC.state !== "running") { try { AC.resume(); } catch (e) { /* ignore */ } }
+});
+/* pause(true) suspends the context (every loop, sfx tail and the title theme freeze in place, nothing is torn down);
+   pause(false) resumes it. Listeners (the streaming <audio> elements) follow via onPauseChange. */
+audio.pause = on => {
+  held = !!on;
+  if (AC && live(AC)) {
+    try { if (held) AC.suspend(); else if (!document.hidden) AC.resume(); } catch (e) { /* ignore */ }
+  }
+  pauseCbs.forEach(f => { try { f(held); } catch (e) { /* ignore */ } });
+};
+audio.isPaused = () => held;
+audio.onPauseChange = f => pauseCbs.push(f);
 ["pointerdown", "keydown", "touchend"].forEach(ev => window.addEventListener(ev, () => audio.unlock(), { capture: true, passive: true }));
 audio.buses = () => ({ music: musicBus, sfx: sfxBus, noise: noiseBuf });
 audio.setMute = m => {
@@ -61,7 +83,7 @@ audio.setMute = m => {
 audio.onMuteChange = f => muteCbs.push(f);
 audio.setMusicVolume = v => { if (musicBus) musicBus.gain.value = v; };
 audio.setSfxVolume = v => { if (sfxBus) sfxBus.gain.value = v; };
-const ok = () => !audio.muted && ctx();
+const ok = () => !audio.muted && !held && ctx();
 
 /* ---------------- voices ---------------- */
 function env(g, t, a, peak, d, sus = 0.0001) {
@@ -180,7 +202,13 @@ function tick() {
   const now = AC.currentTime, ahead = now + 0.2;
   // a stalled main thread (a heavy room paint, a background tab) leaves loops behind: skip the missed steps silently
   // rather than scheduling them all in the past, which plays them at once as a burst
-  loops.forEach(L => { if (!L.running) return; let guard = 0; while (L.next < now - 0.02 && guard++ < 4096) L.advance(); while (L.next < ahead) { L.playStep(L.step, L.next); L.advance(); } });
+  loops.forEach(L => {
+    if (!L.running) return;
+    let guard = 0; while (L.next < now - 0.02 && guard++ < 4096) L.advance();
+    // a stall longer than the guard (minutes) leaves next still in the past: jump to now rather than burst the backlog
+    if (L.next < now - 0.02) L.next = now + 0.02;
+    while (L.next < ahead) { L.playStep(L.step, L.next); L.advance(); }
+  });
   if (!loops.size) { clearInterval(timer); timer = null; }
 }
 
@@ -189,7 +217,7 @@ function loop(opts = {}) {
   const genre = G[opts.genre] ? opts.genre : (opts.genre && /house/.test(opts.genre) ? "house" : "house");
   const spec = G[genre];
   const rnd = mulberry((opts.seed || 1) >>> 0);
-  const L = { genre, bpm: opts.bpm || 122, energy: opts.energy || 3, running: false, step: 0, next: 0, beatBase: 0, tBase: 0, beatCbs: [], filt: null };
+  const L = { genre, bpm: opts.bpm || 122, energy: opts.energy || 3, running: false, stopping: false, step: 0, next: 0, beatBase: 0, tBase: 0, beatCbs: [], filt: null };
   if (!c) {
     // silent stand-in with a working clock (for tests / no audio)
     const t0 = performance.now();
@@ -259,9 +287,18 @@ function loop(opts = {}) {
       loops.add(L); ensureTimer();
     },
     stop(fadeSec = 0) {
-      if (!L.running) return;
-      if (fadeSec > 0) { const t = AC.currentTime; out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0.0001, t + fadeSec); setTimeout(() => { L.running = false; loops.delete(L); try { out.disconnect(); } catch (e) { /* ignore */ } }, fadeSec * 1000 + 50); }
-      else { L.running = false; loops.delete(L); try { out.disconnect(); } catch (e) { /* ignore */ } }
+      if (!L.running || (L.stopping && fadeSec > 0)) return;   // a second fade during the fade would stack another ramp and timer
+      const end = () => { L.running = false; L.stopping = false; loops.delete(L); try { out.disconnect(); } catch (e) { /* ignore */ } };
+      if (fadeSec > 0) {
+        L.stopping = true;
+        // cancel a fade-in still in flight (setMusic ramps up with setTargetAtTime) so the fade-out starts from where it is
+        const t = AC.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(Math.max(out.gain.value, 0.0001), t); out.gain.linearRampToValueAtTime(0.0001, t + fadeSec);
+        setTimeout(end, fadeSec * 1000 + 50);
+      } else {
+        // cut: a 15 ms ramp instead of yanking the node mid-waveform, which clicks
+        const t = AC.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0.0001, t + 0.015);
+        L.running = false; loops.delete(L); setTimeout(() => { try { out.disconnect(); } catch (e) { /* ignore */ } }, 60);
+      }
     },
     setBpm(b) { const ph = ctl.phase(); L.bpm = clamp(b, 40, 220); L.beatBase = ph; L.tBase = AC.currentTime; },
     getBpm: () => L.bpm,
@@ -277,6 +314,7 @@ function loop(opts = {}) {
     output: out,
     connect(node) { try { out.disconnect(); } catch (e) { /* ignore */ } out.connect(node); }
   };
+  L.ctl = ctl;
   return ctl;
 }
 audio.loop = loop;
@@ -331,14 +369,14 @@ audio.ambience = function (kind) {
     const g = AC.createGain(); g.gain.value = vol; s.connect(f); f.connect(g); g.connect(out); s.start(); nodes.push(s); return { f, g };
   };
   let sub = null;
-  if (kind === "street") { bed("lowpass", 500, 0.5); bed("bandpass", 1200, 0.06); ivs.push(setInterval(() => { if (Math.random() < 0.25 && !audio.muted) { const t = AC.currentTime; tone(t, out, "square", 380 + Math.random() * 80, 0.03, 0.01, 0.3); } }, 2500)); }
+  if (kind === "street") { bed("lowpass", 500, 0.5); bed("bandpass", 1200, 0.06); ivs.push(setInterval(() => { if (Math.random() < 0.25 && !audio.muted && AC.state === "running") { const t = AC.currentTime; tone(t, out, "square", 380 + Math.random() * 80, 0.03, 0.01, 0.3); } }, 2500)); }
   else if (kind === "rain") { bed("highpass", 2500, 0.35); bed("lowpass", 400, 0.2); }
   else if (kind === "crowd") { const b = bed("bandpass", 700, 0.5, 1.4); const l = AC.createOscillator(), lg = AC.createGain(); l.frequency.value = 0.3; lg.gain.value = 250; l.connect(lg); lg.connect(b.f.frequency); l.start(); nodes.push(l); }
   else if (kind === "club_through_wall") { sub = loop({ genre: "house", bpm: 124, seed: 77, energy: 3, volume: 0.6, dest: out }); sub.setFilter("lowpass", 260); sub.start(); }
   else if (kind === "subway") { bed("lowpass", 180, 0.7); bed("bandpass", 900, 0.05); }
-  else if (kind === "office") { const o = AC.createOscillator(); o.frequency.value = 60; const g = AC.createGain(); g.gain.value = 0.04; o.connect(g); g.connect(out); o.start(); nodes.push(o); bed("lowpass", 300, 0.15); ivs.push(setInterval(() => { if (Math.random() < 0.6 && !audio.muted) noise(AC.currentTime, out, "highpass", 4000, 0.05, 0.02); }, 300)); }
+  else if (kind === "office") { const o = AC.createOscillator(); o.frequency.value = 60; const g = AC.createGain(); g.gain.value = 0.04; o.connect(g); g.connect(out); o.start(); nodes.push(o); bed("lowpass", 300, 0.15); ivs.push(setInterval(() => { if (Math.random() < 0.6 && !audio.muted && AC.state === "running") noise(AC.currentTime, out, "highpass", 4000, 0.05, 0.02); }, 300)); }
   else if (kind === "festival") { bed("bandpass", 600, 0.5, 0.8); sub = loop({ genre: "festival", bpm: 126, seed: 9, energy: 4, volume: 0.5, dest: out }); sub.setFilter("lowpass", 500); sub.start(); }
-  else if (kind === "airport") { bed("lowpass", 700, 0.35); ivs.push(setInterval(() => { if (Math.random() < 0.15 && !audio.muted) { const t = AC.currentTime; tone(t, out, "sine", 660, 0.05, 0.02, 0.5); tone(t + 0.45, out, "sine", 523, 0.05, 0.02, 0.6); } }, 4000)); }
+  else if (kind === "airport") { bed("lowpass", 700, 0.35); ivs.push(setInterval(() => { if (Math.random() < 0.15 && !audio.muted && AC.state === "running") { const t = AC.currentTime; tone(t, out, "sine", 660, 0.05, 0.02, 0.5); tone(t + 0.45, out, "sine", 523, 0.05, 0.02, 0.6); } }, 4000)); }
   else { bed("lowpass", 220, 0.15); }
   out.gain.setTargetAtTime(1, AC.currentTime, 0.4);
   return {
@@ -352,7 +390,9 @@ audio.setAmbience = function (kind, f = 1) {
   if (amb) { amb.stop(f); amb = null; }
   if (kind && ctx()) amb = audio.ambience(kind);
 };
-audio.stopAll = function (f = 0.5) { audio.setMusic(null, f); audio.setAmbience(null, f); loops.forEach(L => { L.running = false; }); loops.clear(); };
+/* stop every loop through its own stop(), so each one fades and its nodes are disconnected (clearing the set by hand
+   left their outputs wired to the music bus and their handles unable to stop them later) */
+audio.stopAll = function (f = 0.5) { audio.setMusic(null, f); audio.setAmbience(null, f); [...loops].forEach(L => { try { L.ctl.stop(f); } catch (e) { L.running = false; loops.delete(L); } }); };
 
 /* ---------------- sfx ---------------- */
 const S = {};

@@ -241,6 +241,9 @@ await RP.card({ kicker, title, sub, body: ["p1", "p2"], checks: [[true, "did x"]
 await RP.mg.play("crowdRead", { ... })   // mini-game → result object (see docs/MINIGAMES.md)
 await RP.run(async () => {...})      // run a cutscene from a non-handler context with the panel locked
 ```
+Timers in content: prefer `RP.wait(ms)` over raw `setTimeout` in scripts, so a cutscene stands still while the game
+is paused (see "Pause, sound switch, save slots" below).
+
 Sound: `RP.sfx(name)` — click, thump, crackle, ring, buzz, ping, door, doorBuzz, footstep, coin, cash,
 pickup, drop, error, success, unlock, camera, typing, microwave, alarm, spray, scratch, needle, rewind,
 cheer, boo, whoosh, train, siren, splash, zip, shower, knock, glass, horn, blip, select, fail.
@@ -292,3 +295,36 @@ queued result (or their `auto()` result). The walkthrough must reach `RP.complet
 `["expect", "S.done.includes(2)", "act 2 complete"]` (completing an act also starts the next one if it exists).
 
 Run: `node tests/run.mjs walk act2 --act 2 --page <your build>` → must print `"ok": true` with no PAGE ERRORS.
+
+## Pause, sound switch, save slots
+
+**Pause** (`src/core/engine.js`): `RP.pause(true|false)`, `RP.togglePause()`, `RP.paused`. The player pauses with the
+PAUSE button in the sentence bar, the `Pause` key or `Shift+P` (`P` alone is "pick up"), and automatically when the tab
+is hidden (it then stays paused until RESUME). The overlay offers RESUME, SAVE GAME, LOAD GAME, SOUND ON/OFF and QUIT TO
+TITLE; SAVE and QUIT are disabled while a cutscene or mini-game runs, LOAD answers "Finish this first". Pausing:
+- stops the frame loop (actors, room `update`, drawing); the dt clock is reset on resume, so nothing jumps;
+- freezes the game clock `RP.gnow()` (performance.now() minus paused time). Room `t`, `RP.fadeTo`, `RP.shake`, `RP.flash`
+  run on it; `RP.say` lines, `RP.wait`, toasts and `RP.ptimeout(fn, ms)` / `RP.pclear(t)` are pausable timers;
+- in mini-games: `host.raf` skips frames and passes a timestamp with the paused time removed, `host.timeout` /
+  `host.interval` stand still, key presses are swallowed (key-ups pass). **Not covered:** raw `setTimeout` /
+  `setInterval` / `performance.now()` inside a mini-game or a room script (they keep running in real time) — use the
+  host helpers / `RP.wait` / the `t` argument instead;
+- suspends the AudioContext (`RP.audio.pause(on)`; every loop and scheduled note freezes in place, nothing is torn
+  down) and pauses the streaming-patch `<audio>` elements.
+
+**Sound switch**: one state, `RP.setMute(bool)` / `RP.toggleMute()` / `RP.isMuted()`, stored in `reparte.muted`. The SND
+button, the pause overlay, the title's SOUND button and the `M` key (not inside mini-games or text boxes) all use it.
+Any button with `data-mute-label="SOUND"` gets its label kept in step. Note: mini-games that wire their own nodes
+straight to `AC.destination` (beat.Match does) bypass the master mute; they only check `RP.audio.muted` when they start.
+
+**Save slots**: the autosave (`RP.save`, CONTINUE) is unchanged. Three manual slots live at `<save key>.slot1..3` as
+`{ S, when, label }` (label "Level N · room name · clock"). `RP.slots()` → `[{ n, empty, label, when }]`,
+`RP.hasSlots()`, `RP.saveSlot(n)` (refused while busy or in a mini-game), `RP.loadSlot(n)` (same path as `RP.restore`;
+refused while busy), `RP.pickSlot("save"|"load")` (in-game picker → n or null), `RP.slotUI(box, mode, done)` (the list,
+drawn into any element; the title uses it). Malformed stored JSON reads as an empty slot. Test: `node tests/saveload.mjs --page <build>`.
+
+**Layout notes**: on a touch screen in landscape (`(pointer: coarse)`, not portrait) `layout()` sets `body.t` and the
+frame grows from 640×360 to 640×422 (sentence line 38 px, panel 128 px) so the sentence-bar buttons, verbs and dialogue
+choices stay ≥ 32 css px once scaled. The scene is still 640×256. While the game is hidden (`RP.hideGame(true)`: title,
+arcade) the `#toast` host moves to `<body>` as a fixed strip so title-screen toasts are visible; it returns to the frame
+on `RP.hideGame(false)`.

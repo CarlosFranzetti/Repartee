@@ -91,6 +91,10 @@ function showTitle() {
   const bCont = el("button", { type: "button", cls: "cont", text: "CONTINUE" }, split);
   if (saved) bCont.addEventListener("click", go(async () => { closeTitle(); if (!(await RP.loadSave())) { showTitle(); } }));
   else { bCont.disabled = true; bCont.title = "No saved game yet"; }
+  // LOAD: the three manual save slots (RP.slotUI in the panel below); greyed until one of them holds a game
+  const bLoad = el("button", { type: "button", cls: "load", text: "LOAD" }, split);
+  if (RP.hasSlots()) bLoad.addEventListener("click", go(() => loadPanel(panel)));
+  else { bLoad.disabled = true; bLoad.title = "No saved games yet (save from MENU or the pause screen)"; }
   const bNew = el("button", { type: "button", cls: "new", text: DEMO ? "PLAY LEVEL " + DEMO.level : "NEW GAME" }, split);
   bNew.addEventListener("click", go(() => newGame(panel)));
   const first = [saved ? bCont : bNew];
@@ -99,6 +103,9 @@ function showTitle() {
   add("JUKEBOX", () => toggle(panel, jukebox));
   add("MINI-GAMES", () => toggle(panel, arcade));
   add("CREDITS", () => toggle(panel, credits));
+  // the same sound switch as the in-game SND button, the pause screen and the M key (RP.setMute); labels follow it
+  const bSnd = add("", () => RP.toggleMute());
+  bSnd.dataset.muteLabel = "SOUND"; bSnd.textContent = "SOUND " + (RP.isMuted() ? "OFF" : "ON");
   if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all eight mini-games in the arcade. Sound on helps." }, box);
   else el("p", { cls: "small", text: "Five levels. Eight mini-games. Sound on helps." }, box);
   if (SITE) levelNav(box);
@@ -131,6 +138,17 @@ function lockedPage(box) {
   const row = el("div", { cls: "erow" }, card);
   link(DEMO.full, "PLAY THE FULL GAME", row, "btn primary").style.textDecoration = "none";
   levelNav(box);
+}
+function loadPanel(panel) {
+  stopPreview();
+  if (!panel.hidden && panel.dataset.k === "load") { panel.hidden = true; themeSync(2000); return; }
+  panel.innerHTML = ""; panel.className = "panelbox slotbox-t"; panel.dataset.k = "load"; panel.hidden = false;
+  RP.slotUI(panel, "load", async n => {
+    if (!n) { panel.hidden = true; themeSync(2000); return; }
+    closeTitle();
+    if (!(await RP.loadSlot(n))) showTitle();
+  });
+  themeSync(2000);
 }
 function closeTitle() { themeOn = false; clearTimeout(themeTimer); themeTimer = 0; RP.audio.titleTheme.stop(0.5); stopPreview(); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
 function toggle(panel, fill) { stopPreview(); if (!panel.hidden && panel.dataset.k === fill.name) { panel.hidden = true; themeSync(2000); return; } panel.innerHTML = ""; panel.className = "panelbox"; panel.dataset.k = fill.name; fill(panel); panel.hidden = false; themeSync(2000); }
