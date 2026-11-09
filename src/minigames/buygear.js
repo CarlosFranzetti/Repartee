@@ -286,6 +286,36 @@ const CSS = `
 .bg-card-end ul b { font-weight: 400; color: var(--fg); }
 .bg-card-end canvas { width: min(480px, 100%); height: auto; image-rendering: pixelated; image-rendering: crisp-edges; border: 2px solid #3a2f78; }
 .bg-wrap :focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .bg-head .bg-leave { min-height: 32px; padding: 3px 14px; }
+  .bg-offer .kbtn, .bg-btns .btn, .bg-probe, .bg-card, .bg-aud .opts .btn { min-height: 32px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .mg-buyGear { padding-top: 6px; padding-bottom: 6px; }
+  .mg-buyGear .mg-logo { font-size: 18px; } .mg-buyGear .mg-sub { font-size: 15px; }
+  .bg-wrap { gap: 4px; }
+  .bg-head .bg-cash { font-size: 20px; } .bg-head .bg-cash small { font-size: 14px; }
+  .bg-main { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-areas: "scene insp say" "cards insp notes"; grid-template-rows: auto 1fr; gap: 4px 8px; }
+  .bg-box { padding: 5px; gap: 4px; }
+  .bg-a-notes { align-self: stretch; }
+  .bg-say { min-height: 0; font-size: 16px; line-height: 1; }
+  .bg-cards { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .bg-card { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n d p"; padding: 3px 8px; column-gap: 8px; font-size: 16px; align-items: center; }
+  .bg-card .sub { display: none; } .bg-card .pr { font-size: 19px; }
+  .bg-ttl { font-size: 17px; } .bg-ttl small { font-size: 13px; }
+  .bg-box .bg-frame { width: 112px; align-self: center; }
+  .bg-fact { font-size: 14px; max-height: 4.2em; }
+  .bg-probes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .bg-probe { gap: 0; font-size: 14px; padding: 2px 3px; text-align: center; } .bg-probe kbd { font-size: 12px; }
+  .bg-notes { min-height: 0; font-size: 15px; gap: 2px; } .bg-notes li { grid-template-columns: 38px 1fr; gap: 4px; } .bg-notes li i { font-size: 12px; }
+  .bg-deal { padding: 4px 8px; gap: 4px 10px; }
+  .bg-deal.stick { box-shadow: 0 -4px 0 rgba(5, 3, 10, .9), 0 6px 0 #05030a; }
+  .bg-ask { font-size: 15px; min-width: 0; } .bg-ask b { font-size: 24px; } .bg-ask small { font-size: 13px; margin-top: 0; }
+  .bg-offer { flex: 1 1 200px; } .bg-offer .val { font-size: 22px; min-width: 52px; } .bg-offer input[type=range] { height: 24px; }
+  .bg-btns .btn { font-size: 17px; padding: 3px 10px; }
+  .bg-meter { font-size: 17px; } .bg-meter b { font-size: 24px; }
+  .bg-aud .q { font-size: 17px; } .bg-aud .opts .btn { font-size: 16px; padding: 3px 8px; }
+}
 @media (max-width: 760px) {
   .bg-main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "scene" "say" "cards" "insp" "notes"; grid-template-rows: auto; }
   .bg-cards { grid-template-columns: minmax(0, 1fr); gap: 4px; }

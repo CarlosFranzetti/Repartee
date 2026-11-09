@@ -204,7 +204,7 @@ const CSS = `
   .mg-crowdRead .mg-wrap { gap: 4px; }
   .mg-crowdRead .mg-head { flex-wrap: nowrap; align-items: baseline; }
   .mg-crowdRead .mg-logo { font-size: 13px; } .mg-crowdRead .mg-sub { font-size: 15px; }
-  .cr-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 36%); gap: 8px; align-items: start; }
+  .cr-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 54%); gap: 8px; align-items: start; }
   .cr-left, .cr-side { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .cr-scene, .cr-now, .cr-gauge, .cr-chips, .cr-msg, .cr-say, .cr-tell, .cr-hand, .cr-act, .cr-hist { order: 0; }
   .cr-now, .cr-say, canvas.cr-hist { display: none; }
@@ -213,10 +213,16 @@ const CSS = `
   .cr-chips .sk-chip { font-size: 14px; padding: 0 5px; }
   .cr-tell { padding: 0; border: 0; background: none; min-height: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cr-tell > :not(:first-child) { display: none; }
-  .cr-hand { max-height: calc(100vh - 76px); overflow-y: auto; gap: 3px; padding-right: 2px; }
+  .cr-hand { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: calc(100vh - 76px); overflow-y: auto; gap: 3px; padding-right: 2px; }
   .cr-hand .sk-card { padding: 2px 5px 2px 3px; }
   .cr-act .btn { padding: 4px 12px; font-size: 19px; }
 }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .cr-act .btn, .sk-head .sk-leave { min-height: 32px; }
+}
+/* the action row stays on screen while the rest scrolls */
+.cr-act { position: sticky; bottom: -12px; z-index: 3; background: #0a0716; padding: 4px 0 12px; margin-bottom: -12px; }
+@media (max-height: 460px) { .cr-act { padding-bottom: 8px; bottom: -4px; margin-bottom: -8px; } }
 `;
 let cssDone = false;
 
@@ -278,7 +284,7 @@ RP.mg.register("crowdRead", {
       const W = 320, H = 144;
       const cv = el("canvas", { cls: "sk-cv px", width: W, height: H, role: "img", "aria-label": "The dance floor, seen from the DJ booth" }, sceneWrap);
       const sc = cv.getContext("2d");
-      kit.fit(host, cv, W, H, sceneWrap, 0, 190);
+      kit.fit(host, cv, W, H, sceneWrap, 0, 226);
 
       /* ----- under the scene ----- */
       const now = el("div", { cls: "cr-now" }, left);

@@ -74,6 +74,7 @@ const TECH_START = {
 const gearLabel = (id, fb) => { try { const g = RP.gearInfo(id); return g ? g.brand + " " + g.model : fb; } catch (e) { return fb; } };
 const gearType = (id, fb) => { try { const g = RP.gearInfo(id); if (g) return g.kind === "turntable" ? "tt" : "cdj"; } catch (e) { /* ignore */ } return fb; };
 
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 const CSS = `
 .sc-clock { font-size: 24px; color: var(--amber); font-variant-numeric: tabular-nums; } .sc-clock.low { color: #ff6a6a; }
 .sc-clock small { color: var(--muted); font-size: 17px; margin-right: 6px; }
@@ -146,6 +147,10 @@ const CSS = `
 .sc-main.compact .sc-cap { padding: 2px 6px; gap: 1px; } .sc-main.compact .sc-caphd { font-size: 14px; } .sc-main.compact .sc-caphd small { font-size: 14px; } .sc-main.compact .sc-capbody { min-height: 0; gap: 0 12px; } .sc-main.compact .sc-capbody span { font-size: 16px; line-height: 1; } .sc-main.compact .sc-capbody span::before { width: 4px; height: 4px; margin-right: 5px; }
 @media (max-width: 860px) { .sc-clock { font-size: 20px; } .sc-panel { min-height: 0; } .sc-info .mg-msg { font-size: 20px; } .sc-acts .btn { padding: 6px 12px; } }
 @media (max-width: 420px) { .sc-test .kbtn { font-size: 16px; } .sc-tab { font-size: 16px; } .sc-eq input { height: 74px; } }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .sc-test .kbtn, .sc-main.compact .sc-test .kbtn, .sc-tab, .sc-main.compact .sc-tab, .sc-seg button, .sc-acts .btn, .sc-acts .kbtn, .sc-strip .kbtn, .sc-card .kbtn { min-height: 32px; }
+}
+@media (max-width: 760px) { .sc-acts { position: sticky; bottom: -12px; z-index: 3; background: #0a0716; padding: 4px 0 12px; margin-bottom: -12px; } }
 @media (prefers-reduced-motion: reduce) { .sc-scene { cursor: pointer; } }
 `;
 
@@ -329,7 +334,7 @@ RP.mg.register("soundCheck", {
         const track = n => { a.nodes.push(n); return n; };
         a.out = track(AC.createGain()); a.out.gain.value = 0.0001;
         const lim = track(AC.createDynamicsCompressor()); lim.threshold.value = -12; lim.knee.value = 8; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.15;
-        a.out.connect(lim); lim.connect(AC.destination);
+        a.out.connect(lim); lim.connect(sfxDest(AC));
         a.sum = track(AC.createGain());
         a.dk = [0, 1].map(() => {
           const input = track(AC.createGain()), drive = track(AC.createGain()), sh = track(AC.createWaveShaper()), hp = track(AC.createBiquadFilter()), shelf = track(AC.createBiquadFilter()), g = track(AC.createGain());

@@ -60,6 +60,7 @@ const CSS = `
 `;
 let cssDone = false;
 
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 RP.mg.register("beatMatch", {
   title: "beat.Match", order: 1,
   desc: "Match two decks by tempo and phase, then bring the new one in.",
@@ -127,7 +128,7 @@ RP.mg.register("beatMatch", {
     const bpmB = () => BASE_B * (1 + st.pitch / 100);
     const AC = RP.audio.ctx();
     let master = null, gA = null, gB = null;
-    if (AC && !RP.audio.muted) { master = AC.createGain(); master.gain.value = 0.8; master.connect(AC.destination); gA = AC.createGain(); gB = AC.createGain(); gA.connect(master); gB.connect(master); }
+    if (AC) { master = AC.createGain(); master.gain.value = 0.8; master.connect(sfxDest(AC)); gA = AC.createGain(); gB = AC.createGain(); gA.connect(master); gB.connect(master); }
     const D = RP.audio.drums;
     function schedule() {
       if (!gA) return;

@@ -36,6 +36,7 @@ const CSS = `
   .pt-deal { grid-template-columns: 1fr 1fr; column-gap: 8px; } .pt-row { grid-template-columns: 1fr; gap: 0; font-size: 17px; padding: 1px 4px; } .pt-row .lb { font-size: 13px; } .pt-row.lock .vl::after { content: " *"; }
 }
 .pt-peek { margin-top: 6px; }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) { .pt-peek, .pt-play .sk-choice, .sk-head .sk-leave { min-height: 32px; } }
 .pt-hide { display: none; }
 `;
 let cssDone = false;
