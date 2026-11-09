@@ -854,7 +854,16 @@ MG.play = async function (id, params = {}) {
     timeout(fn, ms) { const t = ptimeout(fn, ms); cleanups.push(() => pclear(t)); return t; },
     interval(fn, ms) { const h = { t: null }; const tick = () => { h.t = ptimeout(tick, ms); fn(); }; h.t = ptimeout(tick, ms); cleanups.push(() => pclear(h.t)); return h; },
     cleanup(fn) { cleanups.push(fn); },
-    header(title, sub) { const h = el("div", { cls: "mg-head" }, root); el("div", { cls: "mg-logo", html: esc(title).replace(".", "<span>.</span>") }, h); if (sub) el("div", { cls: "mg-sub", text: sub }, h); return h; },
+    /* the header: logo on the left; on the right the sub label (e.g. "Arcade") and a PAUSE button (the only on-screen
+       pause inside a mini-game, which phones need: they have no Pause key) */
+    header(title, sub) {
+      const h = el("div", { cls: "mg-head" }, root); el("div", { cls: "mg-logo", html: esc(title).replace(".", "<span>.</span>") }, h);
+      const r = el("div", { cls: "mg-headR" }, h);
+      if (sub) el("div", { cls: "mg-sub", text: sub }, r);
+      const pb = el("button", { cls: "mg-pause", type: "button", "aria-label": "Pause game", title: "Pause (Pause key or Shift+P)", text: "PAUSE" }, r);
+      pb.addEventListener("click", e => { e.stopPropagation(); setPaused(true); });
+      return h;
+    },
     button(text, onClick, cls) { const b = el("button", { cls: "btn " + (cls || ""), type: "button", text }, root); b.addEventListener("click", onClick); return b; }
   };
   MG.active = host;

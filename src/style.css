@@ -168,6 +168,12 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .mg-logo { font-family: var(--logo); font-size: clamp(18px, 3.4vw, 28px); color: #fff; }
 .mg-logo span { color: var(--pink); }
 .mg-sub { font-size: 19px; color: var(--muted); }
+.mg-headR { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+/* same quiet look as the sentence-bar SND / MENU / PAUSE buttons */
+.mg-pause { flex: none; font-family: var(--ui); font-size: 15px; letter-spacing: .04em; color: var(--verb); background: none; border: 1px solid #241d48; border-radius: 2px; padding: 2px 8px; cursor: pointer; }
+.mg-pause:hover, .mg-pause:focus-visible { color: var(--fg); border-color: var(--line); outline: none; }
+/* 32 px tap target on touch; the negative block margin keeps it from making the header row (and the game) taller */
+@media (pointer: coarse) { .mg-pause { min-height: 32px; min-width: 44px; margin-block: -8px; } }
 .mg-panel { background: #120e24; border: 1px solid var(--line); border-radius: 4px; padding: 10px; }
 .mg-msg { font-size: 22px; color: var(--fg); min-height: 1.1em; }
 .mg-say { font-size: 20px; color: #ff8fcf; min-height: 1.1em; }

@@ -140,6 +140,11 @@ const errorsOf = p => { const errors = []; p.on("pageerror", e => errors.push("p
   await p.waitForTimeout(100);
   const d2 = await p.evaluate(() => window.RP.paused);
   check(d && !d2, "PAUSE button pauses, RESUME resumes");
+  await p.keyboard.press("Pause"); await p.waitForTimeout(50);
+  const k1 = await p.evaluate(() => window.RP.paused);
+  await p.keyboard.press("Pause"); await p.waitForTimeout(50);
+  const k2 = await p.evaluate(() => window.RP.paused);
+  check(k1 && !k2, "Pause key toggles pause");
 
   // 4: beat.Match
   await p.evaluate(() => { window.RP.mg.play("beatMatch", { arcade: true, difficulty: 2 }).then(r => { window.__mgResult = r; }); });
@@ -149,8 +154,13 @@ const errorsOf = p => { const errors = []; p.on("pageerror", e => errors.push("p
   await p.waitForTimeout(300);
   const g1 = await grab();
   check(g0.cv !== g1.cv, "beat.Match animates before pausing");
-  await p.keyboard.press("Shift+P");
+  // the on-screen PAUSE in the mini-game header (phones have no Pause key)
+  const hb = await p.$(".mg .mg-head .mg-pause");
+  check(!!hb, "beat.Match: PAUSE button in the mini-game header");
+  if (hb) await hb.click(); else await p.keyboard.press("Shift+P");
   await p.waitForTimeout(100);
+  const top = await p.evaluate(() => { const o = document.querySelector(".overlay.pause"); if (!o) return null; const b = o.querySelector(".btn.primary").getBoundingClientRect(); const at = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2); return { onTop: o.contains(at), z: getComputedStyle(o).zIndex }; });
+  check(top && top.onTop, "beat.Match: PAUSED overlay sits above the mini-game", JSON.stringify(top));
   const g2 = await grab();
   const ac2 = await p.evaluate(() => ({ paused: window.RP.paused, ctx: window.RP.audio.ctx().state, save: document.querySelector(".pausemenu .btn:nth-child(2)").disabled }));
   await p.waitForTimeout(500);
@@ -158,11 +168,11 @@ const errorsOf = p => { const errors = []; p.on("pageerror", e => errors.push("p
   check(ac2.paused && ac2.ctx === "suspended", "beat.Match: paused, AudioContext suspended", ac2.ctx);
   check(g2.cv === g3.cv && g2.timer === g3.timer, "beat.Match: platters, grid and timer stand still for 500 ms");
   check(ac2.save, "beat.Match: SAVE disabled while a mini-game runs");
-  await p.keyboard.press("Pause");
+  await p.click(".overlay.pause .btn.primary");   // RESUME returns to the mini-game
   await p.waitForTimeout(400);
   const g4 = await grab();
   const ac4 = await p.evaluate(() => ({ paused: window.RP.paused, ctx: window.RP.audio.ctx().state }));
-  check(!ac4.paused && ac4.ctx === "running" && g4.cv !== g3.cv, "beat.Match: resumes (Pause key), animates again", ac4.ctx);
+  check(!ac4.paused && ac4.ctx === "running" && g4.cv !== g3.cv, "beat.Match: RESUME returns to it, animates again", ac4.ctx);
   await p.evaluate(() => { const b = [...document.querySelectorAll(".mg button")].find(x => /GIVE UP|HANG UP/.test(x.textContent)); if (b) b.click(); });
   await p.waitForTimeout(400);
   const res = await p.evaluate(() => window.__mgResult || null);
