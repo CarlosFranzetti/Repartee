@@ -49,9 +49,11 @@ button { font-family: var(--ui); }
 #sentence { position: absolute; left: 0; top: 256px; width: 640px; height: 18px; box-sizing: border-box; padding-inline: 6px; gap: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; color: var(--cyan); background: #07050f; }
 #sentence .hud { flex: none; margin-left: auto; color: var(--muted); font-size: 15px; letter-spacing: .03em; white-space: nowrap; }
 #sentence #sent { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#sentence .snd, #sentence .menuBtn { flex: none; color: var(--muted); font-size: 15px; background: none; border: 0; padding: 0 2px; cursor: pointer; }
+#sentence .snd, #sentence .menuBtn, #sentence .pauseBtn { flex: none; color: var(--muted); font-size: 15px; background: none; border: 0; padding: 0 2px; cursor: pointer; }
 #sentence .menuBtn { color: var(--amber); }
-#sentence .snd:hover, #sentence .menuBtn:hover { color: var(--fg); }
+#sentence .pauseBtn { color: var(--verb); }
+#sentence .snd:hover, #sentence .menuBtn:hover, #sentence .pauseBtn:hover { color: var(--fg); }
+#sentence .snd:focus-visible, #sentence .menuBtn:focus-visible, #sentence .pauseBtn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 0; }
 #panel { position: absolute; left: 0; top: 274px; width: 640px; height: 86px; box-sizing: border-box; padding: 4px 6px 5px; background: var(--panel); border-top: 1px solid var(--line); display: grid; grid-template-columns: 204px 1fr; gap: 8px; }
 #verbs { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 3px; }
 .verb { background: #110d24; border: 1px solid #241d48; color: var(--verb); font-size: 18px; line-height: 1; padding: 0; cursor: pointer; border-radius: 2px; }
@@ -63,7 +65,9 @@ button { font-family: var(--ui); }
 .slot:hover { border-color: #463a86; color: var(--fg); }
 .slot.sel { border-color: var(--pink); color: var(--pink); }
 .slot canvas { width: 32px; height: 24px; image-rendering: crisp-edges; image-rendering: pixelated; }
-.slot span { font-size: 13px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding-inline: 2px; }
+.slot span { font-size: 13px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding-inline: 2px; }
+/* line-height 1 clipped the descenders; the icon's empty bottom rows tuck under the label so both fit the 37 px row */
+.slot canvas { margin-bottom: -5px; }
 .slot.empty { cursor: default; opacity: .45; }
 #choices { grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: flex-start; gap: 0; padding-left: 6px; overflow-y: auto; }
 /* auto margins centre a short list; a long one starts at the top and scrolls (justify-content: center would clip its first rows) */
@@ -86,16 +90,18 @@ body.p { overflow: auto; }
 body.p #app { justify-content: center; padding-block: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-bottom, 0px) + 12px); height: auto; min-height: 100%; }
 body.p #below { display: flex; }
 body.p #hint { display: block; }
-body.p #sentence { position: relative; left: auto; top: auto; width: 100%; height: auto; font-size: 20px; border: 1px solid var(--line); display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 2px 10px; padding: 4px 8px; }
-body.p #sentence .snd, body.p #sentence .menuBtn, body.p #sentence .hud { position: static; font-size: 16px; }
-body.p #sentence .hud { justify-self: end; text-align: right; }
+body.p #sentence { position: relative; left: auto; top: auto; width: 100%; height: auto; font-size: 20px; border: 1px solid var(--line); display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; gap: 2px 10px; padding: 4px 8px; box-sizing: border-box; }
+body.p #sentence .snd, body.p #sentence .menuBtn, body.p #sentence .pauseBtn, body.p #sentence .hud { position: static; font-size: 16px; }
+body.p #sentence .snd, body.p #sentence .menuBtn, body.p #sentence .pauseBtn { min-height: 36px; min-width: 44px; padding: 0 4px; }
+body.p #sentence .hud.hud { min-width: 0; justify-self: stretch; white-space: normal; line-height: 1.05; }   /* a long HUD wraps in its cell instead of widening the page */
+body.p #sentence .hud { text-align: right; }
 body.p #sentence #sent { grid-column: 1 / -1; grid-row: 2; text-align: center; font-size: 20px; min-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.p #panel { position: static; width: 100%; height: auto; grid-template-columns: 1fr; padding: 8px; gap: 10px; border: 1px solid var(--line); }
 body.p .verb { font-size: 22px; min-height: 40px; }
 body.p #verbs { grid-template-rows: none; }
 body.p #inv { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); grid-auto-rows: auto; overflow: visible; }
 body.p .slot { min-height: 74px; gap: 4px; }
-body.p .slot canvas { width: 64px; height: 48px; }
+body.p .slot canvas { width: 64px; height: 48px; margin-bottom: 0; }
 body.p .slot span { font-size: 16px; }
 body.p .choice { font-size: 22px; padding: 6px 4px; }
 
@@ -173,6 +179,12 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .mg-logo { font-family: var(--logo); font-size: clamp(18px, 3.4vw, 28px); color: #fff; }
 .mg-logo span { color: var(--pink); }
 .mg-sub { font-size: 19px; color: var(--muted); }
+.mg-headR { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+/* same quiet look as the sentence-bar SND / MENU / PAUSE buttons */
+.mg-pause { flex: none; font-family: var(--ui); font-size: 15px; letter-spacing: .04em; color: var(--verb); background: none; border: 1px solid #241d48; border-radius: 2px; padding: 2px 8px; cursor: pointer; }
+.mg-pause:hover, .mg-pause:focus-visible { color: var(--fg); border-color: var(--line); outline: none; }
+/* 32 px tap target on touch; the negative block margin keeps it from making the header row (and the game) taller */
+@media (pointer: coarse) { .mg-pause { min-height: 32px; min-width: 44px; margin-block: -8px; } }
 .mg-panel { background: #120e24; border: 1px solid var(--line); border-radius: 4px; padding: 10px; }
 .mg-msg { font-size: 22px; color: var(--fg); min-height: 1.1em; }
 .mg-say { font-size: 20px; color: #ff8fcf; min-height: 1.1em; }
@@ -222,6 +234,9 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 
 /* title: CONTINUE | NEW GAME split button (shared by all menu styles) */
 .split { display: grid; grid-template-columns: 1fr 1fr; }
+.menu .split { grid-template-columns: 1.2fr .8fr 1.2fr; }
+.menu .split .load { background: rgba(10, 6, 24, .92); color: var(--pink); border-left: 2px solid var(--pink) !important; }
+.menu .split .load:disabled { color: var(--muted); cursor: default; }
 .menu .split button { font-family: var(--ui); font-size: 24px; letter-spacing: .08em; padding: 8px 12px; cursor: pointer; text-align: center; text-shadow: none; border: 0; }
 .menu .split button::before { content: none; }
 .menu .split .cont { background: var(--pink); color: #12061a; }
@@ -274,6 +289,55 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .arc-spot-facts { font-size: 15px; letter-spacing: .08em; color: var(--muted); margin: 0; }
 .arc-spot-facts b { color: var(--tint); font-weight: 400; }
 .arc-count { font-size: 13px; color: var(--muted); letter-spacing: .1em; }
+
+/* pause overlay and save/load slots */
+.overlay.pause { z-index: 40; background: rgba(5, 3, 10, .93); }
+.pausebox, .slotbox { width: min(460px, 100%); }
+.pausebox h2 { text-align: center; letter-spacing: .12em; }
+.pausemenu { display: grid; gap: 8px; }
+.pausemenu .btn { width: 100%; }
+.slotnote { margin: 0; font-size: 17px; color: var(--muted); line-height: 1.15; }
+.slotlist { display: grid; gap: 6px; }
+.slotrow { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 10px; align-items: baseline; text-align: left; font-family: var(--ui); background: #120e24; border: 1px solid #241d48; color: var(--fg); padding: 6px 10px; cursor: pointer; border-radius: 2px; min-width: 0; }
+.slotrow b { grid-row: 1 / 3; font-weight: 400; color: var(--pink); font-size: 18px; letter-spacing: .06em; }
+.slotrow span { font-size: 19px; line-height: 1.1; overflow-wrap: anywhere; }
+.slotrow small { grid-column: 2; font-size: 15px; color: var(--muted); }
+.slotrow.empty span { color: var(--muted); }
+.slotrow:hover:not(:disabled), .slotrow:focus-visible { border-color: var(--pink); outline: none; }
+.slotrow:disabled { cursor: default; border-style: dashed; }
+.slotrow:disabled b { color: var(--muted); }
+.panelbox .slotbox-t h2 { font-family: var(--logo); font-weight: 400; font-size: 16px; margin: 0 0 6px; color: #fff; }
+.panelbox .slotbox-t .slotlist { margin: 6px 0 8px; }
+
+/* touch screens in landscape (body.t, set by layout()): the frame grows to 640x422 so the sentence-line buttons, the
+   verbs and dialogue choices are all >= 32 css px tall once the frame is scaled to the screen */
+body.t #sentence { height: 38px; font-size: 20px; }
+body.t #sentence .snd, body.t #sentence .menuBtn, body.t #sentence .pauseBtn { align-self: stretch; font-size: 18px; min-width: 44px; padding: 0 4px; }
+body.t #sentence .hud { font-size: 16px; }
+body.t #panel { top: 294px; height: 128px; }
+body.t #inv { grid-auto-rows: calc((128px - 12px) / 2); }
+body.t .slot canvas { margin-bottom: 0; }
+body.t #panel.choosing { top: auto; bottom: 0; height: auto; min-height: 128px; max-height: 412px; }
+body.t .choice { font-size: 20px; padding: 8px 4px; }
+@media (pointer: coarse) {
+  .rb-chip { min-height: 34px; padding: 4px 10px; font-size: 16px; }
+  .rb-row { min-height: 40px; }
+}
+/* the toast strip while the game is hidden (title, arcade): fixed at the top of the window, above the title */
+#toast.top { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 60; }
+/* short landscape screens (phones on their side): tighten the title so the whole menu fits above the fold */
+@media (max-height: 500px) {
+  #title { padding-block: 6px; }
+  .tbox { gap: 6px; }
+  .logo { font-size: clamp(26px, 6vw, 44px); }
+  .tag { font-size: 16px; }
+  .tagline { font-size: 15px; }
+  .menu { gap: 5px; margin-top: 2px; }
+  .menu > button { padding: 5px 8px; font-size: 19px; min-height: 34px; }
+  .menu .split button { padding: 4px 10px; font-size: 21px; min-height: 34px; }
+  .small { font-size: 15px; }
+  .levelnav { font-size: 16px; padding: 2px 10px; }
+}
 
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -1598,8 +1662,11 @@ const RP = window.RP;
 const { mulberry, hashStr, clamp } = RP.u;
 
 let AC = null, master = null, musicBus = null, sfxBus = null, ambBus = null, noiseBuf = null, comp = null;
-const muteCbs = [];
+const muteCbs = [], pauseCbs = [];
 const audio = RP.audio = { muted: false };
+// held: the game is paused (RP.pause). The context stays suspended until it is released, whatever else calls ctx()
+let held = false;
+const live = c => c && c.state !== "closed";
 
 function ctx() {
   if (!AC) {
@@ -1617,9 +1684,11 @@ function ctx() {
       musicBus.connect(comp); sfxBus.connect(comp); ambBus.connect(comp); comp.connect(master); master.connect(AC.destination);
       noiseBuf = AC.createBuffer(1, AC.sampleRate * 1, AC.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      if (held) { try { AC.suspend(); } catch (e) { /* ignore */ } }
     } catch (e) { AC = null; return null; }
   }
-  if (AC.state === "suspended") { try { AC.resume(); } catch (e) { /* ignore */ } }
+  // wake a suspended (or iOS "interrupted") context, but never while the game is paused or the tab is in the background
+  if (AC.state !== "running" && live(AC) && !held && !document.hidden) { try { AC.resume(); } catch (e) { /* ignore */ } }
   return AC;
 }
 audio.ctx = ctx;
@@ -1632,15 +1701,32 @@ audio.unlock = () => {
   if (!unlocked) { try { const b = c.createBuffer(1, 1, c.sampleRate), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); unlocked = true; } catch (e) { /* ignore */ } }
 };
 audio.ready = (maxMs = 600) => {
-  const c = ctx(); if (!c || c.state === "running") return Promise.resolve(!!c);
+  const c = ctx(); if (!c || c.state === "running" || held) return Promise.resolve(!!c);
   return new Promise(res => {
     let done = false; const fin = v => { if (!done) { done = true; res(v); } };
     try { c.resume().then(() => fin(true), () => fin(false)); } catch (e) { fin(false); }
     setTimeout(() => fin(c.state === "running"), maxMs);
   });
 };
-// coming back to the tab: wake the context; the schedulers skip the beats that were missed instead of bursting them
-document.addEventListener("visibilitychange", () => { if (!document.hidden && AC && AC.state === "suspended") { try { AC.resume(); } catch (e) { /* ignore */ } } });
+/* background tab: suspend the context, so the look-ahead schedulers (throttled to ~1 Hz by the browser) can't fall
+   behind and nothing plays half-scheduled; coming back wakes it, unless the game is paused (RP.pause), in which case
+   RESUME does. Audio time stands still while suspended, so the loops pick up exactly where they stopped. */
+document.addEventListener("visibilitychange", () => {
+  if (!AC || !live(AC)) return;
+  if (document.hidden) { if (AC.state === "running") { try { AC.suspend(); } catch (e) { /* ignore */ } } }
+  else if (!held && AC.state !== "running") { try { AC.resume(); } catch (e) { /* ignore */ } }
+});
+/* pause(true) suspends the context (every loop, sfx tail and the title theme freeze in place, nothing is torn down);
+   pause(false) resumes it. Listeners (the streaming <audio> elements) follow via onPauseChange. */
+audio.pause = on => {
+  held = !!on;
+  if (AC && live(AC)) {
+    try { if (held) AC.suspend(); else if (!document.hidden) AC.resume(); } catch (e) { /* ignore */ }
+  }
+  pauseCbs.forEach(f => { try { f(held); } catch (e) { /* ignore */ } });
+};
+audio.isPaused = () => held;
+audio.onPauseChange = f => pauseCbs.push(f);
 ["pointerdown", "keydown", "touchend"].forEach(ev => window.addEventListener(ev, () => audio.unlock(), { capture: true, passive: true }));
 audio.buses = () => ({ music: musicBus, sfx: sfxBus, noise: noiseBuf });
 audio.setMute = m => {
@@ -1651,7 +1737,7 @@ audio.setMute = m => {
 audio.onMuteChange = f => muteCbs.push(f);
 audio.setMusicVolume = v => { if (musicBus) musicBus.gain.value = v; };
 audio.setSfxVolume = v => { if (sfxBus) sfxBus.gain.value = v; };
-const ok = () => !audio.muted && ctx();
+const ok = () => !audio.muted && !held && ctx();
 
 /* ---------------- voices ---------------- */
 function env(g, t, a, peak, d, sus = 0.0001) {
@@ -1770,7 +1856,13 @@ function tick() {
   const now = AC.currentTime, ahead = now + 0.2;
   // a stalled main thread (a heavy room paint, a background tab) leaves loops behind: skip the missed steps silently
   // rather than scheduling them all in the past, which plays them at once as a burst
-  loops.forEach(L => { if (!L.running) return; let guard = 0; while (L.next < now - 0.02 && guard++ < 4096) L.advance(); while (L.next < ahead) { L.playStep(L.step, L.next); L.advance(); } });
+  loops.forEach(L => {
+    if (!L.running) return;
+    let guard = 0; while (L.next < now - 0.02 && guard++ < 4096) L.advance();
+    // a stall longer than the guard (minutes) leaves next still in the past: jump to now rather than burst the backlog
+    if (L.next < now - 0.02) L.next = now + 0.02;
+    while (L.next < ahead) { L.playStep(L.step, L.next); L.advance(); }
+  });
   if (!loops.size) { clearInterval(timer); timer = null; }
 }
 
@@ -1779,7 +1871,7 @@ function loop(opts = {}) {
   const genre = G[opts.genre] ? opts.genre : (opts.genre && /house/.test(opts.genre) ? "house" : "house");
   const spec = G[genre];
   const rnd = mulberry((opts.seed || 1) >>> 0);
-  const L = { genre, bpm: opts.bpm || 122, energy: opts.energy || 3, running: false, step: 0, next: 0, beatBase: 0, tBase: 0, beatCbs: [], filt: null };
+  const L = { genre, bpm: opts.bpm || 122, energy: opts.energy || 3, running: false, stopping: false, step: 0, next: 0, beatBase: 0, tBase: 0, beatCbs: [], filt: null };
   if (!c) {
     // silent stand-in with a working clock (for tests / no audio)
     const t0 = performance.now();
@@ -1849,9 +1941,18 @@ function loop(opts = {}) {
       loops.add(L); ensureTimer();
     },
     stop(fadeSec = 0) {
-      if (!L.running) return;
-      if (fadeSec > 0) { const t = AC.currentTime; out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0.0001, t + fadeSec); setTimeout(() => { L.running = false; loops.delete(L); try { out.disconnect(); } catch (e) { /* ignore */ } }, fadeSec * 1000 + 50); }
-      else { L.running = false; loops.delete(L); try { out.disconnect(); } catch (e) { /* ignore */ } }
+      if (!L.running || (L.stopping && fadeSec > 0)) return;   // a second fade during the fade would stack another ramp and timer
+      const end = () => { L.running = false; L.stopping = false; loops.delete(L); try { out.disconnect(); } catch (e) { /* ignore */ } };
+      if (fadeSec > 0) {
+        L.stopping = true;
+        // cancel a fade-in still in flight (setMusic ramps up with setTargetAtTime) so the fade-out starts from where it is
+        const t = AC.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(Math.max(out.gain.value, 0.0001), t); out.gain.linearRampToValueAtTime(0.0001, t + fadeSec);
+        setTimeout(end, fadeSec * 1000 + 50);
+      } else {
+        // cut: a 15 ms ramp instead of yanking the node mid-waveform, which clicks
+        const t = AC.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0.0001, t + 0.015);
+        L.running = false; loops.delete(L); setTimeout(() => { try { out.disconnect(); } catch (e) { /* ignore */ } }, 60);
+      }
     },
     setBpm(b) { const ph = ctl.phase(); L.bpm = clamp(b, 40, 220); L.beatBase = ph; L.tBase = AC.currentTime; },
     getBpm: () => L.bpm,
@@ -1867,6 +1968,7 @@ function loop(opts = {}) {
     output: out,
     connect(node) { try { out.disconnect(); } catch (e) { /* ignore */ } out.connect(node); }
   };
+  L.ctl = ctl;
   return ctl;
 }
 audio.loop = loop;
@@ -1921,14 +2023,14 @@ audio.ambience = function (kind) {
     const g = AC.createGain(); g.gain.value = vol; s.connect(f); f.connect(g); g.connect(out); s.start(); nodes.push(s); return { f, g };
   };
   let sub = null;
-  if (kind === "street") { bed("lowpass", 500, 0.5); bed("bandpass", 1200, 0.06); ivs.push(setInterval(() => { if (Math.random() < 0.25 && !audio.muted) { const t = AC.currentTime; tone(t, out, "square", 380 + Math.random() * 80, 0.03, 0.01, 0.3); } }, 2500)); }
+  if (kind === "street") { bed("lowpass", 500, 0.5); bed("bandpass", 1200, 0.06); ivs.push(setInterval(() => { if (Math.random() < 0.25 && !audio.muted && AC.state === "running") { const t = AC.currentTime; tone(t, out, "square", 380 + Math.random() * 80, 0.03, 0.01, 0.3); } }, 2500)); }
   else if (kind === "rain") { bed("highpass", 2500, 0.35); bed("lowpass", 400, 0.2); }
   else if (kind === "crowd") { const b = bed("bandpass", 700, 0.5, 1.4); const l = AC.createOscillator(), lg = AC.createGain(); l.frequency.value = 0.3; lg.gain.value = 250; l.connect(lg); lg.connect(b.f.frequency); l.start(); nodes.push(l); }
   else if (kind === "club_through_wall") { sub = loop({ genre: "house", bpm: 124, seed: 77, energy: 3, volume: 0.6, dest: out }); sub.setFilter("lowpass", 260); sub.start(); }
   else if (kind === "subway") { bed("lowpass", 180, 0.7); bed("bandpass", 900, 0.05); }
-  else if (kind === "office") { const o = AC.createOscillator(); o.frequency.value = 60; const g = AC.createGain(); g.gain.value = 0.04; o.connect(g); g.connect(out); o.start(); nodes.push(o); bed("lowpass", 300, 0.15); ivs.push(setInterval(() => { if (Math.random() < 0.6 && !audio.muted) noise(AC.currentTime, out, "highpass", 4000, 0.05, 0.02); }, 300)); }
+  else if (kind === "office") { const o = AC.createOscillator(); o.frequency.value = 60; const g = AC.createGain(); g.gain.value = 0.04; o.connect(g); g.connect(out); o.start(); nodes.push(o); bed("lowpass", 300, 0.15); ivs.push(setInterval(() => { if (Math.random() < 0.6 && !audio.muted && AC.state === "running") noise(AC.currentTime, out, "highpass", 4000, 0.05, 0.02); }, 300)); }
   else if (kind === "festival") { bed("bandpass", 600, 0.5, 0.8); sub = loop({ genre: "festival", bpm: 126, seed: 9, energy: 4, volume: 0.5, dest: out }); sub.setFilter("lowpass", 500); sub.start(); }
-  else if (kind === "airport") { bed("lowpass", 700, 0.35); ivs.push(setInterval(() => { if (Math.random() < 0.15 && !audio.muted) { const t = AC.currentTime; tone(t, out, "sine", 660, 0.05, 0.02, 0.5); tone(t + 0.45, out, "sine", 523, 0.05, 0.02, 0.6); } }, 4000)); }
+  else if (kind === "airport") { bed("lowpass", 700, 0.35); ivs.push(setInterval(() => { if (Math.random() < 0.15 && !audio.muted && AC.state === "running") { const t = AC.currentTime; tone(t, out, "sine", 660, 0.05, 0.02, 0.5); tone(t + 0.45, out, "sine", 523, 0.05, 0.02, 0.6); } }, 4000)); }
   else { bed("lowpass", 220, 0.15); }
   out.gain.setTargetAtTime(1, AC.currentTime, 0.4);
   return {
@@ -1942,7 +2044,9 @@ audio.setAmbience = function (kind, f = 1) {
   if (amb) { amb.stop(f); amb = null; }
   if (kind && ctx()) amb = audio.ambience(kind);
 };
-audio.stopAll = function (f = 0.5) { audio.setMusic(null, f); audio.setAmbience(null, f); loops.forEach(L => { L.running = false; }); loops.clear(); };
+/* stop every loop through its own stop(), so each one fades and its nodes are disconnected (clearing the set by hand
+   left their outputs wired to the music bus and their handles unable to stop them later) */
+audio.stopAll = function (f = 0.5) { audio.setMusic(null, f); audio.setAmbience(null, f); [...loops].forEach(L => { try { L.ctl.stop(f); } catch (e) { L.running = false; loops.delete(L); } }); };
 
 /* ---------------- sfx ---------------- */
 const S = {};
@@ -2265,6 +2369,19 @@ ST.resolve = async rec => {
   return (ST.cache[rec.id] = out);
 };
 
+/* ---- pause and background: the <audio> elements play on their own clock, so suspending the AudioContext alone
+   would let them run on (silently when routed through it, audibly when not) and come back out of place. Every
+   element that should be playing is in "playing"; it is paused while the game is paused or the tab is hidden. */
+const playing = new Set();
+const wantPlay = () => !(audio.isPaused && audio.isPaused()) && !document.hidden;
+const syncEl = el => { try { if (wantPlay()) { if (el.paused && el.src) el.play().catch(() => {}); } else if (!el.paused) el.pause(); } catch (e) { /* ignore */ } };
+const syncAll = () => playing.forEach(syncEl);
+if (audio.onPauseChange) audio.onPauseChange(syncAll);
+document.addEventListener("visibilitychange", syncAll);
+// an element that is not routed through the context (no Web Audio) follows the mute switch on its own
+const direct = new Set();
+if (audio.onMuteChange) audio.onMuteChange(m => direct.forEach(el => { el.muted = m; }));
+
 /* ---- a streamed "loop": same handle shape as audio.loop, so callers can't tell ---- */
 function streamed(rec, o, fallback) {
   const el = new Audio(); el.crossOrigin = "anonymous"; el.preload = "auto";
@@ -2279,6 +2396,7 @@ function streamed(rec, o, fallback) {
       node.connect(filt); filt.connect(gain); gain.connect(audio.buses().music);
     } catch (e) { node = null; el.volume = Math.min(1, vol0); }
   } else el.volume = Math.min(1, vol0);
+  if (!node) { el.muted = !!audio.muted; direct.add(el); }
   let fb = null; // the synthesized loop takes over if the preview never arrives
   const useFallback = () => { if (dead || fb) return; fb = fallback(); if (fb) { try { fb.start(); } catch (e) { /* ignore */ } } };
   const H = {
@@ -2289,14 +2407,16 @@ function streamed(rec, o, fallback) {
         if (!r) { useFallback(); return; }
         el.src = r.url; el.loop = true; // a 30-second preview loops until stopped
         el.addEventListener("error", () => useFallback(), { once: true });
-        el.play().catch(() => useFallback());
+        playing.add(el);
+        if (wantPlay()) el.play().catch(() => { if (wantPlay()) useFallback(); });   // a play() refused because we paused is not a failure
         if (RP.toast && !ST.quiet) RP.toast("NOW PLAYING: " + r.artist + " - " + r.title + " (preview)");
       });
     },
     stop(fadeSec) {
       dead = true;
       if (fb) { try { fb.stop(fadeSec); } catch (e) { /* ignore */ } }
-      const end = () => { try { el.pause(); el.src = ""; } catch (e) { /* ignore */ } try { gain && gain.disconnect(); } catch (e) { /* ignore */ } };
+      playing.delete(el); direct.delete(el);
+      const end = () => { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { /* ignore */ } try { gain && gain.disconnect(); } catch (e) { /* ignore */ } };
       if (gain && c && fadeSec > 0) { const t = c.currentTime; gain.gain.setValueAtTime(gain.gain.value, t); gain.gain.linearRampToValueAtTime(0.0001, t + fadeSec); setTimeout(end, fadeSec * 1000 + 50); }
       else end();
     },
@@ -5650,6 +5770,7 @@ function buildDom() {
   const sent = dom.sentence = el("div", { id: "sentence" }, frame);
   dom.snd = el("button", { cls: "snd", type: "button", "aria-label": "Toggle sound", text: "SND" }, sent);
   dom.menuBtn = el("button", { cls: "menuBtn", type: "button", text: "MENU" }, sent);
+  dom.pauseBtn = el("button", { cls: "pauseBtn", type: "button", "aria-label": "Pause game", title: "Pause (Pause key or Shift+P)", text: "PAUSE" }, sent);
   dom.sent = el("span", { id: "sent", text: "Walk to" }, sent);
   dom.hud = el("span", { cls: "hud", id: "hud" }, sent);
   const panel = dom.panel = el("div", { id: "panel" }, frame);
@@ -5666,6 +5787,7 @@ function buildDom() {
   });
   dom.snd.addEventListener("click", e => { e.stopPropagation(); setMute(!muted()); });
   dom.menuBtn.addEventListener("click", e => { e.stopPropagation(); if (!busy) RP.run(() => phoneMenu()); });
+  dom.pauseBtn.addEventListener("click", e => { e.stopPropagation(); setPaused(true); });
   bindInput();
   window.addEventListener("resize", layout);
   layout();
@@ -5678,7 +5800,40 @@ const A = () => RP.audio;
 const sfx = (n, o) => { try { const a = A(); if (a && a.sfx && a.sfx[n]) a.sfx[n](o); } catch (e) { /* ignore */ } };
 RP.sfx = sfx;
 const muted = () => { const a = A(); return a ? !!a.muted : true; };
-function setMute(m) { const a = A(); if (a && a.setMute) a.setMute(m); store.set("reparte.muted", m); dom.snd.textContent = m ? "SND OFF" : "SND ON"; }
+/* one sound switch for the whole game: the sentence-bar SND button, the pause overlay, the title's SOUND button and the
+   M key all call this; audio.onMuteChange tells every label */
+function setMute(m) {
+  m = !!m;
+  const a = A(); if (a && a.setMute) a.setMute(m);
+  store.set("reparte.muted", m);
+  if (dom.snd) dom.snd.textContent = m ? "SND OFF" : "SND ON";
+  if (!a || !a.onMuteChange) muteLabels();
+}
+const muteLabels = () => { if (dom.snd) dom.snd.textContent = muted() ? "SND OFF" : "SND ON"; document.querySelectorAll("[data-mute-label]").forEach(b => { b.textContent = (b.dataset.muteLabel || "SOUND") + (muted() ? " OFF" : " ON"); b.setAttribute("aria-pressed", muted() ? "false" : "true"); }); };
+RP.setMute = setMute;
+RP.isMuted = muted;
+RP.toggleMute = () => setMute(!muted());
+
+/* ======================================================================
+   pause clock & pausable timers
+   gnow() is performance.now() minus all the time spent paused: it stands still while paused, so anything timed
+   on it (fades, shakes, room time, speech, RP.wait, toasts, mini-game rAF time) resumes where it stopped.
+   ====================================================================== */
+let paused = false, pauseT0 = 0, pausedMs = 0;
+const gnow = () => (paused ? pauseT0 : performance.now()) - pausedMs;
+RP.gnow = gnow;
+const ptimers = new Set();
+function ptimeout(fn, ms) {
+  const T = { left: Math.max(0, ms || 0), t0: 0, id: 0, armed: false };
+  T.arm = () => { T.armed = true; T.t0 = performance.now(); T.id = setTimeout(() => { ptimers.delete(T); fn(); }, T.left); };
+  ptimers.add(T);
+  if (!paused) T.arm();
+  return T;
+}
+function pclear(T) { if (T) { clearTimeout(T.id); ptimers.delete(T); } }
+function holdTimers() { ptimers.forEach(T => { if (!T.armed) return; clearTimeout(T.id); T.armed = false; T.left = Math.max(0, T.left - (performance.now() - T.t0)); }); }
+function releaseTimers() { ptimers.forEach(T => { if (!T.armed) T.arm(); }); }
+RP.ptimeout = ptimeout; RP.pclear = pclear;
 
 /* ======================================================================
    verbs, sentence, HUD
@@ -5821,7 +5976,7 @@ RP.kid = kid;
 function evalv(v, ...a) { return typeof v === "function" ? v(...a) : v; }
 
 function makeInstance(def) {
-  const inst = { def, id: def.id, width: def.width || W, bgKey: null, bg: null, lmKey: null, lm: null, halo: null, L: null, emissive: [], actors: [], fx: [], camX: 0, t0: performance.now() };
+  const inst = { def, id: def.id, width: def.width || W, bgKey: null, bg: null, lmKey: null, lm: null, halo: null, L: null, emissive: [], actors: [], fx: [], camX: 0, t0: gnow() };
   // actors
   const list = evalv(def.actors, S) || [];
   list.forEach(a => {
@@ -6018,7 +6173,7 @@ function render(now) {
    speech
    ====================================================================== */
 let skipFn = null, speechScale = 1, curSpeech = null;
-const wait = ms => new Promise(r => setTimeout(r, fast ? 0 : ms));
+const wait = ms => new Promise(r => { if (fast) setTimeout(r, 0); else ptimeout(r, ms); });   // stands still while paused
 RP.wait = wait;
 function speakerAnchor(who) {
   const v = VOICES[who];
@@ -6072,8 +6227,8 @@ function say(text, who = "kid") {
     if (a) a.talking = true;
     let done = false;
     const dur = Math.max(1500, 650 + text.length * 48);
-    const finish = () => { if (done) return; done = true; clearTimeout(tm); e.remove(); curSpeech = null; if (a) a.talking = false; skipFn = null; res(); };
-    const tm = setTimeout(finish, dur);
+    const finish = () => { if (done) return; done = true; pclear(tm); e.remove(); curSpeech = null; if (a) a.talking = false; skipFn = null; res(); };
+    const tm = ptimeout(finish, dur);   // the line stays up while the game is paused
     skipFn = finish;
   });
 }
@@ -6154,11 +6309,11 @@ RP.convo = async function (options, opts = {}) {
    ====================================================================== */
 RP.fadeTo = (target, ms = 600) => new Promise(res => {
   if (fast) { fade = target; res(); return; }
-  const from = fade, t0 = performance.now();
-  (function step(t) { const p = Math.min(1, (t - t0) / ms); fade = from + (target - from) * p; if (p < 1) requestAnimationFrame(step); else res(); })(t0);
+  const from = fade, t0 = gnow();
+  (function step() { const p = Math.min(1, (gnow() - t0) / ms); fade = from + (target - from) * p; if (p < 1) requestAnimationFrame(step); else res(); })();
 });
-RP.shake = ms => { shakeT = performance.now() + ms; };
-RP.flash = (col = "#fff", ms = 300) => { flashCol = col; flashT = performance.now() + ms; };
+RP.shake = ms => { shakeT = gnow() + ms; };
+RP.flash = (col = "#fff", ms = 300) => { flashCol = col; flashT = gnow() + ms; };
 let toastQ = [], toastOn = false;
 function toast(msg) {
   if (fast) { RP.test.log.push("toast: " + msg); return; }
@@ -6170,7 +6325,7 @@ function nextToast() {
   if (!m) { toastOn = false; return; }
   toastOn = true;
   const t = el("div", { cls: "toastItem", text: m }, dom.toast);
-  setTimeout(() => { t.classList.add("out"); setTimeout(() => { t.remove(); nextToast(); }, 300); }, 1700);
+  ptimeout(() => { t.classList.add("out"); setTimeout(() => { t.remove(); nextToast(); }, 300); }, 1700);
 }
 RP.toast = toast;
 
@@ -6358,14 +6513,16 @@ async function phoneMenu() {
   if (fast) return;
   const opts = [["msgs", "Messages (" + S.msgs.length + ")"], ["crate", "Record crate (" + S.records.length + ")"], ["gear", "My setup"]];
   if (!S.f.noTravel && availableLocations().length) opts.splice(1, 0, ["map", "Subway map"]);
-  opts.push(["hint", "Show what I can click"], ["save", "Save game"], ["title", "Quit to title"], ["back", "Back"]);
+  opts.push(["hint", "Show what I can click"], ["save", "Save game"], ["load", "Load game"], ["title", "Quit to title"], ["back", "Back"]);
   const i = await choose(opts.map(o => o[1]));
   const k = opts[i][0];
   if (k === "msgs") await RP.phone();
   if (k === "map") await RP.travel();
   if (k === "crate") await RP.crateView();
   if (k === "gear") await RP.gearView();
-  if (k === "save") { save(); toast("Saved."); }
+  if (k === "save") { save(); toast("Saved."); const n = await pickSlot("save"); if (n) saveSlot(n, true); }
+  // the menu runs at busy depth 1 (its own RP.run, or the act() that used the phone); deeper means a cutscene opened it
+  if (k === "load") { if (busyN > 1) toast("Finish this first"); else { const n = await pickSlot("load"); if (n) await loadSlot(n, { force: true }); } }
   if (k === "hint") setTimeout(revealHotspots, 50);
   if (k === "title") { save(); if (RP.onQuit) RP.onQuit(); }
 }
@@ -6395,16 +6552,29 @@ MG.play = async function (id, params = {}) {
   const root = el("div", { cls: "mg-wrap" }, ov);
   const cleanups = [];
   let rafs = [];
+  /* pause: the host's rAF loops skip frames while paused and hand the mini-game a clock with the paused time taken
+     out (so dt never jumps), and host.timeout / host.interval stand still. Raw setTimeout/setInterval and
+     performance.now() inside a mini-game are not covered. */
+  const mgBase = pausedMs;
   const host = {
     root, ov, S, params, el: (t, a, p) => el(t, a, p || root),
     rec: RP.rec, sleeve, sfx, audio: A(), fast,
     onKey(fn) { const h = e => fn(e); document.addEventListener("keydown", h); cleanups.push(() => document.removeEventListener("keydown", h)); },
     onKeyUp(fn) { const h = e => fn(e); document.addEventListener("keyup", h); cleanups.push(() => document.removeEventListener("keyup", h)); },
-    raf(fn) { let id; const loop = t => { if (fn(t) === false) return; id = requestAnimationFrame(loop); rafs[0] = id; }; id = requestAnimationFrame(loop); rafs.push(() => cancelAnimationFrame(id)); cleanups.push(() => cancelAnimationFrame(id)); },
-    timeout(fn, ms) { const t = setTimeout(fn, ms); cleanups.push(() => clearTimeout(t)); return t; },
-    interval(fn, ms) { const t = setInterval(fn, ms); cleanups.push(() => clearInterval(t)); return t; },
+    raf(fn) { let id; const loop = t => { if (!paused && fn(t - (pausedMs - mgBase)) === false) return; id = requestAnimationFrame(loop); rafs[0] = id; }; id = requestAnimationFrame(loop); rafs.push(() => cancelAnimationFrame(id)); cleanups.push(() => cancelAnimationFrame(id)); },
+    timeout(fn, ms) { const t = ptimeout(fn, ms); cleanups.push(() => pclear(t)); return t; },
+    interval(fn, ms) { const h = { t: null }; const tick = () => { h.t = ptimeout(tick, ms); fn(); }; h.t = ptimeout(tick, ms); cleanups.push(() => pclear(h.t)); return h; },
     cleanup(fn) { cleanups.push(fn); },
-    header(title, sub) { const h = el("div", { cls: "mg-head" }, root); el("div", { cls: "mg-logo", html: esc(title).replace(".", "<span>.</span>") }, h); if (sub) el("div", { cls: "mg-sub", text: sub }, h); return h; },
+    /* the header: logo on the left; on the right the sub label (e.g. "Arcade") and a PAUSE button (the only on-screen
+       pause inside a mini-game, which phones need: they have no Pause key) */
+    header(title, sub) {
+      const h = el("div", { cls: "mg-head" }, root); el("div", { cls: "mg-logo", html: esc(title).replace(".", "<span>.</span>") }, h);
+      const r = el("div", { cls: "mg-headR" }, h);
+      if (sub) el("div", { cls: "mg-sub", text: sub }, r);
+      const pb = el("button", { cls: "mg-pause", type: "button", "aria-label": "Pause game", title: "Pause (Pause key or Shift+P)", text: "PAUSE" }, r);
+      pb.addEventListener("click", e => { e.stopPropagation(); setPaused(true); });
+      return h;
+    },
     button(text, onClick, cls) { const b = el("button", { cls: "btn " + (cls || ""), type: "button", text }, root); b.addEventListener("click", onClick); return b; }
   };
   MG.active = host;
@@ -6667,6 +6837,27 @@ function bindInput() {
     if (!verb && !pending) { act("walk", { hot: h.id, x, y }); return; }
     act(verb, { hot: h.id, x, y }, pending);
   });
+  /* pause and mute keys, ahead of everything else (capture phase). P is "pick up", so pause is the Pause key or
+     Shift+P; M (not a verb key) toggles sound, except inside a mini-game (makTracks uses M) or a text box.
+     While paused, key presses stop here: nothing behind the overlay (speech skip, verb keys, mini-game keys) sees
+     them, but Tab / Enter / Space still work the overlay's own buttons. Key-ups pass, so a held key is let go. */
+  window.addEventListener("keydown", e => {
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    const mods = e.ctrlKey || e.metaKey || e.altKey;
+    const pauseKey = e.key === "Pause" || (!mods && e.shiftKey && (e.key === "P" || e.key === "p"));
+    if (pauseKey && !typing && (paused || canPause())) { e.preventDefault(); e.stopPropagation(); setPaused(!paused); return; }
+    const muteKey = !mods && !e.shiftKey && (e.key === "m" || e.key === "M") && !typing;
+    if (paused) {
+      e.stopPropagation();
+      if (muteKey) { e.preventDefault(); setMute(!muted()); }
+      // Escape backs out of the slot list, or resumes
+      if (e.key === "Escape") { e.preventDefault(); const back = pauseOv && pauseOv.querySelector(".slotlist") && pauseOv.querySelector(".erow .btn"); if (back) back.click(); else setPaused(false); }
+      return;
+    }
+    if (muteKey && !MG.active) { e.preventDefault(); e.stopPropagation(); setMute(!muted()); }
+  }, true);
+  // switching away from the tab pauses a game in progress; it stays paused until RESUME
+  document.addEventListener("visibilitychange", () => { if (document.hidden && !fast && canPause()) setPaused(true); });
   document.addEventListener("keydown", e => {
     if (MG.active) return;
     if (e.key === "Escape") { if (busy && skipFn) { skipFn(); return; } verb = null; pending = null; updateVerbs(); renderInv(); updateSentence(); }
@@ -6738,6 +6929,7 @@ RP.hasSave = () => { const d = store.get(SAVE_KEY); return !!(d && ROOMS[d.room]
 RP.loadSave = async function () {
   const d = store.get(SAVE_KEY);
   if (!d || !ROOMS[d.room]) return false;
+  if (!fast && RP.audio && RP.audio.ready) { RP.audio.unlock(); await RP.audio.ready(); }   // as RP.startAct: music never starts against a waking context
   S = Object.assign(baseState(), d);
   applyWardrobe();
   renderInv(); updateHud();
@@ -6755,8 +6947,140 @@ RP.restore = async function (d) {
 };
 
 /* ======================================================================
-   acts
+   save slots: three manual slots next to the autosave, each { S, when, label } under SAVE_KEY + ".slot1..3"
    ====================================================================== */
+const SLOTS = 3;
+const slotKey = n => SAVE_KEY + ".slot" + n;
+function slotLabel(st) {
+  const r = ROOMS[st.room];
+  const rn = r ? (typeof r.name === "function" ? r.name(st) : r.name) || r.id : st.room;
+  return ["Level " + st.act, rn, st.clock || st.day || ""].filter(Boolean).join(" \u00b7 ");
+}
+/* read a slot; anything malformed (bad JSON comes back null from store.get, a wrong shape, a room this build lacks) is empty */
+function readSlot(n) {
+  const d = store.get(slotKey(n));
+  if (!d || typeof d !== "object" || !d.S || typeof d.S !== "object" || !ROOMS[d.S.room]) return null;
+  return { S: d.S, when: +d.when || 0, label: typeof d.label === "string" ? d.label : slotLabel(d.S) };
+}
+RP.slots = () => { const out = []; for (let n = 1; n <= SLOTS; n++) { const d = readSlot(n); out.push({ n, empty: !d, label: d ? d.label : "", when: d ? d.when : 0 }); } return out; };
+RP.hasSlots = () => RP.slots().some(x => !x.empty);
+RP.readSlot = readSlot;
+/* manual save: never mid-cutscene or mid-mini-game (busy). The phone menu passes inMenu: its own RP.run is busy depth 1 */
+function saveSlot(n, inMenu) {
+  if (!cur || MG.active || busyN > (inMenu ? 1 : 0)) { toast("Can't save right now"); return false; }
+  S.kx = Math.round(kid.x); S.ky = Math.round(kid.y); S.face = kid.face;
+  const ok = store.set(slotKey(n), { S: JSON.parse(JSON.stringify(S)), when: Date.now(), label: slotLabel(S) });
+  toast(ok ? "Saved to slot " + n + "." : "Couldn't save (storage is full or blocked).");
+  return ok;
+}
+RP.saveSlot = n => saveSlot(n, false);
+/* load: the same path as RP.restore (deep copy, wardrobe, inventory and HUD, instant goto, audio unlock/ready).
+   Refused while a cutscene or mini-game runs; whatever else is in flight (a walk, a selected verb, a line) is dropped */
+async function loadSlot(n, opts = {}) {
+  const d = readSlot(n);
+  if (!d) { toast("That slot is empty."); return false; }
+  if (!opts.force && (busy || MG.active)) { toast("Finish this first"); return false; }
+  if (paused) setPaused(false);
+  verb = null; pending = null; hoverName = "";
+  if (skipFn) skipFn();
+  kid.path = []; kid.onArrive = null;
+  dom.talk.querySelectorAll(".hs").forEach(e => e.remove());
+  updateVerbs();
+  const ok = await RP.restore(d.S);
+  if (ok) toast("Loaded slot " + n + ".");
+  return ok;
+}
+RP.loadSlot = loadSlot;
+const fmtWhen = t => { try { return new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; } };
+/* the slot list, drawn into any box (the in-game picker, the pause overlay, the title panel). done(n | null) */
+function slotUI(box, mode, done) {
+  box.innerHTML = "";
+  el("h2", { text: mode === "save" ? "SAVE GAME" : "LOAD GAME" }, box);
+  el("p", { cls: "slotnote", text: mode === "save" ? "Pick a slot. Saving over a slot replaces it. (The game also autosaves for CONTINUE.)" : "Pick a saved game." }, box);
+  const list = el("div", { cls: "slotlist" }, box);
+  let first = null;
+  RP.slots().forEach(x => {
+    const bt = el("button", { type: "button", cls: "slotrow" + (x.empty ? " empty" : "") }, list);
+    el("b", { text: "SLOT " + x.n }, bt);
+    el("span", { text: x.empty ? "empty" : x.label }, bt);
+    if (!x.empty && x.when) el("small", { text: fmtWhen(x.when) }, bt);
+    if (mode === "load" && x.empty) { bt.disabled = true; return; }
+    if (!first) first = bt;
+    bt.addEventListener("click", () => done(x.n));
+  });
+  const row = el("div", { cls: "erow" }, box);
+  const back = el("button", { cls: "btn", type: "button", text: "BACK" }, row);
+  back.addEventListener("click", () => done(null));
+  box.addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(null); } });
+  setTimeout(() => (first || back).focus({ preventScroll: true }), 30);
+}
+RP.slotUI = slotUI;
+/* in-game picker overlay -> slot number or null */
+function pickSlot(mode) {
+  return new Promise(res => {
+    if (fast) { res(null); return; }
+    const ov = overlay("slots");
+    const box = el("div", { cls: "cratebox slotbox", role: "dialog", "aria-label": mode === "save" ? "Save game" : "Load game" }, ov);
+    slotUI(box, mode, n => { ov.remove(); res(n); });
+  });
+}
+RP.pickSlot = pickSlot;
+
+/* ======================================================================
+   pause: freezes the frame loop, mini-game rAF loops and host timers, speech/RP.wait/fade timers, and suspends
+   the AudioContext (and the streaming <audio> elements). Overlay: RESUME, SAVE, LOAD, SOUND, QUIT TO TITLE.
+   ====================================================================== */
+let pauseOv = null;
+const gameShown = () => !!dom.app && dom.app.style.visibility !== "hidden";
+const canPause = () => (!!cur && gameShown()) || !!MG.active;
+function setPaused(on) {
+  on = !!on;
+  if (on === paused) return paused;
+  if (on && !canPause()) return false;
+  if (on) {
+    paused = true; pauseT0 = performance.now();
+    holdTimers();
+    try { const a = A(); if (a && a.pause) a.pause(true); } catch (e) { /* ignore */ }
+    showPause();
+  } else {
+    pausedMs += performance.now() - pauseT0; paused = false;
+    last = performance.now();
+    if (pauseOv) { pauseOv.remove(); pauseOv = null; }
+    try { const a = A(); if (a && a.pause) a.pause(false); } catch (e) { /* ignore */ }
+    releaseTimers();
+  }
+  document.body.classList.toggle("paused", paused);
+  return paused;
+}
+RP.pause = setPaused;
+RP.togglePause = () => setPaused(!paused);
+Object.defineProperty(RP, "paused", { get: () => paused });
+function showPause() {
+  if (pauseOv) pauseOv.remove();
+  const ov = pauseOv = overlay("pause");
+  const box = el("div", { cls: "cratebox pausebox", role: "dialog", "aria-label": "Paused" }, ov);
+  const main = () => {
+    box.innerHTML = "";
+    el("h2", { text: "PAUSED" }, box);
+    const col = el("div", { cls: "pausemenu" }, box);
+    const b = (text, fn, cls) => { const x = el("button", { cls: "btn" + (cls ? " " + cls : ""), type: "button", text }, col); x.addEventListener("click", fn); return x; };
+    const res = b("RESUME", () => setPaused(false), "primary");
+    const sv = b("SAVE GAME", () => slotUI(box, "save", n => { if (n) saveSlot(n, false); main(); }));
+    if (busy || MG.active) { sv.disabled = true; sv.title = "You can save once this scene or mini-game is over"; }
+    const ld = b("LOAD GAME", () => {
+      if (busy || MG.active) { note.textContent = "Finish this first."; toast("Finish this first"); return; }
+      slotUI(box, "load", n => { if (n) loadSlot(n); else main(); });
+    });
+    if (!RP.hasSlots()) { ld.disabled = true; ld.title = "No saved games yet"; }
+    const snd = b("", () => setMute(!muted()));
+    snd.dataset.muteLabel = "SOUND"; muteLabels();
+    const q = b("QUIT TO TITLE", () => { setPaused(false); save(); if (RP.onQuit) RP.onQuit(); });
+    if (busy || MG.active) { q.disabled = true; q.title = "You can quit once this scene or mini-game is over"; }
+    const note = el("p", { cls: "slotnote", text: busy || MG.active ? "Saving and quitting wait until this scene is over." : "Pause / Shift+P to resume. M toggles sound." }, box);
+    setTimeout(() => res.focus({ preventScroll: true }), 30);
+  };
+  main();
+}
 function applyWardrobe() {
   const a = ACTS[S.act];
   if (a && a.wardrobe && RP.chars.get("kid")) RP.chars.update("kid", a.wardrobe);
@@ -6789,11 +7113,16 @@ RP.completeAct = async function (checks) {
    layout
    ====================================================================== */
 let s = 1;
+const coarse = () => { try { return matchMedia("(pointer: coarse)").matches; } catch (e) { return false; } };
 function layout() {
   if (!dom.frame) return;
   const vw = document.documentElement.clientWidth || window.innerWidth, vh = document.documentElement.clientHeight || window.innerHeight;
   const portrait = vw < 600 && vh > vw;
   document.body.classList.toggle("p", portrait);
+  // touch screens in landscape: a taller sentence line and panel (body.t) so every control is >= 32 css px after scaling
+  const touchL = !portrait && coarse();
+  document.body.classList.toggle("t", touchL);
+  const FH = touchL ? 422 : 360;
   const cs = getComputedStyle(dom.app), gut = (parseFloat(cs.paddingLeft) || 16) + (parseFloat(cs.paddingRight) || 16);
   const below = dom.below;
   if (portrait) {
@@ -6804,9 +7133,9 @@ function layout() {
     speechScale = clamp(15 / (20 * s), 1, 2.2);
   } else {
     if (dom.sentence.parentNode !== dom.frame) { dom.frame.appendChild(dom.sentence); dom.frame.appendChild(dom.panel); }
-    s = Math.min((vw - gut) / W, (vh - 20) / 360);
-    dom.frame.style.height = "360px";
-    dom.frameBox.style.width = W * s + "px"; dom.frameBox.style.height = 360 * s + "px";
+    s = Math.min((vw - gut) / W, (vh - 20) / FH);
+    dom.frame.style.height = FH + "px";
+    dom.frameBox.style.width = W * s + "px"; dom.frameBox.style.height = FH * s + "px";
     speechScale = clamp(14 / (20 * s), 1, 1.8);
   }
   dom.frame.style.transform = "scale(" + s + ")";
@@ -6820,8 +7149,11 @@ RP.layout = layout;
    loop & boot
    ====================================================================== */
 let last = performance.now();
-function loop(t) {
-  const dt = Math.min(0.05, (t - last) / 1000); last = t;
+function loop(t0) {
+  // paused: keep the clock in step (no dt jump on resume) and skip actors, room update and drawing
+  if (paused) { last = t0; requestAnimationFrame(loop); return; }
+  const t = t0 - pausedMs;   // the game clock (gnow): room time doesn't count the time spent paused
+  const dt = Math.min(0.05, (t0 - last) / 1000); last = t0;
   if (cur) {
     updateActor(kid, dt);
     cur.actors.forEach(a => updateActor(a, dt));
@@ -6833,13 +7165,22 @@ function loop(t) {
 }
 RP.boot = function () {
   buildDom();
+  try { const a = A(); if (a && a.onMuteChange) a.onMuteChange(muteLabels); } catch (e) { /* ignore */ }
   const m = store.get("reparte.muted");
   setMute(m == null ? false : !!m);
   updateVerbs(); renderInv(); updateSentence(); updateHud();
   requestAnimationFrame(loop);
 };
 RP.reset = () => { S = baseState(); kid.path = []; renderInv(); updateHud(); };
-RP.hideGame = on => { if (dom.app) dom.app.style.visibility = on ? "hidden" : ""; };
+/* while the game is hidden (title, arcade) the toast host moves to <body> as a fixed strip, so title-screen toasts
+   (streaming patch, NOW PLAYING) are seen; in the game it sits back in the frame, first after the speech layer */
+RP.hideGame = on => {
+  if (dom.app) dom.app.style.visibility = on ? "hidden" : "";
+  if (dom.toast) {
+    if (on && dom.toast.parentNode !== document.body) { document.body.appendChild(dom.toast); dom.toast.classList.add("top"); }
+    if (!on && dom.toast.parentNode !== dom.frame) { dom.frame.insertBefore(dom.toast, dom.talk.nextSibling); dom.toast.classList.remove("top"); }
+  }
+};
 
 /* ======================================================================
    test hooks
@@ -7973,6 +8314,11 @@ const CSS = `
 .ap-main.compact .ap-phone { padding: 4px 6px 6px; border-radius: 14px; max-width: 440px; justify-self: start; width: 100%; gap: 3px; } .ap-main.compact .ap-phone::before { display: none; } .ap-main.compact .ap-status { font-size: 15px; }
 .ap-main.compact .ap-screen { height: auto; flex: 1 1 0; min-height: 0; max-height: none; padding: 5px; gap: 4px; } .ap-main.compact .ap-row { min-height: 32px; } .ap-main.compact .ap-bubble { font-size: 18px; padding: 4px 7px; } .ap-main.compact .ap-opt { font-size: 18px; padding: 4px 8px; } .ap-main.compact .ap-who canvas { width: 40px; height: 40px; } .ap-main.compact .ap-who { grid-template-columns: 40px minmax(0, 1fr); } .ap-main.compact .ap-legend { display: none; } .ap-main.compact .ap-opt .sub, .ap-main.compact .ap-opt .why { font-size: 14px; } .ap-main.compact .ap-goal { font-size: 15px; } .nk-compact .nk-end li .ap-tip { font-size: 14px; }
 @media (max-width: 860px) { .ap-plan { grid-template-columns: 1fr; gap: 4px; } .ap-slot { flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; } .ap-slot b { flex: none; width: 70px; } .ap-slot span { flex: 1; } .ap-slot small { display: none; } .ap-screen { max-height: none; } }
+/* touch targets: 32px minimum on phones; the action row stays on screen while the rest scrolls */
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .ap-acts .btn, .ap-go .btn, .ap-back, .ap-opt, .ap-q { min-height: 32px; }
+  .ap-acts { position: sticky; z-index: 3; background: #0a0716; padding: 4px 0 12px; bottom: -12px; margin-bottom: -12px; }
+}
 @media (prefers-reduced-motion: reduce) { .ap-scene { } }
 `;
 
@@ -8804,9 +9150,9 @@ RP.mg.register("afterParty", {
         const avail = root.clientWidth || 700, wide = !compact && avail >= 940;
         main.classList.toggle("wide", wide); main.classList.toggle("compact", compact);
         if (compact) {
-          const w = Math.max(280, Math.min(avail * 0.5, (window.innerHeight - 190) * (W / H)));
-          main.style.gridTemplateColumns = Math.round(w) + "px minmax(0, 1fr)"; scene.cv.style.width = Math.round(w) + "px"; scene.cv.style.height = Math.round(w * H / W) + "px";
-          phone.style.height = Math.max(200, window.innerHeight - 22) + "px";
+          const w = Math.max(232, Math.min(avail * 0.5, (window.innerHeight - 236) * (W / H)));
+          main.style.gridTemplateColumns = Math.round(Math.max(w, Math.min(avail * 0.47, 390))) + "px minmax(0, 1fr)"; scene.cv.style.width = Math.round(w) + "px"; scene.cv.style.height = Math.round(w * H / W) + "px";
+          phone.style.height = Math.max(200, window.innerHeight - 64) + "px";
         } else { phone.style.height = ""; main.style.gridTemplateColumns = ""; NK.fit(scene.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 720); }
       }
       layout(); updateHud(); showHome();
@@ -8866,11 +9212,29 @@ const CSS = `
 .call { font-size: 19px; color: var(--fg); background: #1a0f22; border: 1px solid #4a1f3a; padding: 3px 10px; border-radius: 2px; display: flex; align-items: center; gap: 8px; }
 .call i { width: 8px; height: 8px; background: #3fd07a; display: inline-block; animation: bmblink 1s steps(1) infinite; }
 @keyframes bmblink { 50% { opacity: .2; } }
-@media (max-width: 760px) { .bm-grid { grid-template-columns: 1fr 1fr; } .bm-mix { grid-column: 1 / -1; order: 3; } .plat { width: 92px; height: 92px; } .fader input[type=range] { height: 92px; } .bpm { font-size: 32px; } }
+@media (max-width: 760px) { .bm-grid { grid-template-columns: 1fr 1fr; } .bm-mix { grid-column: 1 / -1; order: 3; } .plat { width: 92px; height: 92px; } .fader input[type=range] { height: 92px; } .bpm { font-size: 32px; } .tip { display: none; } /* the tip is keyboard advice; phones have none */ }
+/* short landscape phones (e.g. 844x390): a three-column layout with everything shrunk so GIVE UP and the nudge buttons stay on screen */
+@media (max-height: 480px) and (orientation: landscape) {
+  .mg-wrap:has(.bm-grid) { gap: 4px; }
+  .bm-grid { grid-template-columns: 1fr 1.25fr 1fr; gap: 6px; }
+  .bm-mix { grid-column: auto; order: 0; }
+  .deck, .bm-mix { padding: 6px; gap: 4px; }
+  .plat { width: 56px; height: 56px; } .fader input[type=range] { height: 56px; }
+  .bpm { font-size: 24px; } .bpm small { font-size: 13px; }
+  .dt { font-size: 16px; } .dsub, .pitchread { font-size: 13px; }
+  .bm-gridcv { height: 40px; } .meter { height: 8px; }
+  .readouts, .xf { font-size: 14px; } .stp { font-size: 13px; padding: 2px 6px; }
+  .tip { display: none; }
+  .mg-wrap:has(.bm-grid) .mg-logo { font-size: 18px; } .mg-wrap:has(.bm-grid) .mg-sub { font-size: 15px; }
+  .deck .row { gap: 4px; } .deck .kbtn { padding: 4px 8px; min-height: 32px; font-size: 15px; }
+  .bm-grid ~ .row .btn { font-size: 17px; padding: 4px 12px; min-height: 32px; }
+  .bm-grid ~ .mg-msg { font-size: 17px; min-height: 0; } .bm-grid ~ .mg-say { font-size: 16px; min-height: 0; }
+}
 @media (prefers-reduced-motion: reduce) { .call i { animation: none; } }
 `;
 let cssDone = false;
 
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 RP.mg.register("beatMatch", {
   title: "beat.Match", order: 1,
   desc: "Match two decks by tempo and phase, then bring the new one in.",
@@ -8938,7 +9302,7 @@ RP.mg.register("beatMatch", {
     const bpmB = () => BASE_B * (1 + st.pitch / 100);
     const AC = RP.audio.ctx();
     let master = null, gA = null, gB = null;
-    if (AC && !RP.audio.muted) { master = AC.createGain(); master.gain.value = 0.8; master.connect(AC.destination); gA = AC.createGain(); gB = AC.createGain(); gA.connect(master); gB.connect(master); }
+    if (AC) { master = AC.createGain(); master.gain.value = 0.8; master.connect(sfxDest(AC)); gA = AC.createGain(); gB = AC.createGain(); gA.connect(master); gB.connect(master); }
     const D = RP.audio.drums;
     function schedule() {
       if (!gA) return;
@@ -9022,7 +9386,7 @@ RP.mg.register("beatMatch", {
     });
     host.onKeyUp(e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") st.nudge = 0; if (kHeld && e.key === kHeld.key) kStop(); });
     window.addEventListener("blur", kStop); host.cleanup(() => window.removeEventListener("blur", kStop));
-    const sizeGrid = () => { const r = gcv.getBoundingClientRect(); const d = Math.min(2, window.devicePixelRatio || 1); gcv.width = Math.max(200, Math.round(r.width * d)); gcv.height = Math.round(72 * d); };
+    const sizeGrid = () => { const r = gcv.getBoundingClientRect(); const d = Math.min(2, window.devicePixelRatio || 1); gcv.width = Math.max(200, Math.round(r.width * d)); gcv.height = Math.round(Math.max(40, r.height || 72) * d); };
     sizeGrid();
     return new Promise(resolve => {
       let done = false;
@@ -9360,6 +9724,36 @@ const CSS = `
 .bg-card-end ul b { font-weight: 400; color: var(--fg); }
 .bg-card-end canvas { width: min(480px, 100%); height: auto; image-rendering: pixelated; image-rendering: crisp-edges; border: 2px solid #3a2f78; }
 .bg-wrap :focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .bg-head .bg-leave { min-height: 32px; padding: 3px 14px; }
+  .bg-offer .kbtn, .bg-btns .btn, .bg-probe, .bg-card, .bg-aud .opts .btn { min-height: 32px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .mg-buyGear { padding-top: 6px; padding-bottom: 6px; }
+  .mg-buyGear .mg-logo { font-size: 18px; } .mg-buyGear .mg-sub { font-size: 15px; }
+  .bg-wrap { gap: 4px; }
+  .bg-head .bg-cash { font-size: 20px; } .bg-head .bg-cash small { font-size: 14px; }
+  .bg-main { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-areas: "scene insp say" "cards insp notes"; grid-template-rows: auto 1fr; gap: 4px 8px; }
+  .bg-box { padding: 5px; gap: 4px; }
+  .bg-a-notes { align-self: stretch; }
+  .bg-say { min-height: 0; font-size: 16px; line-height: 1; }
+  .bg-cards { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .bg-card { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "n d p"; padding: 3px 8px; column-gap: 8px; font-size: 16px; align-items: center; }
+  .bg-card .sub { display: none; } .bg-card .pr { font-size: 19px; }
+  .bg-ttl { font-size: 17px; } .bg-ttl small { font-size: 13px; }
+  .bg-box .bg-frame { width: 112px; align-self: center; }
+  .bg-fact { font-size: 14px; max-height: 4.2em; }
+  .bg-probes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .bg-probe { gap: 0; font-size: 14px; padding: 2px 3px; text-align: center; } .bg-probe kbd { font-size: 12px; }
+  .bg-notes { min-height: 0; font-size: 15px; gap: 2px; } .bg-notes li { grid-template-columns: 38px 1fr; gap: 4px; } .bg-notes li i { font-size: 12px; }
+  .bg-deal { padding: 4px 8px; gap: 4px 10px; }
+  .bg-deal.stick { box-shadow: 0 -4px 0 rgba(5, 3, 10, .9), 0 6px 0 #05030a; }
+  .bg-ask { font-size: 15px; min-width: 0; } .bg-ask b { font-size: 24px; } .bg-ask small { font-size: 13px; margin-top: 0; }
+  .bg-offer { flex: 1 1 200px; } .bg-offer .val { font-size: 22px; min-width: 52px; } .bg-offer input[type=range] { height: 24px; }
+  .bg-btns .btn { font-size: 17px; padding: 3px 10px; }
+  .bg-meter { font-size: 17px; } .bg-meter b { font-size: 24px; }
+  .bg-aud .q { font-size: 17px; } .bg-aud .opts .btn { font-size: 16px; padding: 3px 8px; }
+}
 @media (max-width: 760px) {
   .bg-main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "scene" "say" "cards" "insp" "notes"; grid-template-rows: auto; }
   .bg-cards { grid-template-columns: minmax(0, 1fr); gap: 4px; }
@@ -10142,7 +10536,7 @@ const CSS = `
   .mg-crowdRead .mg-wrap { gap: 4px; }
   .mg-crowdRead .mg-head { flex-wrap: nowrap; align-items: baseline; }
   .mg-crowdRead .mg-logo { font-size: 13px; } .mg-crowdRead .mg-sub { font-size: 15px; }
-  .cr-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 36%); gap: 8px; align-items: start; }
+  .cr-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 54%); gap: 8px; align-items: start; }
   .cr-left, .cr-side { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .cr-scene, .cr-now, .cr-gauge, .cr-chips, .cr-msg, .cr-say, .cr-tell, .cr-hand, .cr-act, .cr-hist { order: 0; }
   .cr-now, .cr-say, canvas.cr-hist { display: none; }
@@ -10151,10 +10545,16 @@ const CSS = `
   .cr-chips .sk-chip { font-size: 14px; padding: 0 5px; }
   .cr-tell { padding: 0; border: 0; background: none; min-height: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cr-tell > :not(:first-child) { display: none; }
-  .cr-hand { max-height: calc(100vh - 76px); overflow-y: auto; gap: 3px; padding-right: 2px; }
+  .cr-hand { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: calc(100vh - 76px); overflow-y: auto; gap: 3px; padding-right: 2px; }
   .cr-hand .sk-card { padding: 2px 5px 2px 3px; }
   .cr-act .btn { padding: 4px 12px; font-size: 19px; }
 }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .cr-act .btn, .sk-head .sk-leave { min-height: 32px; }
+}
+/* the action row stays on screen while the rest scrolls */
+.cr-act { position: sticky; bottom: -12px; z-index: 3; background: #0a0716; padding: 4px 0 12px; margin-bottom: -12px; }
+@media (max-height: 460px) { .cr-act { padding-bottom: 8px; bottom: -4px; margin-bottom: -8px; } }
 `;
 let cssDone = false;
 
@@ -10216,7 +10616,7 @@ RP.mg.register("crowdRead", {
       const W = 320, H = 144;
       const cv = el("canvas", { cls: "sk-cv px", width: W, height: H, role: "img", "aria-label": "The dance floor, seen from the DJ booth" }, sceneWrap);
       const sc = cv.getContext("2d");
-      kit.fit(host, cv, W, H, sceneWrap, 0, 190);
+      kit.fit(host, cv, W, H, sceneWrap, 0, 226);
 
       /* ----- under the scene ----- */
       const now = el("div", { cls: "cr-now" }, left);
@@ -11709,6 +12109,7 @@ let nbuf = null;
 function noiseBuf(AC) { if (nbuf && nbuf.sampleRate === AC.sampleRate) return nbuf; nbuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = nbuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return nbuf; }
 /* opts: { wobble: cents (0 = steady), rate: Hz, pan: -1..1, hum: bool, crackle: 0..1, silent: bool, thin: bool,
            distort: bool, vol, bend (cents, live via .bend), key (midi root), pulse }  -> { stop(), bend(cents), crackle(p) } */
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 GK.tone = function (o = {}) {
   const dead = { stop() {}, bend() {}, crackle() {}, silent: true };
   let AC = null;
@@ -11720,7 +12121,7 @@ GK.tone = function (o = {}) {
     let tail = out;
     if (o.distort) { const ws = AC.createWaveShaper(); const cur = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; cur[i] = Math.tanh(x * 6) * 0.7; } ws.curve = cur; out.connect(ws); tail = ws; }
     let pan = null; try { pan = AC.createStereoPanner(); pan.pan.value = o.pan || 0; tail.connect(pan); pan.connect(comp); } catch (e) { tail.connect(comp); }
-    comp.connect(AC.destination);
+    comp.connect(sfxDest(AC));
     const t0 = AC.currentTime;
     out.gain.setValueAtTime(0.0001, t0); out.gain.linearRampToValueAtTime(o.vol == null ? 0.5 : o.vol, t0 + 0.05);
     // detune bus: LFO (wobble) + live bend
@@ -11789,7 +12190,7 @@ GK.band = function (cutIdx) {
   if (!AC || (RP.audio && RP.audio.muted)) return dead;
   try {
     const comp = AC.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 6;
-    const master = AC.createGain(); master.gain.value = 0.0001; master.connect(comp); comp.connect(AC.destination);
+    const master = AC.createGain(); master.gain.value = 0.0001; master.connect(comp); comp.connect(sfxDest(AC));
     master.gain.linearRampToValueAtTime(0.8, AC.currentTime + 0.1);
     const buses = [0, 1, 2].map(i => { const g = AC.createGain(); g.gain.value = i === cutIdx ? 0.03 : 1; g.connect(master); return g; });
     const nb = noiseBuf(AC), midi = n => 440 * Math.pow(2, (n - 69) / 12);
@@ -11859,6 +12260,31 @@ const CSS = `
 .dg-warn .ttl { font-size: 22px; color: #ff9a8a; line-height: 1; }
 .dg-warn ul { margin: 0; padding-left: 18px; font-size: 18px; line-height: 1.05; color: #f4ead0; }
 .dg-warn li { margin: 2px 0; }
+/* touch targets (32px), and the footer row (LEAVE / ASK / PAY & GO) stays on screen */
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .dg-flip .btn, .dg-flip .kbtn, .dk .kbtn, .dk-tabs .kbtn, .dk-actions .btn.sm, .mg-goDigging .dk > .row .btn { min-height: 32px; }
+}
+.mg-goDigging .dk > .row { position: sticky; bottom: -12px; z-index: 3; background: #0a0716; padding: 4px 0 12px; margin-bottom: -12px; }
+@media (max-height: 480px) and (orientation: landscape) {
+  .overlay.mg-goDigging { padding-top: 4px; padding-bottom: 4px; }
+  .mg-goDigging .dk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; }
+  .mg-goDigging .dk > * { grid-column: 1 / -1; }
+  .mg-goDigging .dk > .mg-msg { grid-column: 1; font-size: 17px; line-height: 1.05; min-height: 0; }
+  .mg-goDigging .dk > .row { grid-column: 2; position: static; padding: 0; margin: 0; background: none; flex-wrap: nowrap; }
+  .mg-goDigging .dk > .row .btn { font-size: 18px; padding: 2px 12px; }
+  .mg-goDigging .mg-logo { font-size: 16px; } .mg-goDigging .mg-sub { font-size: 15px; }
+  .mg-goDigging .dk-hud { font-size: 17px; gap: 2px 12px; } .mg-goDigging .dk-hud .want { font-size: 16px; flex: 1 1 auto; } .dk-hud .want .dg-def, .dk-hud .dg-cap { font-size: 14px; }
+  .dg-flip .btn, .dg-flip .kbtn { font-size: 18px; padding: 3px 4px; }
+  .dk-say { min-height: 44px; padding: 3px 8px; grid-template-columns: 38px 1fr; gap: 8px; } .dk-say canvas.dk-por { width: 38px; height: 38px; } .dk-say .txt { font-size: 17px; min-height: 2.04em; } .dk-say .who { font-size: 13px; }
+  .dk-tabs .kbtn { font-size: 16px; padding: 2px 8px; }
+  .dk-info.mg-panel { padding: 6px 8px; gap: 3px; }
+  .dk-title { font-size: 17px; } .dk-title small { font-size: 15px; margin-top: 0; }
+  .dk-buyrow { flex-wrap: nowrap; gap: 6px; } .dk-buyrow .dk-actions { flex-wrap: nowrap; } .dk-buyrow .dk-price { min-width: 0; } .dk-actions .btn.sm { white-space: nowrap; }
+  .dk-meta, .dk-note { font-size: 15px; } .dg-role { font-size: 15px; } .dk-fact { font-size: 14px; } .dk-price { font-size: 24px; }
+  .dk-actions .btn.sm { font-size: 17px; padding: 2px 8px; }
+  .dg-hag, .dg-warn { padding: 5px 8px; gap: 3px; } .dg-warn .ttl { font-size: 18px; } .dg-warn ul { font-size: 15px; }
+  .dk-keys { display: none; }
+}
 `;
 let cssDone = false;
 
@@ -12561,7 +12987,8 @@ RP.mg.register("goDigging", {
       const wideCols = root.clientWidth >= 820;
       const box = stage; const avail = wideCols ? Math.min(680, root.clientWidth - 300) : root.clientWidth;
       const holder = { clientWidth: Math.min(avail, root.clientWidth) };
-      const fit = DK.fit(cv, holder, { scale: 2, minW: 160, maxW: 340, h: W => W < 240 ? 138 : 184, fallback: 328 });
+      const land = window.innerHeight <= 480 && window.innerWidth > window.innerHeight;   // short landscape phone: a smaller bin so the buttons fit
+      const fit = DK.fit(cv, holder, land ? { scale: 1.1, minW: 160, maxW: 216, h: 138, fallback: 328 } : { scale: 2, minW: 160, maxW: 340, h: W => W < 240 ? 138 : 184, fallback: 328 });
       L = layout(fit.W, fit.H); buildLayers();
       dust = DK.dust(RM ? 0 : 14, [L.cx - 56, 8, 112, L.floorY - 24], Math.random);
     }
@@ -12715,6 +13142,7 @@ function shapeOf(sp) {         // 24 bar heights (0..1) for the pad thumbnail
 
 /* ------------------------------------------------------------------ audio engine */
 const midi = n => 440 * Math.pow(2, (n - 69) / 12);
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 function makeEngine() {
   let AC = null;
   try { AC = RP.audio && RP.audio.ctx && RP.audio.ctx(); } catch (e) { AC = null; }
@@ -12724,7 +13152,7 @@ function makeEngine() {
     const comp = AC.createDynamicsCompressor(); comp.threshold.value = -12; comp.knee.value = 8; comp.ratio.value = 5; comp.attack.value = 0.004; comp.release.value = 0.18;
     const master = AC.createGain(); master.gain.value = 0.9;
     const filt = AC.createBiquadFilter(); filt.type = "lowpass"; filt.frequency.value = 20000; filt.Q.value = 0.9;
-    filt.connect(comp); comp.connect(master); master.connect(AC.destination);
+    filt.connect(comp); comp.connect(master); master.connect(sfxDest(AC));
     const nb = AC.createBuffer(1, AC.sampleRate, AC.sampleRate), d = nb.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     Object.assign(E, { comp, master, filt, nb, live: true, bus: null });
@@ -12880,7 +13308,10 @@ const CSS = `
 .mt-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .mg-head.mt-head { align-items: center; }
 .mt-head .mt-leave { font-size: 18px; padding: 2px 12px; }
-.mt-head .btn.primary { font-size: 18px; padding: 2px 12px; margin-left: auto; }
+.mt-acts { position: sticky; top: -12px; z-index: 8; display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px 0 4px; margin-top: -10px; background: linear-gradient(#0a0716 85%, rgba(10, 7, 22, 0)); }
+.mt-acts .btn { font-size: 18px; padding: 2px 12px; min-height: 32px; }
+.mt-acts .btn.primary { margin-left: auto; }
+@media (min-width: 861px) and (min-height: 481px) { .mt-acts { margin-bottom: -38px; padding-bottom: 0; background: none; pointer-events: none; } .mt-acts .btn { pointer-events: auto; } .mt-acts .btn.primary { margin-left: 0; } .mt-hint { padding-right: 270px; } }
 .mt-bfin { display: none; font-size: 20px; }
 .mt-cols { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 10px; align-items: start; }
 .mt-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -12987,7 +13418,6 @@ const CSS = `
 .mt-toast { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); background: var(--amber); color: #12061a; font-size: 20px; padding: 3px 12px; z-index: 5; pointer-events: none; border: 2px solid #fff; }
 .mt-wrap :focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
 @media (max-width: 860px) {
-  .mt-head .btn.primary { display: none; }
   .mt-bfin { display: block; }
   .mt-cols { grid-template-columns: minmax(0, 1fr); }
   .mt-machine { grid-template-columns: minmax(0, 1fr); }
@@ -13007,6 +13437,45 @@ const CSS = `
   .mt-step { grid-column: calc(var(--ri) + 2); grid-row: calc(var(--si) + 2); }
   .mt-step.b4 { margin-left: 0; margin-top: 4px; }
   .mt-pads { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+/* touch targets: nothing under 32px tall on phones */
+@media (max-height: 480px) and (orientation: landscape), (max-width: 860px) {
+  .mt-trans .btn, .mt-bpm .kbtn, .mt-vb, .mt-secpick, .mt-bfin { min-height: 32px; }
+  .mt-bpm .kbtn { min-width: 36px; }
+  .mt-sec { min-height: 32px; font-size: 14px; }
+  .mt-ly { height: 32px; }
+  .mt-trans { top: 36px; }
+  .mt-rh { border: 0; box-shadow: inset 0 0 0 1px #241d48; }
+  .mt-rh .nm { align-self: stretch; min-height: 32px; display: flex; flex-direction: column; justify-content: center; }
+  .mt-rh .ms { align-self: stretch; height: auto; min-height: 32px; width: 26px; }
+}
+/* short landscape phones: keep the desktop grid (16 steps across, 7 rows) instead of the stacked phone grid */
+@media (max-height: 480px) and (orientation: landscape) {
+  .mt-wrap { gap: 5px; }
+  .mg-makTracks .mg-logo { font-size: 18px; } .mg-makTracks .mg-sub { font-size: 15px; }
+  .mt-head { margin-right: 250px; }
+  .mt-acts { margin-top: -41px; padding-top: 8px; top: -8px; background: none; pointer-events: none; } .mt-acts .btn { pointer-events: auto; }
+  .mt-machine { grid-template-columns: minmax(200px, 300px) minmax(0, 1fr); padding: 6px; gap: 6px; }
+  .mt-trans { position: static; justify-content: flex-end; flex-wrap: wrap; background: none; padding: 0; margin: 0; border: 0; gap: 4px 8px; }
+  .mt-trans .lg { display: inline; } .mt-bpm input[type=range] { display: inline-block; width: 90px; }
+  .mt-trans .btn { font-size: 18px; padding: 3px 10px; }
+  .mt-hint { font-size: 17px; }
+  .mt-grid { grid-template-columns: 112px repeat(16, minmax(0, 1fr)); grid-template-rows: 18px repeat(7, 32px); gap: 3px; }
+  .mt-num { grid-row: 1; grid-column: calc(var(--si) + 2); line-height: 18px; font-size: 12px; }
+  .mt-rh { grid-column: 1; grid-row: calc(var(--ri) + 2); flex-wrap: nowrap; justify-content: flex-start; gap: 3px; padding: 0 2px; }
+  .mt-rh .nm { flex: 1 1 auto; text-align: left; font-size: 16px; letter-spacing: .03em; padding: 0 1px; }
+  .mt-rh .nm small { display: block; } .mt-rh .led { display: block; width: 6px; height: 6px; }
+  .mt-rh .ms { width: 22px; font-size: 13px; }
+  .mt-step { grid-column: calc(var(--si) + 2); grid-row: calc(var(--ri) + 2); }
+  .mt-step.b4 { margin-left: 4px; margin-top: 0; }
+  .mt-pads { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
+/* portrait phones: the stacked grid, with 32px steps */
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px) {
+  .mt-grid { grid-template-rows: auto repeat(16, 32px); }
+  .mt-step.b4 { margin-top: 0; }
+  .mt-num { line-height: 32px; }
+  .mt-rh .ms { width: auto; flex: 1 1 0; }
 }
 @media (prefers-reduced-motion: reduce) { .mt-vb.new { animation: none; } }
 `;
@@ -13142,7 +13611,9 @@ RP.mg.register("makTracks", {
     const wrap = el("div", { cls: "mt-wrap" }, root); root.removeChild(wrap);
     const head = host.header("mak.Tracks", withLou ? "Lou's place · remix session" : "Bedroom studio");
     head.classList.add("mt-head");
-    const leave = el("button", { cls: "btn mt-leave", type: "button", text: "GIVE UP" }, head);
+    /* FINISH TRACK / GIVE UP live in a bar that sticks to the top of the overlay, so the player never has to scroll to finish or quit */
+    const acts = el("div", { cls: "mt-acts" }, wrap);
+    const leave = el("button", { cls: "btn mt-leave", type: "button", text: "GIVE UP" }, acts);
     root.appendChild(wrap);
     const hint = el("div", { cls: "mt-hint", "aria-live": "polite" }, wrap);
     const cols = el("div", { cls: "mt-cols" }, wrap);
@@ -13161,7 +13632,7 @@ RP.mg.register("makTracks", {
     const bpmIn = el("input", { type: "range", min: "70", max: "170", step: "1", value: String(st.bpm), "aria-label": "BPM" }, bpmw);
     const bUp = el("button", { cls: "kbtn", type: "button", text: "+", "aria-label": "Faster" }, bpmw);
     const bpmTxt = el("span", { text: "" }, bpmw);
-    const bFin = el("button", { cls: "btn primary", type: "button", text: "FINISH TRACK" }); head.insertBefore(bFin, leave);
+    const bFin = el("button", { cls: "btn primary", type: "button", text: "FINISH TRACK" }); acts.insertBefore(bFin, leave);
     const bFin2 = el("button", { cls: "btn primary mt-bfin", type: "button", text: "FINISH TRACK: NAME IT AND BOUNCE" }, wrap);
 
     const grid = el("div", { cls: "mt-grid", role: "grid", "aria-label": "16-step sequencer" }, machine);
@@ -13753,7 +14224,7 @@ NK.CSS_COMPACT = `
 .nk-compact .mg-head { gap: 6px; align-items: baseline; flex-wrap: nowrap; justify-content: space-between; }
 .nk-compact .mg-logo { font-size: 14px; } .nk-compact .mg-sub { font-size: 15px; }
 .nk-compact .mg-msg { font-size: 17px; } .nk-compact .mg-say { font-size: 15px; }
-.nk-compact .btn { font-size: 18px; padding: 3px 12px; }
+.nk-compact .btn { font-size: 18px; padding: 3px 12px; min-height: 32px; }
 .nk-compact .nk-end { gap: 4px; padding: 8px 10px; } .nk-compact .nk-end h2 { font-size: 14px; } .nk-compact .nk-end .nk-kick { font-size: 15px; }
 .nk-compact .nk-end .nk-stamp { width: 144px; height: 60px; } .nk-compact .nk-end .nk-score { display: none; }
 .nk-compact .nk-end .nk-blurb { font-size: 16px; line-height: 1.05; } .nk-compact .nk-end ul { column-count: 2; column-gap: 14px; width: 100%; } .nk-compact .nk-end li { font-size: 15px; break-inside: avoid; }
@@ -13978,6 +14449,7 @@ const CSS = `
   .pt-deal { grid-template-columns: 1fr 1fr; column-gap: 8px; } .pt-row { grid-template-columns: 1fr; gap: 0; font-size: 17px; padding: 1px 4px; } .pt-row .lb { font-size: 13px; } .pt-row.lock .vl::after { content: " *"; }
 }
 .pt-peek { margin-top: 6px; }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) { .pt-peek, .pt-play .sk-choice, .sk-head .sk-leave { min-height: 32px; } }
 .pt-hide { display: none; }
 `;
 let cssDone = false;
@@ -15447,6 +15919,10 @@ const CSS = `
   .sk-g .sk-end .score { font-size: 24px; } .sk-g .sk-end .stat b { font-size: 21px; } .sk-g .sk-end canvas { width: 128px !important; height: 48px !important; } .sk-g .sk-end .sub { font-size: 19px; }
   .sk-g .sk-tip { display: none; }
 }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .sk-head .sk-leave, .sk-note .sk-tg { min-height: 32px; }
+  .sk-g .sk-choice { min-height: 32px; }
+}
 @media (prefers-reduced-motion: reduce) { .sk-say .more { animation: none; } .sk-meter .fill { transition: none; } .sk-meter.hit .bar { animation: none; } }
 `;
 let cssDone = false;
@@ -15927,6 +16403,7 @@ const TECH_START = {
 const gearLabel = (id, fb) => { try { const g = RP.gearInfo(id); return g ? g.brand + " " + g.model : fb; } catch (e) { return fb; } };
 const gearType = (id, fb) => { try { const g = RP.gearInfo(id); if (g) return g.kind === "turntable" ? "tt" : "cdj"; } catch (e) { /* ignore */ } return fb; };
 
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 const CSS = `
 .sc-clock { font-size: 24px; color: var(--amber); font-variant-numeric: tabular-nums; } .sc-clock.low { color: #ff6a6a; }
 .sc-clock small { color: var(--muted); font-size: 17px; margin-right: 6px; }
@@ -15999,6 +16476,10 @@ const CSS = `
 .sc-main.compact .sc-cap { padding: 2px 6px; gap: 1px; } .sc-main.compact .sc-caphd { font-size: 14px; } .sc-main.compact .sc-caphd small { font-size: 14px; } .sc-main.compact .sc-capbody { min-height: 0; gap: 0 12px; } .sc-main.compact .sc-capbody span { font-size: 16px; line-height: 1; } .sc-main.compact .sc-capbody span::before { width: 4px; height: 4px; margin-right: 5px; }
 @media (max-width: 860px) { .sc-clock { font-size: 20px; } .sc-panel { min-height: 0; } .sc-info .mg-msg { font-size: 20px; } .sc-acts .btn { padding: 6px 12px; } }
 @media (max-width: 420px) { .sc-test .kbtn { font-size: 16px; } .sc-tab { font-size: 16px; } .sc-eq input { height: 74px; } }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .sc-test .kbtn, .sc-main.compact .sc-test .kbtn, .sc-tab, .sc-main.compact .sc-tab, .sc-seg button, .sc-acts .btn, .sc-acts .kbtn, .sc-strip .kbtn, .sc-card .kbtn { min-height: 32px; }
+}
+@media (max-width: 760px) { .sc-acts { position: sticky; bottom: -12px; z-index: 3; background: #0a0716; padding: 4px 0 12px; margin-bottom: -12px; } }
 @media (prefers-reduced-motion: reduce) { .sc-scene { cursor: pointer; } }
 `;
 
@@ -16182,7 +16663,7 @@ RP.mg.register("soundCheck", {
         const track = n => { a.nodes.push(n); return n; };
         a.out = track(AC.createGain()); a.out.gain.value = 0.0001;
         const lim = track(AC.createDynamicsCompressor()); lim.threshold.value = -12; lim.knee.value = 8; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.15;
-        a.out.connect(lim); lim.connect(AC.destination);
+        a.out.connect(lim); lim.connect(sfxDest(AC));
         a.sum = track(AC.createGain());
         a.dk = [0, 1].map(() => {
           const input = track(AC.createGain()), drive = track(AC.createGain()), sh = track(AC.createWaveShaper()), hp = track(AC.createBiquadFilter()), shelf = track(AC.createBiquadFilter()), g = track(AC.createGain());
@@ -20711,6 +21192,10 @@ function showTitle() {
   const bCont = el("button", { type: "button", cls: "cont", text: "CONTINUE" }, split);
   if (saved) bCont.addEventListener("click", go(async () => { closeTitle(); if (!(await RP.loadSave())) { showTitle(); } }));
   else { bCont.disabled = true; bCont.title = "No saved game yet"; }
+  // LOAD: the three manual save slots (RP.slotUI in the panel below); greyed until one of them holds a game
+  const bLoad = el("button", { type: "button", cls: "load", text: "LOAD" }, split);
+  if (RP.hasSlots()) bLoad.addEventListener("click", go(() => loadPanel(panel)));
+  else { bLoad.disabled = true; bLoad.title = "No saved games yet (save from MENU or the pause screen)"; }
   const bNew = el("button", { type: "button", cls: "new", text: DEMO ? "PLAY LEVEL " + DEMO.level : "NEW GAME" }, split);
   bNew.addEventListener("click", go(() => newGame(panel)));
   const first = [saved ? bCont : bNew];
@@ -20719,6 +21204,9 @@ function showTitle() {
   add("JUKEBOX", () => toggle(panel, jukebox));
   add("MINI-GAMES", () => toggle(panel, arcade));
   add("CREDITS", () => toggle(panel, credits));
+  // the same sound switch as the in-game SND button, the pause screen and the M key (RP.setMute); labels follow it
+  const bSnd = add("", () => RP.toggleMute());
+  bSnd.dataset.muteLabel = "SOUND"; bSnd.textContent = "SOUND " + (RP.isMuted() ? "OFF" : "ON");
   if (DEMO) el("p", { cls: "small", text: "Level " + DEMO.level + " of " + DEMO.names.length + ": " + DEMO.names[DEMO.level - 1] + ", plus all eight mini-games in the arcade. Sound on helps." }, box);
   else el("p", { cls: "small", text: "Five levels. Eight mini-games. Sound on helps." }, box);
   if (SITE) levelNav(box);
@@ -20751,6 +21239,17 @@ function lockedPage(box) {
   const row = el("div", { cls: "erow" }, card);
   link(DEMO.full, "PLAY THE FULL GAME", row, "btn primary").style.textDecoration = "none";
   levelNav(box);
+}
+function loadPanel(panel) {
+  stopPreview();
+  if (!panel.hidden && panel.dataset.k === "load") { panel.hidden = true; themeSync(2000); return; }
+  panel.innerHTML = ""; panel.className = "panelbox slotbox-t"; panel.dataset.k = "load"; panel.hidden = false;
+  RP.slotUI(panel, "load", async n => {
+    if (!n) { panel.hidden = true; themeSync(2000); return; }
+    closeTitle();
+    if (!(await RP.loadSlot(n))) showTitle();
+  });
+  themeSync(2000);
 }
 function closeTitle() { themeOn = false; clearTimeout(themeTimer); themeTimer = 0; RP.audio.titleTheme.stop(0.5); stopPreview(); if (titleEl) { titleEl.remove(); titleEl = null; } RP.hideGame(false); RP.layout(); }
 function toggle(panel, fill) { stopPreview(); if (!panel.hidden && panel.dataset.k === fill.name) { panel.hidden = true; themeSync(2000); return; } panel.innerHTML = ""; panel.className = "panelbox"; panel.dataset.k = fill.name; fill(panel); panel.hidden = false; themeSync(2000); }

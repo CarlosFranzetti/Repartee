@@ -29,8 +29,9 @@ const outFile = outIdx >= 0 ? path.resolve(args[outIdx + 1]) : null;
 const FULL_GAME_URL = "https://claude.ai/artifact/8tvKcJw3WLVhBsno8Snk6N";
 const SITE_URL = "https://repartee-umber.vercel.app";
 const LEVELS = ["Bedroom DJ", "Underground Hustler", "Club DJ", "Touring DJ", "Superstar DJ"];
-// levels that have their own claude.ai artifact; artifact builds link there, and to the Vercel page for the rest
-const LEVEL_ARTIFACTS = { 1: "https://claude.ai/artifact/4m4u3sHMgVhkqURBBfiFtY", 2: "https://claude.ai/artifact/QMwvpWyeeqKM3HgfgP4EhF" };
+// levels with their own claude.ai artifact would go here; none today (the Level 1 and 2 artifacts were deleted on
+// 2026-11-09), so artifact builds link every level to its Vercel page
+const LEVEL_ARTIFACTS = {};
 // artifact: true marks a claude.ai build. Each artifact keeps its own browser storage, so progress from another page
 // can't be seen there and its level pages are never locked.
 const site = (level, artifact) => ({

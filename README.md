@@ -47,9 +47,12 @@ gives the full screen; portrait puts the controls under the scene.
 
 Controls: pick a verb, then click something. Click the floor to walk. Right-click looks.
 **H** or **Tab** labels everything clickable. **MENU** opens messages, the subway map, your
-record crate, your setup and saving.
+record crate, your setup, Save game and Load game. **PAUSE** (or the Pause key, or Shift+P) freezes everything,
+sound included, and offers Resume, Save, Load, Sound and Quit; switching tabs pauses too. **SND** (or **M**)
+turns the sound off and on anywhere, including the title. The game autosaves as you go, and you have three
+manual save slots besides.
 
-Title menu: **CONTINUE | NEW GAME**, then **HOW TO PLAY**, **CHAPTER SELECT** (replays the levels you've
+Title menu: **CONTINUE | LOAD | NEW GAME**, then **HOW TO PLAY**, **CHAPTER SELECT** (replays the levels you've
 finished), **JUKEBOX** (plays every record in the game, with its story), **MINI-GAMES** (pick a tile, see its
 card, press PLAY; best scores are kept) and **CREDITS**.
 
