@@ -3,6 +3,23 @@
 A hand-written dump of the working context, so a fresh session can pick up where the last one stopped. Newest state
 first. It is a summary, not a transcript. `context.md` keeps the older timestamped entries.
 
+## State on 2026-11-09
+
+**Shipped on the work branch (2026-11-09, owner asked for pause, sound toggle, save/load and a QA pass).** Pause
+(`RP.pause`, `setPaused` in engine.js: PAUSE button in the sentence bar and in every mini-game header, Pause key,
+Shift+P, auto-pause on hidden tab; freezes the loop, `RP.gnow` clock, `ptimeout` speech/wait/toast timers, the
+mini-game host's rAF/timers, suspends the AudioContext, pauses streamed `<audio>`). One mute state (`RP.setMute`,
+SND, M key, SOUND on the title and the pause overlay). Three manual save slots at `SAVE_KEY + ".slotN"`
+(`RP.saveSlot/loadSlot/slotUI`), picker from the phone menu, pause overlay and a LOAD button on the title; autosave
+and CONTINUE unchanged. Audio fixes: no resume while paused/hidden, suspend on hidden tab, ambience skips while
+suspended, long stall jumps to present, fade-stop cancels fade-in, stopAll stops loops, sfx ignored while paused.
+All mini-games route through the sfx bus (mute reaches them mid-game) and fit 844x390 with 32px touch targets.
+New tests: `tests/browser.mjs` (five viewports, layout/audio/stream), `tests/sweep.mjs` (every verb on every
+hotspot/item after every walkthrough step; 68,780 probes, 0 defects), `tests/saveload.mjs` (slots, title load,
+pause in a room and in beat.Match, shared mute). Known limits: raw setTimeout/performance.now inside mini-games
+and room scripts keep running during pause (only host helpers and RP.wait freeze); iOS "interrupted" handling and
+real-device audio unverified from the sandbox.
+
 ## State on 2026-10-26
 
 **Project.** re:parteé, a pixel-art point-and-click DJ adventure in five levels. Plain JavaScript on `window.RP`, HTML
@@ -17,10 +34,9 @@ After a PR merges, restart the branch from `origin/main`. The remote copy of the
 (the git proxy cut the delete); the owner can delete it on GitHub.
 
 **On the work branch, not yet on main**
-- Level 1 and Level 2 claude.ai artifacts: https://claude.ai/artifact/4m4u3sHMgVhkqURBBfiFtY and
-  https://claude.ai/artifact/QMwvpWyeeqKM3HgfgP4EhF (private). Built with `node tools/build.mjs --out <f> --level N
-  --artifact` (writes `<f>.artifact.html`). Artifact builds set `RP_SITE.artifact`, so their level pages never lock
-  (each artifact has its own storage), and link to each other via `LEVEL_ARTIFACTS` in `tools/build.mjs`.
+- The Level 1 and Level 2 claude.ai artifacts were DELETED on 2026-11-09 at the owner's request ("useless"); the
+  full-game artifact (`FULL_GAME_URL` in `tools/build.mjs`, `dist/artifact.html`) still exists. `LEVEL_ARTIFACTS` is
+  now empty, so artifact builds link every level page to the Vercel site.
 - `TODO.md`: a "Later" item for a desktop app (Electron or Tauri wrapper).
 - `tools/blindplay.mjs serve ... --unlock`: marks every level finished so Levels 2-5 pages open for playtests.
 - Levels 3-5 story/continuity fixes and renames, and the room-sweep and mini-game-sweep fixes (see

@@ -29,8 +29,10 @@ from Bushwick to a headline slot at the Harbor Lights festival.
 - **Right-click** (desktop) looks. **Space, Enter or a click** skips dialogue.
 - **H or Tab** puts a label on every clickable thing in the room. Use it whenever you are stuck.
 - **Keys:** L look, P pick up, U use, O open, T talk, G give, Esc to cancel a verb.
-- **MENU** (or the phone) opens your messages, the subway map, your record crate, your setup, and Save game.
-  The map appears when you are free to travel. The game also saves as you go.
+- **MENU** (or the phone) opens your messages, the subway map, your record crate, your setup, Save game and
+  Load game (three slots). The map appears when you are free to travel. The game also saves as you go.
+- **PAUSE** (or the Pause key, or Shift+P) freezes the game and the sound; it also pauses when you switch tabs.
+  **SND** (or **M**) turns the sound off and on.
 - **Mini-games** explain themselves on screen, and the title screen's Mini-Game Arcade replays them. Failing one never
   ruins the story: you can retry, and after enough misses the game moves you on.
 

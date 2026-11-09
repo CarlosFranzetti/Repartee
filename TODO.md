@@ -12,6 +12,13 @@
       (`node tests/run.mjs walk actN --act N --page <scratch build>`), then integrate, run `node tests/full.mjs`,
       `node tests/perf.mjs` and `node tests/contrast.mjs`, and ship one pull request.
 
+- [x] **Pause, sound switch, save slots, phone fit (2026-11-09).** PAUSE button (Pause key, Shift+P, auto on hidden
+      tab) freezes loop, clock, speech, mini-games and the AudioContext; one mute state behind SND, M, the title and the
+      pause overlay; three manual save slots with a picker (menu, pause overlay, LOAD on the title) next to the
+      autosave. Browser QA (`tests/browser.mjs`), logic sweep (`tests/sweep.mjs`, 68,780 probes, 0 defects) and
+      save/pause tests (`tests/saveload.mjs`) added; all mini-games fit phone landscape with 32px touch targets and
+      follow the mute switch mid-game.
+
 ## Later
 
 - [x] **Secret streaming patch.** Built 2026-11-03 (`src/core/stream.js`): tapping the title logo (3 on "re:", 2 on
