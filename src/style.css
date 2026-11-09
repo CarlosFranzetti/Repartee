@@ -38,9 +38,11 @@ button { font-family: var(--ui); }
 #sentence { position: absolute; left: 0; top: 256px; width: 640px; height: 18px; box-sizing: border-box; padding-inline: 6px; gap: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; color: var(--cyan); background: #07050f; }
 #sentence .hud { flex: none; margin-left: auto; color: var(--muted); font-size: 15px; letter-spacing: .03em; white-space: nowrap; }
 #sentence #sent { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#sentence .snd, #sentence .menuBtn { flex: none; color: var(--muted); font-size: 15px; background: none; border: 0; padding: 0 2px; cursor: pointer; }
+#sentence .snd, #sentence .menuBtn, #sentence .pauseBtn { flex: none; color: var(--muted); font-size: 15px; background: none; border: 0; padding: 0 2px; cursor: pointer; }
 #sentence .menuBtn { color: var(--amber); }
-#sentence .snd:hover, #sentence .menuBtn:hover { color: var(--fg); }
+#sentence .pauseBtn { color: var(--verb); }
+#sentence .snd:hover, #sentence .menuBtn:hover, #sentence .pauseBtn:hover { color: var(--fg); }
+#sentence .snd:focus-visible, #sentence .menuBtn:focus-visible, #sentence .pauseBtn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 0; }
 #panel { position: absolute; left: 0; top: 274px; width: 640px; height: 86px; box-sizing: border-box; padding: 4px 6px 5px; background: var(--panel); border-top: 1px solid var(--line); display: grid; grid-template-columns: 204px 1fr; gap: 8px; }
 #verbs { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 3px; }
 .verb { background: #110d24; border: 1px solid #241d48; color: var(--verb); font-size: 18px; line-height: 1; padding: 0; cursor: pointer; border-radius: 2px; }
@@ -52,7 +54,9 @@ button { font-family: var(--ui); }
 .slot:hover { border-color: #463a86; color: var(--fg); }
 .slot.sel { border-color: var(--pink); color: var(--pink); }
 .slot canvas { width: 32px; height: 24px; image-rendering: crisp-edges; image-rendering: pixelated; }
-.slot span { font-size: 13px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding-inline: 2px; }
+.slot span { font-size: 13px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding-inline: 2px; }
+/* line-height 1 clipped the descenders; the icon's empty bottom rows tuck under the label so both fit the 37 px row */
+.slot canvas { margin-bottom: -5px; }
 .slot.empty { cursor: default; opacity: .45; }
 #choices { grid-column: 1 / -1; display: flex; flex-direction: column; justify-content: flex-start; gap: 0; padding-left: 6px; overflow-y: auto; }
 /* auto margins centre a short list; a long one starts at the top and scrolls (justify-content: center would clip its first rows) */
@@ -75,16 +79,18 @@ body.p { overflow: auto; }
 body.p #app { justify-content: center; padding-block: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-bottom, 0px) + 12px); height: auto; min-height: 100%; }
 body.p #below { display: flex; }
 body.p #hint { display: block; }
-body.p #sentence { position: relative; left: auto; top: auto; width: 100%; height: auto; font-size: 20px; border: 1px solid var(--line); display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 2px 10px; padding: 4px 8px; }
-body.p #sentence .snd, body.p #sentence .menuBtn, body.p #sentence .hud { position: static; font-size: 16px; }
-body.p #sentence .hud { justify-self: end; text-align: right; }
+body.p #sentence { position: relative; left: auto; top: auto; width: 100%; height: auto; font-size: 20px; border: 1px solid var(--line); display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; gap: 2px 10px; padding: 4px 8px; box-sizing: border-box; }
+body.p #sentence .snd, body.p #sentence .menuBtn, body.p #sentence .pauseBtn, body.p #sentence .hud { position: static; font-size: 16px; }
+body.p #sentence .snd, body.p #sentence .menuBtn, body.p #sentence .pauseBtn { min-height: 36px; min-width: 44px; padding: 0 4px; }
+body.p #sentence .hud.hud { min-width: 0; justify-self: stretch; white-space: normal; line-height: 1.05; }   /* a long HUD wraps in its cell instead of widening the page */
+body.p #sentence .hud { text-align: right; }
 body.p #sentence #sent { grid-column: 1 / -1; grid-row: 2; text-align: center; font-size: 20px; min-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.p #panel { position: static; width: 100%; height: auto; grid-template-columns: 1fr; padding: 8px; gap: 10px; border: 1px solid var(--line); }
 body.p .verb { font-size: 22px; min-height: 40px; }
 body.p #verbs { grid-template-rows: none; }
 body.p #inv { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); grid-auto-rows: auto; overflow: visible; }
 body.p .slot { min-height: 74px; gap: 4px; }
-body.p .slot canvas { width: 64px; height: 48px; }
+body.p .slot canvas { width: 64px; height: 48px; margin-bottom: 0; }
 body.p .slot span { font-size: 16px; }
 body.p .choice { font-size: 22px; padding: 6px 4px; }
 
@@ -162,6 +168,12 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .mg-logo { font-family: var(--logo); font-size: clamp(18px, 3.4vw, 28px); color: #fff; }
 .mg-logo span { color: var(--pink); }
 .mg-sub { font-size: 19px; color: var(--muted); }
+.mg-headR { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+/* same quiet look as the sentence-bar SND / MENU / PAUSE buttons */
+.mg-pause { flex: none; font-family: var(--ui); font-size: 15px; letter-spacing: .04em; color: var(--verb); background: none; border: 1px solid #241d48; border-radius: 2px; padding: 2px 8px; cursor: pointer; }
+.mg-pause:hover, .mg-pause:focus-visible { color: var(--fg); border-color: var(--line); outline: none; }
+/* 32 px tap target on touch; the negative block margin keeps it from making the header row (and the game) taller */
+@media (pointer: coarse) { .mg-pause { min-height: 32px; min-width: 44px; margin-block: -8px; } }
 .mg-panel { background: #120e24; border: 1px solid var(--line); border-radius: 4px; padding: 10px; }
 .mg-msg { font-size: 22px; color: var(--fg); min-height: 1.1em; }
 .mg-say { font-size: 20px; color: #ff8fcf; min-height: 1.1em; }
@@ -211,6 +223,9 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 
 /* title: CONTINUE | NEW GAME split button (shared by all menu styles) */
 .split { display: grid; grid-template-columns: 1fr 1fr; }
+.menu .split { grid-template-columns: 1.2fr .8fr 1.2fr; }
+.menu .split .load { background: rgba(10, 6, 24, .92); color: var(--pink); border-left: 2px solid var(--pink) !important; }
+.menu .split .load:disabled { color: var(--muted); cursor: default; }
 .menu .split button { font-family: var(--ui); font-size: 24px; letter-spacing: .08em; padding: 8px 12px; cursor: pointer; text-align: center; text-shadow: none; border: 0; }
 .menu .split button::before { content: none; }
 .menu .split .cont { background: var(--pink); color: #12061a; }
@@ -263,3 +278,52 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .arc-spot-facts { font-size: 15px; letter-spacing: .08em; color: var(--muted); margin: 0; }
 .arc-spot-facts b { color: var(--tint); font-weight: 400; }
 .arc-count { font-size: 13px; color: var(--muted); letter-spacing: .1em; }
+
+/* pause overlay and save/load slots */
+.overlay.pause { z-index: 40; background: rgba(5, 3, 10, .93); }
+.pausebox, .slotbox { width: min(460px, 100%); }
+.pausebox h2 { text-align: center; letter-spacing: .12em; }
+.pausemenu { display: grid; gap: 8px; }
+.pausemenu .btn { width: 100%; }
+.slotnote { margin: 0; font-size: 17px; color: var(--muted); line-height: 1.15; }
+.slotlist { display: grid; gap: 6px; }
+.slotrow { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 10px; align-items: baseline; text-align: left; font-family: var(--ui); background: #120e24; border: 1px solid #241d48; color: var(--fg); padding: 6px 10px; cursor: pointer; border-radius: 2px; min-width: 0; }
+.slotrow b { grid-row: 1 / 3; font-weight: 400; color: var(--pink); font-size: 18px; letter-spacing: .06em; }
+.slotrow span { font-size: 19px; line-height: 1.1; overflow-wrap: anywhere; }
+.slotrow small { grid-column: 2; font-size: 15px; color: var(--muted); }
+.slotrow.empty span { color: var(--muted); }
+.slotrow:hover:not(:disabled), .slotrow:focus-visible { border-color: var(--pink); outline: none; }
+.slotrow:disabled { cursor: default; border-style: dashed; }
+.slotrow:disabled b { color: var(--muted); }
+.panelbox .slotbox-t h2 { font-family: var(--logo); font-weight: 400; font-size: 16px; margin: 0 0 6px; color: #fff; }
+.panelbox .slotbox-t .slotlist { margin: 6px 0 8px; }
+
+/* touch screens in landscape (body.t, set by layout()): the frame grows to 640x422 so the sentence-line buttons, the
+   verbs and dialogue choices are all >= 32 css px tall once the frame is scaled to the screen */
+body.t #sentence { height: 38px; font-size: 20px; }
+body.t #sentence .snd, body.t #sentence .menuBtn, body.t #sentence .pauseBtn { align-self: stretch; font-size: 18px; min-width: 44px; padding: 0 4px; }
+body.t #sentence .hud { font-size: 16px; }
+body.t #panel { top: 294px; height: 128px; }
+body.t #inv { grid-auto-rows: calc((128px - 12px) / 2); }
+body.t .slot canvas { margin-bottom: 0; }
+body.t #panel.choosing { top: auto; bottom: 0; height: auto; min-height: 128px; max-height: 412px; }
+body.t .choice { font-size: 20px; padding: 8px 4px; }
+@media (pointer: coarse) {
+  .rb-chip { min-height: 34px; padding: 4px 10px; font-size: 16px; }
+  .rb-row { min-height: 40px; }
+}
+/* the toast strip while the game is hidden (title, arcade): fixed at the top of the window, above the title */
+#toast.top { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 60; }
+/* short landscape screens (phones on their side): tighten the title so the whole menu fits above the fold */
+@media (max-height: 500px) {
+  #title { padding-block: 6px; }
+  .tbox { gap: 6px; }
+  .logo { font-size: clamp(26px, 6vw, 44px); }
+  .tag { font-size: 16px; }
+  .tagline { font-size: 15px; }
+  .menu { gap: 5px; margin-top: 2px; }
+  .menu > button { padding: 5px 8px; font-size: 19px; min-height: 34px; }
+  .menu .split button { padding: 4px 10px; font-size: 21px; min-height: 34px; }
+  .small { font-size: 15px; }
+  .levelnav { font-size: 16px; padding: 2px 10px; }
+}

@@ -89,6 +89,11 @@ const CSS = `
 .ap-main.compact .ap-phone { padding: 4px 6px 6px; border-radius: 14px; max-width: 440px; justify-self: start; width: 100%; gap: 3px; } .ap-main.compact .ap-phone::before { display: none; } .ap-main.compact .ap-status { font-size: 15px; }
 .ap-main.compact .ap-screen { height: auto; flex: 1 1 0; min-height: 0; max-height: none; padding: 5px; gap: 4px; } .ap-main.compact .ap-row { min-height: 32px; } .ap-main.compact .ap-bubble { font-size: 18px; padding: 4px 7px; } .ap-main.compact .ap-opt { font-size: 18px; padding: 4px 8px; } .ap-main.compact .ap-who canvas { width: 40px; height: 40px; } .ap-main.compact .ap-who { grid-template-columns: 40px minmax(0, 1fr); } .ap-main.compact .ap-legend { display: none; } .ap-main.compact .ap-opt .sub, .ap-main.compact .ap-opt .why { font-size: 14px; } .ap-main.compact .ap-goal { font-size: 15px; } .nk-compact .nk-end li .ap-tip { font-size: 14px; }
 @media (max-width: 860px) { .ap-plan { grid-template-columns: 1fr; gap: 4px; } .ap-slot { flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; } .ap-slot b { flex: none; width: 70px; } .ap-slot span { flex: 1; } .ap-slot small { display: none; } .ap-screen { max-height: none; } }
+/* touch targets: 32px minimum on phones; the action row stays on screen while the rest scrolls */
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .ap-acts .btn, .ap-go .btn, .ap-back, .ap-opt, .ap-q { min-height: 32px; }
+  .ap-acts { position: sticky; z-index: 3; background: #0a0716; padding: 4px 0 12px; bottom: -12px; margin-bottom: -12px; }
+}
 @media (prefers-reduced-motion: reduce) { .ap-scene { } }
 `;
 
@@ -920,9 +925,9 @@ RP.mg.register("afterParty", {
         const avail = root.clientWidth || 700, wide = !compact && avail >= 940;
         main.classList.toggle("wide", wide); main.classList.toggle("compact", compact);
         if (compact) {
-          const w = Math.max(280, Math.min(avail * 0.5, (window.innerHeight - 190) * (W / H)));
-          main.style.gridTemplateColumns = Math.round(w) + "px minmax(0, 1fr)"; scene.cv.style.width = Math.round(w) + "px"; scene.cv.style.height = Math.round(w * H / W) + "px";
-          phone.style.height = Math.max(200, window.innerHeight - 22) + "px";
+          const w = Math.max(232, Math.min(avail * 0.5, (window.innerHeight - 236) * (W / H)));
+          main.style.gridTemplateColumns = Math.round(Math.max(w, Math.min(avail * 0.47, 390))) + "px minmax(0, 1fr)"; scene.cv.style.width = Math.round(w) + "px"; scene.cv.style.height = Math.round(w * H / W) + "px";
+          phone.style.height = Math.max(200, window.innerHeight - 64) + "px";
         } else { phone.style.height = ""; main.style.gridTemplateColumns = ""; NK.fit(scene.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 720); }
       }
       layout(); updateHud(); showHome();

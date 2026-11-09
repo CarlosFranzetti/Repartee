@@ -36,6 +36,31 @@ const CSS = `
 .dg-warn .ttl { font-size: 22px; color: #ff9a8a; line-height: 1; }
 .dg-warn ul { margin: 0; padding-left: 18px; font-size: 18px; line-height: 1.05; color: #f4ead0; }
 .dg-warn li { margin: 2px 0; }
+/* touch targets (32px), and the footer row (LEAVE / ASK / PAY & GO) stays on screen */
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .dg-flip .btn, .dg-flip .kbtn, .dk .kbtn, .dk-tabs .kbtn, .dk-actions .btn.sm, .mg-goDigging .dk > .row .btn { min-height: 32px; }
+}
+.mg-goDigging .dk > .row { position: sticky; bottom: -12px; z-index: 3; background: #0a0716; padding: 4px 0 12px; margin-bottom: -12px; }
+@media (max-height: 480px) and (orientation: landscape) {
+  .overlay.mg-goDigging { padding-top: 4px; padding-bottom: 4px; }
+  .mg-goDigging .dk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; }
+  .mg-goDigging .dk > * { grid-column: 1 / -1; }
+  .mg-goDigging .dk > .mg-msg { grid-column: 1; font-size: 17px; line-height: 1.05; min-height: 0; }
+  .mg-goDigging .dk > .row { grid-column: 2; position: static; padding: 0; margin: 0; background: none; flex-wrap: nowrap; }
+  .mg-goDigging .dk > .row .btn { font-size: 18px; padding: 2px 12px; }
+  .mg-goDigging .mg-logo { font-size: 16px; } .mg-goDigging .mg-sub { font-size: 15px; }
+  .mg-goDigging .dk-hud { font-size: 17px; gap: 2px 12px; } .mg-goDigging .dk-hud .want { font-size: 16px; flex: 1 1 auto; } .dk-hud .want .dg-def, .dk-hud .dg-cap { font-size: 14px; }
+  .dg-flip .btn, .dg-flip .kbtn { font-size: 18px; padding: 3px 4px; }
+  .dk-say { min-height: 44px; padding: 3px 8px; grid-template-columns: 38px 1fr; gap: 8px; } .dk-say canvas.dk-por { width: 38px; height: 38px; } .dk-say .txt { font-size: 17px; min-height: 2.04em; } .dk-say .who { font-size: 13px; }
+  .dk-tabs .kbtn { font-size: 16px; padding: 2px 8px; }
+  .dk-info.mg-panel { padding: 6px 8px; gap: 3px; }
+  .dk-title { font-size: 17px; } .dk-title small { font-size: 15px; margin-top: 0; }
+  .dk-buyrow { flex-wrap: nowrap; gap: 6px; } .dk-buyrow .dk-actions { flex-wrap: nowrap; } .dk-buyrow .dk-price { min-width: 0; } .dk-actions .btn.sm { white-space: nowrap; }
+  .dk-meta, .dk-note { font-size: 15px; } .dg-role { font-size: 15px; } .dk-fact { font-size: 14px; } .dk-price { font-size: 24px; }
+  .dk-actions .btn.sm { font-size: 17px; padding: 2px 8px; }
+  .dg-hag, .dg-warn { padding: 5px 8px; gap: 3px; } .dg-warn .ttl { font-size: 18px; } .dg-warn ul { font-size: 15px; }
+  .dk-keys { display: none; }
+}
 `;
 let cssDone = false;
 
@@ -738,7 +763,8 @@ RP.mg.register("goDigging", {
       const wideCols = root.clientWidth >= 820;
       const box = stage; const avail = wideCols ? Math.min(680, root.clientWidth - 300) : root.clientWidth;
       const holder = { clientWidth: Math.min(avail, root.clientWidth) };
-      const fit = DK.fit(cv, holder, { scale: 2, minW: 160, maxW: 340, h: W => W < 240 ? 138 : 184, fallback: 328 });
+      const land = window.innerHeight <= 480 && window.innerWidth > window.innerHeight;   // short landscape phone: a smaller bin so the buttons fit
+      const fit = DK.fit(cv, holder, land ? { scale: 1.1, minW: 160, maxW: 216, h: 138, fallback: 328 } : { scale: 2, minW: 160, maxW: 340, h: W => W < 240 ? 138 : 184, fallback: 328 });
       L = layout(fit.W, fit.H); buildLayers();
       dust = DK.dust(RM ? 0 : 14, [L.cx - 56, 8, 112, L.floorY - 24], Math.random);
     }

@@ -108,6 +108,7 @@ function shapeOf(sp) {         // 24 bar heights (0..1) for the pad thumbnail
 
 /* ------------------------------------------------------------------ audio engine */
 const midi = n => 440 * Math.pow(2, (n - 69) / 12);
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 function makeEngine() {
   let AC = null;
   try { AC = RP.audio && RP.audio.ctx && RP.audio.ctx(); } catch (e) { AC = null; }
@@ -117,7 +118,7 @@ function makeEngine() {
     const comp = AC.createDynamicsCompressor(); comp.threshold.value = -12; comp.knee.value = 8; comp.ratio.value = 5; comp.attack.value = 0.004; comp.release.value = 0.18;
     const master = AC.createGain(); master.gain.value = 0.9;
     const filt = AC.createBiquadFilter(); filt.type = "lowpass"; filt.frequency.value = 20000; filt.Q.value = 0.9;
-    filt.connect(comp); comp.connect(master); master.connect(AC.destination);
+    filt.connect(comp); comp.connect(master); master.connect(sfxDest(AC));
     const nb = AC.createBuffer(1, AC.sampleRate, AC.sampleRate), d = nb.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     Object.assign(E, { comp, master, filt, nb, live: true, bus: null });
@@ -273,7 +274,10 @@ const CSS = `
 .mt-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .mg-head.mt-head { align-items: center; }
 .mt-head .mt-leave { font-size: 18px; padding: 2px 12px; }
-.mt-head .btn.primary { font-size: 18px; padding: 2px 12px; margin-left: auto; }
+.mt-acts { position: sticky; top: -12px; z-index: 8; display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px 0 4px; margin-top: -10px; background: linear-gradient(#0a0716 85%, rgba(10, 7, 22, 0)); }
+.mt-acts .btn { font-size: 18px; padding: 2px 12px; min-height: 32px; }
+.mt-acts .btn.primary { margin-left: auto; }
+@media (min-width: 861px) and (min-height: 481px) { .mt-acts { margin-bottom: -38px; padding-bottom: 0; background: none; pointer-events: none; } .mt-acts .btn { pointer-events: auto; } .mt-acts .btn.primary { margin-left: 0; } .mt-hint { padding-right: 270px; } }
 .mt-bfin { display: none; font-size: 20px; }
 .mt-cols { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 10px; align-items: start; }
 .mt-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -380,7 +384,6 @@ const CSS = `
 .mt-toast { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); background: var(--amber); color: #12061a; font-size: 20px; padding: 3px 12px; z-index: 5; pointer-events: none; border: 2px solid #fff; }
 .mt-wrap :focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
 @media (max-width: 860px) {
-  .mt-head .btn.primary { display: none; }
   .mt-bfin { display: block; }
   .mt-cols { grid-template-columns: minmax(0, 1fr); }
   .mt-machine { grid-template-columns: minmax(0, 1fr); }
@@ -400,6 +403,45 @@ const CSS = `
   .mt-step { grid-column: calc(var(--ri) + 2); grid-row: calc(var(--si) + 2); }
   .mt-step.b4 { margin-left: 0; margin-top: 4px; }
   .mt-pads { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+/* touch targets: nothing under 32px tall on phones */
+@media (max-height: 480px) and (orientation: landscape), (max-width: 860px) {
+  .mt-trans .btn, .mt-bpm .kbtn, .mt-vb, .mt-secpick, .mt-bfin { min-height: 32px; }
+  .mt-bpm .kbtn { min-width: 36px; }
+  .mt-sec { min-height: 32px; font-size: 14px; }
+  .mt-ly { height: 32px; }
+  .mt-trans { top: 36px; }
+  .mt-rh { border: 0; box-shadow: inset 0 0 0 1px #241d48; }
+  .mt-rh .nm { align-self: stretch; min-height: 32px; display: flex; flex-direction: column; justify-content: center; }
+  .mt-rh .ms { align-self: stretch; height: auto; min-height: 32px; width: 26px; }
+}
+/* short landscape phones: keep the desktop grid (16 steps across, 7 rows) instead of the stacked phone grid */
+@media (max-height: 480px) and (orientation: landscape) {
+  .mt-wrap { gap: 5px; }
+  .mg-makTracks .mg-logo { font-size: 18px; } .mg-makTracks .mg-sub { font-size: 15px; }
+  .mt-head { margin-right: 250px; }
+  .mt-acts { margin-top: -41px; padding-top: 8px; top: -8px; background: none; pointer-events: none; } .mt-acts .btn { pointer-events: auto; }
+  .mt-machine { grid-template-columns: minmax(200px, 300px) minmax(0, 1fr); padding: 6px; gap: 6px; }
+  .mt-trans { position: static; justify-content: flex-end; flex-wrap: wrap; background: none; padding: 0; margin: 0; border: 0; gap: 4px 8px; }
+  .mt-trans .lg { display: inline; } .mt-bpm input[type=range] { display: inline-block; width: 90px; }
+  .mt-trans .btn { font-size: 18px; padding: 3px 10px; }
+  .mt-hint { font-size: 17px; }
+  .mt-grid { grid-template-columns: 112px repeat(16, minmax(0, 1fr)); grid-template-rows: 18px repeat(7, 32px); gap: 3px; }
+  .mt-num { grid-row: 1; grid-column: calc(var(--si) + 2); line-height: 18px; font-size: 12px; }
+  .mt-rh { grid-column: 1; grid-row: calc(var(--ri) + 2); flex-wrap: nowrap; justify-content: flex-start; gap: 3px; padding: 0 2px; }
+  .mt-rh .nm { flex: 1 1 auto; text-align: left; font-size: 16px; letter-spacing: .03em; padding: 0 1px; }
+  .mt-rh .nm small { display: block; } .mt-rh .led { display: block; width: 6px; height: 6px; }
+  .mt-rh .ms { width: 22px; font-size: 13px; }
+  .mt-step { grid-column: calc(var(--si) + 2); grid-row: calc(var(--ri) + 2); }
+  .mt-step.b4 { margin-left: 4px; margin-top: 0; }
+  .mt-pads { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
+/* portrait phones: the stacked grid, with 32px steps */
+@media (max-width: 860px) and (orientation: portrait), (max-width: 560px) {
+  .mt-grid { grid-template-rows: auto repeat(16, 32px); }
+  .mt-step.b4 { margin-top: 0; }
+  .mt-num { line-height: 32px; }
+  .mt-rh .ms { width: auto; flex: 1 1 0; }
 }
 @media (prefers-reduced-motion: reduce) { .mt-vb.new { animation: none; } }
 `;
@@ -535,7 +577,9 @@ RP.mg.register("makTracks", {
     const wrap = el("div", { cls: "mt-wrap" }, root); root.removeChild(wrap);
     const head = host.header("mak.Tracks", withLou ? "Lou's place · remix session" : "Bedroom studio");
     head.classList.add("mt-head");
-    const leave = el("button", { cls: "btn mt-leave", type: "button", text: "GIVE UP" }, head);
+    /* FINISH TRACK / GIVE UP live in a bar that sticks to the top of the overlay, so the player never has to scroll to finish or quit */
+    const acts = el("div", { cls: "mt-acts" }, wrap);
+    const leave = el("button", { cls: "btn mt-leave", type: "button", text: "GIVE UP" }, acts);
     root.appendChild(wrap);
     const hint = el("div", { cls: "mt-hint", "aria-live": "polite" }, wrap);
     const cols = el("div", { cls: "mt-cols" }, wrap);
@@ -554,7 +598,7 @@ RP.mg.register("makTracks", {
     const bpmIn = el("input", { type: "range", min: "70", max: "170", step: "1", value: String(st.bpm), "aria-label": "BPM" }, bpmw);
     const bUp = el("button", { cls: "kbtn", type: "button", text: "+", "aria-label": "Faster" }, bpmw);
     const bpmTxt = el("span", { text: "" }, bpmw);
-    const bFin = el("button", { cls: "btn primary", type: "button", text: "FINISH TRACK" }); head.insertBefore(bFin, leave);
+    const bFin = el("button", { cls: "btn primary", type: "button", text: "FINISH TRACK" }); acts.insertBefore(bFin, leave);
     const bFin2 = el("button", { cls: "btn primary mt-bfin", type: "button", text: "FINISH TRACK: NAME IT AND BOUNCE" }, wrap);
 
     const grid = el("div", { cls: "mt-grid", role: "grid", "aria-label": "16-step sequencer" }, machine);

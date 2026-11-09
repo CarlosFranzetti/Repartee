@@ -608,6 +608,7 @@ let nbuf = null;
 function noiseBuf(AC) { if (nbuf && nbuf.sampleRate === AC.sampleRate) return nbuf; nbuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = nbuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return nbuf; }
 /* opts: { wobble: cents (0 = steady), rate: Hz, pan: -1..1, hum: bool, crackle: 0..1, silent: bool, thin: bool,
            distort: bool, vol, bend (cents, live via .bend), key (midi root), pulse }  -> { stop(), bend(cents), crackle(p) } */
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 GK.tone = function (o = {}) {
   const dead = { stop() {}, bend() {}, crackle() {}, silent: true };
   let AC = null;
@@ -619,7 +620,7 @@ GK.tone = function (o = {}) {
     let tail = out;
     if (o.distort) { const ws = AC.createWaveShaper(); const cur = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; cur[i] = Math.tanh(x * 6) * 0.7; } ws.curve = cur; out.connect(ws); tail = ws; }
     let pan = null; try { pan = AC.createStereoPanner(); pan.pan.value = o.pan || 0; tail.connect(pan); pan.connect(comp); } catch (e) { tail.connect(comp); }
-    comp.connect(AC.destination);
+    comp.connect(sfxDest(AC));
     const t0 = AC.currentTime;
     out.gain.setValueAtTime(0.0001, t0); out.gain.linearRampToValueAtTime(o.vol == null ? 0.5 : o.vol, t0 + 0.05);
     // detune bus: LFO (wobble) + live bend
@@ -688,7 +689,7 @@ GK.band = function (cutIdx) {
   if (!AC || (RP.audio && RP.audio.muted)) return dead;
   try {
     const comp = AC.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 6;
-    const master = AC.createGain(); master.gain.value = 0.0001; master.connect(comp); comp.connect(AC.destination);
+    const master = AC.createGain(); master.gain.value = 0.0001; master.connect(comp); comp.connect(sfxDest(AC));
     master.gain.linearRampToValueAtTime(0.8, AC.currentTime + 0.1);
     const buses = [0, 1, 2].map(i => { const g = AC.createGain(); g.gain.value = i === cutIdx ? 0.03 : 1; g.connect(master); return g; });
     const nb = noiseBuf(AC), midi = n => 440 * Math.pow(2, (n - 69) / 12);

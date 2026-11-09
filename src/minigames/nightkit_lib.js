@@ -25,7 +25,7 @@ NK.CSS_COMPACT = `
 .nk-compact .mg-head { gap: 6px; align-items: baseline; flex-wrap: nowrap; justify-content: space-between; }
 .nk-compact .mg-logo { font-size: 14px; } .nk-compact .mg-sub { font-size: 15px; }
 .nk-compact .mg-msg { font-size: 17px; } .nk-compact .mg-say { font-size: 15px; }
-.nk-compact .btn { font-size: 18px; padding: 3px 12px; }
+.nk-compact .btn { font-size: 18px; padding: 3px 12px; min-height: 32px; }
 .nk-compact .nk-end { gap: 4px; padding: 8px 10px; } .nk-compact .nk-end h2 { font-size: 14px; } .nk-compact .nk-end .nk-kick { font-size: 15px; }
 .nk-compact .nk-end .nk-stamp { width: 144px; height: 60px; } .nk-compact .nk-end .nk-score { display: none; }
 .nk-compact .nk-end .nk-blurb { font-size: 16px; line-height: 1.05; } .nk-compact .nk-end ul { column-count: 2; column-gap: 14px; width: 100%; } .nk-compact .nk-end li { font-size: 15px; break-inside: avoid; }

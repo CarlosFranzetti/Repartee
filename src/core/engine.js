@@ -59,6 +59,7 @@ function buildDom() {
   const sent = dom.sentence = el("div", { id: "sentence" }, frame);
   dom.snd = el("button", { cls: "snd", type: "button", "aria-label": "Toggle sound", text: "SND" }, sent);
   dom.menuBtn = el("button", { cls: "menuBtn", type: "button", text: "MENU" }, sent);
+  dom.pauseBtn = el("button", { cls: "pauseBtn", type: "button", "aria-label": "Pause game", title: "Pause (Pause key or Shift+P)", text: "PAUSE" }, sent);
   dom.sent = el("span", { id: "sent", text: "Walk to" }, sent);
   dom.hud = el("span", { cls: "hud", id: "hud" }, sent);
   const panel = dom.panel = el("div", { id: "panel" }, frame);
@@ -75,6 +76,7 @@ function buildDom() {
   });
   dom.snd.addEventListener("click", e => { e.stopPropagation(); setMute(!muted()); });
   dom.menuBtn.addEventListener("click", e => { e.stopPropagation(); if (!busy) RP.run(() => phoneMenu()); });
+  dom.pauseBtn.addEventListener("click", e => { e.stopPropagation(); setPaused(true); });
   bindInput();
   window.addEventListener("resize", layout);
   layout();
@@ -87,7 +89,40 @@ const A = () => RP.audio;
 const sfx = (n, o) => { try { const a = A(); if (a && a.sfx && a.sfx[n]) a.sfx[n](o); } catch (e) { /* ignore */ } };
 RP.sfx = sfx;
 const muted = () => { const a = A(); return a ? !!a.muted : true; };
-function setMute(m) { const a = A(); if (a && a.setMute) a.setMute(m); store.set("reparte.muted", m); dom.snd.textContent = m ? "SND OFF" : "SND ON"; }
+/* one sound switch for the whole game: the sentence-bar SND button, the pause overlay, the title's SOUND button and the
+   M key all call this; audio.onMuteChange tells every label */
+function setMute(m) {
+  m = !!m;
+  const a = A(); if (a && a.setMute) a.setMute(m);
+  store.set("reparte.muted", m);
+  if (dom.snd) dom.snd.textContent = m ? "SND OFF" : "SND ON";
+  if (!a || !a.onMuteChange) muteLabels();
+}
+const muteLabels = () => { if (dom.snd) dom.snd.textContent = muted() ? "SND OFF" : "SND ON"; document.querySelectorAll("[data-mute-label]").forEach(b => { b.textContent = (b.dataset.muteLabel || "SOUND") + (muted() ? " OFF" : " ON"); b.setAttribute("aria-pressed", muted() ? "false" : "true"); }); };
+RP.setMute = setMute;
+RP.isMuted = muted;
+RP.toggleMute = () => setMute(!muted());
+
+/* ======================================================================
+   pause clock & pausable timers
+   gnow() is performance.now() minus all the time spent paused: it stands still while paused, so anything timed
+   on it (fades, shakes, room time, speech, RP.wait, toasts, mini-game rAF time) resumes where it stopped.
+   ====================================================================== */
+let paused = false, pauseT0 = 0, pausedMs = 0;
+const gnow = () => (paused ? pauseT0 : performance.now()) - pausedMs;
+RP.gnow = gnow;
+const ptimers = new Set();
+function ptimeout(fn, ms) {
+  const T = { left: Math.max(0, ms || 0), t0: 0, id: 0, armed: false };
+  T.arm = () => { T.armed = true; T.t0 = performance.now(); T.id = setTimeout(() => { ptimers.delete(T); fn(); }, T.left); };
+  ptimers.add(T);
+  if (!paused) T.arm();
+  return T;
+}
+function pclear(T) { if (T) { clearTimeout(T.id); ptimers.delete(T); } }
+function holdTimers() { ptimers.forEach(T => { if (!T.armed) return; clearTimeout(T.id); T.armed = false; T.left = Math.max(0, T.left - (performance.now() - T.t0)); }); }
+function releaseTimers() { ptimers.forEach(T => { if (!T.armed) T.arm(); }); }
+RP.ptimeout = ptimeout; RP.pclear = pclear;
 
 /* ======================================================================
    verbs, sentence, HUD
@@ -230,7 +265,7 @@ RP.kid = kid;
 function evalv(v, ...a) { return typeof v === "function" ? v(...a) : v; }
 
 function makeInstance(def) {
-  const inst = { def, id: def.id, width: def.width || W, bgKey: null, bg: null, lmKey: null, lm: null, halo: null, L: null, emissive: [], actors: [], fx: [], camX: 0, t0: performance.now() };
+  const inst = { def, id: def.id, width: def.width || W, bgKey: null, bg: null, lmKey: null, lm: null, halo: null, L: null, emissive: [], actors: [], fx: [], camX: 0, t0: gnow() };
   // actors
   const list = evalv(def.actors, S) || [];
   list.forEach(a => {
@@ -427,7 +462,7 @@ function render(now) {
    speech
    ====================================================================== */
 let skipFn = null, speechScale = 1, curSpeech = null;
-const wait = ms => new Promise(r => setTimeout(r, fast ? 0 : ms));
+const wait = ms => new Promise(r => { if (fast) setTimeout(r, 0); else ptimeout(r, ms); });   // stands still while paused
 RP.wait = wait;
 function speakerAnchor(who) {
   const v = VOICES[who];
@@ -481,8 +516,8 @@ function say(text, who = "kid") {
     if (a) a.talking = true;
     let done = false;
     const dur = Math.max(1500, 650 + text.length * 48);
-    const finish = () => { if (done) return; done = true; clearTimeout(tm); e.remove(); curSpeech = null; if (a) a.talking = false; skipFn = null; res(); };
-    const tm = setTimeout(finish, dur);
+    const finish = () => { if (done) return; done = true; pclear(tm); e.remove(); curSpeech = null; if (a) a.talking = false; skipFn = null; res(); };
+    const tm = ptimeout(finish, dur);   // the line stays up while the game is paused
     skipFn = finish;
   });
 }
@@ -563,11 +598,11 @@ RP.convo = async function (options, opts = {}) {
    ====================================================================== */
 RP.fadeTo = (target, ms = 600) => new Promise(res => {
   if (fast) { fade = target; res(); return; }
-  const from = fade, t0 = performance.now();
-  (function step(t) { const p = Math.min(1, (t - t0) / ms); fade = from + (target - from) * p; if (p < 1) requestAnimationFrame(step); else res(); })(t0);
+  const from = fade, t0 = gnow();
+  (function step() { const p = Math.min(1, (gnow() - t0) / ms); fade = from + (target - from) * p; if (p < 1) requestAnimationFrame(step); else res(); })();
 });
-RP.shake = ms => { shakeT = performance.now() + ms; };
-RP.flash = (col = "#fff", ms = 300) => { flashCol = col; flashT = performance.now() + ms; };
+RP.shake = ms => { shakeT = gnow() + ms; };
+RP.flash = (col = "#fff", ms = 300) => { flashCol = col; flashT = gnow() + ms; };
 let toastQ = [], toastOn = false;
 function toast(msg) {
   if (fast) { RP.test.log.push("toast: " + msg); return; }
@@ -579,7 +614,7 @@ function nextToast() {
   if (!m) { toastOn = false; return; }
   toastOn = true;
   const t = el("div", { cls: "toastItem", text: m }, dom.toast);
-  setTimeout(() => { t.classList.add("out"); setTimeout(() => { t.remove(); nextToast(); }, 300); }, 1700);
+  ptimeout(() => { t.classList.add("out"); setTimeout(() => { t.remove(); nextToast(); }, 300); }, 1700);
 }
 RP.toast = toast;
 
@@ -767,14 +802,16 @@ async function phoneMenu() {
   if (fast) return;
   const opts = [["msgs", "Messages (" + S.msgs.length + ")"], ["crate", "Record crate (" + S.records.length + ")"], ["gear", "My setup"]];
   if (!S.f.noTravel && availableLocations().length) opts.splice(1, 0, ["map", "Subway map"]);
-  opts.push(["hint", "Show what I can click"], ["save", "Save game"], ["title", "Quit to title"], ["back", "Back"]);
+  opts.push(["hint", "Show what I can click"], ["save", "Save game"], ["load", "Load game"], ["title", "Quit to title"], ["back", "Back"]);
   const i = await choose(opts.map(o => o[1]));
   const k = opts[i][0];
   if (k === "msgs") await RP.phone();
   if (k === "map") await RP.travel();
   if (k === "crate") await RP.crateView();
   if (k === "gear") await RP.gearView();
-  if (k === "save") { save(); toast("Saved."); }
+  if (k === "save") { save(); toast("Saved."); const n = await pickSlot("save"); if (n) saveSlot(n, true); }
+  // the menu runs at busy depth 1 (its own RP.run, or the act() that used the phone); deeper means a cutscene opened it
+  if (k === "load") { if (busyN > 1) toast("Finish this first"); else { const n = await pickSlot("load"); if (n) await loadSlot(n, { force: true }); } }
   if (k === "hint") setTimeout(revealHotspots, 50);
   if (k === "title") { save(); if (RP.onQuit) RP.onQuit(); }
 }
@@ -804,16 +841,29 @@ MG.play = async function (id, params = {}) {
   const root = el("div", { cls: "mg-wrap" }, ov);
   const cleanups = [];
   let rafs = [];
+  /* pause: the host's rAF loops skip frames while paused and hand the mini-game a clock with the paused time taken
+     out (so dt never jumps), and host.timeout / host.interval stand still. Raw setTimeout/setInterval and
+     performance.now() inside a mini-game are not covered. */
+  const mgBase = pausedMs;
   const host = {
     root, ov, S, params, el: (t, a, p) => el(t, a, p || root),
     rec: RP.rec, sleeve, sfx, audio: A(), fast,
     onKey(fn) { const h = e => fn(e); document.addEventListener("keydown", h); cleanups.push(() => document.removeEventListener("keydown", h)); },
     onKeyUp(fn) { const h = e => fn(e); document.addEventListener("keyup", h); cleanups.push(() => document.removeEventListener("keyup", h)); },
-    raf(fn) { let id; const loop = t => { if (fn(t) === false) return; id = requestAnimationFrame(loop); rafs[0] = id; }; id = requestAnimationFrame(loop); rafs.push(() => cancelAnimationFrame(id)); cleanups.push(() => cancelAnimationFrame(id)); },
-    timeout(fn, ms) { const t = setTimeout(fn, ms); cleanups.push(() => clearTimeout(t)); return t; },
-    interval(fn, ms) { const t = setInterval(fn, ms); cleanups.push(() => clearInterval(t)); return t; },
+    raf(fn) { let id; const loop = t => { if (!paused && fn(t - (pausedMs - mgBase)) === false) return; id = requestAnimationFrame(loop); rafs[0] = id; }; id = requestAnimationFrame(loop); rafs.push(() => cancelAnimationFrame(id)); cleanups.push(() => cancelAnimationFrame(id)); },
+    timeout(fn, ms) { const t = ptimeout(fn, ms); cleanups.push(() => pclear(t)); return t; },
+    interval(fn, ms) { const h = { t: null }; const tick = () => { h.t = ptimeout(tick, ms); fn(); }; h.t = ptimeout(tick, ms); cleanups.push(() => pclear(h.t)); return h; },
     cleanup(fn) { cleanups.push(fn); },
-    header(title, sub) { const h = el("div", { cls: "mg-head" }, root); el("div", { cls: "mg-logo", html: esc(title).replace(".", "<span>.</span>") }, h); if (sub) el("div", { cls: "mg-sub", text: sub }, h); return h; },
+    /* the header: logo on the left; on the right the sub label (e.g. "Arcade") and a PAUSE button (the only on-screen
+       pause inside a mini-game, which phones need: they have no Pause key) */
+    header(title, sub) {
+      const h = el("div", { cls: "mg-head" }, root); el("div", { cls: "mg-logo", html: esc(title).replace(".", "<span>.</span>") }, h);
+      const r = el("div", { cls: "mg-headR" }, h);
+      if (sub) el("div", { cls: "mg-sub", text: sub }, r);
+      const pb = el("button", { cls: "mg-pause", type: "button", "aria-label": "Pause game", title: "Pause (Pause key or Shift+P)", text: "PAUSE" }, r);
+      pb.addEventListener("click", e => { e.stopPropagation(); setPaused(true); });
+      return h;
+    },
     button(text, onClick, cls) { const b = el("button", { cls: "btn " + (cls || ""), type: "button", text }, root); b.addEventListener("click", onClick); return b; }
   };
   MG.active = host;
@@ -1076,6 +1126,27 @@ function bindInput() {
     if (!verb && !pending) { act("walk", { hot: h.id, x, y }); return; }
     act(verb, { hot: h.id, x, y }, pending);
   });
+  /* pause and mute keys, ahead of everything else (capture phase). P is "pick up", so pause is the Pause key or
+     Shift+P; M (not a verb key) toggles sound, except inside a mini-game (makTracks uses M) or a text box.
+     While paused, key presses stop here: nothing behind the overlay (speech skip, verb keys, mini-game keys) sees
+     them, but Tab / Enter / Space still work the overlay's own buttons. Key-ups pass, so a held key is let go. */
+  window.addEventListener("keydown", e => {
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    const mods = e.ctrlKey || e.metaKey || e.altKey;
+    const pauseKey = e.key === "Pause" || (!mods && e.shiftKey && (e.key === "P" || e.key === "p"));
+    if (pauseKey && !typing && (paused || canPause())) { e.preventDefault(); e.stopPropagation(); setPaused(!paused); return; }
+    const muteKey = !mods && !e.shiftKey && (e.key === "m" || e.key === "M") && !typing;
+    if (paused) {
+      e.stopPropagation();
+      if (muteKey) { e.preventDefault(); setMute(!muted()); }
+      // Escape backs out of the slot list, or resumes
+      if (e.key === "Escape") { e.preventDefault(); const back = pauseOv && pauseOv.querySelector(".slotlist") && pauseOv.querySelector(".erow .btn"); if (back) back.click(); else setPaused(false); }
+      return;
+    }
+    if (muteKey && !MG.active) { e.preventDefault(); e.stopPropagation(); setMute(!muted()); }
+  }, true);
+  // switching away from the tab pauses a game in progress; it stays paused until RESUME
+  document.addEventListener("visibilitychange", () => { if (document.hidden && !fast && canPause()) setPaused(true); });
   document.addEventListener("keydown", e => {
     if (MG.active) return;
     if (e.key === "Escape") { if (busy && skipFn) { skipFn(); return; } verb = null; pending = null; updateVerbs(); renderInv(); updateSentence(); }
@@ -1147,6 +1218,7 @@ RP.hasSave = () => { const d = store.get(SAVE_KEY); return !!(d && ROOMS[d.room]
 RP.loadSave = async function () {
   const d = store.get(SAVE_KEY);
   if (!d || !ROOMS[d.room]) return false;
+  if (!fast && RP.audio && RP.audio.ready) { RP.audio.unlock(); await RP.audio.ready(); }   // as RP.startAct: music never starts against a waking context
   S = Object.assign(baseState(), d);
   applyWardrobe();
   renderInv(); updateHud();
@@ -1164,8 +1236,140 @@ RP.restore = async function (d) {
 };
 
 /* ======================================================================
-   acts
+   save slots: three manual slots next to the autosave, each { S, when, label } under SAVE_KEY + ".slot1..3"
    ====================================================================== */
+const SLOTS = 3;
+const slotKey = n => SAVE_KEY + ".slot" + n;
+function slotLabel(st) {
+  const r = ROOMS[st.room];
+  const rn = r ? (typeof r.name === "function" ? r.name(st) : r.name) || r.id : st.room;
+  return ["Level " + st.act, rn, st.clock || st.day || ""].filter(Boolean).join(" \u00b7 ");
+}
+/* read a slot; anything malformed (bad JSON comes back null from store.get, a wrong shape, a room this build lacks) is empty */
+function readSlot(n) {
+  const d = store.get(slotKey(n));
+  if (!d || typeof d !== "object" || !d.S || typeof d.S !== "object" || !ROOMS[d.S.room]) return null;
+  return { S: d.S, when: +d.when || 0, label: typeof d.label === "string" ? d.label : slotLabel(d.S) };
+}
+RP.slots = () => { const out = []; for (let n = 1; n <= SLOTS; n++) { const d = readSlot(n); out.push({ n, empty: !d, label: d ? d.label : "", when: d ? d.when : 0 }); } return out; };
+RP.hasSlots = () => RP.slots().some(x => !x.empty);
+RP.readSlot = readSlot;
+/* manual save: never mid-cutscene or mid-mini-game (busy). The phone menu passes inMenu: its own RP.run is busy depth 1 */
+function saveSlot(n, inMenu) {
+  if (!cur || MG.active || busyN > (inMenu ? 1 : 0)) { toast("Can't save right now"); return false; }
+  S.kx = Math.round(kid.x); S.ky = Math.round(kid.y); S.face = kid.face;
+  const ok = store.set(slotKey(n), { S: JSON.parse(JSON.stringify(S)), when: Date.now(), label: slotLabel(S) });
+  toast(ok ? "Saved to slot " + n + "." : "Couldn't save (storage is full or blocked).");
+  return ok;
+}
+RP.saveSlot = n => saveSlot(n, false);
+/* load: the same path as RP.restore (deep copy, wardrobe, inventory and HUD, instant goto, audio unlock/ready).
+   Refused while a cutscene or mini-game runs; whatever else is in flight (a walk, a selected verb, a line) is dropped */
+async function loadSlot(n, opts = {}) {
+  const d = readSlot(n);
+  if (!d) { toast("That slot is empty."); return false; }
+  if (!opts.force && (busy || MG.active)) { toast("Finish this first"); return false; }
+  if (paused) setPaused(false);
+  verb = null; pending = null; hoverName = "";
+  if (skipFn) skipFn();
+  kid.path = []; kid.onArrive = null;
+  dom.talk.querySelectorAll(".hs").forEach(e => e.remove());
+  updateVerbs();
+  const ok = await RP.restore(d.S);
+  if (ok) toast("Loaded slot " + n + ".");
+  return ok;
+}
+RP.loadSlot = loadSlot;
+const fmtWhen = t => { try { return new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; } };
+/* the slot list, drawn into any box (the in-game picker, the pause overlay, the title panel). done(n | null) */
+function slotUI(box, mode, done) {
+  box.innerHTML = "";
+  el("h2", { text: mode === "save" ? "SAVE GAME" : "LOAD GAME" }, box);
+  el("p", { cls: "slotnote", text: mode === "save" ? "Pick a slot. Saving over a slot replaces it. (The game also autosaves for CONTINUE.)" : "Pick a saved game." }, box);
+  const list = el("div", { cls: "slotlist" }, box);
+  let first = null;
+  RP.slots().forEach(x => {
+    const bt = el("button", { type: "button", cls: "slotrow" + (x.empty ? " empty" : "") }, list);
+    el("b", { text: "SLOT " + x.n }, bt);
+    el("span", { text: x.empty ? "empty" : x.label }, bt);
+    if (!x.empty && x.when) el("small", { text: fmtWhen(x.when) }, bt);
+    if (mode === "load" && x.empty) { bt.disabled = true; return; }
+    if (!first) first = bt;
+    bt.addEventListener("click", () => done(x.n));
+  });
+  const row = el("div", { cls: "erow" }, box);
+  const back = el("button", { cls: "btn", type: "button", text: "BACK" }, row);
+  back.addEventListener("click", () => done(null));
+  box.addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(null); } });
+  setTimeout(() => (first || back).focus({ preventScroll: true }), 30);
+}
+RP.slotUI = slotUI;
+/* in-game picker overlay -> slot number or null */
+function pickSlot(mode) {
+  return new Promise(res => {
+    if (fast) { res(null); return; }
+    const ov = overlay("slots");
+    const box = el("div", { cls: "cratebox slotbox", role: "dialog", "aria-label": mode === "save" ? "Save game" : "Load game" }, ov);
+    slotUI(box, mode, n => { ov.remove(); res(n); });
+  });
+}
+RP.pickSlot = pickSlot;
+
+/* ======================================================================
+   pause: freezes the frame loop, mini-game rAF loops and host timers, speech/RP.wait/fade timers, and suspends
+   the AudioContext (and the streaming <audio> elements). Overlay: RESUME, SAVE, LOAD, SOUND, QUIT TO TITLE.
+   ====================================================================== */
+let pauseOv = null;
+const gameShown = () => !!dom.app && dom.app.style.visibility !== "hidden";
+const canPause = () => (!!cur && gameShown()) || !!MG.active;
+function setPaused(on) {
+  on = !!on;
+  if (on === paused) return paused;
+  if (on && !canPause()) return false;
+  if (on) {
+    paused = true; pauseT0 = performance.now();
+    holdTimers();
+    try { const a = A(); if (a && a.pause) a.pause(true); } catch (e) { /* ignore */ }
+    showPause();
+  } else {
+    pausedMs += performance.now() - pauseT0; paused = false;
+    last = performance.now();
+    if (pauseOv) { pauseOv.remove(); pauseOv = null; }
+    try { const a = A(); if (a && a.pause) a.pause(false); } catch (e) { /* ignore */ }
+    releaseTimers();
+  }
+  document.body.classList.toggle("paused", paused);
+  return paused;
+}
+RP.pause = setPaused;
+RP.togglePause = () => setPaused(!paused);
+Object.defineProperty(RP, "paused", { get: () => paused });
+function showPause() {
+  if (pauseOv) pauseOv.remove();
+  const ov = pauseOv = overlay("pause");
+  const box = el("div", { cls: "cratebox pausebox", role: "dialog", "aria-label": "Paused" }, ov);
+  const main = () => {
+    box.innerHTML = "";
+    el("h2", { text: "PAUSED" }, box);
+    const col = el("div", { cls: "pausemenu" }, box);
+    const b = (text, fn, cls) => { const x = el("button", { cls: "btn" + (cls ? " " + cls : ""), type: "button", text }, col); x.addEventListener("click", fn); return x; };
+    const res = b("RESUME", () => setPaused(false), "primary");
+    const sv = b("SAVE GAME", () => slotUI(box, "save", n => { if (n) saveSlot(n, false); main(); }));
+    if (busy || MG.active) { sv.disabled = true; sv.title = "You can save once this scene or mini-game is over"; }
+    const ld = b("LOAD GAME", () => {
+      if (busy || MG.active) { note.textContent = "Finish this first."; toast("Finish this first"); return; }
+      slotUI(box, "load", n => { if (n) loadSlot(n); else main(); });
+    });
+    if (!RP.hasSlots()) { ld.disabled = true; ld.title = "No saved games yet"; }
+    const snd = b("", () => setMute(!muted()));
+    snd.dataset.muteLabel = "SOUND"; muteLabels();
+    const q = b("QUIT TO TITLE", () => { setPaused(false); save(); if (RP.onQuit) RP.onQuit(); });
+    if (busy || MG.active) { q.disabled = true; q.title = "You can quit once this scene or mini-game is over"; }
+    const note = el("p", { cls: "slotnote", text: busy || MG.active ? "Saving and quitting wait until this scene is over." : "Pause / Shift+P to resume. M toggles sound." }, box);
+    setTimeout(() => res.focus({ preventScroll: true }), 30);
+  };
+  main();
+}
 function applyWardrobe() {
   const a = ACTS[S.act];
   if (a && a.wardrobe && RP.chars.get("kid")) RP.chars.update("kid", a.wardrobe);
@@ -1198,11 +1402,16 @@ RP.completeAct = async function (checks) {
    layout
    ====================================================================== */
 let s = 1;
+const coarse = () => { try { return matchMedia("(pointer: coarse)").matches; } catch (e) { return false; } };
 function layout() {
   if (!dom.frame) return;
   const vw = document.documentElement.clientWidth || window.innerWidth, vh = document.documentElement.clientHeight || window.innerHeight;
   const portrait = vw < 600 && vh > vw;
   document.body.classList.toggle("p", portrait);
+  // touch screens in landscape: a taller sentence line and panel (body.t) so every control is >= 32 css px after scaling
+  const touchL = !portrait && coarse();
+  document.body.classList.toggle("t", touchL);
+  const FH = touchL ? 422 : 360;
   const cs = getComputedStyle(dom.app), gut = (parseFloat(cs.paddingLeft) || 16) + (parseFloat(cs.paddingRight) || 16);
   const below = dom.below;
   if (portrait) {
@@ -1213,9 +1422,9 @@ function layout() {
     speechScale = clamp(15 / (20 * s), 1, 2.2);
   } else {
     if (dom.sentence.parentNode !== dom.frame) { dom.frame.appendChild(dom.sentence); dom.frame.appendChild(dom.panel); }
-    s = Math.min((vw - gut) / W, (vh - 20) / 360);
-    dom.frame.style.height = "360px";
-    dom.frameBox.style.width = W * s + "px"; dom.frameBox.style.height = 360 * s + "px";
+    s = Math.min((vw - gut) / W, (vh - 20) / FH);
+    dom.frame.style.height = FH + "px";
+    dom.frameBox.style.width = W * s + "px"; dom.frameBox.style.height = FH * s + "px";
     speechScale = clamp(14 / (20 * s), 1, 1.8);
   }
   dom.frame.style.transform = "scale(" + s + ")";
@@ -1229,8 +1438,11 @@ RP.layout = layout;
    loop & boot
    ====================================================================== */
 let last = performance.now();
-function loop(t) {
-  const dt = Math.min(0.05, (t - last) / 1000); last = t;
+function loop(t0) {
+  // paused: keep the clock in step (no dt jump on resume) and skip actors, room update and drawing
+  if (paused) { last = t0; requestAnimationFrame(loop); return; }
+  const t = t0 - pausedMs;   // the game clock (gnow): room time doesn't count the time spent paused
+  const dt = Math.min(0.05, (t0 - last) / 1000); last = t0;
   if (cur) {
     updateActor(kid, dt);
     cur.actors.forEach(a => updateActor(a, dt));
@@ -1242,13 +1454,22 @@ function loop(t) {
 }
 RP.boot = function () {
   buildDom();
+  try { const a = A(); if (a && a.onMuteChange) a.onMuteChange(muteLabels); } catch (e) { /* ignore */ }
   const m = store.get("reparte.muted");
   setMute(m == null ? false : !!m);
   updateVerbs(); renderInv(); updateSentence(); updateHud();
   requestAnimationFrame(loop);
 };
 RP.reset = () => { S = baseState(); kid.path = []; renderInv(); updateHud(); };
-RP.hideGame = on => { if (dom.app) dom.app.style.visibility = on ? "hidden" : ""; };
+/* while the game is hidden (title, arcade) the toast host moves to <body> as a fixed strip, so title-screen toasts
+   (streaming patch, NOW PLAYING) are seen; in the game it sits back in the frame, first after the speech layer */
+RP.hideGame = on => {
+  if (dom.app) dom.app.style.visibility = on ? "hidden" : "";
+  if (dom.toast) {
+    if (on && dom.toast.parentNode !== document.body) { document.body.appendChild(dom.toast); dom.toast.classList.add("top"); }
+    if (!on && dom.toast.parentNode !== dom.frame) { dom.frame.insertBefore(dom.toast, dom.talk.nextSibling); dom.toast.classList.remove("top"); }
+  }
+};
 
 /* ======================================================================
    test hooks

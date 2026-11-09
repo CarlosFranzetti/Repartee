@@ -69,6 +69,19 @@ ST.resolve = async rec => {
   return (ST.cache[rec.id] = out);
 };
 
+/* ---- pause and background: the <audio> elements play on their own clock, so suspending the AudioContext alone
+   would let them run on (silently when routed through it, audibly when not) and come back out of place. Every
+   element that should be playing is in "playing"; it is paused while the game is paused or the tab is hidden. */
+const playing = new Set();
+const wantPlay = () => !(audio.isPaused && audio.isPaused()) && !document.hidden;
+const syncEl = el => { try { if (wantPlay()) { if (el.paused && el.src) el.play().catch(() => {}); } else if (!el.paused) el.pause(); } catch (e) { /* ignore */ } };
+const syncAll = () => playing.forEach(syncEl);
+if (audio.onPauseChange) audio.onPauseChange(syncAll);
+document.addEventListener("visibilitychange", syncAll);
+// an element that is not routed through the context (no Web Audio) follows the mute switch on its own
+const direct = new Set();
+if (audio.onMuteChange) audio.onMuteChange(m => direct.forEach(el => { el.muted = m; }));
+
 /* ---- a streamed "loop": same handle shape as audio.loop, so callers can't tell ---- */
 function streamed(rec, o, fallback) {
   const el = new Audio(); el.crossOrigin = "anonymous"; el.preload = "auto";
@@ -83,6 +96,7 @@ function streamed(rec, o, fallback) {
       node.connect(filt); filt.connect(gain); gain.connect(audio.buses().music);
     } catch (e) { node = null; el.volume = Math.min(1, vol0); }
   } else el.volume = Math.min(1, vol0);
+  if (!node) { el.muted = !!audio.muted; direct.add(el); }
   let fb = null; // the synthesized loop takes over if the preview never arrives
   const useFallback = () => { if (dead || fb) return; fb = fallback(); if (fb) { try { fb.start(); } catch (e) { /* ignore */ } } };
   const H = {
@@ -93,14 +107,16 @@ function streamed(rec, o, fallback) {
         if (!r) { useFallback(); return; }
         el.src = r.url; el.loop = true; // a 30-second preview loops until stopped
         el.addEventListener("error", () => useFallback(), { once: true });
-        el.play().catch(() => useFallback());
+        playing.add(el);
+        if (wantPlay()) el.play().catch(() => { if (wantPlay()) useFallback(); });   // a play() refused because we paused is not a failure
         if (RP.toast && !ST.quiet) RP.toast("NOW PLAYING: " + r.artist + " - " + r.title + " (preview)");
       });
     },
     stop(fadeSec) {
       dead = true;
       if (fb) { try { fb.stop(fadeSec); } catch (e) { /* ignore */ } }
-      const end = () => { try { el.pause(); el.src = ""; } catch (e) { /* ignore */ } try { gain && gain.disconnect(); } catch (e) { /* ignore */ } };
+      playing.delete(el); direct.delete(el);
+      const end = () => { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { /* ignore */ } try { gain && gain.disconnect(); } catch (e) { /* ignore */ } };
       if (gain && c && fadeSec > 0) { const t = c.currentTime; gain.gain.setValueAtTime(gain.gain.value, t); gain.gain.linearRampToValueAtTime(0.0001, t + fadeSec); setTimeout(end, fadeSec * 1000 + 50); }
       else end();
     },

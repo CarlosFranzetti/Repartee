@@ -120,6 +120,10 @@ const CSS = `
   .sk-g .sk-end .score { font-size: 24px; } .sk-g .sk-end .stat b { font-size: 21px; } .sk-g .sk-end canvas { width: 128px !important; height: 48px !important; } .sk-g .sk-end .sub { font-size: 19px; }
   .sk-g .sk-tip { display: none; }
 }
+@media (max-height: 480px) and (orientation: landscape), (max-width: 760px) {
+  .sk-head .sk-leave, .sk-note .sk-tg { min-height: 32px; }
+  .sk-g .sk-choice { min-height: 32px; }
+}
 @media (prefers-reduced-motion: reduce) { .sk-say .more { animation: none; } .sk-meter .fill { transition: none; } .sk-meter.hit .bar { animation: none; } }
 `;
 let cssDone = false;

@@ -38,11 +38,29 @@ const CSS = `
 .call { font-size: 19px; color: var(--fg); background: #1a0f22; border: 1px solid #4a1f3a; padding: 3px 10px; border-radius: 2px; display: flex; align-items: center; gap: 8px; }
 .call i { width: 8px; height: 8px; background: #3fd07a; display: inline-block; animation: bmblink 1s steps(1) infinite; }
 @keyframes bmblink { 50% { opacity: .2; } }
-@media (max-width: 760px) { .bm-grid { grid-template-columns: 1fr 1fr; } .bm-mix { grid-column: 1 / -1; order: 3; } .plat { width: 92px; height: 92px; } .fader input[type=range] { height: 92px; } .bpm { font-size: 32px; } }
+@media (max-width: 760px) { .bm-grid { grid-template-columns: 1fr 1fr; } .bm-mix { grid-column: 1 / -1; order: 3; } .plat { width: 92px; height: 92px; } .fader input[type=range] { height: 92px; } .bpm { font-size: 32px; } .tip { display: none; } /* the tip is keyboard advice; phones have none */ }
+/* short landscape phones (e.g. 844x390): a three-column layout with everything shrunk so GIVE UP and the nudge buttons stay on screen */
+@media (max-height: 480px) and (orientation: landscape) {
+  .mg-wrap:has(.bm-grid) { gap: 4px; }
+  .bm-grid { grid-template-columns: 1fr 1.25fr 1fr; gap: 6px; }
+  .bm-mix { grid-column: auto; order: 0; }
+  .deck, .bm-mix { padding: 6px; gap: 4px; }
+  .plat { width: 56px; height: 56px; } .fader input[type=range] { height: 56px; }
+  .bpm { font-size: 24px; } .bpm small { font-size: 13px; }
+  .dt { font-size: 16px; } .dsub, .pitchread { font-size: 13px; }
+  .bm-gridcv { height: 40px; } .meter { height: 8px; }
+  .readouts, .xf { font-size: 14px; } .stp { font-size: 13px; padding: 2px 6px; }
+  .tip { display: none; }
+  .mg-wrap:has(.bm-grid) .mg-logo { font-size: 18px; } .mg-wrap:has(.bm-grid) .mg-sub { font-size: 15px; }
+  .deck .row { gap: 4px; } .deck .kbtn { padding: 4px 8px; min-height: 32px; font-size: 15px; }
+  .bm-grid ~ .row .btn { font-size: 17px; padding: 4px 12px; min-height: 32px; }
+  .bm-grid ~ .mg-msg { font-size: 17px; min-height: 0; } .bm-grid ~ .mg-say { font-size: 16px; min-height: 0; }
+}
 @media (prefers-reduced-motion: reduce) { .call i { animation: none; } }
 `;
 let cssDone = false;
 
+const sfxDest = AC => { try { const b = RP.audio.buses && RP.audio.buses(); return (b && b.sfx) || AC.destination; } catch (e) { return AC.destination; } }; /* route through the engine bus so master mute applies */
 RP.mg.register("beatMatch", {
   title: "beat.Match", order: 1,
   desc: "Match two decks by tempo and phase, then bring the new one in.",
@@ -110,7 +128,7 @@ RP.mg.register("beatMatch", {
     const bpmB = () => BASE_B * (1 + st.pitch / 100);
     const AC = RP.audio.ctx();
     let master = null, gA = null, gB = null;
-    if (AC && !RP.audio.muted) { master = AC.createGain(); master.gain.value = 0.8; master.connect(AC.destination); gA = AC.createGain(); gB = AC.createGain(); gA.connect(master); gB.connect(master); }
+    if (AC) { master = AC.createGain(); master.gain.value = 0.8; master.connect(sfxDest(AC)); gA = AC.createGain(); gB = AC.createGain(); gA.connect(master); gB.connect(master); }
     const D = RP.audio.drums;
     function schedule() {
       if (!gA) return;
@@ -194,7 +212,7 @@ RP.mg.register("beatMatch", {
     });
     host.onKeyUp(e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") st.nudge = 0; if (kHeld && e.key === kHeld.key) kStop(); });
     window.addEventListener("blur", kStop); host.cleanup(() => window.removeEventListener("blur", kStop));
-    const sizeGrid = () => { const r = gcv.getBoundingClientRect(); const d = Math.min(2, window.devicePixelRatio || 1); gcv.width = Math.max(200, Math.round(r.width * d)); gcv.height = Math.round(72 * d); };
+    const sizeGrid = () => { const r = gcv.getBoundingClientRect(); const d = Math.min(2, window.devicePixelRatio || 1); gcv.width = Math.max(200, Math.round(r.width * d)); gcv.height = Math.round(Math.max(40, r.height || 72) * d); };
     sizeGrid();
     return new Promise(resolve => {
       let done = false;
