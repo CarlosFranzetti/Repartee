@@ -2335,31 +2335,72 @@ ST.flash = () => {
    iTunes Search: https://itunes.apple.com/search?term=...&media=music&entity=song&limit=N returns
    { resultCount, results: [{ artistName, trackName, previewUrl, trackTimeMillis, ... }] } with CORS open. */
 const norm = s => String(s || "").toLowerCase().replace(/\(.*?\)|\[.*?\]/g, " ").replace(/feat\.?|featuring|ft\./g, " ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+/* the catalog names records the way a crate does ("Weekend / Just Wanna Dance", "FK-EP", "X presents Y featuring Z");
+   the store names songs. Search and score on the lead artist and the first title. */
+const simpArtist = a => String(a || "").replace(/\s+(featuring|feat\.?|ft\.|presents?|pres\.|with|vs\.?|&)\s+.*$/i, "").trim();
+const simpTitle = t => { const m = /\(incl\.\s*([^)]+)\)/i.exec(t || ""); if (m) return m[1].trim(); // "X (incl. Y)": Y is the song
+  return String(t || "").replace(/ \(.*\)$/, "").split(/\s+\/\s+/)[0].replace(/\s+-?\s*E\.?P\.?(\s+vol\.?\s*\d+)?$/i, "").trim(); };
+ST.simp = { artist: simpArtist, title: simpTitle };
 const score = (rec, r) => {
-  const a = norm(rec.artist), t = norm(rec.title), ra = norm(r.artistName), rt = norm(r.trackName);
+  const a = norm(simpArtist(rec.artist)), t = norm(simpTitle(rec.title)), ra = norm(r.artistName), rt = norm(r.trackName);
   let s = 0;
   if (ra === a) s += 4; else if (ra.includes(a) || a.includes(ra)) s += 2;
   if (rt === t) s += 4; else if (rt.includes(t) || t.includes(rt)) s += 2;
+  else return -99; // the title must match: an artist-only hit would play some other song by them
   // judge "remix / live / edit" on the raw titles: norm() strips the brackets those words usually sit in
   const extra = /remix|live|karaoke|instrumental|edit|version|mix\b/i;
   if (extra.test(r.trackName || "") && !extra.test(rec.title || "")) s -= 3;
   return s;
 };
+ST.log = [];                                        // the last few things the patch did, for debugging in the console
+const note = (...a) => { ST.log.push(a.join(" ")); if (ST.log.length > 40) ST.log.shift(); };
+/* the search runs as a script tag (JSONP, "callback=") first: it needs no CORS, so it works from file:// copies
+   and whenever Apple's CORS header is missing (it is for a null origin); fetch is the fallback */
+let jsonpN = 0;
+const jsonp = (url, ms) => new Promise((res, rej) => {
+  const cb = "__rpItunes" + (++jsonpN);
+  const sc = document.createElement("script");
+  let called = false;
+  const done = (ok, v) => { clearTimeout(tm); delete window[cb]; sc.remove(); ok ? res(v) : rej(v); };
+  const tm = setTimeout(() => done(false, new Error("timeout")), ms);
+  window[cb] = j => { called = true; done(true, j); };
+  sc.onerror = () => done(false, new Error("script error"));
+  sc.onload = () => { if (!called) done(false, new Error("no callback")); }; // loaded but never called back (not JSONP)
+  sc.src = url + "&callback=" + cb; document.head.appendChild(sc);
+});
+const searchUrl = (rec, artist) => "https://itunes.apple.com/search?term=" + encodeURIComponent((artist || simpArtist(rec.artist)) + " " + simpTitle(rec.title)) + "&media=music&entity=song&limit=8";
+// "X presents Y": the store often files the record under Y, so Y is tried when X finds nothing
+const presented = a => { const m = /\s+(?:presents?|pres\.)\s+(.+?)(?:\s+(?:featuring|feat\.?|ft\.)\s.*)?$/i.exec(a || ""); return m ? m[1].trim() : null; };
 ST.resolve = async rec => {
   const c = ST.cache[rec.id]; if (c !== undefined) return c;
-  const term = encodeURIComponent(rec.artist + " " + rec.title.replace(/ \(.*\)$/, ""));
-  const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 8000);
-  let out = null;
-  try {
-    const r = await fetch("https://itunes.apple.com/search?term=" + term + "&media=music&entity=song&limit=8", { signal: ac.signal });
-    if (r.ok) {
-      const j = await r.json();
-      const best = (j.results || []).filter(x => x.previewUrl).map(x => [score(rec, x), x]).sort((p, q) => q[0] - p[0])[0];
-      if (best && best[0] >= 4) out = { url: best[1].previewUrl, title: best[1].trackName, artist: best[1].artistName, duration: Math.round((best[1].trackTimeMillis || 0) / 1000), preview: true };
-    }
-  } catch (e) { out = null; } finally { clearTimeout(tm); }
+  let out = await lookup(rec, null);
+  const alt = presented(rec.artist);
+  if (!out && alt) out = await lookup(rec, alt);
   return (ST.cache[rec.id] = out);
 };
+async function lookup(rec, artist) {
+  let out = null, j = null, why = "";
+  try { j = await jsonp(searchUrl(rec, artist), 8000); }
+  catch (e0) {
+    note("jsonp failed:", e0.message, "- retrying");   // Apple throttles bursts with an empty reply; one retry after a pause
+    await new Promise(r => setTimeout(r, 1500));
+    try { j = await jsonp(searchUrl(rec, artist), 8000); } catch (e1) {
+    note("jsonp failed again:", e1.message);
+    const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 8000);
+    try { const r = await fetch(searchUrl(rec, artist), { signal: ac.signal }); if (r.ok) j = await r.json(); else why = "search http " + r.status; }
+    catch (e2) { why = "search failed (" + (e2.message || e2) + ")"; } finally { clearTimeout(tm); }
+    }
+  }
+  if (j) {
+    const scored = rec2 => (j.results || []).filter(x => x.previewUrl).map(x => [score(rec2, x), x]).sort((p, q) => q[0] - p[0])[0];
+    const best = scored(artist ? Object.assign({}, rec, { artist }) : rec);
+    if (best && best[0] >= 4) out = { url: best[1].previewUrl, title: best[1].trackName, artist: best[1].artistName, duration: Math.round((best[1].trackTimeMillis || 0) / 1000), preview: true };
+    else why = best && best[0] > -99 ? "no close match (best: " + best[1].artistName + " - " + best[1].trackName + ")" : "no match on iTunes";
+  }
+  note(rec.id, (artist ? "(as " + artist + ") " : "") + (out ? "-> " + out.artist + " - " + out.title : "-> " + why));
+  if (!out) ST.lastWhy = why;
+  return out;
+}
 
 /* ---- pause and background: the <audio> elements play on their own clock, so suspending the AudioContext alone
    would let them run on (silently when routed through it, audibly when not) and come back out of place. Every
@@ -2374,33 +2415,41 @@ document.addEventListener("visibilitychange", syncAll);
 const direct = new Set();
 if (audio.onMuteChange) audio.onMuteChange(m => direct.forEach(el => { el.muted = m; }));
 
-/* ---- a streamed "loop": same handle shape as audio.loop, so callers can't tell ---- */
+/* ---- a streamed "loop": same handle shape as audio.loop, so callers can't tell ----
+   The element plays on its own, not through the AudioContext: routing it through createMediaElementSource needs
+   CORS-clean media and a running context, and either one failing gives silence with no error. Volume, mute and
+   fades are done on the element itself. */
+const SILENT_WAV = (() => { // a 1-sample silent WAV, played inside the click so iOS lets this element play later
+  const b = new Uint8Array(46), v = new DataView(b.buffer), w = (o, s) => { for (let i = 0; i < s.length; i++) b[o + i] = s.charCodeAt(i); };
+  w(0, "RIFF"); v.setUint32(4, 38, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, 2, true);
+  let s = ""; b.forEach(x => { s += String.fromCharCode(x); }); return "data:audio/wav;base64," + btoa(s);
+})();
+const ERR = { 1: "aborted", 2: "network error", 3: "decode error", 4: "format not supported" };
 function streamed(rec, o, fallback) {
-  const el = new Audio(); el.crossOrigin = "anonymous"; el.preload = "auto";
-  let node = null, gain = null, filt = null, dead = false;
-  const vol0 = o.volume == null ? 0.8 : o.volume;
-  const c = audio.ctx();
-  // route through the music bus when the context exists, so the mute switch and the bus volume still apply
-  if (c) {
-    try {
-      node = c.createMediaElementSource(el); gain = c.createGain(); gain.gain.value = vol0;
-      filt = c.createBiquadFilter(); filt.type = "allpass"; filt.frequency.value = 20000;
-      node.connect(filt); filt.connect(gain); gain.connect(audio.buses().music);
-    } catch (e) { node = null; el.volume = Math.min(1, vol0); }
-  } else el.volume = Math.min(1, vol0);
-  if (!node) { el.muted = !!audio.muted; direct.add(el); }
-  let fb = null; // the synthesized loop takes over if the preview never arrives
-  const useFallback = () => { if (dead || fb) return; fb = fallback(); if (fb) { try { fb.start(); } catch (e) { /* ignore */ } } };
+  const el = new Audio(); el.preload = "auto";
+  let dead = false, fb = null, rampT = null;
+  const vol0 = Math.min(1, o.volume == null ? 0.8 : o.volume);
+  el.volume = vol0; el.muted = !!audio.muted; direct.add(el);
+  const useFallback = why => { if (dead || fb) return; note("fallback:", why); fb = fallback(); if (fb) { try { fb.start(); } catch (e) { /* ignore */ } } if (RP.toast && !ST.quiet && why) RP.toast("STREAM: " + why + ". Playing the loop."); };
+  // unlock: a silent play() inside the user's click, so the later play() of the real file is allowed on phones
+  try { el.src = SILENT_WAV; el.play().catch(() => {}); } catch (e) { /* ignore */ }
+  const ramp = (to, sec, then) => {
+    clearInterval(rampT);
+    if (!sec) { el.volume = to; if (then) then(); return; }
+    const from = el.volume, t0 = performance.now();
+    rampT = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / (sec * 1000)); el.volume = from + (to - from) * k; if (k >= 1) { clearInterval(rampT); if (then) then(); } }, 30);
+  };
   const H = {
     silent: false, output: null, streamed: true,
     start() {
       ST.resolve(rec).then(r => {
         if (dead) return;
-        if (!r) { useFallback(); return; }
+        if (!r) { useFallback(ST.lastWhy || "no preview found"); return; }
+        el.addEventListener("error", () => useFallback("the browser refused the preview (" + (ERR[(el.error || {}).code] || "unknown") + ")"), { once: true });
         el.src = r.url; el.loop = true; // a 30-second preview loops until stopped
-        el.addEventListener("error", () => useFallback(), { once: true });
         playing.add(el);
-        if (wantPlay()) el.play().catch(() => { if (wantPlay()) useFallback(); });   // a play() refused because we paused is not a failure
+        if (wantPlay()) el.play().then(() => note("playing", r.url), e => { if (wantPlay()) useFallback("play() refused (" + (e && e.name || e) + ")"); });
         if (RP.toast && !ST.quiet) RP.toast("NOW PLAYING: " + r.artist + " - " + r.title + " (preview)");
       });
     },
@@ -2408,16 +2457,11 @@ function streamed(rec, o, fallback) {
       dead = true;
       if (fb) { try { fb.stop(fadeSec); } catch (e) { /* ignore */ } }
       playing.delete(el); direct.delete(el);
-      const end = () => { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { /* ignore */ } try { gain && gain.disconnect(); } catch (e) { /* ignore */ } };
-      if (gain && c && fadeSec > 0) { const t = c.currentTime; gain.gain.setValueAtTime(gain.gain.value, t); gain.gain.linearRampToValueAtTime(0.0001, t + fadeSec); setTimeout(end, fadeSec * 1000 + 50); }
-      else end();
+      const end = () => { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { /* ignore */ } };
+      if (fadeSec > 0 && !el.paused) ramp(0, fadeSec, end); else end();
     },
-    setVolume(v, ramp) {
-      if (fb) { try { fb.setVolume(v, ramp); } catch (e) { /* ignore */ } }
-      if (gain && c) { const t = c.currentTime; gain.gain.cancelScheduledValues(t); gain.gain.setValueAtTime(gain.gain.value, t); gain.gain.linearRampToValueAtTime(Math.max(0.0001, v), t + (ramp || 0.05)); }
-      else el.volume = Math.max(0, Math.min(1, v));
-    },
-    setFilter(type, f) { if (fb) { try { fb.setFilter(type, f); } catch (e) { /* ignore */ } } if (filt) { filt.type = type || "allpass"; filt.frequency.value = f || 20000; } },
+    setVolume(v, ramp2) { if (fb) { try { fb.setVolume(v, ramp2); } catch (e) { /* ignore */ } } ramp(Math.max(0, Math.min(1, v)), ramp2 || 0.05); },
+    setFilter(type, f) { if (fb) { try { fb.setFilter(type, f); } catch (e) { /* ignore */ } } },
     setEnergy() {}, setBpm() {}, nudge() {},
     getBpm: () => rec.bpm || 120,
     phase() { return (el.currentTime || 0) * (rec.bpm || 120) / 60; },
