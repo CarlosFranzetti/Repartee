@@ -26,7 +26,12 @@
       and the story's record plays then play the actual record: official 30-second previews from Apple's public
       iTunes Search API, straight from the browser (no server, no key, licensed), audio only, looping until stopped;
       anything that fails falls back to the built-in loop. Mini-games always keep the synthesized loops, so beat.Match
-      is untouched. The owner chose previews over YouTube audio (which needs a server to resolve).
+      is untouched. The owner chose previews over YouTube audio (which needs a server to resolve). Reworked 2026-11-11
+      after "the actual tracks aren't working": the search now runs as a script tag (JSONP) first, which needs no CORS
+      (Apple sends none for a `null` origin, i.e. an offline `dist/index.html`), the preview plays as a plain `<audio>`
+      element instead of through the AudioContext (CORS-tainted or interrupted contexts gave silence with no error),
+      the element is unlocked inside the click for iPhones, and every fallback toasts its reason (`RP.stream.log` in
+      the console keeps the last 40 steps).
 - [ ] **Full-length streaming (later).** `src/data/stream_ids.js` holds a YouTube video id per record (empty until
       `node tools/stream-ids.mjs` is run from a machine that reaches youtube.com; hand-fix bad matches). On top of it,
       add either an embedded player (video present, terms to check) or a serverless function on the game's own Vercel

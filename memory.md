@@ -3,6 +3,20 @@
 A hand-written dump of the working context, so a fresh session can pick up where the last one stopped. Newest state
 first. It is a summary, not a transcript. `context.md` keeps the older timestamped entries.
 
+## State on 2026-11-11
+
+**Streaming patch rework (owner: "the actual tracks aren't working").** Diagnosed from the sandbox, which can now reach
+Apple: the Search API sends `access-control-allow-origin: *` for an https origin but NOT for a `null` origin (an
+offline `dist/index.html`), so fetch died there with a silent fallback; headless Chromium has no AAC decoder, so the
+preview itself cannot be heard in the sandbox (real browsers decode it; previews are `.m4a` AAC served as
+`audio/x-m4p`). `src/core/stream.js` now: JSONP script-tag search first (no CORS needed; gives up at onload if the
+reply never calls back), fetch as fallback; the `<audio>` plays directly (no createMediaElementSource: a tainted or
+interrupted context gave silence with no error), mute via `onMuteChange`, fades by JS ramp; a silent WAV is played
+inside the click so iOS allows the later play(); every fallback toasts its reason ("STREAM: ... Playing the loop.")
+and `RP.stream.log` keeps the last 40 steps. Verified end to end with the real search and an MP3 substituted for
+the AAC; `tests/browser.mjs --only stream` mocks both forms. Rate limit: the iTunes API answered 403 once during a
+burst; keep calls spaced. The owner should play a jukebox record in a real browser and read any STREAM toast.
+
 ## State on 2026-11-09
 
 **Shipped on the work branch (2026-11-09, owner asked for pause, sound toggle, save/load and a QA pass).** Pause

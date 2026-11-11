@@ -558,12 +558,16 @@ async function streamSection(browser) {
   let mode = "ok";
   let curRec = { artist: "x", title: "y" }; // set before each play so the mock result scores as a match
   const hdr = { "access-control-allow-origin": "*" };
+  // the game asks as a script tag first (JSONP, "callback=") and falls back to fetch; the mock serves both forms
   await page.route("**/itunes.apple.com/search**", route => {
-    itunes.push(route.request().url());
-    if (mode === "ok") return route.fulfill({ status: 200, headers: { ...hdr, "content-type": "application/json" }, body: JSON.stringify({ resultCount: 1, results: [{ artistName: curRec.artist, trackName: curRec.title.replace(/ \(.*\)$/, ""), previewUrl: "https://audio-ssl.itunes.apple.com/qa/preview.wav", trackTimeMillis: 2000 }] }) });
+    const url = route.request().url(); itunes.push(url);
+    const cb = (/[?&]callback=([\w$]+)/.exec(url) || [])[1];
+    const wrap = body => cb ? { headers: { ...hdr, "content-type": "text/javascript" }, body: cb + "(" + body + ");" } : { headers: { ...hdr, "content-type": "application/json" }, body };
+    if (mode === "ok") return route.fulfill({ status: 200, ...wrap(JSON.stringify({ resultCount: 1, results: [{ artistName: curRec.artist, trackName: curRec.title.replace(/ \(.*\)$/, ""), previewUrl: "https://audio-ssl.itunes.apple.com/qa/preview.wav", trackTimeMillis: 2000 }] })) });
     if (mode === "fail") return route.abort("failed");
     if (mode === "500") return route.fulfill({ status: 500, headers: hdr, body: "no" });
-    return route.fulfill({ status: 200, headers: { ...hdr, "content-type": "application/json" }, body: "{not json" });
+    // "badjson": the script form gets valid JS that never calls back (the game must give up at onload, not after its timeout); the fetch form gets broken JSON
+    return route.fulfill({ status: 200, headers: { ...hdr, "content-type": cb ? "text/javascript" : "application/json" }, body: cb ? "/* not jsonp */" : "{not json" });
   });
   let audioBody = wavBuf(2);
   await page.route("**/audio-ssl.itunes.apple.com/**", route => route.fulfill({ status: 200, headers: { ...hdr, "content-type": "audio/wav" }, body: audioBody }));
@@ -576,7 +580,8 @@ async function streamSection(browser) {
     const flashed = await flashSeen;
     await wait(200);
     const f1 = await shot(S, "stream-after-code");
-    const ti = await page.evaluate(() => { const t = document.querySelector("#toast .toastItem"); const app = document.getElementById("app"); return { toastText: t ? t.textContent : null, appVisibility: getComputedStyle(app).visibility, on: RP.stream.on, unlocked: RP.stream.unlocked }; });
+    // the toast host moves out of #app while the title is up, so judge the toast by its own visibility, not #app's
+    const ti = await page.evaluate(() => { const t = document.querySelector("#toast .toastItem"); const r = t && t.getBoundingClientRect(); const hidden = !t || getComputedStyle(t).visibility === "hidden" || !r.height || r.bottom < 0 || r.top > innerHeight; return { toastText: t ? t.textContent : null, appVisibility: hidden ? "hidden" : "visible", on: RP.stream.on, unlocked: RP.stream.unlocked }; });
     add(flashed ? "info" : "bug", "desktop", "tap-code white flash", `flash element seen: ${flashed}`);
     if (!ti.unlocked || !ti.on) add("bug", "desktop", "tap code did not unlock/enable the streaming patch", JSON.stringify(ti), f1);
     if (ti.toastText && ti.appVisibility === "hidden") add("bug", "desktop", "streaming-patch toast is in the DOM but inside the hidden #app, so it is never visible on the title screen", JSON.stringify(ti), f1);
@@ -595,7 +600,7 @@ async function streamSection(browser) {
     await press(S, ".rb-row >> nth=0");
     await page.waitForFunction(() => /NOW PLAYING/.test((document.querySelector("#toast") || {}).textContent || ""), null, { timeout: 5000 }).catch(() => {});
     await wait(600);
-    const np = await page.evaluate(() => { const t = document.querySelector("#toast"); const app = document.getElementById("app"); return { toast: t && t.textContent, appVis: getComputedStyle(app).visibility, ctx: RP.audio.ctx().state, els: 0 }; });
+    const np = await page.evaluate(() => { const t = document.querySelector("#toast"); const i = t && t.querySelector(".toastItem"); const r = i && i.getBoundingClientRect(); const hidden = !i || getComputedStyle(i).visibility === "hidden" || !r.height || r.bottom < 0 || r.top > innerHeight; return { toast: t && t.textContent, appVis: hidden ? "hidden" : "visible", ctx: RP.audio.ctx().state, els: 0 }; });
     const f3 = await shot(S, "stream-nowplaying");
     const gotToast = /NOW PLAYING/.test(np.toast || "");
     if (!gotToast) add("bug", "desktop", "NOW PLAYING toast did not appear", JSON.stringify({ np, itunesCalls: itunes.length }), f3);
@@ -610,7 +615,7 @@ async function streamSection(browser) {
     for (const m of ["fail", "500", "badjson"]) {
       mode = m;
       await page.evaluate(() => { RP.stream.cache = {}; });
-      await press(S, ".rb-row >> nth=1"); await wait(1500);
+      await press(S, ".rb-row >> nth=1"); await wait(2500);
       const fb = await page.evaluate(() => ({ row: !!document.querySelector(".rb-row.on"), toast: (document.querySelector("#toast") || {}).textContent || "", osc: window.__qa.osc.size, sched: [...window.__qa.iv.values()].some(v => v.ms === 25) }));
       add((fb.osc > 0 || fb.sched) && !/NOW PLAYING/.test(fb.toast) ? "info" : "bug", "desktop", `fetch ${m}: fallback loop`, JSON.stringify(fb));
       await press(S, ".rb-row.on").catch(() => {}); await wait(400);
