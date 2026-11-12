@@ -78,8 +78,11 @@ function showTitle() {
   // the streaming patch's tap code lives on the logo: 3 taps on "re:", 2 on "parteé", 3 on "re:"
   logo.querySelector(".re").addEventListener("click", () => { if (RP.stream && RP.stream.tap("R")) stopPreview(); });
   logo.querySelector(".pa").addEventListener("click", () => { RP.stream && RP.stream.tap("P"); });
-  el("p", { cls: "tag", text: "A PIXEL-ART DJ ADVENTURE GAME" }, box);
-  el("p", { cls: "tagline", text: "From broke-ass bedroom DJ to festival headliner. One questionable decision at a time." }, box);
+  // three centred lines under the logo: what it is and who made it, then the pitch on two lines
+  const tag = el("p", { cls: "tag" }, box);
+  el("span", { text: "A PIXELART DJ ADVENTURE GAME " }, tag); el("span", { cls: "by", text: "by Carlos Franzetti" }, tag);
+  const tl = el("p", { cls: "tagline" }, box);
+  el("span", { text: "From broke-ass bedroom DJ to festival headliner." }, tl); el("span", { text: "One questionable decision at a time." }, tl);
   if (DEMO && !pageOpen(DEMO.level)) { lockedPage(box); return; }
   const menu = el("div", { cls: "menu" }, box);
   const panel = el("div", { cls: "panelbox", hidden: "" }, box);

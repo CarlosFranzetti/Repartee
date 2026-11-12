@@ -207,8 +207,12 @@ body.p .choice { font-size: 22px; padding: 6px 4px; }
 .logo { font-family: var(--logo); font-weight: 400; font-size: clamp(30px, 8.4vw, 72px); line-height: 1; margin: 0; color: #fff; letter-spacing: -.02em; text-shadow: 0 4px 0 #2a0d3a, 0 0 24px rgba(255, 63, 164, .25); }
 .logo .c, .logo .e { color: var(--pink); }
 .logo .re, .logo .pa { cursor: inherit; user-select: none; }
-.tag { font-size: clamp(18px, 3.6vw, 26px); letter-spacing: .14em; color: #e9e2ff; text-shadow: 0 2px 0 #000; margin: 0; }
-.tagline { font-size: clamp(16px, 3vw, 21px); color: var(--amber); text-shadow: 0 2px 0 #000; margin: 0; }
+/* letter-spacing adds a gap after the last letter of a line too, which pushes centred text left; the matching
+   padding-left puts the line back on the centre (it matches the last span, "by Carlos Franzetti") */
+.tag { font-size: clamp(18px, 3.6vw, 26px); letter-spacing: .14em; padding-left: .06em; color: #e9e2ff; text-shadow: 0 2px 0 #000; margin: 0; width: 100%; text-align: center; text-wrap: balance; }
+.tag .by { letter-spacing: .06em; white-space: nowrap; color: var(--amber); }
+.tagline { font-size: clamp(16px, 3vw, 21px); color: var(--amber); text-shadow: 0 2px 0 #000; margin: 0; width: 100%; text-align: center; }
+.tagline span { display: block; text-wrap: balance; }
 /* title menu: the CONTINUE | NEW GAME split on top, then solid buttons in a two-column grid */
 .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; width: min(480px, 100%); }
 .menu > button { font-family: var(--ui); font-size: 21px; letter-spacing: .06em; background: rgba(14, 10, 30, .94); border: 2px solid var(--line); box-shadow: 0 0 0 2px #000; color: var(--fg); text-align: center; padding: 9px 8px; cursor: pointer; }
@@ -27894,8 +27898,11 @@ function showTitle() {
   // the streaming patch's tap code lives on the logo: 3 taps on "re:", 2 on "parteé", 3 on "re:"
   logo.querySelector(".re").addEventListener("click", () => { if (RP.stream && RP.stream.tap("R")) stopPreview(); });
   logo.querySelector(".pa").addEventListener("click", () => { RP.stream && RP.stream.tap("P"); });
-  el("p", { cls: "tag", text: "A PIXEL-ART DJ ADVENTURE GAME" }, box);
-  el("p", { cls: "tagline", text: "From broke-ass bedroom DJ to festival headliner. One questionable decision at a time." }, box);
+  // three centred lines under the logo: what it is and who made it, then the pitch on two lines
+  const tag = el("p", { cls: "tag" }, box);
+  el("span", { text: "A PIXELART DJ ADVENTURE GAME " }, tag); el("span", { cls: "by", text: "by Carlos Franzetti" }, tag);
+  const tl = el("p", { cls: "tagline" }, box);
+  el("span", { text: "From broke-ass bedroom DJ to festival headliner." }, tl); el("span", { text: "One questionable decision at a time." }, tl);
   if (DEMO && !pageOpen(DEMO.level)) { lockedPage(box); return; }
   const menu = el("div", { cls: "menu" }, box);
   const panel = el("div", { cls: "panelbox", hidden: "" }, box);
