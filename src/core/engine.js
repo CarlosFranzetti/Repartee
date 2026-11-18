@@ -813,7 +813,7 @@ async function phoneMenu() {
   if (k === "map") await RP.travel();
   if (k === "crate") await RP.crateView();
   if (k === "gear") await RP.gearView();
-  if (k === "save") { save(); toast("Saved."); const n = await pickSlot("save"); if (n) saveSlot(n, true); }
+  if (k === "save") { save(); const n = await pickSlot("save"); if (n) saveSlot(n, true); else toast("Autosaved."); }   // one message: the slot's, or the autosave's if the picker was closed
   // the menu runs at busy depth 1 (its own RP.run, or the act() that used the phone); deeper means a cutscene opened it
   if (k === "load") { if (busyN > 1) toast("Finish this first"); else { const n = await pickSlot("load"); if (n) await loadSlot(n, { force: true }); } }
   if (k === "hint") setTimeout(revealHotspots, 50);

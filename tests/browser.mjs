@@ -297,7 +297,13 @@ async function menuChecks(S) {
       const left = await page.locator("#overlays .overlay").count();
       if (left) add("bug", vp.name, `${e}: overlay did not close`, `${left} overlays remain`);
     } else if (e === "Show what I can click") { await wait(600); await shot(S, "menu-labels"); }
-    else if (e === "Save game") { await wait(200); const t = await page.evaluate(() => (document.querySelector("#toast .toastItem") || {}).textContent); if (t !== "Saved.") add("glitch", vp.name, "Save game showed no 'Saved.' toast", `toast=${t}`); }
+    else if (e === "Save game") {   // the slot picker opens; one message follows the pick ("Saved to slot N.")
+      await wait(300);
+      const row = page.locator("#overlays .slotrow").first();
+      if (!(await row.count())) add("bug", vp.name, "Save game: no slot picker", "no .slotrow");
+      else { await press(S, row); await wait(300); const t = await page.evaluate(() => (document.querySelector("#toast .toastItem") || {}).textContent); if (!/^Saved to slot 1\./.test(t || "")) add("glitch", vp.name, "Save game showed no 'Saved to slot' toast", `toast=${t}`); }
+      const left = await page.locator("#overlays .overlay").count(); if (left) add("bug", vp.name, "Save game: picker did not close", `${left} overlays remain`);
+    }
     await wait(300);
   }
 }
