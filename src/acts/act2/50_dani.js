@@ -152,11 +152,11 @@ async function afterShower(S, smooth) {
   await A2.dayCheck(S);
 }
 
-async function takePierogi(S) {
+async function takePierogi(S, asked) {
   if (S.f.a2_pierogiGot) return "I've already got the Tupperware. Taking more would make it a heist.";
   if (!S.f.a2_daniMet) return "The pierogi aren't mine to take. Yet.";
   await RP.lines([
-    "Dani, could I take some pierogi to go?",
+    ...(asked ? [] : ["Dani, could I take some pierogi to go?"]),
     "@a2_dani You've eaten eleven. Who are they for?",
     "Somebody who needs softening. A man who holds a key, a folding table and a grudge.",
     "@a2_dani Landlord. Obviously. Polish? Then it's a done deal. Here: the good Tupperware. Return it clean, I know where you sleep. (It's Marcus's.)"
@@ -168,7 +168,7 @@ async function talkDani(S) {
   if (S.f.a2_showered) {
     if (!S.f.a2_pierogiGot && S.f.a2_daniMet) {
       await RP.convo([
-        { text: "Could I take some pierogi to go?", run: async () => { await takePierogi(S); return "end"; } },
+        { text: "Could I take some pierogi to go?", run: async () => { await takePierogi(S, true); return "end"; } },
         { text: "Just saying thanks.", end: true }
       ]);
       return;
@@ -184,7 +184,7 @@ async function talkDani(S) {
     { text: "The pierogi. Tell me everything.", run: async () => { await RP.lines(["@a2_dani Potato and cheese. My grandmother's recipe. She'd hate everything about my life and love everything about my pierogi."]); } },
     { text: "So... the shower. I hear it has seven settings.", run: async () => { await showerSmooth(S); return "end"; } },
     { text: "I'll be honest, I really just need a shower.", run: async () => { await showerHonest(S); return "end"; } },
-    { text: "Could I take some pierogi to go?", when: S2 => !S2.f.a2_pierogiGot, run: async () => { await takePierogi(S); } },
+    { text: "Could I take some pierogi to go?", when: S2 => !S2.f.a2_pierogiGot, run: async () => { await takePierogi(S, true); } },
     { text: "What's your bar night like?", run: async () => { await RP.lines(["@a2_dani I bartend at Nowhere on Saturdays. Dante pays in drink tickets. Don't tell him I told you. Actually, tell him. He never reads his texts."]); } },
     { text: "Maybe later.", end: true }
   ]);

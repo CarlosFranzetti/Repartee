@@ -160,9 +160,16 @@ function nextHint(S, voice) {
   if (!S.f.a2_plasma) return m ? "Money first. You're broke in a way a flyer could fix. Look at the pole outside." : "Money. Something on the pole outside promised a hundred dollars, and I have a body.";
   if (!S.f.a2_showered) return m ? "You smell like a hot dog. Toby has my bathroom until step twelve. Who else owns a shower? Or what does Toby love more than a shower?" : "I smell like a hot dog. Toby has the bathroom until step twelve. Somebody else owns a shower, or Toby loves something more than his.";
   if (!S.f.a2_cashed && RP.has("a2_card")) return m ? "That card isn't cash. Somewhere on this block plastic becomes paper. At a price." : "A card isn't cash. Somewhere on this block plastic becomes paper. At a price.";
-  if (!S.f.a2_metEddie) return m ? "You have money and no turntables. I mentioned a van. Window-shop before Friday." : "Money, no turntables. Marcus mentioned a van. Window-shop before Friday.";
+  const short = A2.cashShort(S);
+  const d = A2.daysToFri(S);
+  const tmr = d > 1;
+  const earn = m ? "Decks run $" + A2.DECKS + " and you've got $" + Math.round(S.money) + ". Rosa's pays eighteen a run, twice a day" + (tmr ? ", and she's good for it again tomorrow" : "") + ". Friday's door money lands before Eddie's van closes on Saturday. Nobody's asking you to be rich by tonight."
+    : "Decks run $" + A2.DECKS + " and I've got $" + Math.round(S.money) + ". Rosa pays eighteen a run, twice a day" + (tmr ? ", and again tomorrow" : "") + ". Friday's door money comes before Eddie's van closes on Saturday.";
+  if (!S.f.a2_metEddie && !short) return m ? "You have money and no turntables. I mentioned a van. Window-shop before Friday." : "Money, no turntables. Marcus mentioned a van. Window-shop before Friday.";
+  if (short) return earn;
   const left = A2.leads(S);
-  if (left.length) return m ? "You're set for Friday. But it's Tuesday, and you've got three days: " + left.join(", ") + ". Or sleep. I won't judge. I'll judge a little." : "I'm set for Friday. But there's a long stretch before it: " + left.join(", ") + ". Or I sleep. Both are on the menu.";
+  const dd = d > 0 ? A2.NUM[d].toLowerCase() + (d === 1 ? " day" : " days") : "no days";
+  if (left.length) return m ? "You're set for Friday. But it's " + A2.dayName(S) + ", and you've got " + dd + ": " + left.join(", ") + ". Or sleep. I won't judge. I'll judge a little." : "I'm set for Friday. But there's a stretch before it: " + left.join(", ") + ". Or I sleep. Both are on the menu.";
   return m ? "You're set. Sleep on the couch and I'll wake you for Friday. Birthday. Twenty-eight. Plus three." : "I think I'm ready. Rent's due Tuesday and the party's Friday. Sleep on it. Literally.";
 }
 A2.hint = nextHint;
@@ -176,15 +183,16 @@ A2.dayCheck = async S => {
   if (S.f.a2_dayDone || ch(S) !== 1 || !readyToSleep(S)) return;
   S.f.a2_dayDone = true;
   S.f.a2_beats = Math.max(S.f.a2_beats || 0, 4);
-  RP.setClock("TUE 1:40 PM");
-  await RP.say("Money, check. Clean, check. It's Tuesday afternoon and nobody expects me anywhere until Marcus's party on Friday.");
+  if (A2.dowIdx(S.clock) < 1 || (A2.dow(S) === "TUE" && /AM/.test(S.clock))) RP.setClock("TUE 1:40 PM");   // never wind the clock back
+  const dn = A2.dayName(S), dd = A2.daysToFri(S), tm = /(\d+):\d+\s*(AM|PM)/.exec(S.clock || ""), hr = tm ? (+tm[1] % 12) + (tm[2] === "PM" ? 12 : 0) : 13;
+  await RP.say("Money, check. Clean, check. It's " + dn + (hr < 12 ? " morning" : hr < 17 ? " afternoon" : " evening") + " and nobody expects me anywhere until Marcus's party on Friday, " + A2.NUM[dd].toLowerCase() + (dd === 1 ? " day" : " days") + " off.");
   RP.text("MARCUS", "u set. party's friday. wear pants");
-  await RP.lines(["Three days. Kowalski holds office hours at two, on my floor. 4C still has my stuff in it. Toby is still, as far as I know, in the bathroom.", "I can sleep through it from the couch. Or I can do something with it. Nobody's making me."]);
+  await RP.lines([A2.NUM[dd] + (dd === 1 ? " day" : " days") + ". " + (A2.dow(S) === "TUE" ? "Kowalski holds office hours at two, on my floor." : "Kowalski's office hours are Tuesdays at two, but his folding table seems to have stayed on my floor.") + " 4C still has my stuff in it. Toby is still, as far as I know, in the bathroom.", "I can sleep through it from the couch. Or I can do something with it. Nobody's making me."]);
 };
 
 /* ------------------------------------------------------------------ cutscenes */
 async function textDani(S) {
-  RP.text("DANI (NOWHERE BAR)", "hey dj. marcus says ur homeless?? lol. come thru, im making pierogi. my shower has 7 settings.");
+  await RP.phone([{ from: "DANI (NOWHERE BAR)", text: "hey dj. marcus says ur homeless?? lol. come thru, im making pierogi. my shower has 7 settings.", hot: true }]);
   await RP.say("Dani. Dani with the apron. She wanted a dance. She wanted ME to dance. That's... a lot of risk for one text.");
   const i = await RP.choose(["\"Hey! Pierogi sounds great.\"", "\"Seven settings? I'll need to see them in person.\"", "\"What's the water pressure on setting seven?\""]);
   const reply = [
@@ -412,7 +420,8 @@ async function talkMarcus(S) {
       await RP.lines(["@marcus Rosa's deli. The delivery guy drops crates at the door and she hurts her back about once a day. Eighteen bucks a run.", "@marcus It's honest, it's cash and it smells like pickles. That's three things, bro."]);
     } },
     { text: "Landlord says rent's due Tuesday.", run: async () => {
-      await RP.lines(["@marcus Kowalski? He told me hot water was \"next week.\" In 2023.", "@marcus Tuesday is a problem for future you. Future you has a hot shower and a monthly residency."]);
+      if (S.f.a2_kowDone) await RP.lines(["@marcus You paid Kowalski forty bucks and a Tupperware of pierogi and got a key and a reference. I've lived here four years. He still calls me \"the other one.\"", "@marcus The rest of the rent is a problem for future you. Future you has a hot shower and a monthly residency."]);
+      else await RP.lines(["@marcus Kowalski? He told me hot water was \"next week.\" In 2023.", "@marcus Tuesday is a problem for future you. Future you has a hot shower and a monthly residency."]);
     } },
     { text: "What should I do next?", when: S2 => S2.f.a2_plan, run: async () => { await RP.say(A2.hint(S, "marcus"), "marcus"); } },
     { text: "Later.", end: true }
@@ -430,10 +439,26 @@ async function useCouch(S) {
     await RP.lines(["I could lie down and skip to Friday.", "But first I should " + left.join(" and ") + ". Otherwise Friday's just a longer version of today, with a smell."]);
     return;
   }
-  const left = A2.leads(S);
-  if (left.length) await RP.say("It's Tuesday. Three days to Friday, and some of them are free. I haven't done: " + left.join(", ") + ".");
-  const i = await RP.choose(["Sleep until Friday (Marcus's party)", "Not yet"]);
+  const left = A2.leads(S), d = A2.daysToFri(S);
+  const dn = d > 0 ? A2.NUM[d] + (d === 1 ? " day" : " days") + " to Friday" : "Friday's here";
+  const bits = ["It's " + A2.dayName(S) + ". " + dn + ", and some of them are free." + (left.length ? " I haven't done: " + left.join(", ") + "." : "")];
+  if (A2.cashShort(S)) bits.push("Decks run $" + A2.DECKS + " and I've got $" + Math.round(S.money) + ". " + (d > 1 ? "Rosa pays again tomorrow, and " : "") + "Friday's door money comes in before Eddie's van closes on Saturday.");
+  await RP.lines(bits);
+  const opts = ["Sleep until Friday (Marcus's party)"];
+  if (d > 1) opts.push("Sleep till tomorrow morning");
+  opts.push("Not yet");
+  const i = await RP.choose(opts);
   if (i === 0) await sleepToFriday(S).then(() => partyIntro(S));
+  else if (opts[i] === "Sleep till tomorrow morning") await sleepTomorrow(S);
+}
+
+async function sleepTomorrow(S) {
+  await RP.fadeTo(1, 800);
+  A2.nextDay(S);
+  RP.relight();
+  const k = RP.actor("kid"); k.x = 300; k.y = 232; k.face = "front";
+  await RP.fadeTo(0, 800);
+  await RP.say(A2.dayName(S) + ". The couch has left a permanent crease in my plans. Rosa's crates will have restocked themselves, which is not how crates work, but this is Brooklyn.");
 }
 
 /* ------------------------------------------------------------------ room */

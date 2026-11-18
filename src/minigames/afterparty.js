@@ -597,6 +597,7 @@ RP.mg.register("afterParty", {
     function showHome() {
       view = "home";
       setScreen(() => {
+        if (G.actions === 0) el("div", { cls: "ap-bubble", text: "THE GOAL: " + NEED + " guests actually at the party, a place and a sound system. Sunrise is at " + NK.clock(START + T0) + " (" + fmtLeft(G.mins) + " from now). Every call costs minutes." }, screen);
         if (G.battery <= 0) el("div", { cls: "ap-bubble ev", text: "PHONE DEAD. Only in-person things work now: charge at the bodega, work the street, or talk to Hamid and Cal." }, screen);
         const q = el("div", { cls: "ap-quick" }, screen);
         const qb = (label, costs, fn, why) => { const b = el("button", { cls: "ap-q", type: "button" }, q); el("b", { text: label }, b); if (why) el("span", { cls: "why", text: why }, b); else el("span", { cls: "c", html: costs }, b); if (why) b.disabled = true; else b.addEventListener("click", fn); return b; };
@@ -722,7 +723,7 @@ RP.mg.register("afterParty", {
         el("h3", { html: "<span>" + (ev.phase === "party" ? "AT THE PARTY" : "NOTIFICATION") + "</span>" }, screen);
         const b0 = el("div", { cls: "ap-bubble ev" }, screen); el("div", { html: "<b style='font-weight:400;color:var(--pink);letter-spacing:.08em'>" + ev.title + "</b>" }, b0); el("div", { text: ev.text }, b0);
         ev.choices.forEach(ch => {
-          const why = ch.cost && ch.cost.fav && G.favors < ch.cost.fav ? "no favors left" : ch.cost && ch.cost.cash && G.cash < ch.cost.cash ? "not enough cash" : null;
+          const why = ch.cost && ch.cost.fav && G.favors < ch.cost.fav ? "no favors left" : ch.cost && ch.cost.cash && G.cash < ch.cost.cash ? "not enough cash" : ch.cost && ch.cost.min && G.mins < ch.cost.min ? "too long: " + G.mins + " min left" : null;
           const b = el("button", { cls: "ap-opt", type: "button" }, screen); el("span", { html: ch.label + (why ? "<span class='why'>" + why + "</span>" : "") }, b); el("span", { cls: "c", html: fxChips(ch) }, b);
           if (why) b.disabled = true; else b.addEventListener("click", () => {
             const r = ch.run() || {};
@@ -931,7 +932,7 @@ RP.mg.register("afterParty", {
         } else { phone.style.height = ""; main.style.gridTemplateColumns = ""; NK.fit(scene.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 720); }
       }
       layout(); updateHud(); showHome();
-      setMsg("It's 4:10 AM and the party is dead. You need " + NEED + " people, a place and a sound system before sunrise. Start with Twinkie.");
+      setMsg("It's 4:10 AM and the party is dead. Sunrise is at " + NK.clock(START + T0) + ", " + T0 + " minutes away. You need " + NEED + " guests who actually show up, a place and a sound system before then. Start with Twinkie.");
       let last = null;
       host.raf(tm => {
         if (G.over && !host.root.isConnected) return false;

@@ -118,9 +118,12 @@ async function useAtm(S) {
 /* ------------------------------------------------------------------ Rosa's side job (honest, small, never a dead end) */
 RP.voice("a2_rosa", { color: "#8affb0", prefix: "ROSA: ", anchor: [450, 70] });
 async function rosaJob(S) {
-  const k = "a2_rosa" + (S.f.a2_ch || 1), n = S.f[k] || 0;
+  const k = "a2_rosa" + (S.f.a2_ch || 1);
+  // the crates reset with the in-game day (the HUD weekday): two runs a day
+  if (S.f.a2_rosaDay !== A2.dow(S)) { S.f.a2_rosaDay = A2.dow(S); S.f[k] = 0; }
+  const n = S.f[k] || 0;
   if (!S.f.a2_rosaMet) { S.f.a2_rosaMet = true; await RP.lines(["Rosa, behind the counter, sees me look at the crates and puts a hand on her lower back with great ceremony.", "@a2_rosa Delivery's out front. Twelve crates. My back says no. My wallet says eighteen dollars."]); }
-  if (n >= 2) { await RP.say("Rosa waves me off. \"That's all the crates for today, mijo. My back's back.\" She winks like it never left.", "nar"); return; }
+  if (n >= 2) { await RP.say("Rosa waves me off. \"That's all the crates for today, mijo. My back's back.\" She winks like it never left." + (A2.dowIdx(S.clock) < 3 && (S.f.a2_ch || 1) === 1 ? " \"Come back tomorrow. The delivery guy is never on time, and my back is never on time either.\"" : ""), "nar"); return; }
   const i = await RP.choose(["Carry the crates ($18)", "Not now"]);
   if (i !== 0) { await RP.say("I check my wallet, then my back. Neither of us is ready."); return; }
   await RP.fadeTo(1, 500); RP.sfx("thump"); await RP.wait(600);

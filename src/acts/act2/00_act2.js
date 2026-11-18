@@ -93,8 +93,8 @@ RP.item("a2_sachet", { name: "lavender sachet", short: "Sachet",
   use: "I sniff it. I'm calmer. That's not the plan, though. It's meant for somebody more tense than me." });
 RP.item("a2_knife", { name: "putty knife", short: "Knife",
   icon: c => { R(c, 5, 13, 15, 5, "#c8c4d8"); R(c, 5, 13, 15, 1, "#efeaf6"); R(c, 20, 12, 8, 7, "#c0302c"); R(c, 22, 14, 4, 1, "#ff8a7a"); },
-  look: "A four-dollar putty knife with a rubber grip, labeled \"MULTI-USE.\" Thin, flat and stiff. Designed for paint, plaster and, I suspect, problems.",
-  use: "I scrape the air. The air is unaffected. Paint, however, has reason to worry." });
+  look: S => S.f.a2_loot4c && !S.f.a2_fireEscape ? "A four-dollar putty knife I bought to crack a window, and then Kowalski handed me the key. It's now a very small, very flat monument to planning ahead." : "A four-dollar putty knife with a rubber grip, labeled \"MULTI-USE.\" Thin, flat and stiff. Designed for paint, plaster and, I suspect, problems.",
+  use: S => S.f.a2_loot4c && !S.f.a2_fireEscape ? "I scrape the air out of respect. Four dollars, for a window I no longer need. Eddie knew." : "I scrape the air. The air is unaffected. Paint, however, has reason to worry." });
 RP.item("a2_pierogi", { name: "Dani's pierogi (to go)", short: "Pierogi",
   icon: c => { R(c, 5, 13, 22, 11, "#efeaf6"); R(c, 5, 13, 22, 2, "#c8c4d8"); ell(c, 11, 12, 5, 3, "#e8c890"); ell(c, 18, 11, 5, 3, "#e0b878"); ell(c, 23, 13, 4, 3, "#e8c890"); R(c, 8, 18, 16, 1, "#c0302c"); },
   look: "A Tupperware of Dani's potato-and-cheese pierogi, still warm through the lid. Masking tape on top: \"RETURN CLEAN. I KNOW WHERE YOU SLEEP (NOWHERE).\"",
@@ -151,7 +151,20 @@ A2.cs = (fn, keyFn) => {
 };
 // story beats advance the HUD clock (time only moves on story beats)
 A2.CLOCKS = ["MON 2:20 PM", "MON 5:10 PM", "MON 8:30 PM", "TUE 11:10 AM", "WED 3:25 PM", "THU 6:15 PM", "THU 9:40 PM"];
-A2.beat = S => { const n = S.f.a2_beats || 0; if (n < A2.CLOCKS.length) RP.setClock(A2.CLOCKS[n]); S.f.a2_beats = n + 1; };
+// the day of the week comes from the HUD clock; the story clock never runs backwards
+A2.DOW = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+A2.DAYS = { MON: "Monday", TUE: "Tuesday", WED: "Wednesday", THU: "Thursday", FRI: "Friday", SAT: "Saturday", SUN: "Sunday" };
+A2.dow = S => (S.clock || "").slice(0, 3);
+A2.dowIdx = s => Math.max(0, A2.DOW.indexOf(String(s || "").slice(0, 3)));
+A2.dayName = S => A2.DAYS[A2.dow(S)] || "Monday";
+A2.daysToFri = S => Math.max(0, 4 - A2.dowIdx(S.clock));
+A2.NUM = ["No", "One", "Two", "Three", "Four"];
+// sleep through to the next morning (Mon-Wed only; Thursday night is the party). Rosa's crates reset with the day.
+A2.nextDay = S => { const i = A2.dowIdx(S.clock); if (i >= 3) return false; RP.setClock(A2.DOW[i + 1] + " 9:10 AM"); return true; };
+// the decks cost $180 (Eddie's haggled price); the LifeDrop card counts at what the ATM would leave
+A2.DECKS = 180;
+A2.cashShort = S => !S.f.a2_turntables && (S.money + (RP.has("a2_card") ? Math.round((S.f.a2_cardBal || 0) * 0.9) : 0)) < A2.DECKS;
+A2.beat = S => { const n = S.f.a2_beats || 0; if (n < A2.CLOCKS.length && A2.dowIdx(A2.CLOCKS[n]) >= A2.dowIdx(S.clock)) RP.setClock(A2.CLOCKS[n]); S.f.a2_beats = n + 1; };
 
 /* play a mini-game; when it isn't built yet (res.missing) run a small dialogue fallback so the story always advances */
 A2.mg = async (id, params, fallback) => {

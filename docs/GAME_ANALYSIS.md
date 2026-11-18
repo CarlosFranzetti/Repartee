@@ -102,4 +102,8 @@ switching); Phase 2 as listed above.
   - Level 5: Saturday in any order after a clue chain to the Sharpie; a fixed advance so the gear is a real choice that
     shows up later; Margo's advance, record sales and a paid radio read to recover.
   - New walkthroughs `act3alt` and `act5alt` cover the alternate routes; all nine walkthroughs and the full run pass.
-- Next (Phase 3): fresh blind playtests of each level and a new length estimate.
+- Phase 3 done: Levels 3 to 5 had their blind round on 2026-11-03; Levels 1 and 2 were replayed blind on 2026-11-18
+  on the build with pause, save slots and the Phase 1-2 changes. Both testers finished without needing the hint
+  line in Level 1. Their estimates for a human's first play: Level 1, 35 to 50 minutes; Level 2, 60 to 75 minutes.
+  These are testers' estimates, not measured play times (the harness freezes the clock between commands). Findings
+  and fixes are in `PLAYTEST_LOG.md`; the main structural one was a money dead zone in Level 2's open days.

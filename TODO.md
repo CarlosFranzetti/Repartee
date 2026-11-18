@@ -26,6 +26,9 @@
       on pause (`host.now()`, `host.clear()`, `RP.ptimeout`, `RP.gnow()`), with a 2.5 s pause check per mini-game in
       `tests/saveload.mjs`. Both old Levels 3-5 playtest leftovers are closed.
 
+- [x] **Blind playtests of Levels 1 and 2 on the current build, and their fixes (2026-11-18).** Phase 3 of the game
+      analysis is complete. See `docs/PLAYTEST_LOG.md`.
+
 ## Later
 
 - [x] **Secret streaming patch.** Built 2026-11-03 (`src/core/stream.js`): tapping the title logo (3 on "re:", 2 on
