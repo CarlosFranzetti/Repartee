@@ -42,7 +42,7 @@ ST.flash = () => {
 /* ---- resolving: artist + title -> a preview url, cached per record ----
    iTunes Search: https://itunes.apple.com/search?term=...&media=music&entity=song&limit=N returns
    { resultCount, results: [{ artistName, trackName, previewUrl, trackTimeMillis, ... }] } with CORS open. */
-const norm = s => String(s || "").toLowerCase().replace(/\(.*?\)|\[.*?\]/g, " ").replace(/feat\.?|featuring|ft\./g, " ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\(.*?\)|\[.*?\]/g, " ").replace(/feat\.?|featuring|ft\./g, " ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
 /* the catalog names records the way a crate does ("Weekend / Just Wanna Dance", "FK-EP", "X presents Y featuring Z");
    the store names songs. Search and score on the lead artist and the first title. */
 const simpArtist = a => String(a || "").replace(/\s+(featuring|feat\.?|ft\.|presents?|pres\.|with|vs\.?|&)\s+.*$/i, "").trim();
@@ -52,8 +52,9 @@ ST.simp = { artist: simpArtist, title: simpTitle };
 const score = (rec, r) => {
   const a = norm(simpArtist(rec.artist)), t = norm(simpTitle(rec.title)), ra = norm(r.artistName), rt = norm(r.trackName);
   const rc = norm(r.collectionName).replace(/ (ep|single)$/, "");   // the release the track is on
+  const sq = x => x.replace(/ /g, "");   // "M.B.O." and "MBO" are the same act
   let s = 0;
-  if (ra === a) s += 4; else if (ra.includes(a) || a.includes(ra)) s += 2;
+  if (ra === a || sq(ra) === sq(a)) s += 4; else if (ra.includes(a) || a.includes(ra)) s += 2;
   if (rt === t) s += 4; else if (rt && (rt.includes(t) || t.includes(rt))) s += 2;
   else if (rc && rc === t) s += 2;   // the catalog entry is an album or EP: any track from that release will do
   else return -99; // the title must match: an artist-only hit would play some other song by them
