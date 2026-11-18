@@ -843,7 +843,7 @@ MG.play = async function (id, params = {}) {
   let rafs = [];
   /* pause: the host's rAF loops skip frames while paused and hand the mini-game a clock with the paused time taken
      out (so dt never jumps), and host.timeout / host.interval stand still. Raw setTimeout/setInterval and
-     performance.now() inside a mini-game are not covered. */
+     performance.now() inside a mini-game are not covered: use host.now() / host.timeout / host.interval / host.clear. */
   const mgBase = pausedMs;
   const host = {
     root, ov, S, params, el: (t, a, p) => el(t, a, p || root),
@@ -853,6 +853,10 @@ MG.play = async function (id, params = {}) {
     raf(fn) { let id; const loop = t => { if (!paused && fn(t - (pausedMs - mgBase)) === false) return; id = requestAnimationFrame(loop); rafs[0] = id; }; id = requestAnimationFrame(loop); rafs.push(() => cancelAnimationFrame(id)); cleanups.push(() => cancelAnimationFrame(id)); },
     timeout(fn, ms) { const t = ptimeout(fn, ms); cleanups.push(() => pclear(t)); return t; },
     interval(fn, ms) { const h = { t: null }; const tick = () => { h.t = ptimeout(tick, ms); fn(); }; h.t = ptimeout(tick, ms); cleanups.push(() => pclear(h.t)); return h; },
+    /* pause-aware clock in ms: the same clock as the timestamp host.raf passes (stands still while paused), and a
+       canceller for host.timeout / host.interval handles */
+    now: () => gnow() + mgBase,
+    clear(h) { if (h) pclear(h.id !== undefined ? h : h.t); },
     cleanup(fn) { cleanups.push(fn); },
     /* the header: logo on the left; on the right the sub label (e.g. "Arcade") and a PAUSE button (the only on-screen
        pause inside a mini-game, which phones need: they have no Pause key) */

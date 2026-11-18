@@ -191,21 +191,21 @@ RP.mg.register("beatMatch", {
       const up = () => { b.classList.remove("down"); off(); };
       b.addEventListener("pointerdown", down); b.addEventListener("pointerup", up); b.addEventListener("pointerleave", up); b.addEventListener("pointercancel", up);
     };
-    const fh = d => [() => { clearInterval(repeat); fine(d); repeat = setInterval(() => fine(d), 160); }, () => clearInterval(repeat)];
+    const fh = d => [() => { host.clear(repeat); fine(d); repeat = host.interval(() => fine(d), 160); }, () => host.clear(repeat)];
     hold(fineDn, ...fh(-0.05)); hold(fineUp, ...fh(0.05));
     hold(nudgeL, () => { st.nudge = -1; }, () => { st.nudge = 0; });
     hold(nudgeR, () => { st.nudge = 1; }, () => { st.nudge = 0; });
-    host.cleanup(() => clearInterval(repeat));
+    host.cleanup(() => host.clear(repeat));
     /* held arrow keys repeat on our own clock (not the OS key-repeat delay) and speed up the longer they are held; Shift = coarse */
     let kHeld = null, kT0 = 0, kTick = null;
-    const kStep = () => { const ms = performance.now() - kT0; return (ms < 350 ? 0.05 : ms < 900 ? 0.1 : 0.25) * (kHeld.shift ? 5 : 1); };
-    const kStop = () => { clearInterval(kTick); kTick = null; kHeld = null; };
+    const kStep = () => { const ms = host.now() - kT0; return (ms < 350 ? 0.05 : ms < 900 ? 0.1 : 0.25) * (kHeld.shift ? 5 : 1); };
+    const kStop = () => { host.clear(kTick); kTick = null; kHeld = null; };
     host.cleanup(kStop);
     host.onKey(e => {
       if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         e.preventDefault(); if (e.repeat) return;
-        kStop(); const d = e.key === "ArrowUp" ? -1 : 1; kHeld = { key: e.key, shift: e.shiftKey }; kT0 = performance.now();
-        fine(d * kStep()); kTick = setInterval(() => { if (kHeld) fine(d * kStep()); }, 70);
+        kStop(); const d = e.key === "ArrowUp" ? -1 : 1; kHeld = { key: e.key, shift: e.shiftKey }; kT0 = host.now();
+        fine(d * kStep()); kTick = host.interval(() => { if (kHeld) fine(d * kStep()); }, 70);
       }
       if (e.key === "ArrowLeft" && !e.repeat) st.nudge = -1;
       if (e.key === "ArrowRight" && !e.repeat) st.nudge = 1;
@@ -218,12 +218,12 @@ RP.mg.register("beatMatch", {
       let done = false;
       const finish = ok => {
         if (done) return; done = true;
-        if (master) { const t = AC.currentTime; master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.0001, t + (ok ? 1.6 : 0.2)); setTimeout(() => { try { master.disconnect(); } catch (e) { /* ignore */ } }, 1800); }
+        if (master) { const t = AC.currentTime; master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.0001, t + (ok ? 1.6 : 0.2)); RP.ptimeout(() => { try { master.disconnect(); } catch (e) { /* ignore */ } }, 1800); }
         const score = ok ? Math.round(clamp(100 - Math.max(0, st.t - 20) * 0.6, 40, 100)) : 0;
         if (ok) {
           RP.sfx("success");
           const fl = el("div", { cls: "blend", text: "CLEAN BLEND" }, document.body);
-          setTimeout(() => { fl.remove(); resolve({ ok: true, score, time: st.t }); }, 1500);
+          host.timeout(() => { fl.remove(); resolve({ ok: true, score, time: st.t }); }, 1500);
         } else resolve({ ok: false, score: 0, time: st.t });
       };
       hang.addEventListener("click", () => finish(false));

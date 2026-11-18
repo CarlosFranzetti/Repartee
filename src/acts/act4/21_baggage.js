@@ -171,7 +171,7 @@ async function giveToBernadette(S, item) {
 }
 
 /* ------------------------------------------------------------------ the room */
-const flowing = (id, i) => ({ id, name: BAGS[i].label, rects: S => { const x = Math.round(beltPos(i, performance.now() - (RP.curRoom() ? RP.curRoom().t0 : 0))); return [[x, 128 - BAGS[i].h - 2, BAGS[i].w + 4, BAGS[i].h + 4]]; }, z: 50, walk: [500, 232, "back"] });
+const flowing = (id, i) => ({ id, name: BAGS[i].label, rects: S => { const x = Math.round(beltPos(i, RP.gnow() - (RP.curRoom() ? RP.curRoom().t0 : 0))); return [[x, 128 - BAGS[i].h - 2, BAGS[i].w + 4, BAGS[i].h + 4]]; }, z: 50, walk: [500, 232, "back"] });
 RP.room({
   id: "a4_baggage", act: 4, name: "Baggage Services",
   paint, draw, light, ambience: "airport", music: null,

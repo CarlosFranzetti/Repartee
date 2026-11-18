@@ -331,7 +331,7 @@ RP.mg.register("goDigging", {
     const resetMsg = () => { if (!S.done) msg.textContent = baseMsg; };
     let cancelType = null;
     const say = (text, o) => {
-      if (cancelType) cancelType(); S.say = text; S.sayT = performance.now();
+      if (cancelType) cancelType(); S.say = text; S.sayT = host.now();
       cancelType = DK.typer(host, sayTxt, text, null, 16);
     };
     const quip = k => say(DK.pick(RAY_QUIPS[k], Math.random));
@@ -354,7 +354,7 @@ RP.mg.register("goDigging", {
       RP.sfx("needle");
       let loop = null;
       try { loop = RP.audio.recordLoop(c.rec); loop.start(); if (c.cond.id === "beat") loop.setFilter("lowpass", 1500); else if (c.cond.id === "vg") loop.setFilter("highpass", 90); } catch (e) { loop = { stop() {}, setBpm() {}, getBpm: () => 120 }; }
-      S.prev = { loop, copy: c, t0: performance.now(), lastCrack: performance.now(), len: 9 };
+      S.prev = { loop, copy: c, t0: host.now(), lastCrack: host.now(), len: 9 };
       if (S.mode === "flip") setMode("inspect");
       if (S.previews > 5 && S.previews % 3 === 0) quip("tooMany"); else if (c.warped) quip("warp"); else quip("preview");
       {
@@ -789,10 +789,10 @@ RP.mg.register("goDigging", {
           /* preview timing, crackle and wow */
           const pv = S.prev;
           if (pv) {
-            const el_ = (performance.now() - pv.t0) / 1000;
+            const el_ = (host.now() - pv.t0) / 1000;
             prevFill.style.width = Math.min(100, el_ / pv.len * 100) + "%"; prevLbl.textContent = "▶ ~" + pv.copy.rec.bpm + " BPM  0:" + String(Math.floor(el_)).padStart(2, "0");
             const cid = pv.copy.cond.id, gap = cid === "beat" ? 1400 : cid === "vg" ? 2800 : cid === "vg+" ? 6000 : 0;
-            if (gap && performance.now() - pv.lastCrack > gap) { pv.lastCrack = performance.now(); RP.sfx("crackle"); }
+            if (gap && host.now() - pv.lastCrack > gap) { pv.lastCrack = host.now(); RP.sfx("crackle"); }
             if (pv.copy.warped) { try { pv.loop.setBpm(pv.copy.rec.bpm * (1 + 0.045 * Math.sin(el_ * 2.6))); } catch (e) { /* ignore */ } }
             if (el_ > pv.len) { stopPreview(0.5); render(); }
           }

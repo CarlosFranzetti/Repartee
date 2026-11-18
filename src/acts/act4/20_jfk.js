@@ -97,7 +97,7 @@ function draw(c, S, t) {
   // belt movement and the bag that rides it
   const bt = S.f.a4_beltT;
   if (bt && !S.f.a4_beltDone) {
-    const k = Math.min(1, (performance.now() - bt) / 1800);
+    const k = Math.min(1, (RP.gnow() - bt) / 1800);
     const bx = Math.round(122 - k * 58);
     R(c, bx, 130, 24, 14, "#1c1a24"); R(c, bx, 130, 24, 2, "#4a4868"); R(c, bx + 7, 126, 2, 5, "#55516a"); R(c, bx + 15, 126, 2, 5, "#55516a"); R(c, bx + 7, 125, 10, 2, "#8a86a0"); ell(c, bx + 6, 138, 2, 2, "#ff3fa4"); R(c, bx + 11, 134, 6, 3, "#39d0ff");
     if (k >= 1) S.f.a4_beltDone = true;
@@ -152,7 +152,7 @@ async function checkInBag(S) {
   if (fee) { RP.money(-fee); await RP.say("$" + fee + ". For the privilege of being separated from my career."); }
   await RP.lines(["@a4_dolores Berlin. BER. Sticker on, tag on. Claim tag's yours. Don't lose it.", "@a4_dolores Name on the tag: \"" + tagName(S) + ".\" It's how it's always been."]);
   RP.take("a4_bag"); RP.give("a4_claim");
-  S.f.a4_bagChecked = true; S.f.noTravel = true; S.f.a4_beltT = performance.now(); S.f.a4_beltDone = false;
+  S.f.a4_bagChecked = true; S.f.noTravel = true; S.f.a4_beltT = RP.gnow(); S.f.a4_beltDone = false;
   RP.sfx("zip");
   await RP.wait(1900);
   RP.setClock("SAT 7:48 AM");

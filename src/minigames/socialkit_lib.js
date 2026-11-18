@@ -132,8 +132,8 @@ SK.css = () => { if (cssDone) return; cssDone = true; try { el("style", { text: 
 /* ------------------------------------------------------------------ session: timers, keys, advance */
 SK.session = function (host) {
   const S = { host, dead: false, timers: new Set(), keyFn: null, advFn: null, resolvers: new Set() };
-  host.cleanup(() => { S.dead = true; S.timers.forEach(clearTimeout); S.timers.clear(); });
-  S.later = (fn, ms) => { const t = setTimeout(() => { S.timers.delete(t); if (!S.dead) { try { fn(); } catch (e) { console.error(e); } } }, ms); S.timers.add(t); return t; };
+  host.cleanup(() => { S.dead = true; S.timers.forEach(t => host.clear(t)); S.timers.clear(); });
+  S.later = (fn, ms) => { const t = host.timeout(() => { S.timers.delete(t); if (!S.dead) { try { fn(); } catch (e) { console.error(e); } } }, ms); S.timers.add(t); return t; };
   /* wait ms, or until the player taps/presses Space/Enter (skippable) */
   S.wait = (ms, skippable = true) => new Promise(res => {
     if (S.dead) return;
@@ -207,7 +207,7 @@ SK.meter = function (parent, o) {
     if (v !== prev && prev !== undefined) {
       box.classList.remove("hit", "good", "badm"); void box.offsetWidth;
       box.classList.add(v < prev ? "badm" : "good"); if (v < prev) box.classList.add("hit");
-      setTimeout(() => box.classList.remove("good", "badm"), 700);
+      setTimeout(() => box.classList.remove("good", "badm"), 700);   // cosmetic class removal, fine raw
     }
   };
   api.value = undefined; api.set(o.value != null ? o.value : max);
@@ -234,19 +234,19 @@ SK.say = function (S, parent, opts = {}) {
     nm.textContent = name || ""; tx.textContent = ""; more.style.display = "none"; api.last = text;
     const chars = [...String(text)];
     if (SK.reduced() || o.instant || !chars.length) { tx.textContent = text; api.talking = false; res(); return; }
-    const t0 = performance.now(), speed = o.speed || 56, pitch = o.pitch || 420;
+    const t0 = S.host.now(), speed = o.speed || 56, pitch = o.pitch || 420;
     let i = 0, timer = 0, done = false;
     api.talking = true;
     const finish = (skipped) => {
-      if (done) return; done = true; clearTimeout(timer); S.timers.delete(timer);
+      if (done) return; done = true; S.host.clear(timer); S.timers.delete(timer);
       tx.textContent = String(text); api.talking = false; cur = null; res();
     };
     cur = { finish };
     const tick = () => {
       if (S.dead || done) return;
-      const n = Math.min(chars.length, Math.floor((performance.now() - t0) / 1000 * speed));
+      const n = Math.min(chars.length, Math.floor((S.host.now() - t0) / 1000 * speed));
       if (n !== i) { i = n; tx.textContent = chars.slice(0, i).join(""); if (i % 2 === 0 && chars[i - 1] !== " ") blip(pitch); }
-      if (i >= chars.length) finish(false); else { timer = setTimeout(tick, 16); S.timers.add(timer); }
+      if (i >= chars.length) finish(false); else { timer = S.host.timeout(tick, 16); S.timers.add(timer); }
     };
     tick();
   });

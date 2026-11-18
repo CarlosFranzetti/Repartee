@@ -248,7 +248,7 @@ function draw(c, S, t) {
   R(c, 411, 119, 15, 4, scrCol); R(c, 505, 119, 15, 4, scrCol);
   if (playing) [432, 526].forEach((x, j) => { const a = t / 180 + j; P(c, x + Math.cos(a) * 9, 125 + Math.sin(a) * 4, "#62e6ff"); P(c, x + Math.cos(a + 3.14) * 9, 125 + Math.sin(a + 3.14) * 4, "#62e6ff"); });
   P(c, 488, 114, S.f.a1_mixer ? "#3fd07a" : (Math.floor(t / 400) % 2 ? "#ff3f3f" : "#5a1a1a"));
-  if (sparkT > performance.now()) for (let i = 0; i < 6; i++) P(c, 484 + Math.random() * 10, 116 + Math.random() * 10, Math.random() > 0.5 ? "#fff6a0" : "#ffffff");
+  if (sparkT > RP.gnow()) for (let i = 0; i < 6; i++) P(c, 484 + Math.random() * 10, 116 + Math.random() * 10, Math.random() > 0.5 ? "#fff6a0" : "#ffffff");
   if (lampOn(S)) { ell(c, 470, 31, 3, 4, C.bulb); P(c, 469, 29, "#ffffff"); } else { ell(c, 470, 31, 3, 4, "#cfc8b8"); P(c, 469, 29, "#efe8d8"); }
   if (night(S) || dusk(S)) R(c, 140, 156, 6, 1, "#9fc2ff");
   drawDrawer(c, S);
@@ -313,7 +313,7 @@ async function testDecks(S) {
   await RP.walkTo(476, 214, "back");
   if (!S.f.a1_mixer) {
     if (!S.f.a1_c1) await RP.say("Two burned CD-Rs in the decks: Mood II Swing and Hardrive. Let's warm up.");
-    playing = true; RP.sfx("crackle"); sparkT = performance.now() + 800;
+    playing = true; RP.sfx("crackle"); sparkT = RP.gnow() + 800;
     await RP.wait(700); playing = false;
     S.f.a1_c1 = true;
     await RP.lines(["...and channel 2 still sounds like bacon frying.", "Nobody's mixing anything through that."]);
