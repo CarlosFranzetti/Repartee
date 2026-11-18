@@ -19,6 +19,13 @@
       save/pause tests (`tests/saveload.mjs`) added; all mini-games fit phone landscape with 32px touch targets and
       follow the mute switch mid-game.
 
+- [x] **Streaming catalog coverage, pause in mini-games, old leftovers (2026-11-18).** The matcher accepts a track
+      from the matching release, tries the B side, strips accents and has a hand-kept alias file
+      (`src/data/stream_alias.js`): 101 of 105 records resolve on the live store (`node tools/stream-check.mjs`; the
+      other four are not in the store). Every mini-game timer and the room scripts that read the wall clock now stop
+      on pause (`host.now()`, `host.clear()`, `RP.ptimeout`, `RP.gnow()`), with a 2.5 s pause check per mini-game in
+      `tests/saveload.mjs`. Both old Levels 3-5 playtest leftovers are closed.
+
 ## Later
 
 - [x] **Secret streaming patch.** Built 2026-11-03 (`src/core/stream.js`): tapping the title logo (3 on "re:", 2 on
