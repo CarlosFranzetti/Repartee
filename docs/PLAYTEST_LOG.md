@@ -12,6 +12,24 @@ mini-game sweep. "Run" names where a finding came from.
 |---|---|---|---|---|
 | 2-19 | Money | Every subway trip costs 3 dollars and the ATM fee is 10, with no warning before a wasted trip. | design | L2 audio take |
 
+**Level 1 blind take on the 2026-11-18 build (after the pause, save-slot and Phase 1-2 changes)**
+
+The tester finished the level in about 330 commands over two sessions; their estimate for a human's first play is
+35 to 50 minutes. Pause (in a room and inside beat.Match), the sound switch, saving to a slot and loading it back all
+behaved. No hint line was needed. Fixed the same day:
+- Dante's line about the second hour printed as a lone "@" (a string was sliced where an array was meant), so the USB
+  set choice looked consequence-free. Now Dante comments on the style that was loaded.
+- Calling Dante: Use phone in the bedroom leaves "Use phone with...", and the MENU had no call. The MENU's phone menu
+  now offers "Call Dante" once the texts are read (`RP.phoneExtras`, a hook any level can use).
+- The recycling bags' hotspot covered most of the chained bike, so Look at the bike described the bags.
+- Text: the extinguisher line mentioned the popcorn before the kid had it; Sal's "for a Wednesday" on a Tuesday; the
+  slice menu's wrong pie maths; Old Hank repeating two of Lou's lines word for word.
+- The harness numbered choices that the game already numbers ("1. 1. ...").
+Checked and not bugs: Use CDJs runs the same deck test as Push (real clicks; the silent step was a harness timing
+miss); the can run is capped at six bags, about nine dollars in all; the package can be peeked at (Open it).
+Left open, minor: crowd.Read's "ran ahead of the build" feedback doesn't say which picks; Marcus's "+3 on the list"
+text and the unpaid temp shift have no payoff inside Level 1; the beat nudge feels slow.
+
 **Levels 3-5, formerly open after the blind-take fixes (closed 2026-11-18)**
 - 4-8 (part): Katja's hint to play something unknown in Berlin. Closed: the white label "NYC 93" is in the Halle Neun
   crowd.Read crate, and playing it gives Katja's "The unknown one" lines and a follower bonus (`a4_whitePlayed`).

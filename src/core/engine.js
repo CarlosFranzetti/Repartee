@@ -802,9 +802,13 @@ async function phoneMenu() {
   if (fast) return;
   const opts = [["msgs", "Messages (" + S.msgs.length + ")"], ["crate", "Record crate (" + S.records.length + ")"], ["gear", "My setup"]];
   if (!S.f.noTravel && availableLocations().length) opts.splice(1, 0, ["map", "Subway map"]);
+  // levels can add entries at the top (RP.phoneExtras: functions S => [[label, async S => {...}], ...]), e.g. "Call Dante"
+  const extra = (RP.phoneExtras || []).flatMap(f => { try { return f(S) || []; } catch (e) { return []; } });
+  extra.forEach((e, n) => opts.splice(n, 0, ["x" + n, e[0]]));
   opts.push(["hint", "Show what I can click"], ["save", "Save game"], ["load", "Load game"], ["title", "Quit to title"], ["back", "Back"]);
   const i = await choose(opts.map(o => o[1]));
   const k = opts[i][0];
+  if (/^x\d+$/.test(k)) { await extra[+k.slice(1)][1](S); return; }
   if (k === "msgs") await RP.phone();
   if (k === "map") await RP.travel();
   if (k === "crate") await RP.crateView();

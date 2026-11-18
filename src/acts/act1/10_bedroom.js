@@ -395,6 +395,11 @@ async function callDante(S) {
   await RP.lines(["And Dante's text says a vinyl hour is four records. I've got three, and one of them is warped. I need a closer. Ray, at Deep Cuts.", "Tomorrow: temp job in Midtown. Tonight: sleep. Or the bodega. Probably both."]);
 }
 RP.act1CallDante = callDante;
+// the MENU button's phone menu gets "Call Dante" once the texts are read: Use phone leaves "Use phone with..." in the bedroom, which hid the call
+(RP.phoneExtras = RP.phoneExtras || []).push(S => S.act === 1 && S.f.a1_charged && S.f.a1_texts && !S.f.a1_booked ? [["Call Dante", async S => {
+  if (S.room !== "bedroom") { await RP.say("Not from here. Dante will want to hear me play, and the decks are in my room."); return; }
+  await callDante(S);
+}]] : []);
 RP.act1PhoneUse = async S => { if (S.act === 1 && S.f.a1_charged && !S.f.a1_booked && S.f.a1_texts && S.room === "bedroom") { const i = await RP.choose(["Call Dante", "Open the phone menu"]); if (i === 0) { await callDante(S); return true; } } return false; };
 
 async function sleepNow(S) {

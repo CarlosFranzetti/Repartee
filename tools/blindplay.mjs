@@ -395,7 +395,7 @@ if (argv[0] !== "serve") {
     else if (st.overlay) lines.push("ON SCREEN (overlay):\n" + st.overlay);
     if (st.buttons.length) lines.push("BUTTONS: " + st.buttons.map(b => "[" + b + "]").join(" "));
     if (st.sliders.length) lines.push("SLIDERS: " + st.sliders.join("; "));
-    if (st.choices.length) lines.push("CHOOSE ONE:\n" + st.choices.map((c, i) => "  " + (i + 1) + ". " + c).join("\n"));
+    if (st.choices.length) lines.push("CHOOSE ONE:\n" + st.choices.map((c, i) => "  " + (/^\d+\.\s/.test(c) ? c : (i + 1) + ". " + c)).join("\n"));   // the game numbers its own choices; don't number them twice
     if (si && !st.minigame && !st.title) {
       if (si.room !== lastRoom) lines.push("(new location)");
       lastRoom = si.room;

@@ -356,7 +356,7 @@ RP.room({
     { id: "news", name: "newspaper boxes", rects: [[632, 206, 40, 32]], z: 24, walk: [640, 228, "back"], look: "Two newspaper boxes. One is free and the other one's free to ignore.", pickup: "A free paper? Sure. ...It's all ads for personal injury lawyers. I'll leave it.", open: "I don't have the quarters. The paper's not worth a quarter." },
     { id: "hydrant", name: "fire hydrant", r: [666, 212, 20, 26], z: 24, walk: [690, 232, "back"], look: "A fire hydrant. The one thing in New York that's always ready.", open: "I'm not opening a fire hydrant. The city has a thing about that.", use: "No. The last person who did that got on the news.", pull: "The cap won't budge. Somebody wanted it that way." },
     { id: "bike", name: "chained bike", r: [872, 204, 56, 36], z: 24, walk: [900, 232, "back"], look: "A bike chained to a pole. Just the frame and a seat. The wheels left for a better life.", pickup: "It's chained. And it's missing its wheels. A metaphor for my financial life." },
-    { id: "recycling", name: "recycling bags", r: [880, 212, 50, 28], z: 28, walk: [904, 232, "back"], vis: S => (S.f.a1_bags || 0) < 6,
+    { id: "recycling", name: "recycling bags", r: [884, 223, 46, 17], z: 28, walk: [904, 232, "back"], vis: S => (S.f.a1_bags || 0) < 6,
       look: "Bags of recycling the canners haven't got to. Cans, in other words. Money, in other other words. I could pick one up.",
       pickup: async S => {
         if (RP.has("cans2") || RP.has("cans")) return "I'm already carrying a bag. I'm not a camel.";
