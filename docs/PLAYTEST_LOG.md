@@ -12,10 +12,11 @@ mini-game sweep. "Run" names where a finding came from.
 |---|---|---|---|---|
 | 2-19 | Money | Every subway trip costs 3 dollars and the ATM fee is 10, with no warning before a wasted trip. | design | L2 audio take |
 
-**Levels 3-5, still open after the blind-take fixes**
-- 4-8 (part): Katja's hint to play something unknown in Berlin has no pay-off, because the white label isn't in the
-  Level 4 crowd.Read crate.
-- 3-11 (part): "It's Dj lowpass." wasn't found in the Level 3 source; if it shows again, note where.
+**Levels 3-5, formerly open after the blind-take fixes (closed 2026-11-18)**
+- 4-8 (part): Katja's hint to play something unknown in Berlin. Closed: the white label "NYC 93" is in the Halle Neun
+  crowd.Read crate, and playing it gives Katja's "The unknown one" lines and a follower bonus (`a4_whitePlayed`).
+- 3-11 (part): "It's Dj lowpass." Found: Kosmo's Thursday line in `src/acts/act3/35_nights.js` printed the DJ name
+  exactly as typed. It now goes through `A3.djName`, like every other line that says the name.
 
 **Round 2 blind takes of Levels 3-5 (2026-11-03, on the reworked build after PR #11)**
 

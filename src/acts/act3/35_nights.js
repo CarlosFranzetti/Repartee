@@ -454,7 +454,7 @@ A3.confrontBrandon = async function (S, withOdessa) {
 /* ====================================================================== Kosmo */
 A3.kosmoTalk = async function (S) {
   if (!S.f.a3_thu3) return;
-  await lines(["@a3_kosmo Wendell. Don't talk to me while I'm working.", "It's \"" + (S.name || "...") + "\"... never mind. Good luck."]);
+  await lines(["@a3_kosmo Wendell. Don't talk to me while I'm working.", "It's \"" + A3.djName(S) + "\"... never mind. Good luck."]);
 };
 
 /* ====================================================================== the bartenders, the feud, the bar record player */
