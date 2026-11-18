@@ -4,6 +4,7 @@
 //   2. Reload: the title shows CONTINUE and LOAD enabled; LOAD -> slot 2 restores the same state.
 //   3. Pause in Level 1 (real time): nothing moves, the AudioContext is suspended, resume -> running.
 //   4. Pause inside beat.Match: its canvases and timer stand still, then move again after resume.
+//   4b. Every mini-game (pause 2.5 s: canvases, text and countdowns unchanged, then it moves and exits normally).
 //   5. M toggles the one mute state (SND label, title SOUND label, RP.audio.muted).
 // --shots <dir> also saves the sentence bar / pause overlay at 1280x720 and 390x844.
 import { createRequire } from "module";
@@ -188,6 +189,105 @@ const errorsOf = p => { const errors = []; p.on("pageerror", e => errors.push("p
     await p.evaluate(() => window.RP.togglePause());
   }
   check(!errors.length, "no page errors (pause)", errors.slice(0, 5).join(" | "));
+  await ctx.close();
+}
+
+/* ---------------- 6: every mini-game stands still while paused ---------------- */
+{
+  /* params, an optional setup run once the game is up (to get a live timer going), and ms to run before pausing.
+     after.Party and promoter.Talk are turn-based (in-game minutes / patience turns): their only real-time parts are the
+     typewriter and the delays between lines, which is what the pause is checked against. */
+  const GAMES = {
+    afterParty: { p: { difficulty: 2 }, ms: 400 },
+    beatMatch: { p: { arcade: true, difficulty: 2 }, ms: 1000 },
+    buyGear: { p: { slot: "mixer", options: ["can_electric_taula_4_mr"], seller: "boutique", difficulty: 2, budget: 900 }, ms: 1000 },
+    crowdRead: { p: { records: ["mood_ii_swing_closer", "hardrive_deep_inside", "white_nyc93"], crowd: "empty-bar", rounds: 4, difficulty: 2, venue: "Nowhere" }, ms: 1000 },
+    goDigging: { p: { store: "Deep Cuts", budget: 10, wallet: 20, bins: [{ label: "DOLLAR BIN", records: ["mood_ii_swing_closer", "hardrive_deep_inside"] }], want: { vibe: "closer" }, difficulty: 2 }, setup: "document.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }))", ms: 1000 },
+    makTracks: { p: { difficulty: 2 }, setup: "[...document.querySelectorAll('.mg button')].find(b => b.textContent.trim() === 'PLAY').click()", ms: 1000 },
+    promoterTalk: { p: { promoter: "Vic", difficulty: 2 }, setup: "[...document.querySelectorAll('.mg button')].find(b => b.textContent.trim() === 'START').click()", ms: 700 },
+    soundCheck: { p: { faults: ["ground-hum", "dead-channel"], stage: "loft", difficulty: 2 }, ms: 1000 }
+  };
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const p = await ctx.newPage();
+  const errors = errorsOf(p);
+  await p.goto("file://" + page);
+  await p.waitForTimeout(300);
+  await p.mouse.click(5, 5);
+  await p.evaluate(() => {
+    const RP = window.RP;
+    RP.test.noSave = true; RP.test.setFast(false);
+    document.querySelectorAll("#title").forEach(e => e.remove());
+    RP.hideGame(false); RP.layout(); RP.reset(); RP.state.name = "DJ TEST";
+    RP.startAct(1, { noCard: true, noIntro: true });
+  });
+  await p.waitForTimeout(1200);
+  const ids = await p.evaluate(() => window.RP.mg.list().map(m => m.id).sort());
+  check(Object.keys(GAMES).every(id => ids.includes(id)), "every mini-game id is covered by the pause check", ids.join(","));
+  const grab = () => p.evaluate(() => {
+    const mg = document.querySelector(".mg");
+    if (!mg) return null;
+    const cv = [...mg.querySelectorAll("canvas")].map(c => { try { return c.toDataURL(); } catch (e) { return ""; } }).join("|");
+    let h = 0; for (let i = 0; i < cv.length; i++) h = (h * 31 + cv.charCodeAt(i)) | 0;
+    const txt = [...mg.querySelectorAll("*")].map(e => (e.childElementCount ? "" : e.textContent)).filter(Boolean).join("~");
+    const tm = [...mg.querySelectorAll("[class*=clock],[class*=sun],[class*=timer],[class*=time]")].map(e => e.textContent.replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 4);
+    const wrap = document.querySelector(".mg-wrap");
+    if (wrap && wrap.__sc) tm.push("timeLeft=" + wrap.__sc.timeLeft.toFixed(3));
+    txt.split("~").forEach(t => { if (/BPM\s+\d:\d\d/.test(t)) tm.push(t); });
+    return { cv: cv.length + ":" + h, txt, tm, blend: !!document.querySelector(".blend") };
+  });
+  for (const id of Object.keys(GAMES)) {
+    await p.evaluate(([id, par]) => { window.__mgResult = null; window.RP.mg.play(id, par).then(r => { window.__mgResult = r || { none: true }; }); }, [id, GAMES[id].p]);
+    await p.waitForTimeout(300);
+    if (GAMES[id].setup) await p.evaluate(GAMES[id].setup);
+    await p.waitForTimeout(GAMES[id].ms);
+    check(!!(await grab()), id + ": started and showing");
+    await p.evaluate(() => window.RP.pause(true));
+    await p.waitForTimeout(150);
+    const a = await grab();
+    await p.waitForTimeout(2500);
+    const b = await grab();
+    const ended = await p.evaluate(() => window.__mgResult);
+    check(a && b && a.cv === b.cv && a.txt === b.txt && !ended, id + ": paused 2.5 s - canvases, text and timers unchanged, no round ended", "timers " + JSON.stringify(a && a.tm) + " -> " + JSON.stringify(b && b.tm));
+    await p.evaluate(() => window.RP.pause(false));
+    await p.waitForTimeout(1000);
+    const c = await grab();
+    check(c && (c.cv !== b.cv || c.txt !== b.txt), id + ": resumed - moves again", "timers " + JSON.stringify(c && c.tm));
+    if (id === "goDigging") {   // the preview clock must not have jumped by the 2.5 s spent paused (was ~0:01 before the pause)
+      const sec = Math.max(...(c.tm.map(t => { const m = /BPM\s+\d:(\d\d)/.exec(t); return m ? +m[1] : 0; })));
+      check(sec >= 1 && sec <= 3, "goDigging: preview clock continues from where it stopped", "0:0" + sec);
+    }
+    // finish through the mini-game's own exit (a few clicks: some ask to confirm)
+    for (let i = 0; i < 4 && !(await p.evaluate(() => window.__mgResult)); i++) {
+      await p.evaluate(() => { const b = [...document.querySelectorAll(".mg button")].filter(x => !x.disabled && /^(GIVE UP|LEAVE|HANG UP|WALK AWAY|YES|LEAVE ANYWAY|GIVE UP ANYWAY|YES, LEAVE|YES, GIVE UP)/i.test(x.textContent.trim())); if (b.length) b[b.length - 1].click(); });
+      await p.waitForTimeout(500);
+    }
+    const res = await p.evaluate(() => window.__mgResult);
+    check(!!res, id + ": exits normally after the pause", JSON.stringify(res).slice(0, 120));
+    if (!res) await p.evaluate(() => { const o = document.querySelector(".mg"); if (o) o.remove(); });
+    await p.waitForTimeout(300);
+  }
+  {   // beat.Match: a held arrow key repeats on host.interval, so it stops while paused and carries on after RESUME
+    await p.evaluate(() => { window.__mgResult = null; window.RP.mg.play("beatMatch", { arcade: true, difficulty: 2 }).then(r => { window.__mgResult = r || { none: true }; }); });
+    await p.waitForTimeout(500);
+    const pitch = () => p.evaluate(() => [...document.querySelectorAll(".mg input[type=range]")].map(i => i.value).join(","));
+    const p0 = await pitch();
+    await p.keyboard.down("ArrowUp");
+    await p.waitForTimeout(500);
+    const p1 = await pitch();
+    await p.evaluate(() => window.RP.pause(true));
+    await p.waitForTimeout(150);
+    const p2 = await pitch();
+    await p.waitForTimeout(2500);
+    const p3 = await pitch();
+    await p.evaluate(() => window.RP.pause(false));
+    await p.waitForTimeout(500);
+    const p4 = await pitch();
+    await p.keyboard.up("ArrowUp");
+    check(p0 !== p1 && p2 === p3 && p4 !== p3, "beat.Match: held-key fine-tune repeat stops while paused and resumes", [p0, p1, p2, p3, p4].join(" / "));
+    await p.evaluate(() => { const b = [...document.querySelectorAll(".mg button")].find(x => /GIVE UP|HANG UP/.test(x.textContent)); if (b) b.click(); });
+    await p.waitForTimeout(400);
+  }
+  check(!errors.length, "no page errors (mini-game pause)", errors.slice(0, 5).join(" | "));
   await ctx.close();
 }
 

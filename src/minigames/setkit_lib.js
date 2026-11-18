@@ -312,7 +312,7 @@ K.endCard = function (host, parent, cfg) {
     const target = Math.round(clamp(cfg.score, 0, 100));
     const set = n => { sc.innerHTML = n + "<small>/100</small>"; rows.forEach(r => { const on = Math.round(r.v * 10 * Math.min(1, n / Math.max(1, target))); [...r.m.children].forEach((s, i) => s.classList.toggle("on", i < on)); }); };
     if (reduced) set(target);
-    else { let n = 0; const iv = setInterval(() => { n = Math.min(target, n + Math.max(1, Math.round(target / 24))); set(n); if (n >= target) clearInterval(iv); }, 28); host.cleanup(() => clearInterval(iv)); }
+    else { let n = 0; const iv = host.interval(() => { n = Math.min(target, n + Math.max(1, Math.round(target / 24))); set(n); if (n >= target) host.clear(iv); }, 28); }
     host.onKey(e => { if ((e.key === "Enter" || e.key === " ") && document.activeElement && document.activeElement.tagName !== "BUTTON") { e.preventDefault(); fin("continue"); } });
     host.cleanup(() => { done = true; });
   });
@@ -322,7 +322,7 @@ K.endCard = function (host, parent, cfg) {
 K.flash = function (text, color, ms) {
   const f = el("div", { cls: "sk-pop", text }, document.body);
   if (color) f.style.color = color;
-  setTimeout(() => f.remove(), ms || 1100);
+  RP.ptimeout(() => f.remove(), ms || 1100);
   return f;
 };
 

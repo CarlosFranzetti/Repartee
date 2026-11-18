@@ -3,6 +3,27 @@
 A hand-written dump of the working context, so a fresh session can pick up where the last one stopped. Newest state
 first. It is a summary, not a transcript. `context.md` keeps the older timestamped entries.
 
+## State on 2026-11-18
+
+**Since 2026-11-11.** Title screen: three centred lines under the logo ("A PIXELART DJ ADVENTURE GAME by Carlos
+Franzetti" / the pitch on two lines), owner's wording (PR #20, live). Streaming: release matching (an album/EP entry
+plays a track whose release name matches), B-side retry, accent stripping, squashed artist compare, and
+`src/data/stream_alias.js` (seven aliases; track-to-release pairings are from memory, flagged for the owner);
+`tools/stream-check.mjs` runs the real resolver in Node against the live API (curl for JSONP, 7 s spacing):
+101 of 105 resolve; Tears, UR Riot EP, Wheels of Steel and Waveform Transmission Vol. 1 are not in the store.
+Pause: `host.now()` / `host.clear()` added to the mini-game host; all gameplay timers in mini-games and the JFK
+belt / bedroom spark moved to pausable clocks; `tests/saveload.mjs` pauses every mini-game for 2.5 s (71 checks).
+Old leftovers closed: Katja's white-label payoff exists; Kosmo's line uses `A3.djName`. Blind playtests of
+Levels 1 and 2 on this build were run and fixed the same day (see `docs/PLAYTEST_LOG.md`): Level 1 got Dante's set
+line (a sliced string printed "@"), "Call Dante" in the phone menu (`RP.phoneExtras` hook) and text fixes; Level 2
+got daily Rosa runs, "Sleep till tomorrow morning", real-day text, honest fire-escape credit, rent deducted at the
+end, decks at $180 everywhere, and clearer after.Party / buy.Gear. Phase 3 of `docs/GAME_ANALYSIS.md` is done.
+`tools/walkthrough-pdf.mjs` rebuilds `docs/WALKTHROUGH.pdf` (pandoc + Chromium + pdfunite); `tools/screens.mjs`
+refreshes `docs/screenshots/`. A subagent hit the account's 5-hour usage limit once; resume it with SendMessage
+after the reset and stop it (TaskStop) if it keeps re-sending its report. The owner has NOT yet confirmed
+that previews play on their device; ask for the text of any "STREAM:" toast. The Level 1/2 claude.ai artifacts are
+deleted; the scratchpad is cleared between sessions, so keep tools in `tools/` and `tests/`.
+
 ## State on 2026-11-11
 
 **Streaming patch rework (owner: "the actual tracks aren't working").** Diagnosed from the sandbox, which can now reach

@@ -495,7 +495,7 @@ RP.mg.register("crowdRead", {
           if (S.bart && !was) { host.timeout(() => { floor.pop("BARTENDERS DANCING!", "#ffd23f", 236, 26); host.sfx("cheer"); floor.emote("star", 4); }, 700); }
           if (!S.bart && was) say("The bartenders put the bottle down. Back to work.");
           refresh();
-          nextAt = performance.now();
+          nextAt = host.now();
           const lastRound = S.round >= R.rounds - 1;
           host.timeout(() => {
             phase = "wait";

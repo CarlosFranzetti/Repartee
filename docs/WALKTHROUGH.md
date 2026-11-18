@@ -44,7 +44,8 @@ from Bushwick to a headline slot at the Harbor Lights festival.
 4. **Listen to hints that sound like insults.** Ray, Lou and Odessa tell you what to do while pretending not to.
 5. **Check the crate in your phone menu.** Every record has a real fact, and one level quizzes you on them.
 6. **You cannot get stuck.** The game never lets you lose an item you still need.
-7. 
+7. **Save when you like.** MENU has Save game and Load game with three slots, and the game autosaves as you go.
+
 ---
 
 # Level 1: Bedroom DJ
@@ -203,7 +204,8 @@ Toby has been in the bathroom since Sunday doing a twelve-step ritual. His only 
 
 ## Friday: Marcus's birthday party
 
-23. Use the **couch** and choose "Sleep until Friday (Marcus's party)".
+23. Use the **couch** and choose "Sleep until Friday (Marcus's party)". If you are short of the $180 the turntables
+    cost, choose "Sleep till tomorrow morning" instead and work Rosa's crates again first: she pays every day.
 24. Use **the door (guest list)** and pick "Stick to the list, with a tiny bit of mercy". The party fills, and
     Marcus's cover jar pays you $108.
 25. Give **cat-photo USB stick** to **Jess**. She lends you her spare power amp for the loft. Twinkie gives you "Show
@@ -214,7 +216,8 @@ Toby has been in the bathroom since Sunday doing a twelve-step ritual. His only 
 26. Use the **door**, travel to **Eddie's van**, and Talk to **Eddie**. Pick "I want the AT-LP120-USB pair." This starts
     **buy.Gear**.
     **How to win:** inspect and test each listing, haggle, and spot the broken one before you pay ("it was working this
-    morning" is a warning). A good pair costs about $175, and Eddie throws in Inner City's "Good Life".
+    morning" is a warning). Eddie will not go below $180 for the good pair, and he throws in Inner City's "Good
+    Life". The result card lists what cost you points.
 
 ## The loft on Meserole
 
@@ -232,14 +235,16 @@ Toby has been in the bathroom since Sunday doing a twelve-step ritual. His only 
 
 33. Use **door (outside)**, take **subway stairs**, and travel to **Basement Tapes** (Gowanus).
 34. Talk to **Twinkie** and start after.Party.
-    **How to win:** before sunrise you need people, a location and a sound system. The location is sorted, so text your
-    contacts (Marcus, Dani, Moxie) and watch your phone battery.
+    **How to win:** before sunrise (120 minutes) you need 30 guests who actually show up, a place to gather them and a
+    sound system. Ask Twinkie for contacts, set the place first, then text Marcus, Dani and Moxie, and watch your
+    phone battery. Choices that take longer than the time left are greyed out.
 35. Use **turntables (boxed pair)** on the **DJ booth**. Your set ends with Lou's "NYC 93".
 36. Vic walks in. Keep the **demo cassette** ready. It gets handed over. Then promoter.Talk starts.
     **How to win:** a dialogue duel with patience and interest meters. Do not sound desperate and never say "please" to
     Vic. Show you are not in a rush, that you know his party, and mention the white label.
 37. Vic gives you a monthly slot (last Saturday, 11 PM to 12:30), cash on the night, and a copy of Mr. Fingers'
-    "Can You Feel It". Level 2 is complete.
+    "Can You Feel It". The rent comes out of your wallet at the end ($120, or $80 if Kowalski already had $40 from
+    you). Level 2 is complete.
 
 ## Alternatives for Level 2
 
@@ -249,7 +254,8 @@ Toby has been in the bathroom since Sunday doing a twelve-step ritual. His only 
 - **Alternative: Kowalski and the key to 4C.** Tuesday 2 PM is the building manager's office hour. In the hall, Talk to
   **Mr. Kowalski** and ask for the key to 4C. He will not budge for nothing: Give **Dani's pierogi** to him and pay $40.
   You get the key and he puts in a word with Vic. Use **my door (4C)** with **key to 4C**.
-- **Alternative: Rosa's side job.** At **Rosa's Deli Grocery** you can earn $18 a run, twice per chapter.
+- **Alternative: Rosa's side job.** At **Rosa's Deli Grocery** you can earn $18 a run, twice a day. Sleeping on the
+  couch until the next morning brings her deliveries back, so the open days are never a dead end for money.
 - **Alternative: sneaking into the loft.** Without the sachet, Push the **dumpster**, then Use the **dangling ladder**.
 - **Alternative: a lemon at Eddie's.** If you miss the broken deck in buy.Gear, the sale does not go through. Try again, or settle for a cheaper deck.
 - **Alternative: mini-game failures.** You can fail sound.Check or after.Party once and retry. If promoter.Talk goes

@@ -164,14 +164,14 @@ async function fallbackBuy(params) {
 
 async function buyDeck(S) {
   if (S.f.a2_turntables) { await RP.say("I already own turntables. I own turntables! Say it with me: I own turntables."); return; }
-  if (S.money < 170) {
+  if (S.money < PRICE) {
     await RP.lines(["@eddie Show me the money. I can't take promises. Everybody pays me next week, kid. It's the one thing I won't do.", "I have $" + Math.round(S.money) + ". It's a good start."]);
     if (RP.has("a2_card")) await RP.lines(["What about the LifeDrop card?", "@eddie I don't take cards. Cards have records. Cash. Paper. Dirty, green, folded paper."]);
     else await RP.say("Come back with about a hundred and eighty. I'll hold the AT-LP120s till then. Two of them. Because I'm that kind of guy.", "eddie");
     return;
   }
   await RP.lines(["Eddie, I want a pair of turntables. The AT-LP120-USBs.", "@eddie Oh, you want the good ones. Of course you do. It's a two-time deal! Look around. Poke around. Don't trust me."]);
-  const res = await A2.mg("buyGear", { slot: "turntables", options: ["at_lp120_usb", "numark_tt1650", "technics_sl_1200mk2"], flaws: ["ok", "cosmetic", "wobble"], scams: 1, seller: "Eddie Two-Times", budget: Math.floor(S.money), difficulty: 2 }, fallbackBuy);
+  const res = await A2.mg("buyGear", { slot: "turntables", floors: { at_lp120_usb: PRICE }, options: ["at_lp120_usb", "numark_tt1650", "technics_sl_1200mk2"], flaws: ["ok", "cosmetic", "wobble"], scams: 1, seller: "Eddie Two-Times", budget: Math.floor(S.money), difficulty: 2 }, fallbackBuy);
   const paid = res && res.paid > 0 ? Math.min(Math.round(res.paid), Math.floor(S.money)) : 0;
   if (res && res.lemon && paid > 0) {
     // bought a lemon: it "worked this morning". Never a dead end: the two-time refund.
@@ -217,7 +217,7 @@ async function talkEddie(S) {
     await RP.lines(["@eddie A customer! I can smell it. Plasma? Plasma. It's a two-time deal. What do you need?", "Turntables. Real ones. For vinyl.", "@eddie Vinyl! The last honest medium. Look at me. I have turntables."]);
   }
   await RP.convo([
-    { text: "I want the AT-LP120-USB pair.", run: async () => buyDeck(S) },
+    { text: "I want the AT-LP120-USB pair.", when: S2 => !S2.f.a2_turntables, run: async () => buyDeck(S) },
     { text: "What's a two-time deal?", run: async () => { await RP.lines(["@eddie A two-time deal is a deal that you do twice.", "Twice?", "@eddie Twice. Once now, and once... also now. That's the beauty. You save twice."]); } },
     { text: "How much for the AT-LP120-USBs?", run: async () => {
       S.f.a2_eddiePrice = true;
@@ -233,6 +233,8 @@ async function talkEddie(S) {
       if (S.f.a2_bought1) { await RP.lines(["@eddie You bought the good one. Everything else in there is Barry Manilow's \"Greatest Hits\" in nine different covers."]); return; }
       await RP.lines(["@eddie Dollar crate. Well. Three-dollar crate. It's a two-time deal: one for three, or two for six.", "@eddie Crystal Waters. \"Gypsy Woman.\" Mercury Records, produced by The Basement Boys.", "The Basement Boys. Basement Tapes. That's an omen."]);
       if (S.money < 3) { await RP.say("I don't have three dollars. I have a smile and a bad idea."); return; }
+      const yes = await RP.choose(["Buy \"Gypsy Woman\" for $3", "Not today"]);
+      if (yes !== 0) { await RP.say("I put it back. Eddie puts it back twice. The crate remains a crate."); return; }
       RP.money(-3); RP.addRecord("crystal_waters_gypsy_woman"); S.f.a2_bought1 = true;
       await RP.lines(["@eddie That's your first purchase from a two-time dealer. You're basically family.", "Released April 3, 1991. Written by Neal Conway and Crystal Waters. It's going in the crate right next to \"Missing.\""]);
     } },

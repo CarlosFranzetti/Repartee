@@ -308,7 +308,11 @@ TITLE; SAVE and QUIT are disabled while a cutscene or mini-game runs, LOAD answe
 - in mini-games: `host.raf` skips frames and passes a timestamp with the paused time removed, `host.timeout` /
   `host.interval` stand still, key presses are swallowed (key-ups pass). **Not covered:** raw `setTimeout` /
   `setInterval` / `performance.now()` inside a mini-game or a room script (they keep running in real time) — use the
-  host helpers / `RP.wait` / the `t` argument instead;
+  host helpers / `RP.wait` / the `t` argument instead. Mini-game host extras: `host.now()` (ms, the same pause-aware
+  clock as the `host.raf` timestamp; use it for elapsed time) and `host.clear(h)` (cancels a `host.timeout` /
+  `host.interval` handle). Room scripts: `RP.gnow()` instead of `performance.now()`, `RP.ptimeout` / `RP.pclear`
+  instead of `setTimeout`. Raw timers are fine only for cosmetic one-shots (class removal, `focus()` deferral,
+  resize debounce) and for audio schedulers keyed to `AudioContext.currentTime` (frozen while paused);
 - suspends the AudioContext (`RP.audio.pause(on)`; every loop and scheduled note freezes in place, nothing is torn
   down) and pauses the streaming-patch `<audio>` elements.
 

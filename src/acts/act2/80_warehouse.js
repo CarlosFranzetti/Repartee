@@ -137,7 +137,7 @@ async function arrive(S) {
     "Tri-State Tape. Lou said he got his demos duplicated here in 1993. He said it smelled like hot plastic and ambition. It still does."
   ]);
   await RP.lines([
-    "@twinkie Okay. Here's what we need. People. A location, which we have. A sound system, which we kind of have. And a crowd by dawn.",
+    "@twinkie Okay. Here's what we need. The basement stays dark till there's a crowd worth the padlock. So: people. A place to gather them first, a roof, a loft, anywhere with a door. And a sound system we can borrow and carry down. All of it by dawn.",
     "@twinkie Talk to me when you're ready. I'll be here being calm."
   ]);
   RP.toast("Talk to Twinkie to plan the afters.");
@@ -161,7 +161,7 @@ async function fallbackAfter() {
 async function planAfters(S) {
   if (S.f.a2_afterDone) { await RP.say("The afters are in full swing. I have a crowd and a pair of turntables. I should do something about the second."); return; }
   if (!S.f.a2_whIntro) { await arrive(S); return; }
-  await RP.lines(["@twinkie Phone out. Contacts. Location: yes. Sound: whatever Moxie and Jess can lend. And a crowd before the sun comes up.", "@twinkie Go."]);
+  await RP.lines(["@twinkie Phone out. Contacts. Find the people, a place to gather them and a sound system, then we all walk down to the basement together before the sun comes up.", "@twinkie Go."]);
   let res;
   for (;;) {
     res = await A2.mg("afterParty", { needs: { people: 30, location: 1, sound: 1 }, contacts: ["Marcus", "Dani", "Jess", "Moxie", "Fitz", "Toby", "Kosmo"], time: 120, difficulty: 2 }, fallbackAfter);
@@ -176,8 +176,8 @@ async function planAfters(S) {
   RP.followers(30);
   RP.sfx("cheer");
   await RP.lines([
-    "They come. Marcus and plus three (it's actually plus seven). Dani in her apron. Moxie with a van full of PA. Fitz in his beanie. Toby, who has brought a gong.",
-    "@twinkie Look at that. A crowd. A sound system. A basement.",
+    "They come down the stairs in a long, loud line. Marcus and plus three (it's actually plus seven). Dani in her apron. Moxie with a van full of PA. Fitz in his beanie. Toby, who has brought a gong.",
+    "@twinkie Look at that. We found a place, we found a crowd, and now it's in a basement. A sound system, a crowd, a basement. A real night.",
     "I need turntables. Where are my turntables?"
   ]);
   await RP.say("Set up the decks: use the boxed turntables on the booth.", "nar");
@@ -332,10 +332,16 @@ RP.voice("a2_kowalski", { color: "#d8c8a8", prefix: "KOWALSKI: ", anchor: [320, 
 async function settleUp(S) {
   await RP.fadeTo(1, 900);
   RP.setClock("TUE 2:00 PM");
+  // the wallet and the narration agree: the rest of the rent really comes out of the cash in hand
+  const due = S.f.a2_kowDone ? 80 : 120, pay = Math.max(0, Math.min(due, Math.floor(S.money)));
+  if (pay > 0) RP.money(-pay);
+  const rentLine = pay >= due ? "@nar I slide the rent across the desk: $" + pay + (S.f.a2_kowDone ? ", the rest after the $40 on account," : "") + " on time, by one day, in cash, in an envelope that still smells like a basement."
+    : "@nar I slide across the desk everything I have, $" + pay + ", in an envelope that still smells like a basement. Kowalski writes \"balance: next week\" on a form. It's the one thing we agree on.";
   await RP.lines([
     "@nar Tuesday, 2:00 PM. Management office hours. Fifteen minutes, exactly as advertised.",
-    "@nar I slide the rent across the desk: on time, by one day, in cash, in an envelope that still smells like a basement.",
-    S.f.a2_kowDone ? "@a2_kowalski ...The pierogi kid. You already have the key. Fine. The rest is here, too. Huh. Hot water: next week." : "@a2_kowalski ...It's all here. Huh. The lock change was temporary. Here's your key. Hot water: next week.",
+    rentLine,
+    pay < due ? "@a2_kowalski ...Short. But honest, which I find rude. " + (S.f.a2_kowDone ? "You already have the key." : "Here's your key.") + " Hot water: next week."
+      : S.f.a2_kowDone ? "@a2_kowalski ...The pierogi kid. You already have the key. Fine. The rest is here, too. Huh. Hot water: next week." : "@a2_kowalski ...It's all here. Huh. The lock change was temporary. Here's your key. Hot water: next week.",
     "@nar It's always next week. It's the one thing in this building that never changes.",
     "@nar 4C is mine again. Gerald is on the windowsill, leaning at the light like a hostage who has made peace with it. Lou has been watering him through the wall with a turkey baster."
   ]);
@@ -352,7 +358,7 @@ async function finishAct(S) {
     [!!S.f.a2_inLoft, "Got into the Meserole loft"],
     [!!S.f.a2_loftFixed, "Fixed a dead PA"],
     [!!S.f.a2_louSecret, "Learned the secret of \"NYC 93\""],
-    [!!(S.f.a2_tobyDeal || S.f.a2_loot4c || S.f.a2_kowDone), "Used the long Tuesday: " + [S.f.a2_tobyDeal && "Linda", S.f.a2_loot4c && "the fire escape", S.f.a2_kowDone && "Kowalski"].filter(Boolean).join(", ")],
+    [!!(S.f.a2_tobyDeal || S.f.a2_loot4c || S.f.a2_kowDone), "Used the long Tuesday: " + [S.f.a2_tobyDeal && "Linda", S.f.a2_fireEscape && "the fire escape", S.f.a2_loot4c && !S.f.a2_fireEscape && "4C", S.f.a2_kowDone && "Kowalski"].filter(Boolean).join(", ")],
     [!!S.f.a2_turntables, "Bought your first turntables"],
     [!!S.f.a2_slot, "Booked a monthly slot at Basement Tapes"],
     [true, "Paid the rent, rescued Gerald, gave Marcus his couch back"]

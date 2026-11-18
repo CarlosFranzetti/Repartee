@@ -405,7 +405,7 @@ async function run(host, p, SK) {
     }
     floats.draw(c, dt);
   }
-  let last = performance.now();
+  let last = host.now();
   host.raf(t => { const dt = Math.min(0.1, (t - last) / 1000); last = t; try { draw(dt); } catch (e) { /* never throw */ } });
   draw(0);
 

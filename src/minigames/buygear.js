@@ -12,6 +12,7 @@
        scams: n                  how many listings are lemons (default by difficulty, always leaves >= 1 good unit)
        flaws: [...]              scripted scenario: one flaw key per listing ("ok" | "cosmetic" | a lemon flaw). Prices are then
                                  fixed (not rolled), so the story can quote the tag: AT-LP120-USB asks $215.
+       floors: { gearId: $ }     scripted scenario only: pin a listing's lowest price, so the story and the haggle agree (Act 2: the AT-LP120-USB pair, $180).
        asks: { gearId: $ }       scripted scenario only: pin a listing's tag; its haggle floor scales with it (Act 3: CDJ-900 asks $280).
        difficulty: 1..5, seed, arcade }
    Tags are ASKING prices before haggling. Turntables, decks and monitors are sold as a PAIR; the UI says so.
@@ -173,6 +174,8 @@ function buildScenario(p) {
     }
     const pin = forced && p.asks ? Math.round(+p.asks[g.id]) : 0;
     if (pin > 0) { L.floor = r5(L.floor * pin / L.ask); L.ask = pin; }
+    const pinFloor = forced && p.floors ? Math.round(+p.floors[g.id]) : 0;   // scripted: the exact price he will not go below (the story quotes it)
+    if (pinFloor > 0 && pinFloor < L.ask) L.floor = pinFloor;
     L.askNow = L.ask; L.floor0 = L.floor; L.ask0 = L.ask;
     L.patience = [5, 4, 4, 3, 3][diff - 1];
     L.status = "open"; L.agreed = null; L.lastOffer = null; L.probes = {}; L.notes = {}; L.seen = false; L.called = false; L.powered = false; L.cosLev = false;
@@ -194,7 +197,7 @@ function buildScenario(p) {
   return { listings, slot, boutique, pair: !boutique && !!PAIR[slot], budget, diff, best, seed, seller: boutique ? "Mercè" : (typeof p.seller === "string" ? p.seller : "Eddie Two-Times") };
 }
 
-function scoreWorking(sc, L, paid, info) {
+function scoreParts(sc, L, paid, info) {
   const base = 45;
   const pick = 20 * clamp(L.gear.price / Math.max(1, sc.best ? sc.best.gear.price : L.gear.price), 0, 1);
   const gap = Math.max(1, L.ask0 - L.floor0);
@@ -202,8 +205,22 @@ function scoreWorking(sc, L, paid, info) {
   const scams = sc.listings.filter(l => l.scam).length;
   const caught = sc.listings.filter(l => l.scam && (l.called || l.seen)).length;
   const sense = scams ? 20 * (caught / scams) : 20;
-  const score = base + pick + hag + clamp(sense - 7 * (info.falseCalls || 0), 0, 20);
-  return Math.round(clamp(score, 0, 100));
+  const senseNet = clamp(sense - 7 * (info.falseCalls || 0), 0, 20);
+  return { base, pick, hag, scams, caught, sense, senseNet, gap };
+}
+function scoreWorking(sc, L, paid, info) {
+  const t = scoreParts(sc, L, paid, info);
+  return Math.round(clamp(t.base + t.pick + t.hag + t.senseNet, 0, 100));
+}
+/* one line per way the score fell short of 100 (the same numbers scoreWorking adds up) */
+function scoreReasons(sc, L, paid, info) {
+  const t = scoreParts(sc, L, paid, info), out = [], money = n => "$" + Math.round(n).toLocaleString("en-US");
+  const lost = (max, got) => Math.round(max - got);
+  if (lost(20, t.pick) > 0) out.push("-" + lost(20, t.pick) + " a better pair was in reach (" + (sc.best ? sc.best.gear.brand + " " + sc.best.gear.model : "another model") + ")");
+  if (lost(15, t.hag) > 0) out.push("-" + lost(15, t.hag) + " you paid " + money(paid) + "; the lowest he'd go was " + money(L.floor0));
+  if (t.scams && lost(20, t.sense) > 0) out.push("-" + lost(20, t.sense) + " " + (t.scams - t.caught) + " of " + t.scams + " lemons never spotted or called out");
+  if (info.falseCalls) out.push("-" + Math.round(Math.min(7 * info.falseCalls, t.sense)) + " false accusation" + (info.falseCalls > 1 ? "s" : ""));
+  return out;
 }
 
 /* ------------------------------------------------------------------ css */
@@ -586,7 +603,7 @@ RP.mg.register("buyGear", {
       slider.disabled = !open || l.agreed != null; btnOffer.disabled = !open || l.agreed != null;
       ofEl.textContent = (l.agreed != null ? "DEAL " : "ASK ") + money(price) + (sc.pair ? " · PAIR" : "");
       btnBS.disabled = !open;
-      btnBuy.textContent = st.buying ? "SURE? " + money(price) : sc.budget < price ? "NEED " + money(price - sc.budget) + " MORE" : "BUY " + money(price);
+      btnBuy.textContent = st.buying ? "SURE? " + money(price) : sc.budget < price ? (l.agreed == null ? "OVER BY " + money(price - sc.budget) + ": HAGGLE" : "NEED " + money(price - sc.budget) + " MORE") : "BUY " + money(price);
       btnBuy.classList.toggle("confirm", st.buying);
       btnBuy.disabled = !open || sc.budget < price;
       cashEl.innerHTML = cashHtml();
@@ -760,6 +777,7 @@ RP.mg.register("buyGear", {
       }
       else el("li", { html: "Your place on the list: <b>#" + st.place + "</b>" }, ul);
       el("li", { html: "Score: <b>" + res.score + " / 100</b>" }, ul);
+      if (!boutique && l && res.ok) scoreReasons(sc, l, res.paid, { falseCalls: st.falseCalls }).forEach(t => el("li", { cls: "bg-why", text: t }, ul));
       const go = el("button", { cls: "btn primary", type: "button", text: "CONTINUE" }, card);
       go.addEventListener("click", () => { if (resolveFn) { const f = resolveFn; resolveFn = null; f(res); } });
       go.focus({ preventScroll: true });

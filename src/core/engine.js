@@ -802,14 +802,18 @@ async function phoneMenu() {
   if (fast) return;
   const opts = [["msgs", "Messages (" + S.msgs.length + ")"], ["crate", "Record crate (" + S.records.length + ")"], ["gear", "My setup"]];
   if (!S.f.noTravel && availableLocations().length) opts.splice(1, 0, ["map", "Subway map"]);
+  // levels can add entries at the top (RP.phoneExtras: functions S => [[label, async S => {...}], ...]), e.g. "Call Dante"
+  const extra = (RP.phoneExtras || []).flatMap(f => { try { return f(S) || []; } catch (e) { return []; } });
+  extra.forEach((e, n) => opts.splice(n, 0, ["x" + n, e[0]]));
   opts.push(["hint", "Show what I can click"], ["save", "Save game"], ["load", "Load game"], ["title", "Quit to title"], ["back", "Back"]);
   const i = await choose(opts.map(o => o[1]));
   const k = opts[i][0];
+  if (/^x\d+$/.test(k)) { await extra[+k.slice(1)][1](S); return; }
   if (k === "msgs") await RP.phone();
   if (k === "map") await RP.travel();
   if (k === "crate") await RP.crateView();
   if (k === "gear") await RP.gearView();
-  if (k === "save") { save(); toast("Saved."); const n = await pickSlot("save"); if (n) saveSlot(n, true); }
+  if (k === "save") { save(); const n = await pickSlot("save"); if (n) saveSlot(n, true); else toast("Autosaved."); }   // one message: the slot's, or the autosave's if the picker was closed
   // the menu runs at busy depth 1 (its own RP.run, or the act() that used the phone); deeper means a cutscene opened it
   if (k === "load") { if (busyN > 1) toast("Finish this first"); else { const n = await pickSlot("load"); if (n) await loadSlot(n, { force: true }); } }
   if (k === "hint") setTimeout(revealHotspots, 50);
@@ -843,7 +847,7 @@ MG.play = async function (id, params = {}) {
   let rafs = [];
   /* pause: the host's rAF loops skip frames while paused and hand the mini-game a clock with the paused time taken
      out (so dt never jumps), and host.timeout / host.interval stand still. Raw setTimeout/setInterval and
-     performance.now() inside a mini-game are not covered. */
+     performance.now() inside a mini-game are not covered: use host.now() / host.timeout / host.interval / host.clear. */
   const mgBase = pausedMs;
   const host = {
     root, ov, S, params, el: (t, a, p) => el(t, a, p || root),
@@ -853,6 +857,10 @@ MG.play = async function (id, params = {}) {
     raf(fn) { let id; const loop = t => { if (!paused && fn(t - (pausedMs - mgBase)) === false) return; id = requestAnimationFrame(loop); rafs[0] = id; }; id = requestAnimationFrame(loop); rafs.push(() => cancelAnimationFrame(id)); cleanups.push(() => cancelAnimationFrame(id)); },
     timeout(fn, ms) { const t = ptimeout(fn, ms); cleanups.push(() => pclear(t)); return t; },
     interval(fn, ms) { const h = { t: null }; const tick = () => { h.t = ptimeout(tick, ms); fn(); }; h.t = ptimeout(tick, ms); cleanups.push(() => pclear(h.t)); return h; },
+    /* pause-aware clock in ms: the same clock as the timestamp host.raf passes (stands still while paused), and a
+       canceller for host.timeout / host.interval handles */
+    now: () => gnow() + mgBase,
+    clear(h) { if (h) pclear(h.id !== undefined ? h : h.t); },
     cleanup(fn) { cleanups.push(fn); },
     /* the header: logo on the left; on the right the sub label (e.g. "Arcade") and a PAUSE button (the only on-screen
        pause inside a mini-game, which phones need: they have no Pause key) */

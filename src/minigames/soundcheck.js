@@ -377,11 +377,11 @@ RP.mg.register("soundCheck", {
     const setP = (prm, v, tc) => { try { prm.setTargetAtTime(v, AC.currentTime, tc || 0.04); } catch (e) { /* ignore */ } };
     function startDeck(i) {
       const d = S.deck[i];
-      if (d.loop || !aud) { d.loop = d.loop || { silent: true, phase: () => (performance.now() / 1000) * 2.03, stop() {} }; return; }
+      if (d.loop || !aud) { d.loop = d.loop || { silent: true, phase: () => (host.now() / 1000) * 2.03, stop() {} }; return; }
       try {
         d.loop = RP.audio.loop({ genre: i === 0 ? "house" : "deep house", bpm: 122, seed: 7 + i * 5, energy: 3, volume: 0.62, dest: aud.dk[i].input });
         d.loop.start();
-      } catch (e) { d.loop = { silent: true, phase: () => (performance.now() / 1000) * 2.03, stop() {} }; }
+      } catch (e) { d.loop = { silent: true, phase: () => (host.now() / 1000) * 2.03, stop() {} }; }
     }
     function stopDeck(i) { const d = S.deck[i]; if (d.loop) { try { d.loop.stop(0.12); } catch (e) { /* ignore */ } d.loop = null; } }
     host.cleanup(() => {
@@ -389,7 +389,7 @@ RP.mg.register("soundCheck", {
       if (aud) {
         try { aud.out.gain.cancelScheduledValues(AC.currentTime); aud.out.gain.setValueAtTime(0.0001, AC.currentTime); } catch (e) { /* ignore */ }
         aud.src.forEach(s => { try { s.stop(); } catch (e) { /* ignore */ } });
-        setTimeout(() => aud && aud.nodes.forEach(n => { try { n.disconnect(); } catch (e) { /* ignore */ } }), 250);
+        RP.ptimeout(() => aud && aud.nodes.forEach(n => { try { n.disconnect(); } catch (e) { /* ignore */ } }), 250);
       }
     });
 

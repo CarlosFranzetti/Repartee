@@ -12,10 +12,54 @@ mini-game sweep. "Run" names where a finding came from.
 |---|---|---|---|---|
 | 2-19 | Money | Every subway trip costs 3 dollars and the ATM fee is 10, with no warning before a wasted trip. | design | L2 audio take |
 
-**Levels 3-5, still open after the blind-take fixes**
-- 4-8 (part): Katja's hint to play something unknown in Berlin has no pay-off, because the white label isn't in the
-  Level 4 crowd.Read crate.
-- 3-11 (part): "It's Dj lowpass." wasn't found in the Level 3 source; if it shows again, note where.
+**Level 1 blind take on the 2026-11-18 build (after the pause, save-slot and Phase 1-2 changes)**
+
+The tester finished the level in about 330 commands over two sessions; their estimate for a human's first play is
+35 to 50 minutes. Pause (in a room and inside beat.Match), the sound switch, saving to a slot and loading it back all
+behaved. No hint line was needed. Fixed the same day:
+- Dante's line about the second hour printed as a lone "@" (a string was sliced where an array was meant), so the USB
+  set choice looked consequence-free. Now Dante comments on the style that was loaded.
+- Calling Dante: Use phone in the bedroom leaves "Use phone with...", and the MENU had no call. The MENU's phone menu
+  now offers "Call Dante" once the texts are read (`RP.phoneExtras`, a hook any level can use).
+- The recycling bags' hotspot covered most of the chained bike, so Look at the bike described the bags.
+- Text: the extinguisher line mentioned the popcorn before the kid had it; Sal's "for a Wednesday" on a Tuesday; the
+  slice menu's wrong pie maths; Old Hank repeating two of Lou's lines word for word.
+- The harness numbered choices that the game already numbers ("1. 1. ...").
+Checked and not bugs: Use CDJs runs the same deck test as Push (real clicks; the silent step was a harness timing
+miss); the can run is capped at six bags, about nine dollars in all; the package can be peeked at (Open it).
+Left open, minor: crowd.Read's "ran ahead of the build" feedback doesn't say which picks; Marcus's "+3 on the list"
+text and the unpaid temp shift have no payoff inside Level 1; the beat nudge feels slow.
+
+**Level 2 blind take on the 2026-11-18 build**
+
+The tester finished the level (about 640 harness commands over two sessions; their estimate for a human's first play
+is 60 to 75 minutes). Pause (in a room and in sound.Check), the sound switch and save/load to slots all behaved.
+Fixed the same day:
+- Money dead zone in the open days: Rosa's crate runs were counted per chapter, so "once a day" never came back and
+  the only income was sleeping to Friday. Runs now reset each in-game day, the couch offers "Sleep till tomorrow
+  morning", and the hints tell a player who is short what pays (Rosa again tomorrow, Friday's door money).
+- Day and clock: the couch and day-check lines said "Tuesday" whatever the HUD said, and one beat wound the clock
+  back. They now read the real day and the clock never goes backwards.
+- The level summary credited the fire escape to a player who got in with Kowalski's key; the putty knife and the
+  window acknowledge the wasted four dollars on the key route.
+- Text and state: a Kowalski line spoken under the kid's name; the pierogi request said twice; Rhonda ignoring the
+  Con Ed bill in hand; Eddie still offering the pair you own; Marcus's rent line after paying Kowalski; the "Pierogi
+  sounds great" option before Dani's text was shown; rent narrated at the end but not deducted.
+- Eddie's "Got any records?" spent $3 without asking; it now asks.
+- after.Party: the goal (30 guests, a place, a sound system, 120 minutes) is stated up front; a choice that takes
+  longer than the time left is disabled; Twinkie's lines before and after now match what the mini-game has you do.
+- buy.Gear: "NEED $5 MORE" compared the tag with your cash, not your offer (now "OVER BY $5: HAGGLE"); Eddie's quoted
+  $180 and the mini-game's floor now agree; the result card lists what cost points.
+- The phone menu toasted "Saved." before a slot was picked; now one message follows the pick.
+Checked and not bugs: doubled speaker labels ("ROSA: ROSA:") are the harness naming an off-screen voice that already
+carries its name; the taxi's "No thanks" does not book him (the first option has focus, so Enter does); promoter.Talk's
+record count reads the real crate; Kowalski's office hour cannot be missed (it is not time-gated).
+
+**Levels 3-5, formerly open after the blind-take fixes (closed 2026-11-18)**
+- 4-8 (part): Katja's hint to play something unknown in Berlin. Closed: the white label "NYC 93" is in the Halle Neun
+  crowd.Read crate, and playing it gives Katja's "The unknown one" lines and a follower bonus (`a4_whitePlayed`).
+- 3-11 (part): "It's Dj lowpass." Found: Kosmo's Thursday line in `src/acts/act3/35_nights.js` printed the DJ name
+  exactly as typed. It now goes through `A3.djName`, like every other line that says the name.
 
 **Round 2 blind takes of Levels 3-5 (2026-11-03, on the reworked build after PR #11)**
 

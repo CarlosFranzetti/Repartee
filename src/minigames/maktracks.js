@@ -123,11 +123,11 @@ function makeEngine() {
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     Object.assign(E, { comp, master, filt, nb, live: true, bus: null });
     E.newBus = () => {
-      if (E.bus) { const old = E.bus; try { old.gain.setTargetAtTime(0.0001, AC.currentTime, 0.02); } catch (e) { /* ignore */ } setTimeout(() => { try { old.disconnect(); } catch (e) { /* ignore */ } }, 400); }
+      if (E.bus) { const old = E.bus; try { old.gain.setTargetAtTime(0.0001, AC.currentTime, 0.02); } catch (e) { /* ignore */ } RP.ptimeout(() => { try { old.disconnect(); } catch (e) { /* ignore */ } }, 400); }
       E.bus = AC.createGain(); E.bus.gain.value = 1; E.bus.connect(filt); return E.bus;
     };
     E.newBus();
-    E.dispose = () => { try { master.gain.setTargetAtTime(0.0001, AC.currentTime, 0.03); } catch (e) { /* ignore */ } setTimeout(() => { try { master.disconnect(); filt.disconnect(); comp.disconnect(); if (E.bus) E.bus.disconnect(); } catch (e) { /* ignore */ } }, 400); };
+    E.dispose = () => { try { master.gain.setTargetAtTime(0.0001, AC.currentTime, 0.03); } catch (e) { /* ignore */ } RP.ptimeout(() => { try { master.disconnect(); filt.disconnect(); comp.disconnect(); if (E.bus) E.bus.disconnect(); } catch (e) { /* ignore */ } }, 400); };
   } catch (e) { E.live = false; }
   return E;
 }
@@ -505,7 +505,7 @@ RP.mg.register("makTracks", {
     };
     const E = makeEngine();
     host.cleanup(() => { try { E.dispose && E.dispose(); } catch (e) { /* ignore */ } });
-    const clock = () => (E.live ? E.AC.currentTime : performance.now() / 1000);
+    const clock = () => (E.live ? E.AC.currentTime : host.now() / 1000);
     const secOf = b => st.arr[b];
     const origSlice = n => kit.slices[n - 1];
 

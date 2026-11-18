@@ -183,7 +183,7 @@ async function talkRhonda(S) {
     { text: "I'd like to donate plasma.", when: S2 => !S2.f.a2_formGot, once: true, run: async () => {
       await RP.lines([
         "@a2_rhonda New donor? Aren't you brave. Okay. ID, proof of address and Form 27-B.",
-        "ID's in my wallet. Proof of address is behind a locked door in Bushwick. What's Form 27-B?",
+        RP.has("a2_bill") ? "ID's in my wallet. Proof of address: I've got a Con Ed bill from my neighbor Lou. What's Form 27-B?" : "ID's in my wallet. Proof of address is behind a locked door in Bushwick. What's Form 27-B?",
         "@a2_rhonda Voluntary Acknowledgment of Voluntary Donation. It's the one where you say you volunteered voluntarily.",
         "@a2_rhonda Pen's on the chain. Don't ask about the chain."
       ]);

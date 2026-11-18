@@ -672,7 +672,7 @@ GK.tone = function (o = {}) {
       stop() {
         if (!alive) return; alive = false; clearInterval(iv);
         try { const t = AC.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0.0001, t + 0.12); } catch (e) { /* ignore */ }
-        setTimeout(() => { nodes.concat(humNodes || [], motor ? [motor] : []).forEach(n => { try { n && n.stop(); } catch (e) { /* ignore */ } }); try { out.disconnect(); comp.disconnect(); } catch (e) { /* ignore */ } }, 220);
+        RP.ptimeout(() => { nodes.concat(humNodes || [], motor ? [motor] : []).forEach(n => { try { n && n.stop(); } catch (e) { /* ignore */ } }); try { out.disconnect(); comp.disconnect(); } catch (e) { /* ignore */ } }, 220);
       },
       vol(v) { try { out.gain.setTargetAtTime(v, AC.currentTime, 0.03); } catch (e) { /* ignore */ } },
       bend(cents) { try { if (bendSrc) bendSrc.offset.setTargetAtTime(cents, AC.currentTime, 0.02); } catch (e) { /* ignore */ } },
@@ -713,7 +713,7 @@ GK.band = function (cutIdx) {
         }
       } catch (e) { /* ignore */ }
     }, 25);
-    return { stop() { if (!alive) return; alive = false; clearInterval(iv); try { const t = AC.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.0001, t + 0.15); } catch (e) { /* ignore */ } setTimeout(() => { try { master.disconnect(); comp.disconnect(); } catch (e) { /* ignore */ } }, 300); } };
+    return { stop() { if (!alive) return; alive = false; clearInterval(iv); try { const t = AC.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.0001, t + 0.15); } catch (e) { /* ignore */ } RP.ptimeout(() => { try { master.disconnect(); comp.disconnect(); } catch (e) { /* ignore */ } }, 300); } };
   } catch (e) { return dead; }
 };
 })();

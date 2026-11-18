@@ -2346,7 +2346,7 @@ ST.flash = () => {
 /* ---- resolving: artist + title -> a preview url, cached per record ----
    iTunes Search: https://itunes.apple.com/search?term=...&media=music&entity=song&limit=N returns
    { resultCount, results: [{ artistName, trackName, previewUrl, trackTimeMillis, ... }] } with CORS open. */
-const norm = s => String(s || "").toLowerCase().replace(/\(.*?\)|\[.*?\]/g, " ").replace(/feat\.?|featuring|ft\./g, " ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\(.*?\)|\[.*?\]/g, " ").replace(/feat\.?|featuring|ft\./g, " ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
 /* the catalog names records the way a crate does ("Weekend / Just Wanna Dance", "FK-EP", "X presents Y featuring Z");
    the store names songs. Search and score on the lead artist and the first title. */
 const simpArtist = a => String(a || "").replace(/\s+(featuring|feat\.?|ft\.|presents?|pres\.|with|vs\.?|&)\s+.*$/i, "").trim();
@@ -2355,9 +2355,12 @@ const simpTitle = t => { const m = /\(incl\.\s*([^)]+)\)/i.exec(t || ""); if (m)
 ST.simp = { artist: simpArtist, title: simpTitle };
 const score = (rec, r) => {
   const a = norm(simpArtist(rec.artist)), t = norm(simpTitle(rec.title)), ra = norm(r.artistName), rt = norm(r.trackName);
+  const rc = norm(r.collectionName).replace(/ (ep|single)$/, "");   // the release the track is on
+  const sq = x => x.replace(/ /g, "");   // "M.B.O." and "MBO" are the same act
   let s = 0;
-  if (ra === a) s += 4; else if (ra.includes(a) || a.includes(ra)) s += 2;
-  if (rt === t) s += 4; else if (rt.includes(t) || t.includes(rt)) s += 2;
+  if (ra === a || sq(ra) === sq(a)) s += 4; else if (ra.includes(a) || a.includes(ra)) s += 2;
+  if (rt === t) s += 4; else if (rt && (rt.includes(t) || t.includes(rt))) s += 2;
+  else if (rc && rc === t) s += 2;   // the catalog entry is an album or EP: any track from that release will do
   else return -99; // the title must match: an artist-only hit would play some other song by them
   // judge "remix / live / edit" on the raw titles: norm() strips the brackets those words usually sit in
   const extra = /remix|live|karaoke|instrumental|edit|version|mix\b/i;
@@ -2380,36 +2383,41 @@ const jsonp = (url, ms) => new Promise((res, rej) => {
   sc.onload = () => { if (!called) done(false, new Error("no callback")); }; // loaded but never called back (not JSONP)
   sc.src = url + "&callback=" + cb; document.head.appendChild(sc);
 });
-const searchUrl = (rec, artist) => "https://itunes.apple.com/search?term=" + encodeURIComponent((artist || simpArtist(rec.artist)) + " " + simpTitle(rec.title)) + "&media=music&entity=song&limit=8";
+const searchUrl = rec => "https://itunes.apple.com/search?term=" + encodeURIComponent(simpArtist(rec.artist) + " " + simpTitle(rec.title)) + "&media=music&entity=song&limit=8";
 // "X presents Y": the store often files the record under Y, so Y is tried when X finds nothing
 const presented = a => { const m = /\s+(?:presents?|pres\.)\s+(.+?)(?:\s+(?:featuring|feat\.?|ft\.)\s.*)?$/i.exec(a || ""); return m ? m[1].trim() : null; };
+const sides = t => String(t || "").replace(/ \(.*\)$/, "").split(/\s+\/\s+/).map(x => x.trim()).filter(Boolean);   // "A / B" -> [A, B]
+/* A record is looked up under, in order: its hand-kept alias (src/data/stream_alias.js, for releases the store files
+   under another name), its own name, the presented act, then the other sides of an "A / B" title. At most four tries. */
 ST.resolve = async rec => {
   const c = ST.cache[rec.id]; if (c !== undefined) return c;
-  let out = await lookup(rec, null);
-  const alt = presented(rec.artist);
-  if (!out && alt) out = await lookup(rec, alt);
+  const alias = ((RP.data && RP.data.streamAlias) || {})[rec.id];
+  const tries = alias ? [alias, {}] : [{}];
+  const alt = presented(rec.artist); if (alt) tries.push({ artist: alt });
+  sides(rec.title).slice(1).forEach(t => tries.push({ title: t }));
+  let out = null;
+  for (const q of tries.slice(0, 4)) { out = await lookup(Object.assign({}, rec, q), q.artist || q.title ? [q.artist, q.title].filter(Boolean).join(" - ") : ""); if (out) break; }
   return (ST.cache[rec.id] = out);
 };
-async function lookup(rec, artist) {
+async function lookup(rec, as) {
   let out = null, j = null, why = "";
-  try { j = await jsonp(searchUrl(rec, artist), 8000); }
+  try { j = await jsonp(searchUrl(rec), 8000); }
   catch (e0) {
     note("jsonp failed:", e0.message, "- retrying");   // Apple throttles bursts with an empty reply; one retry after a pause
     await new Promise(r => setTimeout(r, 1500));
-    try { j = await jsonp(searchUrl(rec, artist), 8000); } catch (e1) {
+    try { j = await jsonp(searchUrl(rec), 8000); } catch (e1) {
     note("jsonp failed again:", e1.message);
     const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 8000);
-    try { const r = await fetch(searchUrl(rec, artist), { signal: ac.signal }); if (r.ok) j = await r.json(); else why = "search http " + r.status; }
+    try { const r = await fetch(searchUrl(rec), { signal: ac.signal }); if (r.ok) j = await r.json(); else why = "search http " + r.status; }
     catch (e2) { why = "search failed (" + (e2.message || e2) + ")"; } finally { clearTimeout(tm); }
     }
   }
   if (j) {
-    const scored = rec2 => (j.results || []).filter(x => x.previewUrl).map(x => [score(rec2, x), x]).sort((p, q) => q[0] - p[0])[0];
-    const best = scored(artist ? Object.assign({}, rec, { artist }) : rec);
+    const best = (j.results || []).filter(x => x.previewUrl).map(x => [score(rec, x), x]).sort((p, q) => q[0] - p[0])[0];
     if (best && best[0] >= 4) out = { url: best[1].previewUrl, title: best[1].trackName, artist: best[1].artistName, duration: Math.round((best[1].trackTimeMillis || 0) / 1000), preview: true };
     else why = best && best[0] > -99 ? "no close match (best: " + best[1].artistName + " - " + best[1].trackName + ")" : "no match on iTunes";
   }
-  note(rec.id, (artist ? "(as " + artist + ") " : "") + (out ? "-> " + out.artist + " - " + out.title : "-> " + why));
+  note(rec.id, (as ? "(as " + as + ") " : "") + (out ? "-> " + out.artist + " - " + out.title : "-> " + why));
   if (!out) ST.lastWhy = why;
   return out;
 }
@@ -6561,14 +6569,18 @@ async function phoneMenu() {
   if (fast) return;
   const opts = [["msgs", "Messages (" + S.msgs.length + ")"], ["crate", "Record crate (" + S.records.length + ")"], ["gear", "My setup"]];
   if (!S.f.noTravel && availableLocations().length) opts.splice(1, 0, ["map", "Subway map"]);
+  // levels can add entries at the top (RP.phoneExtras: functions S => [[label, async S => {...}], ...]), e.g. "Call Dante"
+  const extra = (RP.phoneExtras || []).flatMap(f => { try { return f(S) || []; } catch (e) { return []; } });
+  extra.forEach((e, n) => opts.splice(n, 0, ["x" + n, e[0]]));
   opts.push(["hint", "Show what I can click"], ["save", "Save game"], ["load", "Load game"], ["title", "Quit to title"], ["back", "Back"]);
   const i = await choose(opts.map(o => o[1]));
   const k = opts[i][0];
+  if (/^x\d+$/.test(k)) { await extra[+k.slice(1)][1](S); return; }
   if (k === "msgs") await RP.phone();
   if (k === "map") await RP.travel();
   if (k === "crate") await RP.crateView();
   if (k === "gear") await RP.gearView();
-  if (k === "save") { save(); toast("Saved."); const n = await pickSlot("save"); if (n) saveSlot(n, true); }
+  if (k === "save") { save(); const n = await pickSlot("save"); if (n) saveSlot(n, true); else toast("Autosaved."); }   // one message: the slot's, or the autosave's if the picker was closed
   // the menu runs at busy depth 1 (its own RP.run, or the act() that used the phone); deeper means a cutscene opened it
   if (k === "load") { if (busyN > 1) toast("Finish this first"); else { const n = await pickSlot("load"); if (n) await loadSlot(n, { force: true }); } }
   if (k === "hint") setTimeout(revealHotspots, 50);
@@ -6602,7 +6614,7 @@ MG.play = async function (id, params = {}) {
   let rafs = [];
   /* pause: the host's rAF loops skip frames while paused and hand the mini-game a clock with the paused time taken
      out (so dt never jumps), and host.timeout / host.interval stand still. Raw setTimeout/setInterval and
-     performance.now() inside a mini-game are not covered. */
+     performance.now() inside a mini-game are not covered: use host.now() / host.timeout / host.interval / host.clear. */
   const mgBase = pausedMs;
   const host = {
     root, ov, S, params, el: (t, a, p) => el(t, a, p || root),
@@ -6612,6 +6624,10 @@ MG.play = async function (id, params = {}) {
     raf(fn) { let id; const loop = t => { if (!paused && fn(t - (pausedMs - mgBase)) === false) return; id = requestAnimationFrame(loop); rafs[0] = id; }; id = requestAnimationFrame(loop); rafs.push(() => cancelAnimationFrame(id)); cleanups.push(() => cancelAnimationFrame(id)); },
     timeout(fn, ms) { const t = ptimeout(fn, ms); cleanups.push(() => pclear(t)); return t; },
     interval(fn, ms) { const h = { t: null }; const tick = () => { h.t = ptimeout(tick, ms); fn(); }; h.t = ptimeout(tick, ms); cleanups.push(() => pclear(h.t)); return h; },
+    /* pause-aware clock in ms: the same clock as the timestamp host.raf passes (stands still while paused), and a
+       canceller for host.timeout / host.interval handles */
+    now: () => gnow() + mgBase,
+    clear(h) { if (h) pclear(h.id !== undefined ? h : h.t); },
     cleanup(fn) { cleanups.push(fn); },
     /* the header: logo on the left; on the right the sub label (e.g. "Arcade") and a PAUSE button (the only on-screen
        pause inside a mini-game, which phones need: they have no Pause key) */
@@ -8255,6 +8271,32 @@ RP.data.records = (RP.data.records || []).concat([
 })();
 
 } catch (e) { console.error("load error in src/data/records_more.js", e); (window.__loadErrors = window.__loadErrors || []).push("src/data/records_more.js: " + e); }
+/* ---- src/data/stream_alias.js ---- */
+try {
+/* Aliases for the streaming patch (src/core/stream.js): records the iTunes store files under another name, or
+   releases (EPs, albums, compilations) where a named track has to stand in for the whole record. Keyed by record id;
+   `artist` and/or `title` replace the catalog's for the lookup only. An alias is tried first and still has to pass
+   the matcher, so a wrong one falls through to the normal lookup. Check with `node tools/stream-check.mjs <id>`.
+   Checked against the store on 2026-11-18. Track-to-release pairings are from memory; hand-fix any that are wrong.
+   Not in the store on that date, so they keep the built-in loop: Frankie Knuckles presents Satoshi Tomiie "Tears",
+   Underground Resistance "Riot EP", Grandmaster Flash "...on the Wheels of Steel", Jeff Mills "Waveform Transmission
+   Vol. 1". */
+(function () {
+"use strict";
+const RP = window.RP;
+RP.data = RP.data || {};
+RP.data.streamAlias = {
+  "francois_k_fk_ep": { title: "Hypnodelic" },
+  "jeff_mills_kat_moda_ep": { title: "The Bells" },
+  "drexciya_the_quest": { title: "Wavejumper" },
+  "69_4_jazz_funk_classics": { title: "My Machines" },
+  "marcel_dettmann_dettmann": { title: "Argon" },
+  "ricardo_villalobos_alcachofa": { title: "Dexter" },
+  "klein_mbo_dirty_talk": { artist: "Klein MBO" }
+};
+})();
+
+} catch (e) { console.error("load error in src/data/stream_alias.js", e); (window.__loadErrors = window.__loadErrors || []).push("src/data/stream_alias.js: " + e); }
 /* ---- src/data/stream_ids.js ---- */
 try {
 /* YouTube video ids for the records, for a future full-length path of the streaming patch (an embedded player, or a
@@ -8870,6 +8912,7 @@ RP.mg.register("afterParty", {
     function showHome() {
       view = "home";
       setScreen(() => {
+        if (G.actions === 0) el("div", { cls: "ap-bubble", text: "THE GOAL: " + NEED + " guests actually at the party, a place and a sound system. Sunrise is at " + NK.clock(START + T0) + " (" + fmtLeft(G.mins) + " from now). Every call costs minutes." }, screen);
         if (G.battery <= 0) el("div", { cls: "ap-bubble ev", text: "PHONE DEAD. Only in-person things work now: charge at the bodega, work the street, or talk to Hamid and Cal." }, screen);
         const q = el("div", { cls: "ap-quick" }, screen);
         const qb = (label, costs, fn, why) => { const b = el("button", { cls: "ap-q", type: "button" }, q); el("b", { text: label }, b); if (why) el("span", { cls: "why", text: why }, b); else el("span", { cls: "c", html: costs }, b); if (why) b.disabled = true; else b.addEventListener("click", fn); return b; };
@@ -8995,7 +9038,7 @@ RP.mg.register("afterParty", {
         el("h3", { html: "<span>" + (ev.phase === "party" ? "AT THE PARTY" : "NOTIFICATION") + "</span>" }, screen);
         const b0 = el("div", { cls: "ap-bubble ev" }, screen); el("div", { html: "<b style='font-weight:400;color:var(--pink);letter-spacing:.08em'>" + ev.title + "</b>" }, b0); el("div", { text: ev.text }, b0);
         ev.choices.forEach(ch => {
-          const why = ch.cost && ch.cost.fav && G.favors < ch.cost.fav ? "no favors left" : ch.cost && ch.cost.cash && G.cash < ch.cost.cash ? "not enough cash" : null;
+          const why = ch.cost && ch.cost.fav && G.favors < ch.cost.fav ? "no favors left" : ch.cost && ch.cost.cash && G.cash < ch.cost.cash ? "not enough cash" : ch.cost && ch.cost.min && G.mins < ch.cost.min ? "too long: " + G.mins + " min left" : null;
           const b = el("button", { cls: "ap-opt", type: "button" }, screen); el("span", { html: ch.label + (why ? "<span class='why'>" + why + "</span>" : "") }, b); el("span", { cls: "c", html: fxChips(ch) }, b);
           if (why) b.disabled = true; else b.addEventListener("click", () => {
             const r = ch.run() || {};
@@ -9204,7 +9247,7 @@ RP.mg.register("afterParty", {
         } else { phone.style.height = ""; main.style.gridTemplateColumns = ""; NK.fit(scene.cv, { clientWidth: wide ? 640 : avail }, W, H, wide ? 640 : 720); }
       }
       layout(); updateHud(); showHome();
-      setMsg("It's 4:10 AM and the party is dead. You need " + NEED + " people, a place and a sound system before sunrise. Start with Twinkie.");
+      setMsg("It's 4:10 AM and the party is dead. Sunrise is at " + NK.clock(START + T0) + ", " + T0 + " minutes away. You need " + NEED + " guests who actually show up, a place and a sound system before then. Start with Twinkie.");
       let last = null;
       host.raf(tm => {
         if (G.over && !host.root.isConnected) return false;
@@ -9413,21 +9456,21 @@ RP.mg.register("beatMatch", {
       const up = () => { b.classList.remove("down"); off(); };
       b.addEventListener("pointerdown", down); b.addEventListener("pointerup", up); b.addEventListener("pointerleave", up); b.addEventListener("pointercancel", up);
     };
-    const fh = d => [() => { clearInterval(repeat); fine(d); repeat = setInterval(() => fine(d), 160); }, () => clearInterval(repeat)];
+    const fh = d => [() => { host.clear(repeat); fine(d); repeat = host.interval(() => fine(d), 160); }, () => host.clear(repeat)];
     hold(fineDn, ...fh(-0.05)); hold(fineUp, ...fh(0.05));
     hold(nudgeL, () => { st.nudge = -1; }, () => { st.nudge = 0; });
     hold(nudgeR, () => { st.nudge = 1; }, () => { st.nudge = 0; });
-    host.cleanup(() => clearInterval(repeat));
+    host.cleanup(() => host.clear(repeat));
     /* held arrow keys repeat on our own clock (not the OS key-repeat delay) and speed up the longer they are held; Shift = coarse */
     let kHeld = null, kT0 = 0, kTick = null;
-    const kStep = () => { const ms = performance.now() - kT0; return (ms < 350 ? 0.05 : ms < 900 ? 0.1 : 0.25) * (kHeld.shift ? 5 : 1); };
-    const kStop = () => { clearInterval(kTick); kTick = null; kHeld = null; };
+    const kStep = () => { const ms = host.now() - kT0; return (ms < 350 ? 0.05 : ms < 900 ? 0.1 : 0.25) * (kHeld.shift ? 5 : 1); };
+    const kStop = () => { host.clear(kTick); kTick = null; kHeld = null; };
     host.cleanup(kStop);
     host.onKey(e => {
       if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         e.preventDefault(); if (e.repeat) return;
-        kStop(); const d = e.key === "ArrowUp" ? -1 : 1; kHeld = { key: e.key, shift: e.shiftKey }; kT0 = performance.now();
-        fine(d * kStep()); kTick = setInterval(() => { if (kHeld) fine(d * kStep()); }, 70);
+        kStop(); const d = e.key === "ArrowUp" ? -1 : 1; kHeld = { key: e.key, shift: e.shiftKey }; kT0 = host.now();
+        fine(d * kStep()); kTick = host.interval(() => { if (kHeld) fine(d * kStep()); }, 70);
       }
       if (e.key === "ArrowLeft" && !e.repeat) st.nudge = -1;
       if (e.key === "ArrowRight" && !e.repeat) st.nudge = 1;
@@ -9440,12 +9483,12 @@ RP.mg.register("beatMatch", {
       let done = false;
       const finish = ok => {
         if (done) return; done = true;
-        if (master) { const t = AC.currentTime; master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.0001, t + (ok ? 1.6 : 0.2)); setTimeout(() => { try { master.disconnect(); } catch (e) { /* ignore */ } }, 1800); }
+        if (master) { const t = AC.currentTime; master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.0001, t + (ok ? 1.6 : 0.2)); RP.ptimeout(() => { try { master.disconnect(); } catch (e) { /* ignore */ } }, 1800); }
         const score = ok ? Math.round(clamp(100 - Math.max(0, st.t - 20) * 0.6, 40, 100)) : 0;
         if (ok) {
           RP.sfx("success");
           const fl = el("div", { cls: "blend", text: "CLEAN BLEND" }, document.body);
-          setTimeout(() => { fl.remove(); resolve({ ok: true, score, time: st.t }); }, 1500);
+          host.timeout(() => { fl.remove(); resolve({ ok: true, score, time: st.t }); }, 1500);
         } else resolve({ ok: false, score: 0, time: st.t });
       };
       hang.addEventListener("click", () => finish(false));
@@ -9498,6 +9541,7 @@ try {
        scams: n                  how many listings are lemons (default by difficulty, always leaves >= 1 good unit)
        flaws: [...]              scripted scenario: one flaw key per listing ("ok" | "cosmetic" | a lemon flaw). Prices are then
                                  fixed (not rolled), so the story can quote the tag: AT-LP120-USB asks $215.
+       floors: { gearId: $ }     scripted scenario only: pin a listing's lowest price, so the story and the haggle agree (Act 2: the AT-LP120-USB pair, $180).
        asks: { gearId: $ }       scripted scenario only: pin a listing's tag; its haggle floor scales with it (Act 3: CDJ-900 asks $280).
        difficulty: 1..5, seed, arcade }
    Tags are ASKING prices before haggling. Turntables, decks and monitors are sold as a PAIR; the UI says so.
@@ -9659,6 +9703,8 @@ function buildScenario(p) {
     }
     const pin = forced && p.asks ? Math.round(+p.asks[g.id]) : 0;
     if (pin > 0) { L.floor = r5(L.floor * pin / L.ask); L.ask = pin; }
+    const pinFloor = forced && p.floors ? Math.round(+p.floors[g.id]) : 0;   // scripted: the exact price he will not go below (the story quotes it)
+    if (pinFloor > 0 && pinFloor < L.ask) L.floor = pinFloor;
     L.askNow = L.ask; L.floor0 = L.floor; L.ask0 = L.ask;
     L.patience = [5, 4, 4, 3, 3][diff - 1];
     L.status = "open"; L.agreed = null; L.lastOffer = null; L.probes = {}; L.notes = {}; L.seen = false; L.called = false; L.powered = false; L.cosLev = false;
@@ -9680,7 +9726,7 @@ function buildScenario(p) {
   return { listings, slot, boutique, pair: !boutique && !!PAIR[slot], budget, diff, best, seed, seller: boutique ? "Mercè" : (typeof p.seller === "string" ? p.seller : "Eddie Two-Times") };
 }
 
-function scoreWorking(sc, L, paid, info) {
+function scoreParts(sc, L, paid, info) {
   const base = 45;
   const pick = 20 * clamp(L.gear.price / Math.max(1, sc.best ? sc.best.gear.price : L.gear.price), 0, 1);
   const gap = Math.max(1, L.ask0 - L.floor0);
@@ -9688,8 +9734,22 @@ function scoreWorking(sc, L, paid, info) {
   const scams = sc.listings.filter(l => l.scam).length;
   const caught = sc.listings.filter(l => l.scam && (l.called || l.seen)).length;
   const sense = scams ? 20 * (caught / scams) : 20;
-  const score = base + pick + hag + clamp(sense - 7 * (info.falseCalls || 0), 0, 20);
-  return Math.round(clamp(score, 0, 100));
+  const senseNet = clamp(sense - 7 * (info.falseCalls || 0), 0, 20);
+  return { base, pick, hag, scams, caught, sense, senseNet, gap };
+}
+function scoreWorking(sc, L, paid, info) {
+  const t = scoreParts(sc, L, paid, info);
+  return Math.round(clamp(t.base + t.pick + t.hag + t.senseNet, 0, 100));
+}
+/* one line per way the score fell short of 100 (the same numbers scoreWorking adds up) */
+function scoreReasons(sc, L, paid, info) {
+  const t = scoreParts(sc, L, paid, info), out = [], money = n => "$" + Math.round(n).toLocaleString("en-US");
+  const lost = (max, got) => Math.round(max - got);
+  if (lost(20, t.pick) > 0) out.push("-" + lost(20, t.pick) + " a better pair was in reach (" + (sc.best ? sc.best.gear.brand + " " + sc.best.gear.model : "another model") + ")");
+  if (lost(15, t.hag) > 0) out.push("-" + lost(15, t.hag) + " you paid " + money(paid) + "; the lowest he'd go was " + money(L.floor0));
+  if (t.scams && lost(20, t.sense) > 0) out.push("-" + lost(20, t.sense) + " " + (t.scams - t.caught) + " of " + t.scams + " lemons never spotted or called out");
+  if (info.falseCalls) out.push("-" + Math.round(Math.min(7 * info.falseCalls, t.sense)) + " false accusation" + (info.falseCalls > 1 ? "s" : ""));
+  return out;
 }
 
 /* ------------------------------------------------------------------ css */
@@ -10072,7 +10132,7 @@ RP.mg.register("buyGear", {
       slider.disabled = !open || l.agreed != null; btnOffer.disabled = !open || l.agreed != null;
       ofEl.textContent = (l.agreed != null ? "DEAL " : "ASK ") + money(price) + (sc.pair ? " · PAIR" : "");
       btnBS.disabled = !open;
-      btnBuy.textContent = st.buying ? "SURE? " + money(price) : sc.budget < price ? "NEED " + money(price - sc.budget) + " MORE" : "BUY " + money(price);
+      btnBuy.textContent = st.buying ? "SURE? " + money(price) : sc.budget < price ? (l.agreed == null ? "OVER BY " + money(price - sc.budget) + ": HAGGLE" : "NEED " + money(price - sc.budget) + " MORE") : "BUY " + money(price);
       btnBuy.classList.toggle("confirm", st.buying);
       btnBuy.disabled = !open || sc.budget < price;
       cashEl.innerHTML = cashHtml();
@@ -10246,6 +10306,7 @@ RP.mg.register("buyGear", {
       }
       else el("li", { html: "Your place on the list: <b>#" + st.place + "</b>" }, ul);
       el("li", { html: "Score: <b>" + res.score + " / 100</b>" }, ul);
+      if (!boutique && l && res.ok) scoreReasons(sc, l, res.paid, { falseCalls: st.falseCalls }).forEach(t => el("li", { cls: "bg-why", text: t }, ul));
       const go = el("button", { cls: "btn primary", type: "button", text: "CONTINUE" }, card);
       go.addEventListener("click", () => { if (resolveFn) { const f = resolveFn; resolveFn = null; f(res); } });
       go.focus({ preventScroll: true });
@@ -10875,7 +10936,7 @@ RP.mg.register("crowdRead", {
           if (S.bart && !was) { host.timeout(() => { floor.pop("BARTENDERS DANCING!", "#ffd23f", 236, 26); host.sfx("cheer"); floor.emote("star", 4); }, 700); }
           if (!S.bart && was) say("The bartenders put the bottle down. Back to work.");
           refresh();
-          nextAt = performance.now();
+          nextAt = host.now();
           const lastRound = S.round >= R.rounds - 1;
           host.timeout(() => {
             phase = "wait";
@@ -12221,7 +12282,7 @@ GK.tone = function (o = {}) {
       stop() {
         if (!alive) return; alive = false; clearInterval(iv);
         try { const t = AC.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0.0001, t + 0.12); } catch (e) { /* ignore */ }
-        setTimeout(() => { nodes.concat(humNodes || [], motor ? [motor] : []).forEach(n => { try { n && n.stop(); } catch (e) { /* ignore */ } }); try { out.disconnect(); comp.disconnect(); } catch (e) { /* ignore */ } }, 220);
+        RP.ptimeout(() => { nodes.concat(humNodes || [], motor ? [motor] : []).forEach(n => { try { n && n.stop(); } catch (e) { /* ignore */ } }); try { out.disconnect(); comp.disconnect(); } catch (e) { /* ignore */ } }, 220);
       },
       vol(v) { try { out.gain.setTargetAtTime(v, AC.currentTime, 0.03); } catch (e) { /* ignore */ } },
       bend(cents) { try { if (bendSrc) bendSrc.offset.setTargetAtTime(cents, AC.currentTime, 0.02); } catch (e) { /* ignore */ } },
@@ -12262,7 +12323,7 @@ GK.band = function (cutIdx) {
         }
       } catch (e) { /* ignore */ }
     }, 25);
-    return { stop() { if (!alive) return; alive = false; clearInterval(iv); try { const t = AC.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.0001, t + 0.15); } catch (e) { /* ignore */ } setTimeout(() => { try { master.disconnect(); comp.disconnect(); } catch (e) { /* ignore */ } }, 300); } };
+    return { stop() { if (!alive) return; alive = false; clearInterval(iv); try { const t = AC.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.0001, t + 0.15); } catch (e) { /* ignore */ } RP.ptimeout(() => { try { master.disconnect(); comp.disconnect(); } catch (e) { /* ignore */ } }, 300); } };
   } catch (e) { return dead; }
 };
 })();
@@ -12603,7 +12664,7 @@ RP.mg.register("goDigging", {
     const resetMsg = () => { if (!S.done) msg.textContent = baseMsg; };
     let cancelType = null;
     const say = (text, o) => {
-      if (cancelType) cancelType(); S.say = text; S.sayT = performance.now();
+      if (cancelType) cancelType(); S.say = text; S.sayT = host.now();
       cancelType = DK.typer(host, sayTxt, text, null, 16);
     };
     const quip = k => say(DK.pick(RAY_QUIPS[k], Math.random));
@@ -12626,7 +12687,7 @@ RP.mg.register("goDigging", {
       RP.sfx("needle");
       let loop = null;
       try { loop = RP.audio.recordLoop(c.rec); loop.start(); if (c.cond.id === "beat") loop.setFilter("lowpass", 1500); else if (c.cond.id === "vg") loop.setFilter("highpass", 90); } catch (e) { loop = { stop() {}, setBpm() {}, getBpm: () => 120 }; }
-      S.prev = { loop, copy: c, t0: performance.now(), lastCrack: performance.now(), len: 9 };
+      S.prev = { loop, copy: c, t0: host.now(), lastCrack: host.now(), len: 9 };
       if (S.mode === "flip") setMode("inspect");
       if (S.previews > 5 && S.previews % 3 === 0) quip("tooMany"); else if (c.warped) quip("warp"); else quip("preview");
       {
@@ -13061,10 +13122,10 @@ RP.mg.register("goDigging", {
           /* preview timing, crackle and wow */
           const pv = S.prev;
           if (pv) {
-            const el_ = (performance.now() - pv.t0) / 1000;
+            const el_ = (host.now() - pv.t0) / 1000;
             prevFill.style.width = Math.min(100, el_ / pv.len * 100) + "%"; prevLbl.textContent = "▶ ~" + pv.copy.rec.bpm + " BPM  0:" + String(Math.floor(el_)).padStart(2, "0");
             const cid = pv.copy.cond.id, gap = cid === "beat" ? 1400 : cid === "vg" ? 2800 : cid === "vg+" ? 6000 : 0;
-            if (gap && performance.now() - pv.lastCrack > gap) { pv.lastCrack = performance.now(); RP.sfx("crackle"); }
+            if (gap && host.now() - pv.lastCrack > gap) { pv.lastCrack = host.now(); RP.sfx("crackle"); }
             if (pv.copy.warped) { try { pv.loop.setBpm(pv.copy.rec.bpm * (1 + 0.045 * Math.sin(el_ * 2.6))); } catch (e) { /* ignore */ } }
             if (el_ > pv.len) { stopPreview(0.5); render(); }
           }
@@ -13205,11 +13266,11 @@ function makeEngine() {
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     Object.assign(E, { comp, master, filt, nb, live: true, bus: null });
     E.newBus = () => {
-      if (E.bus) { const old = E.bus; try { old.gain.setTargetAtTime(0.0001, AC.currentTime, 0.02); } catch (e) { /* ignore */ } setTimeout(() => { try { old.disconnect(); } catch (e) { /* ignore */ } }, 400); }
+      if (E.bus) { const old = E.bus; try { old.gain.setTargetAtTime(0.0001, AC.currentTime, 0.02); } catch (e) { /* ignore */ } RP.ptimeout(() => { try { old.disconnect(); } catch (e) { /* ignore */ } }, 400); }
       E.bus = AC.createGain(); E.bus.gain.value = 1; E.bus.connect(filt); return E.bus;
     };
     E.newBus();
-    E.dispose = () => { try { master.gain.setTargetAtTime(0.0001, AC.currentTime, 0.03); } catch (e) { /* ignore */ } setTimeout(() => { try { master.disconnect(); filt.disconnect(); comp.disconnect(); if (E.bus) E.bus.disconnect(); } catch (e) { /* ignore */ } }, 400); };
+    E.dispose = () => { try { master.gain.setTargetAtTime(0.0001, AC.currentTime, 0.03); } catch (e) { /* ignore */ } RP.ptimeout(() => { try { master.disconnect(); filt.disconnect(); comp.disconnect(); if (E.bus) E.bus.disconnect(); } catch (e) { /* ignore */ } }, 400); };
   } catch (e) { E.live = false; }
   return E;
 }
@@ -13587,7 +13648,7 @@ RP.mg.register("makTracks", {
     };
     const E = makeEngine();
     host.cleanup(() => { try { E.dispose && E.dispose(); } catch (e) { /* ignore */ } });
-    const clock = () => (E.live ? E.AC.currentTime : performance.now() / 1000);
+    const clock = () => (E.live ? E.AC.currentTime : host.now() / 1000);
     const secOf = b => st.arr[b];
     const origSlice = n => kit.slices[n - 1];
 
@@ -14866,7 +14927,7 @@ async function run(host, p, SK) {
     }
     floats.draw(c, dt);
   }
-  let last = performance.now();
+  let last = host.now();
   host.raf(t => { const dt = Math.min(0.1, (t - last) / 1000); last = t; try { draw(dt); } catch (e) { /* never throw */ } });
   draw(0);
 
@@ -15476,7 +15537,7 @@ K.endCard = function (host, parent, cfg) {
     const target = Math.round(clamp(cfg.score, 0, 100));
     const set = n => { sc.innerHTML = n + "<small>/100</small>"; rows.forEach(r => { const on = Math.round(r.v * 10 * Math.min(1, n / Math.max(1, target))); [...r.m.children].forEach((s, i) => s.classList.toggle("on", i < on)); }); };
     if (reduced) set(target);
-    else { let n = 0; const iv = setInterval(() => { n = Math.min(target, n + Math.max(1, Math.round(target / 24))); set(n); if (n >= target) clearInterval(iv); }, 28); host.cleanup(() => clearInterval(iv)); }
+    else { let n = 0; const iv = host.interval(() => { n = Math.min(target, n + Math.max(1, Math.round(target / 24))); set(n); if (n >= target) host.clear(iv); }, 28); }
     host.onKey(e => { if ((e.key === "Enter" || e.key === " ") && document.activeElement && document.activeElement.tagName !== "BUTTON") { e.preventDefault(); fin("continue"); } });
     host.cleanup(() => { done = true; });
   });
@@ -15486,7 +15547,7 @@ K.endCard = function (host, parent, cfg) {
 K.flash = function (text, color, ms) {
   const f = el("div", { cls: "sk-pop", text }, document.body);
   if (color) f.style.color = color;
-  setTimeout(() => f.remove(), ms || 1100);
+  RP.ptimeout(() => f.remove(), ms || 1100);
   return f;
 };
 
@@ -15979,8 +16040,8 @@ SK.css = () => { if (cssDone) return; cssDone = true; try { el("style", { text: 
 /* ------------------------------------------------------------------ session: timers, keys, advance */
 SK.session = function (host) {
   const S = { host, dead: false, timers: new Set(), keyFn: null, advFn: null, resolvers: new Set() };
-  host.cleanup(() => { S.dead = true; S.timers.forEach(clearTimeout); S.timers.clear(); });
-  S.later = (fn, ms) => { const t = setTimeout(() => { S.timers.delete(t); if (!S.dead) { try { fn(); } catch (e) { console.error(e); } } }, ms); S.timers.add(t); return t; };
+  host.cleanup(() => { S.dead = true; S.timers.forEach(t => host.clear(t)); S.timers.clear(); });
+  S.later = (fn, ms) => { const t = host.timeout(() => { S.timers.delete(t); if (!S.dead) { try { fn(); } catch (e) { console.error(e); } } }, ms); S.timers.add(t); return t; };
   /* wait ms, or until the player taps/presses Space/Enter (skippable) */
   S.wait = (ms, skippable = true) => new Promise(res => {
     if (S.dead) return;
@@ -16054,7 +16115,7 @@ SK.meter = function (parent, o) {
     if (v !== prev && prev !== undefined) {
       box.classList.remove("hit", "good", "badm"); void box.offsetWidth;
       box.classList.add(v < prev ? "badm" : "good"); if (v < prev) box.classList.add("hit");
-      setTimeout(() => box.classList.remove("good", "badm"), 700);
+      setTimeout(() => box.classList.remove("good", "badm"), 700);   // cosmetic class removal, fine raw
     }
   };
   api.value = undefined; api.set(o.value != null ? o.value : max);
@@ -16081,19 +16142,19 @@ SK.say = function (S, parent, opts = {}) {
     nm.textContent = name || ""; tx.textContent = ""; more.style.display = "none"; api.last = text;
     const chars = [...String(text)];
     if (SK.reduced() || o.instant || !chars.length) { tx.textContent = text; api.talking = false; res(); return; }
-    const t0 = performance.now(), speed = o.speed || 56, pitch = o.pitch || 420;
+    const t0 = S.host.now(), speed = o.speed || 56, pitch = o.pitch || 420;
     let i = 0, timer = 0, done = false;
     api.talking = true;
     const finish = (skipped) => {
-      if (done) return; done = true; clearTimeout(timer); S.timers.delete(timer);
+      if (done) return; done = true; S.host.clear(timer); S.timers.delete(timer);
       tx.textContent = String(text); api.talking = false; cur = null; res();
     };
     cur = { finish };
     const tick = () => {
       if (S.dead || done) return;
-      const n = Math.min(chars.length, Math.floor((performance.now() - t0) / 1000 * speed));
+      const n = Math.min(chars.length, Math.floor((S.host.now() - t0) / 1000 * speed));
       if (n !== i) { i = n; tx.textContent = chars.slice(0, i).join(""); if (i % 2 === 0 && chars[i - 1] !== " ") blip(pitch); }
-      if (i >= chars.length) finish(false); else { timer = setTimeout(tick, 16); S.timers.add(timer); }
+      if (i >= chars.length) finish(false); else { timer = S.host.timeout(tick, 16); S.timers.add(timer); }
     };
     tick();
   });
@@ -16754,11 +16815,11 @@ RP.mg.register("soundCheck", {
     const setP = (prm, v, tc) => { try { prm.setTargetAtTime(v, AC.currentTime, tc || 0.04); } catch (e) { /* ignore */ } };
     function startDeck(i) {
       const d = S.deck[i];
-      if (d.loop || !aud) { d.loop = d.loop || { silent: true, phase: () => (performance.now() / 1000) * 2.03, stop() {} }; return; }
+      if (d.loop || !aud) { d.loop = d.loop || { silent: true, phase: () => (host.now() / 1000) * 2.03, stop() {} }; return; }
       try {
         d.loop = RP.audio.loop({ genre: i === 0 ? "house" : "deep house", bpm: 122, seed: 7 + i * 5, energy: 3, volume: 0.62, dest: aud.dk[i].input });
         d.loop.start();
-      } catch (e) { d.loop = { silent: true, phase: () => (performance.now() / 1000) * 2.03, stop() {} }; }
+      } catch (e) { d.loop = { silent: true, phase: () => (host.now() / 1000) * 2.03, stop() {} }; }
     }
     function stopDeck(i) { const d = S.deck[i]; if (d.loop) { try { d.loop.stop(0.12); } catch (e) { /* ignore */ } d.loop = null; } }
     host.cleanup(() => {
@@ -16766,7 +16827,7 @@ RP.mg.register("soundCheck", {
       if (aud) {
         try { aud.out.gain.cancelScheduledValues(AC.currentTime); aud.out.gain.setValueAtTime(0.0001, AC.currentTime); } catch (e) { /* ignore */ }
         aud.src.forEach(s => { try { s.stop(); } catch (e) { /* ignore */ } });
-        setTimeout(() => aud && aud.nodes.forEach(n => { try { n.disconnect(); } catch (e) { /* ignore */ } }), 250);
+        RP.ptimeout(() => aud && aud.nodes.forEach(n => { try { n.disconnect(); } catch (e) { /* ignore */ } }), 250);
       }
     });
 
@@ -18095,7 +18156,7 @@ function draw(c, S, t) {
   R(c, 411, 119, 15, 4, scrCol); R(c, 505, 119, 15, 4, scrCol);
   if (playing) [432, 526].forEach((x, j) => { const a = t / 180 + j; P(c, x + Math.cos(a) * 9, 125 + Math.sin(a) * 4, "#62e6ff"); P(c, x + Math.cos(a + 3.14) * 9, 125 + Math.sin(a + 3.14) * 4, "#62e6ff"); });
   P(c, 488, 114, S.f.a1_mixer ? "#3fd07a" : (Math.floor(t / 400) % 2 ? "#ff3f3f" : "#5a1a1a"));
-  if (sparkT > performance.now()) for (let i = 0; i < 6; i++) P(c, 484 + Math.random() * 10, 116 + Math.random() * 10, Math.random() > 0.5 ? "#fff6a0" : "#ffffff");
+  if (sparkT > RP.gnow()) for (let i = 0; i < 6; i++) P(c, 484 + Math.random() * 10, 116 + Math.random() * 10, Math.random() > 0.5 ? "#fff6a0" : "#ffffff");
   if (lampOn(S)) { ell(c, 470, 31, 3, 4, C.bulb); P(c, 469, 29, "#ffffff"); } else { ell(c, 470, 31, 3, 4, "#cfc8b8"); P(c, 469, 29, "#efe8d8"); }
   if (night(S) || dusk(S)) R(c, 140, 156, 6, 1, "#9fc2ff");
   drawDrawer(c, S);
@@ -18160,7 +18221,7 @@ async function testDecks(S) {
   await RP.walkTo(476, 214, "back");
   if (!S.f.a1_mixer) {
     if (!S.f.a1_c1) await RP.say("Two burned CD-Rs in the decks: Mood II Swing and Hardrive. Let's warm up.");
-    playing = true; RP.sfx("crackle"); sparkT = performance.now() + 800;
+    playing = true; RP.sfx("crackle"); sparkT = RP.gnow() + 800;
     await RP.wait(700); playing = false;
     S.f.a1_c1 = true;
     await RP.lines(["...and channel 2 still sounds like bacon frying.", "Nobody's mixing anything through that."]);
@@ -18242,6 +18303,11 @@ async function callDante(S) {
   await RP.lines(["And Dante's text says a vinyl hour is four records. I've got three, and one of them is warped. I need a closer. Ray, at Deep Cuts.", "Tomorrow: temp job in Midtown. Tonight: sleep. Or the bodega. Probably both."]);
 }
 RP.act1CallDante = callDante;
+// the MENU button's phone menu gets "Call Dante" once the texts are read: Use phone leaves "Use phone with..." in the bedroom, which hid the call
+(RP.phoneExtras = RP.phoneExtras || []).push(S => S.act === 1 && S.f.a1_charged && S.f.a1_texts && !S.f.a1_booked ? [["Call Dante", async S => {
+  if (S.room !== "bedroom") { await RP.say("Not from here. Dante will want to hear me play, and the decks are in my room."); return; }
+  await callDante(S);
+}]] : []);
 RP.act1PhoneUse = async S => { if (S.act === 1 && S.f.a1_charged && !S.f.a1_booked && S.f.a1_texts && S.room === "bedroom") { const i = await RP.choose(["Call Dante", "Open the phone menu"]); if (i === 0) { await callDante(S); return true; } } return false; };
 
 async function sleepNow(S) {
@@ -19088,7 +19154,7 @@ RP.room({
     { id: "news", name: "newspaper boxes", rects: [[632, 206, 40, 32]], z: 24, walk: [640, 228, "back"], look: "Two newspaper boxes. One is free and the other one's free to ignore.", pickup: "A free paper? Sure. ...It's all ads for personal injury lawyers. I'll leave it.", open: "I don't have the quarters. The paper's not worth a quarter." },
     { id: "hydrant", name: "fire hydrant", r: [666, 212, 20, 26], z: 24, walk: [690, 232, "back"], look: "A fire hydrant. The one thing in New York that's always ready.", open: "I'm not opening a fire hydrant. The city has a thing about that.", use: "No. The last person who did that got on the news.", pull: "The cap won't budge. Somebody wanted it that way." },
     { id: "bike", name: "chained bike", r: [872, 204, 56, 36], z: 24, walk: [900, 232, "back"], look: "A bike chained to a pole. Just the frame and a seat. The wheels left for a better life.", pickup: "It's chained. And it's missing its wheels. A metaphor for my financial life." },
-    { id: "recycling", name: "recycling bags", r: [880, 212, 50, 28], z: 28, walk: [904, 232, "back"], vis: S => (S.f.a1_bags || 0) < 6,
+    { id: "recycling", name: "recycling bags", r: [884, 223, 46, 17], z: 28, walk: [904, 232, "back"], vis: S => (S.f.a1_bags || 0) < 6,
       look: "Bags of recycling the canners haven't got to. Cans, in other words. Money, in other other words. I could pick one up.",
       pickup: async S => {
         if (RP.has("cans2") || RP.has("cans")) return "I'm already carrying a bag. I'm not a camel.";
@@ -19537,7 +19603,7 @@ async function deliver(S) {
   else if (i === 0) await RP.lines(["Of course not.", "@a1_sal Good kid. It's just oregano. Smitty's cousin grows it in Queens.", "...Oregano.", "@a1_sal What did you think it was?", "...Oregano. Obviously."]);
   else await RP.lines(["...A little.", "@a1_sal Honest! I respect honest. Oregano. Two pounds. Smitty's cousin grows it in Queens.", "@a1_sal Smitty's got a thing about drama. It's a spice. It's a very dramatic spice."]);
   RP.give("a1_slice"); RP.money(20);
-  await RP.lines(["@a1_sal Twenty bucks. And a slice. Pepperoni. On the house.", "@a1_sal Don't tell the other kids. I only do this for the quiet ones.", "I now have twenty dollars and a slice. For a Wednesday, that's a dream."]);
+  await RP.lines(["@a1_sal Twenty bucks. And a slice. Pepperoni. On the house.", "@a1_sal Don't tell the other kids. I only do this for the quiet ones.", "I now have twenty dollars and a slice. For a weeknight, that's a dream."]);
   S.f.a1_delivered = true;
   if (S.money < 14) await RP.say("That's real money. Fares, records, rent-ish. Let's go be useful.");
 }
@@ -19591,9 +19657,9 @@ RP.room({
     { id: "slCounter", name: "counter", r: [420, 142, 220, 56], z: 18, walk: [560, 226, "back"], look: "The counter: white tile, steel, and the grease of a thousand slices. The best seat in the house is on the other side.", pickup: "It's a counter.", use: "Sal's the guy to talk to.", push: "It's a counter. It doesn't push back, but the stool might." },
     { id: "slRegister", name: "cash register", r: [434, 112, 40, 40], z: 28, walk: [454, 224, "back"], look: "Sal's register. It's older than I am and has a better memory than I do. It rings like a bell in a church.", use: "I have no money to give it.", pickup: "It's a register. It's the pizza's heart.", open: "Sal opens it. I just watch.", push: "It dings. It's a good sound." },
     { id: "slTip", name: "tip jar", r: [592, 138, 16, 14], z: 30, walk: [584, 224, "back"], look: "A tip jar. The label says \"COLLEGE FUND.\" Sal's three kids are in their forties.", pickup: "I'm not stealing from a college fund. Especially a forty-year-old's.", use: "I'd tip, but I'm rich in only one resource: regret." },
-    { id: "slMenu", name: "slice menu", r: [408, 14, 84, 58], z: 14, walk: [450, 222, "back"], look: "SLICES: PLAIN 1.50, PEPPERONI 2.00, WHITE 2.50, SICILIAN 3.00. WHOLE PIE $15. The math says a whole pie is cheaper than eight slices. The math is a trap and I've fallen." },
+    { id: "slMenu", name: "slice menu", r: [408, 14, 84, 58], z: 14, walk: [450, 222, "back"], look: "SLICES: PLAIN 1.50, PEPPERONI 2.00, WHITE 2.50, SICILIAN 3.00. WHOLE PIE $15. Eight plain slices come to twelve bucks. The pie is a trap, and I've fallen for it before." },
     { id: "slFridge", name: "drinks fridge", r: [518, 94, 114, 74], z: 14, walk: [570, 224, "back"], look: "A fridge of sodas. Every bodega and every pizzeria in New York has the same fridge. It's one fridge. It's a clone.", open: "I'd need a dollar and a half for a soda. I'm saving it for the slice.", pickup: "I'd need to be the same person who got that fridge into this room." },
-    { id: "slTable1", name: "table", r: [90, 188, 70, 52], z: 24, walk: [124, 244, "back"], look: "A red-and-white checked table. A shaker of oregano, a stack of napkins and a stain I've decided is the shape of Italy.", use: "I'll sit when I have time. It's a Wednesday. I don't have time.", pickup: "It's bolted to the floor. As is everything in a pizzeria.", push: "It slides an inch. A shaker rattles. Sal glares from across the room." },
+    { id: "slTable1", name: "table", r: [90, 188, 70, 52], z: 24, walk: [124, 244, "back"], look: "A red-and-white checked table. A shaker of oregano, a stack of napkins and a stain I've decided is the shape of Italy.", use: "I'll sit when I have time. It's a weeknight. I don't have time.", pickup: "It's bolted to the floor. As is everything in a pizzeria.", push: "It slides an inch. A shaker rattles. Sal glares from across the room." },
     { id: "slTable2", name: "table", r: [190, 196, 70, 52], z: 24, walk: [226, 246, "back"], look: "Another checked table. Someone left a crust on a plate. A holy relic.", use: "I'll sit when the world stops. It's not stopping.", pickup: "Bolted down. I have no more energy for fights with furniture." },
     { id: "stools", name: "counter stools", rects: [[408, 206, 28, 44], [438, 206, 28, 44]], z: 26, walk: [424, 248, "back"], look: "Counter stools. Red vinyl, split at the seam, held together with tape and loyalty.", use: "I'd sit, but I've got places to be.", pickup: "They're screwed to the floor. That's rule #1 of NYC furniture.", push: "It spins. It's a small ride. I have one second of joy." },
     { id: "slBoxes", name: "pizza boxes", r: [598, 210, 44, 46], z: 28, walk: [586, 240, "right"], look: "A tower of pizza boxes. It's like a skyscraper for hungry people.", pickup: "A pizza box? Without a pizza? That's cruelty.", open: "Empty. Cardboard. A sad thought.", push: "I push the tower. It leans. I stop. It's not worth the lawsuit." },
@@ -20322,7 +20388,7 @@ RP.room({
     { id: "board", name: "bulletin board", r: [64, 32, 88, 72], z: 14, walk: [108, 214, "back"], look: "WHO TOOK MY YOGURT. NO FISH. THE MICROWAVE IS NOT A STOVE. CAKE IN CONF RM B (GONE). The cutting edge of workplace literature.", pickup: "I'm not taking a note. They're all signed by someone with a grudge.", talk: "\"Dear board...\" No." },
     { id: "detector", name: "smoke detector", r: [308, 14, 22, 16], z: 24, walk: [318, 212, "back"], look: S => S.f.a1_alarm ? "The smoke detector, blinking red like the heart it never had." : "A smoke detector, blinking green on the ceiling. If Dev's right, it goes off at toast. It watches the room like a hall monitor.", use: "It's on the ceiling. I'd need a ladder, and an idea.", pull: "Out of reach. It's a ceiling thing. It's a god thing.", pickup: "Ceilings: 2. Me: 0.", push: "I'd have to be a giraffe." },
     { id: "clockB", name: "clock", r: [478, 36, 22, 22], z: 14, walk: [490, 214, "back"], look: "It says 11:40. It's 9:30. That clock has never been right, and its confidence is inspiring.", pickup: "It's time, and it's a wall thing." },
-    { id: "extinguisher", name: "fire extinguisher", r: [608, 68, 22, 50], z: 24, walk: [606, 218, "back"], look: "A fire extinguisher, tag dated last year. Look at that: the only responsible thing in the building. And I'm over here with a bag of popcorn.", pickup: "I'm a lot of things. A fire-fighter is not one. I'd rather not hold the thing that stops the fire. That's the thing that will stop the plan.", use: "No. The whole point of this plan is the opposite of that.", pull: "No pin to pull. And no heart to put it out." },
+    { id: "extinguisher", name: "fire extinguisher", r: [608, 68, 22, 50], z: 24, walk: [606, 218, "back"], look: S => "A fire extinguisher, tag dated last year. Look at that: the only responsible thing in the building." + (RP.has("a1_popcorn") ? " And I'm over here with a bag of popcorn." : ""), pickup: "I'm a lot of things. A fire-fighter is not one. I'd rather not hold the thing that stops the fire. That's the thing that will stop the plan.", use: "No. The whole point of this plan is the opposite of that.", pull: "No pin to pull. And no heart to put it out." },
     { id: "washSign", name: "wash hands sign", r: [158, 10, 22, 18], z: 14, walk: [170, 214, "back"], look: "WASH HANDS. A sign for a sink nobody checks and a rule nobody follows." },
     { id: "brTrash", name: "trash can", r: [538, 212, 28, 36], z: 24, walk: [526, 236, "right"], look: "A trash can overflowing with paper plates and an upside-down birthday cake. Someone's career is in there.", open: "It's a swing lid. It swings. I don't look.", pickup: "Absolutely not. I draw the line at office trash.", push: "It wobbles. A plate falls. I look away." }
   ],
@@ -20970,7 +21036,7 @@ async function playSet(S) {
   RP.place("dante", 268, 218, "right"); RP.actor("dante").expr = "happy";
   await RP.say(["The second hour. The USB. Soul on a stolen stick, picked on Wednesday. Nobody could tell. The room swayed.", "The second hour. The USB. All peak, picked on Wednesday. The floor didn't ask where the stick came from. It jumped.", "The second hour. The USB. A little of everything, from a stolen stick. Nobody could tell. Nobody was bored."][S.f.a1_setStyle ?? 2], "nar");
   await RP.fadeTo(0, 700);
-  await RP.lines(["@dante Hey. HEY.", ...["@dante That second hour. Soul. Where'd that come from? The room was holding hands.", "@dante That second hour. All peak, no brakes. I aged a year. The room loved it.", "@dante That second hour. Safe. Smooth. I'd say take a risk, but nobody left, so."][S.f.a1_setStyle ?? 2].slice(0,1), "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
+  await RP.lines(["@dante Hey. HEY.", ["@dante That second hour. Soul. Where'd that come from? The room was holding hands.", "@dante That second hour. All peak, no brakes. I aged a year. The room loved it.", "@dante That second hour. Safe. Smooth. I'd say take a risk, but nobody left, so."][S.f.a1_setStyle ?? 2], "@dante Great set. I'll pay you next week.", "Next week.", "@dante Next week. It's a sacred promise."]);
   RP.sfx("success");
   await RP.lines(["A handful of records, a stolen USB, a flyer with my name wrong, and a slice for the doorman. And now: a gig.", "I'm a DJ. Even if the paycheck is a phrase."]);
   await RP.completeAct([
@@ -21074,7 +21140,7 @@ const nh = RP.rooms.a1_nowhere.hotspots;
 nh.push({ id: "dante", name: "Dante", look: "Dante. Buzzcut, goatee, a bomber jacket with a pink lining, and a smile that says \"I'll pay you next week.\" It's a smile I've learned to respect.", talk: S => S.f.a1_setDone ? RP.lines(["@dante I'll pay you next week. It's a sacred promise."]) : danteTalk(S), use: "I can't use Dante. People have tried. It's usually the other way around.", pickup: "Dante's not for carrying. He's for believing. Eventually.", push: "I'd push him, but he'd say \"next week\" and I'd be broke forever.", give: "\"Sure, just put it on my tab,\" says Dante. \"I'll pay you next week.\"" });
 nh.push({ id: "a1_dani", name: "Dani", look: "Dani. Cyan mohawk, black apron, an expression of someone who's heard every DJ promise \"I'll make you dance.\" She's yet to dance.", talk: S => bartend(S, "dani"), use: "I order a water. Dani gives me a glass of tap and a look. We both know my budget.", pickup: "Dani's not for taking. She's for impressing.", push: "I wave. She raises one eyebrow. It's all the conversation I'm allowed.", give: "Dani shakes her head. \"Tips go in the jar. Everyone else's gifts go in the bin.\"" });
 nh.push({ id: "a1_rafa", name: "Rafa", look: "Rafa. Curly hair, a beard, a red tee under a black apron. He pours drinks like he's reading a tragedy.", talk: S => bartend(S, "rafa"), use: "I ask for a water. Rafa pours it in the saddest, most poetic way I've seen.", pickup: "Rafa's a person. And a screenwriter, I think.", push: "I tap the bar. Rafa nods. A tiny conversation.", give: "Rafa waves it off. \"Tips go in the jar, man.\"" });
-nh.push({ id: "a1_hank", name: "Old Hank", look: "Old Hank. A white beard, a vest, a pair of glasses and the front row of a couch. He's been at every Nowhere since it was a laundromat. That's what he says.", talk: async S => { await RP.lines(["Evening.", "@a1_hank Used to be a laundromat. Same dryers, worse music. I'm still waiting on a sock.", "@a1_hank Start slow. Nobody dances at ten. Not even in 1993. Let the bartenders hear it first."]); }, use: "I'd sit next to him, but the couch is full of memories.", pickup: "Hank is a lot of history. I'd throw out my back.", push: "I nudge his sleeve. He raises his glass. It's a toast. It's a no.", give: "\"Thanks, young man,\" says Hank. \"But I'm on a very strict diet. Of nostalgia.\"" });
+nh.push({ id: "a1_hank", name: "Old Hank", look: "Old Hank. A white beard, a vest, a pair of glasses and the front row of a couch. He's been at every Nowhere since it was a laundromat. That's what he says.", talk: async S => { await RP.lines(["Evening.", "@a1_hank I sat right here when this room still took quarters. I'm still waiting on a sock.", "@a1_hank You're the opener? Play it for the bartenders first. When they move, the room moves."]); }, use: "I'd sit next to him, but the couch is full of memories.", pickup: "Hank is a lot of history. I'd throw out my back.", push: "I nudge his sleeve. He raises his glass. It's a toast. It's a no.", give: "\"Thanks, young man,\" says Hank. \"But I'm on a very strict diet. Of nostalgia.\"" });
 nh.push({ id: "a1_twig", name: "Twig", look: "Twig. He got in. I don't know how. Maybe he knows somebody who knows somebody who knows Tank's cousin.", talk: async S => { await RP.lines(["You got in!", "@a1_twig Tank's cousin. It's a whole thing. I'll tell you later. When there's a later.", "@a1_twig Make 'em dance, man. I came for you. I mean... I came for the bartenders. But you."]); }, use: "I clap him on the shoulder. He nearly drops his drink. We're friends now.", pickup: "Twig's lighter than a record, but with way more opinions.", push: "I nudge him. He nudges me. We both nudge a stranger. Chaos.", give: "\"I'm good,\" says Twig. \"I'm saving room for the music.\"" });
 nh.push({ id: "a1_coco", name: "Coco", look: "Coco. Shades indoors, a bomber with an attitude, a phone with a lock screen I'd love to see. She's the room's most reliable review.", talk: async S => { await RP.lines(["Good crowd.", "@a1_coco Don't flatter me, DJ. It's not a crowd. It's a rumor with shoes.", "@a1_coco Give me a reason to put the phone down."]); }, use: "I wave. Coco holds up one finger. It's the Nowhere version of hello.", pickup: "Coco is not for carrying. Coco is for impressing.", push: "I nudge her. She turns off her phone. Slowly. I've made an enemy.", give: "\"Thank you,\" says Coco. \"No.\"" });
 })();
