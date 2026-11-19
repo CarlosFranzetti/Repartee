@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>re:parteé: links</title>
+<meta name="description" content="{{DESC}}">
+<meta property="og:title" content="re:parteé">
+<meta property="og:description" content="{{DESC}}">
+<meta property="og:image" content="{{SITE}}/og.png">
+<meta property="og:url" content="{{SITE}}/links">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#05030a">
+<style>
+{{FONTS}}
+:root { color-scheme: dark; --bg: #05030a; --line: #2d2456; --pink: #ff3fa4; --cyan: #62e6ff; --amber: #ffc44d; --fg: #efeaff; --muted: #8c84b8; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { font-family: "VT323", ui-monospace, monospace; color: var(--fg); background: var(--bg); min-height: 100dvh; display: flex; justify-content: center; }
+.bg { position: fixed; inset: 0; background: url("title-art.png") 72% bottom / cover no-repeat; image-rendering: pixelated; }
+.bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(5, 3, 10, .92) 0%, rgba(5, 3, 10, .78) 45%, rgba(5, 3, 10, .45) 100%); }
+main { position: relative; width: 100%; max-width: 460px; padding: max(28px, env(safe-area-inset-top)) 20px max(32px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+h1 { font: 400 clamp(30px, 10.5vw, 48px)/1 "Press Start 2P", monospace; margin: 18px 0 6px; color: #fff; letter-spacing: -.02em; text-shadow: 0 4px 0 #2a0d3a, 0 0 24px rgba(255, 63, 164, .35); white-space: nowrap; }
+h1 b { color: var(--pink); font-weight: 400; }
+.tag { margin: 0; font-size: 21px; letter-spacing: .12em; text-wrap: balance; } .tag span { color: var(--amber); letter-spacing: .05em; white-space: nowrap; }
+.pitch { margin: 0 0 10px; font-size: 21px; line-height: 1.15; color: var(--amber); text-wrap: balance; }
+a.btn { display: block; width: 100%; padding: 16px 14px 15px; border: 2px solid var(--line); background: rgba(12, 9, 25, .92); color: var(--fg); text-decoration: none; font-size: 26px; letter-spacing: .06em; line-height: 1.1; }
+a.btn small { display: block; margin-top: 4px; font-size: 18px; letter-spacing: .02em; color: var(--muted); }
+a.btn.primary { background: var(--pink); border-color: var(--pink); color: #12061a; font: 400 16px/1.5 "Press Start 2P", monospace; letter-spacing: 0; padding: 20px 12px 18px; }
+a.btn.primary small { font: 20px/1.1 "VT323", monospace; color: #3a0d28; margin-top: 8px; }
+a.btn:hover, a.btn:focus-visible { border-color: var(--cyan); outline: none; } a.btn.primary:hover, a.btn.primary:focus-visible { border-color: #fff; }
+img.shot { width: 100%; height: auto; display: block; border: 2px solid var(--line); margin: 6px 0; }
+footer { margin-top: 10px; font-size: 19px; color: var(--muted); } footer a { color: var(--cyan); text-decoration: none; }
+</style>
+<script>{{ANALYTICS}}</script>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<main>
+  <h1>re<b>:</b>parte<b>é</b></h1>
+  <p class="tag">A PIXELART DJ ADVENTURE GAME <span>by Carlos Franzetti</span></p>
+  <p class="pitch">From broke-ass bedroom DJ to festival headliner. One questionable decision at a time.</p>
+  <a class="btn primary" href="{{SITE}}/">&#9654; PLAY THE GAME<small>Free, in your browser. Phone or desktop. Sound on.</small></a>
+  <img class="shot" src="shot.png" alt="The game: a pixel-art club with a DJ booth, a small crowd and two bartenders, above a row of verbs and an inventory" width="1246" height="700">
+  <a class="btn" href="https://github.com/CarlosFranzetti/Repartee">THE CODE ON GITHUB<small>Plain JavaScript, canvas and Web Audio. No audio files.</small></a>
+  <a class="btn" href="https://github.com/CarlosFranzetti/Repartee/blob/main/docs/WALKTHROUGH.pdf">STUCK? THE WALKTHROUGH<small>Every puzzle, spoiled. PDF.</small></a>
+  <footer>Five levels. Eight mini-games. 105 real records.<br>A game by <a href="https://github.com/CarlosFranzetti">Carlos Franzetti</a></footer>
+</main>
+</body>
+</html>
