@@ -2,6 +2,7 @@
 //  1. index.html               — dev page that loads every source file with <script src> (works from file://)
 //  2. dist/index.html          — the full game as one self-contained file (fonts, CSS, JS inlined)
 //  3. dist/artifact.html       — the same, content only, for the claude.ai artifact host
+//  4. dist/links.html, og.png   — the link-in-bio page (/links) and the link-preview image, from src/site/
 //  4. dist/level1.html … dist/level5.html — each level on its own (plus the mini-game arcade), built with the
 //     acts up to that level and started at it; finishing it links to the next level's page (Level 5 ends the game)
 // File order: core (fixed) → data → minigames → acts (act1..act5, files sorted by name) → game.js
@@ -78,6 +79,11 @@ function bundle({ level }) {
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>${title}</title>
 <meta name="description" content="${DESC}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${DESC}">
+<meta property="og:image" content="${SITE_URL}/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <style>\n${fonts}\n${css}\n</style>
 <script>${ANALYTICS}</script>
 </head>
@@ -134,6 +140,14 @@ ${full.files.map(f => `<script src="${rel(f)}"></script>`).join("\n")}
   fs.writeFileSync(path.join(root, "index.html"), dev);
   write(path.join(root, "dist/index.html"), full.single);
   write(path.join(root, "dist/artifact.html"), full.art);
+  // the site's extra pages (src/site/): links.html is the link-in-bio page (served as /links), og.png the link-preview
+  // image, title-art.png the page's background. HTML gets the fonts, description, site URL and analytics filled in.
+  const siteDir = path.join(root, "src/site");
+  for (const f of fs.existsSync(siteDir) ? fs.readdirSync(siteDir) : []) {
+    const src = path.join(siteDir, f), dst = path.join(root, "dist", f);
+    if (f.endsWith(".html")) write(dst, fs.readFileSync(src, "utf8").replace(/\{\{FONTS\}\}/g, () => fonts).replace(/\{\{DESC\}\}/g, DESC).replace(/\{\{SITE\}\}/g, SITE_URL).replace(/\{\{ANALYTICS\}\}/g, () => ANALYTICS));
+    else fs.copyFileSync(src, dst);
+  }
   const sizes = LEVELS.map((_, i) => {
     const b = bundle({ level: i + 1 });
     write(path.join(root, "dist/level" + (i + 1) + ".html"), b.single);
